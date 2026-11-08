@@ -1,0 +1,255 @@
+<title>Planora Umsetzungsplan V1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Bauplan-Logik. Kopf mit Eckdaten, dann Zeitachse (Gantt in Wochen), dann Teilprojekte als Tabelle, dann Hilfe von aussen, Risiken. */
+:root{
+  --bg:#f5f7f8; --surface:#ffffff; --fg:#14232f; --muted:#5b6b77; --line:#d9e1e6; --grid:#e9eef1;
+  --matt:#0f7f80; --matt-soft:#d7eeee;
+  --ext:#c27a12; --ext-soft:#f7e8cf;
+  --chef:#6a4fb3; --chef-soft:#e7e1f6;
+  --mile:#14232f; --warn:#b4432f; --warn-soft:#f6dcd6;
+  --f-display:"Archivo","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f171d; --surface:#16212a; --fg:#e4ecf0; --muted:#93a4b0; --line:#2a3944; --grid:#1c2a34;
+  --matt:#3fb8b8; --matt-soft:#163b3d; --ext:#e3a24a; --ext-soft:#3d2e17; --chef:#a68ef0; --chef-soft:#2c2547;
+  --mile:#e4ecf0; --warn:#ec7d68; --warn-soft:#41231d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f171d; --surface:#16212a; --fg:#e4ecf0; --muted:#93a4b0; --line:#2a3944; --grid:#1c2a34;
+  --matt:#3fb8b8; --matt-soft:#163b3d; --ext:#e3a24a; --ext-soft:#3d2e17; --chef:#a68ef0; --chef-soft:#2c2547;
+  --mile:#e4ecf0; --warn:#ec7d68; --warn-soft:#41231d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:44px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,4.4vw,42px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:22px;font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0;max-width:68ch}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;padding:1px 6px;border-radius:3px;background:var(--grid);color:var(--muted)}
+header{display:grid;gap:14px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:10px}
+.fact{background:var(--surface);padding:14px 16px;display:grid;gap:2px;min-width:0}
+.fact b{font-family:var(--f-display);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.fact span{color:var(--muted);font-size:13px}
+section{display:grid;gap:16px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+/* Gantt */
+.gscroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.gantt{--weeks:42;--label:230px;min-width:980px;display:grid;grid-template-columns:var(--label) 1fr;font-size:13px}
+.ghead,.grow{display:contents}
+.gl{padding:7px 12px;border-bottom:1px solid var(--grid);min-width:0;display:flex;align-items:center;gap:8px}
+.gl .id{font-family:var(--f-mono);font-size:11px;color:var(--muted);width:30px;flex:none}
+.gphase{grid-column:1/-1;padding:10px 12px 6px;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--line)}
+.gt{position:relative;border-bottom:1px solid var(--grid);border-left:1px solid var(--line);background-image:linear-gradient(to right,var(--grid) 1px,transparent 1px);background-size:calc(100%/var(--weeks)*4) 100%;min-height:34px}
+.gaxis{position:relative;height:30px;border-left:1px solid var(--line);border-bottom:1px solid var(--line)}
+.gaxis span{position:absolute;top:8px;font-family:var(--f-mono);font-size:10px;color:var(--muted);transform:translateX(-50%)}
+.bar{position:absolute;height:12px;border-radius:3px}
+.bar.matt{background:var(--matt)} .bar.ext{background:var(--ext)} .bar.chef{background:var(--chef)}
+.bar.top{top:6px} .bar.bot{top:20px;height:8px;opacity:.9}
+.bar.solo{top:11px}
+.ms{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed var(--mile);opacity:.55}
+.msl{position:absolute;top:2px;font-family:var(--f-mono);font-size:10px;font-weight:500;background:var(--surface);padding:0 4px;white-space:nowrap}
+.gnote{font-size:13px;color:var(--muted)}
+/* Milestones */
+.miles{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.mile{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:14px 16px;display:grid;gap:6px;align-content:start;min-width:0}
+.mile .w{font-family:var(--f-mono);font-size:12px;color:var(--matt)}
+/* Table */
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:900px;font-size:13.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-family:var(--f-mono);font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--bg);position:sticky;top:0}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.phase td{background:var(--bg);font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 12px}
+.chip{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.chip.ext{background:var(--ext-soft);color:var(--ext)}
+.chip.chef{background:var(--chef-soft);color:var(--chef)}
+.chip.no{background:var(--grid);color:var(--muted)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+td small{color:var(--muted);display:block;margin-top:2px}
+tfoot td{font-weight:600;border-bottom:none}
+/* Externals */
+.ext-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:16px;display:grid;gap:8px;align-content:start;min-width:0}
+.card .row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.card .why{color:var(--muted);font-size:13.5px}
+.prio{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.prio.must{color:var(--warn)} .prio.should{color:var(--ext)} .prio.can{color:var(--muted)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px}
+ul.clean{margin:0;padding-left:18px;display:grid;gap:6px}
+.note{border-left:3px solid var(--line);padding:4px 0 4px 14px;color:var(--muted);font-size:13.5px}
+footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
+@media (prefers-reduced-motion:no-preference){.bar{transition:filter .15s}.bar:hover{filter:brightness(1.12)}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Planora · Umsetzungsplan V1 · Stand 08.11.2026</div>
+  <h1>Vom Architekturentwurf zum Pilot bei Manor und Siemens</h1>
+  <p>Grundlage: Architektur und Entscheide E1–E27 in <span class="mono">docs/architektur/</span>. Kern von V1: klickbares 3D-Modell, Dokumente direkt im Browser, KI-Erfassung und intelligente Suche. Kosten und Investitionsplan folgen später als Zusatzmodul. Alle Dauern sind Schätzungen <span class="tag">[A]</span>, Woche 1 = Start nach Freigabe der Architektur.</p>
+  <div class="facts">
+    <div class="fact"><b class="mono">≈ 42 Wochen</b><span>bis Pilotstart, rund 10 Monate</span></div>
+    <div class="fact"><b class="mono">W23</b><span>erste klickbare Demo für den Verkauf</span></div>
+    <div class="fact"><b class="mono">≈ 200 PT</b><span>Entwicklung Matt (mit Claude Code)</span></div>
+    <div class="fact"><b class="mono">≈ 85 PT</b><span>externe Hilfe, ca. CHF 90–120k [A]</span></div>
+  </div>
+</header>
+
+<section>
+  <div style="display:grid;gap:6px">
+    <h2>Zeitachse</h2>
+    <p class="gnote">Obere Linie: Arbeit von Matt (läuft nacheinander, eine Person). Untere Linie: Externe oder Chef, parallel. Gestrichelt: Meilensteine.</p>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--matt)"></i>Matt (Entwicklung)</span>
+    <span><i style="background:var(--ext)"></i>Externe Hilfe</span>
+    <span><i style="background:var(--chef)"></i>Chef (Fachwissen, Verkauf, Verträge)</span>
+  </div>
+  <div class="gscroll"><div class="gantt" id="gantt"></div></div>
+</section>
+
+<section>
+  <h2>Meilensteine</h2>
+  <div class="miles">
+    <div class="mile"><span class="w">M0 · Woche 2</span><h3>Architektur freigegeben</h3><p>Überarbeitung Welle 4, Codex-Review, Spec und Detailplan stehen. Danach wird gebaut.</p></div>
+    <div class="mile"><span class="w">M1 · Woche 13</span><h3>Fundament läuft</h3><p>Login mit SSO, Mandanten getrennt, Gebäude, Geschosse und Räume erfassbar. Läuft auf Exoscale mit Backups.</p></div>
+    <div class="mile"><span class="w">M2 · Woche 23</span><h3>Demo „3D + Dokumente“</h3><p>Klickbares 3D-Modell, Klick auf Element öffnet Datenblatt im Browser. Daten noch von Hand erfasst. Damit kann der Chef verkaufen.</p></div>
+    <div class="mile"><span class="w">M3 · Woche 31</span><h3>KI erfasst das Gebäude</h3><p>Grundriss und Unterlagen hochladen, KI schlägt Räume und Elemente vor, Mensch bestätigt.</p></div>
+    <div class="mile"><span class="w">M4 · Woche 38</span><h3>Pilotbereit</h3><p>Lebensdauer mit Ampel, Suche, DE/FR/IT, Pentest bestanden, Wiederherstellung geübt.</p></div>
+    <div class="mile"><span class="w">M5 · Woche 42</span><h3>Pilot läuft</h3><p>Erstes echtes Gebäude bei Manor oder Siemens erfasst und im Betrieb.</p></div>
+  </div>
+</section>
+
+<section>
+  <div style="display:grid;gap:6px">
+    <h2>Teilprojekte im Detail</h2>
+    <p class="gnote">PT = Personentage. Ein Personentag mit Claude Code ist produktiver als ohne, die Schätzung rechnet das bereits ein <span class="tag">[A]</span>.</p>
+  </div>
+  <div class="tscroll"><table>
+    <thead><tr><th>#</th><th>Teilprojekt</th><th>Inhalt</th><th>Wochen</th><th>PT Matt</th><th>Hilfe von aussen</th><th>Risiko</th></tr></thead>
+    <tbody id="tbody"></tbody>
+    <tfoot><tr><td></td><td>Total</td><td></td><td class="num">42 Wo</td><td class="num" id="sumMatt"></td><td class="num" id="sumExt"></td><td></td></tr></tfoot>
+  </table></div>
+</section>
+
+<section>
+  <div style="display:grid;gap:6px">
+    <h2>Wo du Hilfe von aussen brauchst</h2>
+    <p class="gnote">Nach Dringlichkeit sortiert. Tagessätze Schweiz für Freelancer geschätzt CHF 1'000–1'400 pro Tag <span class="tag">[A]</span>, vor Vergabe Offerten einholen.</p>
+  </div>
+  <div class="ext-grid" id="extgrid"></div>
+</section>
+
+<section class="two">
+  <div style="display:grid;gap:12px;align-content:start">
+    <h2>Aufgaben für den Chef</h2>
+    <ul class="clean">
+      <li><b>Bis W10:</b> echte TGA-Unterlagen vom Pilotkunden (Anlagelisten, Datenblätter, Revisionspläne). Ohne sie bleibt die KI-Genauigkeit unbewiesen.</li>
+      <li><b>Bis W10:</b> mit Jurist klären, ob KI-Verarbeitung in der EU für Manor und Siemens akzeptiert ist. Auftragsverarbeitungsvertrag vorbereiten.</li>
+      <li><b>W9–W24:</b> Lebensdauer-Standardtabelle pro Bauteiltyp aufbauen. Das ist Fachwissen und ein Kernstück des Produkts.</li>
+      <li><b>W1–W12:</b> Bauteil-Katalog fachlich prüfen: welche 30–50 Typen braucht es zuerst?</li>
+      <li><b>Ab W23:</b> Demo bei Pilotkunden zeigen, Rückmeldungen sammeln.</li>
+      <li><b>Vor W39:</b> Vertretung und Support-Regelung für Matt festlegen.</li>
+    </ul>
+  </div>
+  <div style="display:grid;gap:12px;align-content:start">
+    <h2>Was den Plan verschieben kann</h2>
+    <ul class="clean">
+      <li><b>Echte Unterlagen sind schwieriger als Lindenhof.</b> Puffer: KI-Teilprojekte haben je eine Woche Reserve, Korrektur-Editor ist Pflicht.</li>
+      <li><b>3D auf schwachen Firmen-Laptops.</b> 2D-Ansicht ist eingeplant, Messung auf echtem Kundengerät früh machen.</li>
+      <li><b>Juristische Klärung KI in der EU.</b> Fällt sie negativ aus, braucht es eine KI-freie Variante oder ein Modell in der Schweiz.</li>
+      <li><b>Matt fällt aus.</b> Ein Entwickler ist der grösste Engpass. Laufender Code-Review durch Externe macht den Code für eine Vertretung lesbar.</li>
+      <li><b>Scope wächst.</b> Kosten, Investitionsplan, Wartung und Tickets bleiben bewusst draussen bis nach dem Pilot.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="note">Ohne externe Hilfe verlängert sich der Plan auf etwa 13–15 Monate <span class="tag">[A]</span>: Design, 3D-Bibliothek und DevOps landen dann ebenfalls bei Matt, und Pentest sowie juristische Prüfung kann niemand intern ersetzen.</div>
+
+<footer>
+  <span>Quellen: docs/architektur/00-kontext.md (E1–E27), 03-architektur.md, 04-review.md, 05-tests.md, Spikes S1–S12.</span>
+  <span>[A] = Annahme oder Schätzung, vor Verbindlichkeit prüfen. Preise und Tagessätze nicht nachgeschlagen.</span>
+</footer>
+</div>
+
+<script>
+const W = 42;
+// [id, name, inhalt, start, dauer, ptMatt, phase, risk, help:[{who,type,start,dur,pt,label}]]
+const P = [
+ {ph:"Phase 0 · Planung abschliessen"},
+ {id:"P0",n:"Architektur abschliessen",d:"Welle 4: Überarbeitung auf E23–E27, Codex-Review der Korrekturen, Spec, Detailplan mit Aufgaben",s:1,w:2,pt:8,r:"tief",h:[{t:"chef",s:1,w:10,label:"Pilotunterlagen + Jurist"}]},
+ {ph:"Phase 1 · Fundament"},
+ {id:"P1",n:"Server & Betrieb",d:"Exoscale-Konto, Datenbank, Speicher, Container, Umgebungen Test/Produktion, automatisches Deployment, Backups, Überwachung",s:3,w:2,pt:10,r:"mittel",h:[{t:"ext",s:3,w:2,pt:6,label:"DevOps"}]},
+ {id:"P2",n:"Backend-Grundgerüst",d:"Login mit Keycloak und Microsoft-SSO, Mandanten mit RLS, Rollen und Rechte, Audit-Log, API-Struktur der Module",s:5,w:4,pt:20,r:"hoch",h:[{t:"ext",s:5,w:4,pt:4,label:"Code-Review"}]},
+ {id:"P3",n:"Datenmodell & Bauteil-Katalog",d:"Gebäude, Geschoss, Raum, Element, Elementtyp, Katalog-IDs mit ETIM-Mapping, Mehrsprachigkeit in der Datenbank",s:9,w:2,pt:10,r:"mittel",h:[{t:"chef",s:9,w:4,label:"Katalog prüfen"}]},
+ {id:"P12",n:"Frontend-Rahmen & Design",d:"Designsystem, Navigation, Gebäudebaum, Seitenpanel, Formulare, DE/FR/IT-Grundlage",s:11,w:3,pt:15,r:"mittel",h:[{t:"ext",s:3,w:6,pt:10,label:"UX/UI-Design"}]},
+ {ph:"Phase 2 · Kern: 3D und Dokumente"},
+ {id:"P4",n:"Dokumentablage & Upload",d:"Sicherer Upload mit Quarantäne und Virenscan (Befund K01), Umwandlung Word→PDF und TIFF, Zuordnung zu Elementen",s:14,w:2,pt:10,r:"hoch",h:[]},
+ {id:"P5",n:"Dokument-Viewer im Browser",d:"PDF.js mit Zoom und Suche, Bilder, Excel als Tabelle, Sprung zur Quellseite mit Markierung, kurzlebige Links",s:16,w:3,pt:13,r:"mittel",h:[]},
+ {id:"P9",n:"Bauteil-Bibliothek 3D",d:"30–50 Bauteile im Ton-Look in Blender modellieren, als komprimierte GLB-Dateien exportieren",s:6,w:7,pt:3,r:"tief",h:[{t:"ext",s:6,w:7,pt:12,label:"3D-Artist"}]},
+ {id:"P8",n:"3D-Viewer",d:"Gebäude aus Rechtecken, Geschosse explodieren, Pins mit Gruppierung, Klick öffnet Panel, InstancedMesh, 2D-Ansicht für schwache Laptops",s:19,w:5,pt:25,r:"hoch",h:[{t:"ext",s:19,w:4,pt:12,label:"Three.js-Spezialist"}]},
+ {ph:"Phase 3 · KI-Erfassung"},
+ {id:"P7",n:"Grundriss → Räume",d:"Vektor-PDF auslesen, Claude Vision für Scans, Korrektur-Editor zum Verschieben der Rechtecke, manueller Fallback",s:24,w:3,pt:15,r:"hoch",h:[]},
+ {id:"P6",n:"KI-Auslesen der Unterlagen",d:"Dokumentdienst (Docling, OCR), Claude über Bedrock, Prüfer für Zitate und Katalog-IDs, Bestätigungs-Ansicht, Kostenbremse, Golden Set",s:27,w:5,pt:25,r:"hoch",h:[{t:"ext",s:27,w:2,pt:5,label:"Doc-AI-Berater"}]},
+ {ph:"Phase 4 · Nutzen für das FM"},
+ {id:"P11",n:"Lebensdauer & Ampel",d:"Standardtabelle, Überschreiben pro Typ und Element, Zustand nach ZHAW, Ampel im 3D, E-Mail-Hinweise",s:32,w:2,pt:10,r:"mittel",h:[{t:"chef",s:9,w:16,label:"Lebensdauer-Tabelle"}]},
+ {id:"P10",n:"Intelligente Suche",d:"Suche nach Dateinamen, Volltext und Inhalt (z.B. „Funktionsbeschrieb“), Hybridsuche mit pgvector, KI versteht die Frage, Treffer springen in den Viewer",s:34,w:3,pt:15,r:"mittel",h:[{t:"ext",s:30,w:6,pt:3,label:"Übersetzung FR/IT"}]},
+ {ph:"Phase 5 · Härtung und Pilot"},
+ {id:"P13",n:"Tests, Sicherheit, Datenschutz",d:"Mandanten-Grenztests, Lasttest 20'000 Elemente, Wiederherstellung üben, Pentest, Datenschutz-Unterlagen",s:37,w:2,pt:10,r:"mittel",h:[{t:"ext",s:37,w:2,pt:7,label:"Pentest"}]},
+ {id:"P15",n:"Pilot Manor / Siemens",d:"Gebäude erfassen, Schulung, Rückmeldungen umsetzen, Support",s:39,w:4,pt:16,r:"mittel",h:[{t:"chef",s:39,w:4,label:"Kundenbetreuung"}]},
+];
+const EXT = [
+ {n:"UX/UI-Designer",prio:"must",when:"W3–W8",pt:"8–12 PT",why:"Das 3D-Modell und das Seitenpanel sind das Verkaufsargument. Ein Profi legt Look, Abläufe und Komponenten fest, bevor gebaut wird."},
+ {n:"Security-Pentest (Firma)",prio:"must",when:"W37–W38",pt:"5–8 PT",why:"Enterprise-Kunden verlangen einen unabhängigen Nachweis. Intern nicht ersetzbar."},
+ {n:"Jurist Datenschutz",prio:"must",when:"W1–W10",pt:"2–4 PT",why:"KI-Verarbeitung in der EU, Auftragsverarbeitungsvertrag, revDSG. Klärt der Chef mit dem Juristen."},
+ {n:"Code-Reviewer (laufend)",prio:"must",when:"ab W5, alle 2 Wochen",pt:"≈ 20 PT",why:"Ein zweites Paar Augen auf Sicherheit und Mandantentrennung. Macht den Code für eine Vertretung verständlich."},
+ {n:"Three.js-Spezialist",prio:"should",when:"W19–W22",pt:"10–15 PT",why:"Performance, Instancing, Kamera und Pins sind Spezialwissen. Spart Matt rund 3 Wochen."},
+ {n:"3D-Artist (Blender)",prio:"should",when:"W6–W12",pt:"10–15 PT",why:"Einheitlicher Ton-Look der 30–50 Bauteile. Alternative: Matt modelliert selbst mit Blender-MCP, dann +3 Wochen."},
+ {n:"DevOps / Cloud",prio:"should",when:"W3–W4, W37",pt:"5–8 PT",why:"Sauberer Server-Aufbau, Backups und Wiederherstellungsübung. Danach betreibt Matt selbst."},
+ {n:"Doc-AI-Berater",prio:"can",when:"W27–W28",pt:"3–5 PT",why:"Nur falls echte Unterlagen die KI-Genauigkeit drücken. Optimiert OCR und Prompts."},
+ {n:"Übersetzung FR/IT",prio:"can",when:"W30–W36",pt:"≈ 3 PT",why:"Oberfläche und Katalognamen auf Französisch und Italienisch."},
+];
+const RISK = {tief:"no",mittel:"ext",hoch:"warn"};
+const pct = w => (w/W*100)+"%";
+const g = document.getElementById("gantt");
+let html = '<div class="gl" style="border-bottom:1px solid var(--line)"><span class="eyebrow">Teilprojekt</span></div><div class="gaxis">';
+for(let w=1; w<=W; w+=4){ html += `<span style="left:${pct(w-0.5)}">W${w}</span>`; }
+html += '</div>';
+const MS = [[2,"M0"],[13,"M1"],[23,"M2 Demo"],[31,"M3 KI"],[38,"M4"],[42,"M5 Pilot"]];
+let firstRow = true;
+for(const p of P){
+  if(p.ph){ html += `<div class="gphase">${p.ph}</div>`; continue; }
+  const helpers = p.h.filter(x=>x.t);
+  let bars = `<div class="bar matt ${helpers.length?'top':'solo'}" style="left:${pct(p.s-1)};width:${pct(p.w)}" title="${p.n}: W${p.s}–W${p.s+p.w-1}, Matt"></div>`;
+  for(const h of helpers){ bars += `<div class="bar ${h.t} bot" style="left:${pct(h.s-1)};width:${pct(h.w)}" title="${h.label}: W${h.s}–W${h.s+h.w-1}"></div>`; }
+  for(const [w,l] of MS){ bars += `<div class="ms" style="left:${pct(w)}"></div>`; if(firstRow){ bars += `<span class="msl" style="left:calc(${pct(w)} + 3px)">${l}</span>`; } }
+  firstRow = false;
+  html += `<div class="gl"><span class="id">${p.id}</span><span>${p.n}</span></div><div class="gt">${bars}</div>`;
+}
+g.innerHTML = html;
+// Tabelle
+const tb = document.getElementById("tbody");
+let rows = "", sumM = 0, sumE = 0;
+for(const p of P){
+  if(p.ph){ rows += `<tr class="phase"><td colspan="7">${p.ph}</td></tr>`; continue; }
+  sumM += p.pt;
+  const help = p.h.length ? p.h.map(h=>{ if(h.pt) sumE += h.pt; return `<span class="chip ${h.t}">${h.label}${h.pt?` · ${h.pt} PT`:''}</span>`; }).join(" ") : '<span class="chip no">keine</span>';
+  rows += `<tr><td class="num">${p.id}</td><td><b>${p.n}</b></td><td>${p.d}</td><td class="num">W${p.s}–W${p.s+p.w-1}<small>${p.w} Wo</small></td><td class="num">${p.pt}</td><td>${help}</td><td><span class="chip ${RISK[p.r]}">${p.r}</span></td></tr>`;
+}
+tb.innerHTML = rows;
+document.getElementById("sumMatt").textContent = sumM+" PT";
+document.getElementById("sumExt").textContent = "≈ "+(sumE+25)+" PT extern";
+// Externe
+const PR = {must:"Pflicht",should:"empfohlen",can:"optional"};
+document.getElementById("extgrid").innerHTML = EXT.map(e=>`<div class="card"><div class="row"><h3>${e.n}</h3><span class="prio ${e.prio}">${PR[e.prio]}</span></div><div class="row mono" style="font-size:12.5px;color:var(--muted)"><span>${e.when}</span><span>${e.pt}</span></div><p class="why">${e.why}</p></div>`).join("");
+</script>
