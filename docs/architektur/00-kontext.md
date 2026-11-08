@@ -58,6 +58,14 @@ Ablauf aus Kundensicht:
 | E26 | **Intelligente Suche, KI-unterstuetzt**, in V1: (a) Dokumentnamen, (b) Volltext in allen Dokumenten, (c) **inhaltliche/semantische Suche** (z.B. Suche nach "Funktionsbeschrieb" findet entsprechende Textstellen in allen Dokumenten, auch ohne exakten Begriff). Treffer mit Dokument, Seite, Textausschnitt, Sprung in den Viewer. DE/FR/IT. |
 | E27 | Fuer E26: **kostenguenstiger "Leser"** (Embedding-/Indexierungsmodell fuer alle Dokumente) und ein **genuegend schlaues Server-Modell** fuer Anfrageverstaendnis/Reranking/Antwort mit Quellen. Vorschlag [A, zu recherchieren]: Hybridsuche PostgreSQL-Volltext (tsvector DE/FR/IT) + pgvector; Embeddings mehrsprachig, entweder selbst gehostet in CH (z.B. bge-m3 / multilingual-e5) oder Voyage AI; Claude Haiku 5.5 fuer Anfrage/Reranking; Mandantentrennung auch im Vektorindex. |
 
+## Plan- und Kostenentscheid (2026-11-08)
+
+| # | Entscheid |
+|---|---|
+| E28 | **Variante schnell und schlank:** Demo zuerst als durchgehender Schnitt mit Lindenhof-Daten (Woche 7), Module parallel mit Agenten, fertige Bausteine statt Eigenbau; Pilot ca. Woche 28. Externe Hilfe nur Pentest, Jurist, menschlicher Review Login/Mandanten/Upload, DevOps-Check, FR/IT-Gegenlesen (≈ CHF 10–22k). Matts Zeit zaehlt nicht als Kosten. Details: `docs/plan/umsetzungsplan.html`, `docs/plan/kosten-und-preise.md`. |
+| E29 | **REA** nur fuer Importe aus Bestandssystemen (nach Pilot), nicht fuer den Aufbau von V1. |
+| E30 | Architekturkarte (System, Module, Ablaeufe, Datenmodell, API-Vorschlag): `docs/plan/architektur-uebersicht.html`. Neu und ungeprueft: Modul `suche` + Tabelle `such_abschnitt`, Embedding-Dienst, Modul `hinweise`, API-Pfade → in Welle 4 pruefen. |
+
 ## Naechste Schritte (Stand Ende Sitzung 2026-11-08, noch NICHT gestartet)
 
 Grund fuer Pause: Abo-Nutzungsvolumen knapp. Wiederaufnahme hier:
@@ -68,6 +76,7 @@ Grund fuer Pause: Abo-Nutzungsvolumen knapp. Wiederaufnahme hier:
    - 3D: InstancedMesh als Standard, 2D-Fallback bei Software-Renderer (E-T2, E-T3).
    - Kritische/hohe Befunde aus 04-review.md schliessen, soweit V1 betroffen (K01 Upload zwingend; K02 entfaellt mit E24).
    - Test-Empfehlungen E-T1, E-T5, E-T6, E-T8, E-T9, E-T10 aus 05-tests.md Kap. 1.3 einarbeiten.
+   - Architekturkarte (E30) gegenpruefen: API-Pfade, Suche, Hinweise; Reihenfolge an Demo-Schnitt (E28) anpassen.
 2. **Codex-Review** nur der Korrekturen.
 3. **Bereitschafts-Check**, dann Spec (`docs/superpowers/specs/`) und Umsetzungsplan mit Ressourcen (writing-plans).
 4. **Fuer den Chef:** echte TGA-Unterlagen vom Pilot (Manor/Siemens) beschaffen; KI-Datenstandort EU juristisch klaeren; Vertretung/Support fuer Matt regeln.

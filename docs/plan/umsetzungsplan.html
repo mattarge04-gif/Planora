@@ -44,7 +44,7 @@ section{display:grid;gap:16px}
 .legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
 /* Gantt */
 .gscroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
-.gantt{--weeks:42;--label:230px;min-width:980px;display:grid;grid-template-columns:var(--label) 1fr;font-size:13px}
+.gantt{--weeks:28;--label:230px;min-width:980px;display:grid;grid-template-columns:var(--label) 1fr;font-size:13px}
 .ghead,.grow{display:contents}
 .gl{padding:7px 12px;border-bottom:1px solid var(--grid);min-width:0;display:flex;align-items:center;gap:8px}
 .gl .id{font-family:var(--f-mono);font-size:11px;color:var(--muted);width:30px;flex:none}
@@ -96,12 +96,12 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
 <header>
   <div class="eyebrow">Planora · Umsetzungsplan V1 · Stand 08.11.2026</div>
   <h1>Vom Architekturentwurf zum Pilot bei Manor und Siemens</h1>
-  <p>Grundlage: Architektur und Entscheide E1–E27 in <span class="mono">docs/architektur/</span>. Kern von V1: klickbares 3D-Modell, Dokumente direkt im Browser, KI-Erfassung und intelligente Suche. Kosten und Investitionsplan folgen später als Zusatzmodul. Alle Dauern sind Schätzungen <span class="tag">[A]</span>, Woche 1 = Start nach Freigabe der Architektur.</p>
+  <p><b>Variante: schnell und schlank.</b> Demo zuerst als durchgehender Schnitt mit den Lindenhof-Testdaten, Module parallel mit Agenten, fertige Bausteine statt Eigenbau, externe Hilfe nur wo unersetzbar. Grundlage: Architektur und Entscheide E1–E28 in <span class="mono">docs/architektur/</span>. Kern von V1: klickbares 3D-Modell, Dokumente direkt im Browser, KI-Erfassung und intelligente Suche. Kosten und Investitionsplan folgen später als Zusatzmodul. Alle Dauern sind Schätzungen <span class="tag">[A]</span>, Woche 1 = Start nach Freigabe der Architektur.</p>
   <div class="facts">
-    <div class="fact"><b class="mono">≈ 42 Wochen</b><span>bis Pilotstart, rund 10 Monate</span></div>
-    <div class="fact"><b class="mono">W23</b><span>erste klickbare Demo für den Verkauf</span></div>
-    <div class="fact"><b class="mono">≈ 200 PT</b><span>Entwicklung Matt (mit Claude Code)</span></div>
-    <div class="fact"><b class="mono">≈ 85 PT</b><span>externe Hilfe, ca. CHF 70–145k [A]</span></div>
+    <div class="fact"><b class="mono">≈ 28 Wochen</b><span>bis Pilotstart, rund 6–7 Monate</span></div>
+    <div class="fact"><b class="mono">W7</b><span>erste klickbare Demo für den Verkauf</span></div>
+    <div class="fact"><b class="mono">≈ 130 PT</b><span>Matt mit Claude Code und parallelen Agenten</span></div>
+    <div class="fact"><b class="mono">≈ 13 PT</b><span>externe Hilfe, ca. CHF 10–25k [A]</span></div>
   </div>
 </header>
 
@@ -122,11 +122,11 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
   <h2>Meilensteine</h2>
   <div class="miles">
     <div class="mile"><span class="w">M0 · Woche 2</span><h3>Architektur freigegeben</h3><p>Überarbeitung Welle 4, Codex-Review, Spec und Detailplan stehen. Danach wird gebaut.</p></div>
-    <div class="mile"><span class="w">M1 · Woche 13</span><h3>Fundament läuft</h3><p>Login mit SSO, Mandanten getrennt, Gebäude, Geschosse und Räume erfassbar. Läuft auf Exoscale mit Backups.</p></div>
-    <div class="mile"><span class="w">M2 · Woche 23</span><h3>Demo „3D + Dokumente“</h3><p>Klickbares 3D-Modell, Klick auf Element öffnet Datenblatt im Browser. Daten noch von Hand erfasst. Damit kann der Chef verkaufen.</p></div>
-    <div class="mile"><span class="w">M3 · Woche 31</span><h3>KI erfasst das Gebäude</h3><p>Grundriss und Unterlagen hochladen, KI schlägt Räume und Elemente vor, Mensch bestätigt.</p></div>
-    <div class="mile"><span class="w">M4 · Woche 38</span><h3>Pilotbereit</h3><p>Lebensdauer mit Ampel, Suche, DE/FR/IT, Pentest bestanden, Wiederherstellung geübt.</p></div>
-    <div class="mile"><span class="w">M5 · Woche 42</span><h3>Pilot läuft</h3><p>Erstes echtes Gebäude bei Manor oder Siemens erfasst und im Betrieb.</p></div>
+    <div class="mile"><span class="w">M1 · Woche 7</span><h3>Demo „3D + Dokumente“</h3><p>Lindenhof als klickbares 3D-Modell, Klick auf Element öffnet das Datenblatt im Browser. Ein Mandant, kein SSO, keine KI. Damit kann der Chef verkaufen.</p></div>
+    <div class="mile"><span class="w">M2 · Woche 12</span><h3>Fundament läuft</h3><p>Exoscale mit Backups, Login mit SSO, Mandanten getrennt, sicherer Upload.</p></div>
+    <div class="mile"><span class="w">M3 · Woche 18</span><h3>KI erfasst das Gebäude</h3><p>Grundriss und Unterlagen hochladen, KI schlägt Räume und Elemente vor, Mensch bestätigt. Geprüft mit echten Pilotunterlagen.</p></div>
+    <div class="mile"><span class="w">M4 · Woche 25</span><h3>Pilotbereit</h3><p>Lebensdauer mit Ampel, Suche, DE/FR/IT, 2D-Ansicht, Pentest bestanden, Wiederherstellung geübt.</p></div>
+    <div class="mile"><span class="w">M5 · Woche 28</span><h3>Pilot läuft</h3><p>Erstes echtes Gebäude bei Manor oder Siemens erfasst und im Betrieb.</p></div>
   </div>
 </section>
 
@@ -138,14 +138,14 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
   <div class="tscroll"><table>
     <thead><tr><th>#</th><th>Teilprojekt</th><th>Inhalt</th><th>Wochen</th><th>PT Matt</th><th>Hilfe von aussen</th><th>Risiko</th></tr></thead>
     <tbody id="tbody"></tbody>
-    <tfoot><tr><td></td><td>Total</td><td></td><td class="num">42 Wo</td><td class="num" id="sumMatt"></td><td class="num" id="sumExt"></td><td></td></tr></tfoot>
+    <tfoot><tr><td></td><td>Total</td><td></td><td class="num">28 Wo</td><td class="num" id="sumMatt"></td><td class="num" id="sumExt"></td><td></td></tr></tfoot>
   </table></div>
 </section>
 
 <section>
   <div style="display:grid;gap:6px">
     <h2>Wo du Hilfe von aussen brauchst</h2>
-    <p class="gnote">Nach Dringlichkeit sortiert. Tagessätze Schweiz für Freelancer geschätzt CHF 1'000–1'400 pro Tag <span class="tag">[A]</span>, vor Vergabe Offerten einholen.</p>
+    <p class="gnote">Nach Dringlichkeit sortiert. Nur was Agenten nicht ersetzen können. Sätze: IT CHF 130–180/h, Security CHF 200–400/h <span class="tag">[A]</span>, vor Vergabe Offerten einholen.</p>
   </div>
   <div class="ext-grid" id="extgrid"></div>
 </section>
@@ -154,12 +154,12 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
   <div style="display:grid;gap:12px;align-content:start">
     <h2>Aufgaben für den Chef</h2>
     <ul class="clean">
-      <li><b>Bis W10:</b> echte TGA-Unterlagen vom Pilotkunden (Anlagelisten, Datenblätter, Revisionspläne). Ohne sie bleibt die KI-Genauigkeit unbewiesen.</li>
-      <li><b>Bis W10:</b> mit Jurist klären, ob KI-Verarbeitung in der EU für Manor und Siemens akzeptiert ist. Auftragsverarbeitungsvertrag vorbereiten.</li>
-      <li><b>W9–W24:</b> Lebensdauer-Standardtabelle pro Bauteiltyp aufbauen. Das ist Fachwissen und ein Kernstück des Produkts.</li>
-      <li><b>W1–W12:</b> Bauteil-Katalog fachlich prüfen: welche 30–50 Typen braucht es zuerst?</li>
-      <li><b>Ab W23:</b> Demo bei Pilotkunden zeigen, Rückmeldungen sammeln.</li>
-      <li><b>Vor W39:</b> Vertretung und Support-Regelung für Matt festlegen.</li>
+      <li><b>Bis W8:</b> echte TGA-Unterlagen vom Pilotkunden (Anlagelisten, Datenblätter, Revisionspläne). Ohne sie bleibt die KI-Genauigkeit unbewiesen.</li>
+      <li><b>Bis W8:</b> mit Jurist klären, ob KI-Verarbeitung in der EU für Manor und Siemens akzeptiert ist. Auftragsverarbeitungsvertrag vorbereiten.</li>
+      <li><b>W1–W6:</b> Bauteil-Katalog fachlich prüfen: welche 30–50 Typen braucht es zuerst?</li>
+      <li><b>W3–W18:</b> Lebensdauer-Standardtabelle pro Bauteiltyp aufbauen. Das ist Fachwissen und ein Kernstück des Produkts.</li>
+      <li><b>Ab W7:</b> Demo bei Pilotkunden zeigen, Rückmeldungen sammeln.</li>
+      <li><b>Vor W26:</b> Vertretung und Support-Regelung für Matt festlegen.</li>
     </ul>
   </div>
   <div style="display:grid;gap:12px;align-content:start">
@@ -174,20 +174,39 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
   </div>
 </section>
 
-<div class="note">Ohne externe Hilfe verlängert sich der Plan auf etwa 13–15 Monate <span class="tag">[A]</span>: Design, 3D-Bibliothek und DevOps landen dann ebenfalls bei Matt, und Pentest sowie juristische Prüfung kann niemand intern ersetzen.</div>
+<div class="note">Vorherige Variante (alles nacheinander, viel externe Hilfe): 42 Wochen, CHF 70–145k extern. Diese Variante tauscht Geld gegen Matts Zeit und Agenten. Nicht beschleunigbar bleiben echte Pilotunterlagen, KI-Prüfung damit, Pentest, juristische Klärung und der Pilot selbst <span class="tag">[A]</span>. REA hilft erst nach dem Pilot bei Importen aus Bestandssystemen.</div>
 
 <footer>
-  <span>Quellen: docs/architektur/00-kontext.md (E1–E27), 03-architektur.md, 04-review.md, 05-tests.md, Spikes S1–S12.</span>
+  <span>Kosten: docs/plan/kosten-und-preise.md. Quellen: docs/architektur/00-kontext.md (E1–E28), 03-architektur.md, 04-review.md, 05-tests.md, Spikes S1–S12.</span>
   <span>[A] = Annahme oder Schätzung, vor Verbindlichkeit prüfen. Preise und Tagessätze nicht nachgeschlagen.</span>
 </footer>
 </div>
 
 <script>
-const W = 42;
+const W = 28;
 // [id, name, inhalt, start, dauer, ptMatt, phase, risk, help:[{who,type,start,dur,pt,label}]]
 const P = [
  {ph:"Phase 0 · Planung abschliessen"},
- {id:"P0",n:"Architektur abschliessen",d:"Welle 4: Überarbeitung auf E23–E27, Codex-Review der Korrekturen, Spec, Detailplan mit Aufgaben",s:1,w:2,pt:8,r:"tief",h:[{t:"chef",s:1,w:10,label:"Pilotunterlagen + Jurist"}]},
+ {id:"P0",n:"Architektur abschliessen",d:"Welle 4: Überarbeitung auf E23–E28, Codex-Review der Korrekturen, Spec, Detailplan mit Aufgaben",s:1,w:2,pt:8,r:"tief",h:[{t:"chef",s:1,w:8,label:"Pilotunterlagen + Jurist"}]},
+ {ph:"Phase 1 · Demo-Schnitt"},
+ {id:"D1",n:"Demo: 3D + Dokument-Viewer",d:"Kern-Datenmodell, Import Lindenhof (projekt.json), 3D aus Rechtecken mit Pins, Klick öffnet Panel, PDF.js-Viewer mit Seitensprung. Ein Mandant, kein SSO, keine KI",s:3,w:5,pt:22,r:"mittel",h:[{t:"chef",s:1,w:6,label:"Katalog prüfen"}]},
+ {id:"D2",n:"Bauteil-Bibliothek 3D",d:"30–50 Bauteile im Ton-Look mit Blender-MCP, CC0-Modelle wo passend, GLB komprimiert. Läuft als paralleler Agent",s:3,w:4,pt:3,r:"tief",h:[]},
+ {ph:"Phase 2 · Fundament"},
+ {id:"F1",n:"Server & Betrieb",d:"Exoscale, Datenbank, Speicher, Container, automatisches Deployment, Backups, Überwachung",s:8,w:1,pt:5,r:"mittel",h:[{t:"ext",s:8,w:1,pt:2,label:"DevOps-Check"}]},
+ {id:"F2",n:"Login, Mandanten, Rechte",d:"Keycloak mit Microsoft-SSO, RLS mit Grenztests, Rollen, Audit-Log",s:9,w:3,pt:14,r:"hoch",h:[{t:"ext",s:10,w:2,pt:2,label:"Review Sicherheit"}]},
+ {id:"F3",n:"Sicherer Upload",d:"Quarantäne, Virenscan auf denselben Bytes (K01), Umwandlung Word→PDF und TIFF, Vorschau",s:12,w:1,pt:6,r:"hoch",h:[{t:"ext",s:12,w:1,pt:1,label:"Review Upload"}]},
+ {ph:"Phase 3 · KI-Erfassung"},
+ {id:"K1",n:"Grundriss → Räume",d:"Vektor-PDF auslesen, Claude Vision für Scans, Korrektur-Editor, manueller Fallback",s:13,w:2,pt:10,r:"hoch",h:[]},
+ {id:"K2",n:"KI-Auslesen der Unterlagen",d:"Docling und OCR, Claude über Bedrock, Prüfer für Zitate und Katalog-IDs, Bestätigungs-Ansicht, Kostenbremse, Golden Set mit echten Pilotunterlagen",s:15,w:4,pt:18,r:"hoch",h:[]},
+ {ph:"Phase 4 · Nutzen für das FM"},
+ {id:"N1",n:"Lebensdauer & Ampel",d:"Standardtabelle, Überschreiben pro Typ und Element, Zustand nach ZHAW, Ampel im 3D, E-Mail-Hinweise",s:19,w:2,pt:9,r:"mittel",h:[{t:"chef",s:3,w:16,label:"Lebensdauer-Tabelle"}]},
+ {id:"N2",n:"Intelligente Suche",d:"Dateiname, Volltext und Inhalt (pgvector), KI versteht die Frage, Treffer springen in den Viewer",s:21,w:2,pt:10,r:"mittel",h:[{t:"ext",s:19,w:4,pt:1,label:"Gegenlesen FR/IT"}]},
+ {id:"N3",n:"Feinschliff & 2D-Ansicht",d:"DE/FR/IT komplett, 2D-Ansicht für Laptops ohne Grafikkarte, Design-Skills für den letzten Schliff",s:23,w:1,pt:5,r:"tief",h:[]},
+ {ph:"Phase 5 · Härtung und Pilot"},
+ {id:"H1",n:"Tests & Pentest",d:"Mandanten-Grenztests, Lasttest 20'000 Elemente, Wiederherstellung üben, OWASP ZAP, externer Pentest",s:24,w:2,pt:8,r:"mittel",h:[{t:"ext",s:24,w:2,pt:6,label:"Pentest"}]},
+ {id:"H2",n:"Pilot Manor / Siemens",d:"Gebäude erfassen, Schulung, Rückmeldungen umsetzen, Support",s:26,w:3,pt:12,r:"mittel",h:[{t:"chef",s:26,w:3,label:"Kundenbetreuung"}]},
+];
+const P_ALT = [
  {ph:"Phase 1 · Fundament"},
  {id:"P1",n:"Server & Betrieb",d:"Exoscale-Konto, Datenbank, Speicher, Container, Umgebungen Test/Produktion, automatisches Deployment, Backups, Überwachung",s:3,w:2,pt:10,r:"mittel",h:[{t:"ext",s:3,w:2,pt:6,label:"DevOps"}]},
  {id:"P2",n:"Backend-Grundgerüst",d:"Login mit Keycloak und Microsoft-SSO, Mandanten mit RLS, Rollen und Rechte, Audit-Log, API-Struktur der Module",s:5,w:4,pt:20,r:"hoch",h:[{t:"ext",s:5,w:4,pt:4,label:"Code-Review"}]},
@@ -209,6 +228,14 @@ const P = [
  {id:"P15",n:"Pilot Manor / Siemens",d:"Gebäude erfassen, Schulung, Rückmeldungen umsetzen, Support",s:39,w:4,pt:16,r:"mittel",h:[{t:"chef",s:39,w:4,label:"Kundenbetreuung"}]},
 ];
 const EXT = [
+ {n:"Security-Pentest (Firma)",prio:"must",when:"W24–W25",pt:"5–8 PT · CHF 5–8k",why:"Enterprise-Kunden verlangen einen unabhängigen Nachweis. Vorher OWASP ZAP und security-review-Skill, damit der Auftrag klein bleibt."},
+ {n:"Jurist Datenschutz",prio:"must",when:"W1–W8",pt:"1–2 h · CHF 1–2k",why:"Auftragsverarbeitungsvertrag und KI in der EU, mit Vorlagen statt Tagen."},
+ {n:"Review Login, Mandanten, Upload",prio:"must",when:"W10–W12",pt:"3–4 PT · CHF 3–5k",why:"Ein Mensch prüft die drei Stellen, an denen ein Fehler einen Kunden kostet. Den Rest prüfen Codex und Claude."},
+ {n:"DevOps-Check",prio:"should",when:"W8",pt:"1–2 PT · CHF 1–2k",why:"Backups und Wiederherstellung von einem Profi prüfen lassen."},
+ {n:"Gegenlesen FR/IT",prio:"can",when:"W19–W22",pt:"≈ 1 PT · CHF 0.5–1k",why:"Claude übersetzt, eine Muttersprachperson liest gegen."},
+ {n:"Reserve 3D / Design",prio:"can",when:"bei Bedarf",pt:"0–3 PT · CHF 0–3.5k",why:"Nur falls der 3D-Viewer oder das Design festsitzt."},
+];
+const EXT_ALT = [
  {n:"UX/UI-Designer",prio:"must",when:"W3–W8",pt:"8–12 PT",why:"Das 3D-Modell und das Seitenpanel sind das Verkaufsargument. Ein Profi legt Look, Abläufe und Komponenten fest, bevor gebaut wird."},
  {n:"Security-Pentest (Firma)",prio:"must",when:"W37–W38",pt:"5–8 PT",why:"Enterprise-Kunden verlangen einen unabhängigen Nachweis. Intern nicht ersetzbar."},
  {n:"Jurist Datenschutz",prio:"must",when:"W1–W10",pt:"2–4 PT",why:"KI-Verarbeitung in der EU, Auftragsverarbeitungsvertrag, revDSG. Klärt der Chef mit dem Juristen."},
@@ -225,7 +252,7 @@ const g = document.getElementById("gantt");
 let html = '<div class="gl" style="border-bottom:1px solid var(--line)"><span class="eyebrow">Teilprojekt</span></div><div class="gaxis">';
 for(let w=1; w<=W; w+=4){ html += `<span style="left:${pct(w-0.5)}">W${w}</span>`; }
 html += '</div>';
-const MS = [[2,"M0"],[13,"M1"],[23,"M2 Demo"],[31,"M3 KI"],[38,"M4"],[42,"M5 Pilot"]];
+const MS = [[2,"M0"],[7,"M1 Demo"],[12,"M2"],[18,"M3 KI"],[25,"M4"],[28,"M5 Pilot"]];
 let firstRow = true;
 for(const p of P){
   if(p.ph){ html += `<div class="gphase">${p.ph}</div>`; continue; }
@@ -248,7 +275,7 @@ for(const p of P){
 }
 tb.innerHTML = rows;
 document.getElementById("sumMatt").textContent = sumM+" PT";
-document.getElementById("sumExt").textContent = "≈ "+(sumE+25)+" PT extern";
+document.getElementById("sumExt").textContent = "≈ "+(sumE+1)+" PT extern";
 // Externe
 const PR = {must:"Pflicht",should:"empfohlen",can:"optional"};
 document.getElementById("extgrid").innerHTML = EXT.map(e=>`<div class="card"><div class="row"><h3>${e.n}</h3><span class="prio ${e.prio}">${PR[e.prio]}</span></div><div class="row mono" style="font-size:12.5px;color:var(--muted)"><span>${e.when}</span><span>${e.pt}</span></div><p class="why">${e.why}</p></div>`).join("");

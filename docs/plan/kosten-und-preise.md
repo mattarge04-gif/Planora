@@ -2,7 +2,31 @@
 
 Kennzeichnung: [F] Fakt mit Quelle, [A] Annahme/Schaetzung. Alle Betraege CHF, ohne MWST.
 
-## 1. Investition bis Pilot (ca. 10 Monate)
+## 0. Gueltige Variante: schnell und schlank (PO-Entscheid E28, 2026-11-08)
+
+Matts Arbeitszeit zaehlt nicht als Kosten (arbeitet fuer sich selbst). Externe Hilfe nur wo nicht ersetzbar.
+
+| Posten | CHF [A] |
+|---|---|
+| Pentest (Firma) | 5'000–8'000 |
+| Jurist Datenschutz (Vorlagen + 1–2 h) | 1'000–2'000 |
+| Menschlicher Review Login/Mandanten/Upload (3–4 PT) | 3'000–5'000 |
+| DevOps-Check Backups/Restore (1–2 PT) | 1'000–2'000 |
+| Gegenlesen FR/IT | 500–1'000 |
+| Reserve 3D/Design | 0–3'500 |
+| **Extern total** | **≈ 10'500–21'500** |
+| Sachkosten (Server Test, Tools, KI-Tests, Versicherung) | 6'000–14'000 |
+| **Investition bis Pilot** | **≈ 17'000–36'000** |
+
+- Laufend ohne Loehne: ≈ CHF 1'300–3'000/Mt (kein externer Dauer-Review; Pentest jaehrlich).
+- Gewinnschwelle laufend: ≈ 3–6 Gebaeude bei Ø CHF 6'000/Jahr.
+- Dauer: ≈ 28 Wochen bis Pilot, Demo in Woche 7 (siehe umsetzungsplan.html).
+- Ersetzt durch Agenten: Code-Review (Codex/Claude), UX (Design-Skills), 3D-Bibliothek (Blender-MCP), Three.js, Doc-AI.
+- Risiko: Matt als Engpass steigt; Gegenmittel Dokumentation + BMAD-Projektkontext fuer Vertretung.
+
+Die Abschnitte 1–4 unten sind die fruehere Variante mit viel externer Hilfe (Referenz).
+
+## 1. Investition bis Pilot (fruehere Variante, ca. 10 Monate)
 
 ### Externe Hilfe
 Saetze: IT/Entwicklung CHF 130–180/h, UX CHF 120–160/h (Ratgeberwerte [F], magicheidi.ch); Security/Beratung CHF 200–400/h (Anbieter-Blog, [A]); 1 PT = 8 h.
