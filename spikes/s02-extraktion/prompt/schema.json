@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "elemente_kennwerte@0.1.0 Ausgabe",
+  "$defs": {
+    "feld": {
+      "type": ["object", "null"],
+      "required": ["wert", "einheit", "dokument", "seite", "zitat", "konfidenz"],
+      "properties": {
+        "wert": {},
+        "einheit": { "type": ["string", "null"] },
+        "dokument": { "type": "string" },
+        "seite": { "type": "integer", "minimum": 1 },
+        "zitat": { "type": "string", "maxLength": 200 },
+        "konfidenz": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  },
+  "type": "object",
+  "required": ["prompt_id", "lauf", "katalog_version", "elementtypen", "elemente"],
+  "properties": {
+    "prompt_id": { "const": "elemente_kennwerte@0.1.0" },
+    "lauf": { "type": "string" },
+    "katalog_version": { "const": "test-0.1" },
+    "elementtypen": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["typ_ref", "katalog_id", "hersteller", "typbezeichnung", "leistung_kw", "lebensdauer_jahre", "lebensdauer_stunden"],
+        "properties": {
+          "typ_ref": { "type": "string" },
+          "katalog_id": { "$ref": "#/$defs/feld", "description": "wert: Enum der Katalog-IDs aus katalog.test.json" },
+          "hersteller": { "$ref": "#/$defs/feld" },
+          "typbezeichnung": { "$ref": "#/$defs/feld" },
+          "leistung_kw": { "$ref": "#/$defs/feld" },
+          "lebensdauer_jahre": { "$ref": "#/$defs/feld" },
+          "lebensdauer_stunden": { "$ref": "#/$defs/feld" }
+        }
+      }
+    },
+    "elemente": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["typ_ref", "raum_nummer", "menge", "dokument", "seite", "zitat", "konfidenz"],
+        "properties": {
+          "typ_ref": { "type": "string" },
+          "raum_nummer": { "type": ["string", "null"] },
+          "standort_text": { "type": ["string", "null"] },
+          "menge": { "type": "integer", "minimum": 1 },
+          "dokument": { "type": "string" },
+          "seite": { "type": "integer" },
+          "zitat": { "type": "string" },
+          "konfidenz": { "type": "number" }
+        }
+      }
+    }
+  }
+}

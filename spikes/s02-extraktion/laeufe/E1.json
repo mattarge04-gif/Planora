@@ -1,0 +1,899 @@
+{
+  "prompt_id": "elemente_kennwerte@0.1.0",
+  "lauf": "E1",
+  "katalog_version": "test-0.1",
+  "elementtypen": [
+    {
+      "typ_ref": "LT-01",
+      "katalog_id": {
+        "wert": "leuchte.panel",
+        "einheit": null,
+        "dokument": "02_Datenblatt_LT-01.pdf",
+        "seite": 1,
+        "zitat": "LED-Panel Büro; Bauart LED-Deckenpanel; Anbau",
+        "konfidenz": 0.95
+      },
+      "hersteller": {
+        "wert": "Lindenhof Test Systems",
+        "einheit": null,
+        "dokument": "02_Datenblatt_LT-01.pdf",
+        "seite": 1,
+        "zitat": "Hersteller: Lindenhof Test Systems (frei erfunden)",
+        "konfidenz": 0.9
+      },
+      "typbezeichnung": {
+        "wert": "TESTLIGHT P600",
+        "einheit": null,
+        "dokument": "02_Datenblatt_LT-01.pdf",
+        "seite": 1,
+        "zitat": "LT-01 | TESTLIGHT P600",
+        "konfidenz": 0.97
+      },
+      "leistung_kw": {
+        "wert": 0.036,
+        "einheit": "kW",
+        "dokument": "02_Datenblatt_LT-01.pdf",
+        "seite": 1,
+        "zitat": "Systemleistung / Lichtstrom 36 W / 4 320 lm",
+        "konfidenz": 0.95
+      },
+      "lebensdauer_jahre": null,
+      "lebensdauer_stunden": {
+        "wert": 50000,
+        "einheit": "h",
+        "dokument": "02_Datenblatt_LT-01.pdf",
+        "seite": 1,
+        "zitat": "Lebensdauer 50 000 h L80/B10 (fiktiv, ungeprüft)",
+        "konfidenz": 0.93
+      }
+    },
+    {
+      "typ_ref": "LT-02",
+      "katalog_id": {
+        "wert": "leuchte.downlight",
+        "einheit": null,
+        "dokument": "02_Datenblatt_LT-02.pdf",
+        "seite": 1,
+        "zitat": "LED-Downlight; Bauart LED-Einbau-Downlight",
+        "konfidenz": 0.95
+      },
+      "hersteller": {
+        "wert": "Lindenhof Test Systems",
+        "einheit": null,
+        "dokument": "02_Datenblatt_LT-02.pdf",
+        "seite": 1,
+        "zitat": "Hersteller: Lindenhof Test Systems (frei erfunden)",
+        "konfidenz": 0.9
+      },
+      "typbezeichnung": {
+        "wert": "TESTLIGHT D180",
+        "einheit": null,
+        "dokument": "02_Datenblatt_LT-02.pdf",
+        "seite": 1,
+        "zitat": "LT-02 | TESTLIGHT D180",
+        "konfidenz": 0.97
+      },
+      "leistung_kw": {
+        "wert": 0.014,
+        "einheit": "kW",
+        "dokument": "02_Datenblatt_LT-02.pdf",
+        "seite": 1,
+        "zitat": "Systemleistung / Lichtstrom 14 W / 1 540 lm",
+        "konfidenz": 0.95
+      },
+      "lebensdauer_jahre": null,
+      "lebensdauer_stunden": {
+        "wert": 40000,
+        "einheit": "h",
+        "dokument": "02_Datenblatt_LT-02.pdf",
+        "seite": 1,
+        "zitat": "Lebensdauer 40 000 h L80/B10 (fiktiv, ungeprüft)",
+        "konfidenz": 0.93
+      }
+    },
+    {
+      "typ_ref": "HK-01",
+      "katalog_id": {
+        "wert": "heizung.heizkoerper",
+        "einheit": null,
+        "dokument": "02_Datenblatt_HK-01.pdf",
+        "seite": 1,
+        "zitat": "Heizkörper Standard; Bauart Plattenheizkörper Typ 22",
+        "konfidenz": 0.95
+      },
+      "hersteller": {
+        "wert": "Lindenhof Test Systems",
+        "einheit": null,
+        "dokument": "02_Datenblatt_HK-01.pdf",
+        "seite": 1,
+        "zitat": "Hersteller: Lindenhof Test Systems (frei erfunden)",
+        "konfidenz": 0.9
+      },
+      "typbezeichnung": {
+        "wert": "TESTHEAT P22-1000",
+        "einheit": null,
+        "dokument": "02_Datenblatt_HK-01.pdf",
+        "seite": 1,
+        "zitat": "HK-01 | TESTHEAT P22-1000",
+        "konfidenz": 0.97
+      },
+      "leistung_kw": {
+        "wert": 1.0,
+        "einheit": "kW",
+        "dokument": "02_Datenblatt_HK-01.pdf",
+        "seite": 1,
+        "zitat": "Wärmeleistung 1 000 W bei 55/45/20 °C (synthetischer Betriebspunkt)",
+        "konfidenz": 0.93
+      },
+      "lebensdauer_jahre": null,
+      "lebensdauer_stunden": null
+    },
+    {
+      "typ_ref": "HK-02",
+      "katalog_id": {
+        "wert": "heizung.heizkoerper",
+        "einheit": null,
+        "dokument": "02_Datenblatt_HK-02.pdf",
+        "seite": 1,
+        "zitat": "Heizkörper Kompakt; Bauart Plattenheizkörper Typ 22",
+        "konfidenz": 0.95
+      },
+      "hersteller": {
+        "wert": "Lindenhof Test Systems",
+        "einheit": null,
+        "dokument": "02_Datenblatt_HK-02.pdf",
+        "seite": 1,
+        "zitat": "Hersteller: Lindenhof Test Systems (frei erfunden)",
+        "konfidenz": 0.9
+      },
+      "typbezeichnung": {
+        "wert": "TESTHEAT P22-600",
+        "einheit": null,
+        "dokument": "02_Datenblatt_HK-02.pdf",
+        "seite": 1,
+        "zitat": "HK-02 | TESTHEAT P22-600",
+        "konfidenz": 0.97
+      },
+      "leistung_kw": {
+        "wert": 0.6,
+        "einheit": "kW",
+        "dokument": "02_Datenblatt_HK-02.pdf",
+        "seite": 1,
+        "zitat": "Wärmeleistung 600 W bei 55/45/20 °C (synthetischer Betriebspunkt)",
+        "konfidenz": 0.93
+      },
+      "lebensdauer_jahre": null,
+      "lebensdauer_stunden": null
+    },
+    {
+      "typ_ref": "WP-01",
+      "katalog_id": {
+        "wert": "heizung.waermepumpe_luft_wasser",
+        "einheit": null,
+        "dokument": "02_Datenblatt_WP-01.pdf",
+        "seite": 1,
+        "zitat": "Wärmepumpe Heizung; Bauart Luft/Wasser; ausschliesslich Heizung im Testprojekt",
+        "konfidenz": 0.95
+      },
+      "hersteller": {
+        "wert": "Lindenhof Test Systems",
+        "einheit": null,
+        "dokument": "02_Datenblatt_WP-01.pdf",
+        "seite": 1,
+        "zitat": "Hersteller: Lindenhof Test Systems (frei erfunden)",
+        "konfidenz": 0.9
+      },
+      "typbezeichnung": {
+        "wert": "TESTTHERM AW18",
+        "einheit": null,
+        "dokument": "02_Datenblatt_WP-01.pdf",
+        "seite": 1,
+        "zitat": "WP-01 | TESTTHERM AW18",
+        "konfidenz": 0.97
+      },
+      "leistung_kw": {
+        "wert": 18.0,
+        "einheit": "kW",
+        "dokument": "02_Datenblatt_WP-01.pdf",
+        "seite": 1,
+        "zitat": "Heizleistung / COP 18,0 kW / 3,0 am fiktiven Punkt A-7/W55",
+        "konfidenz": 0.93
+      },
+      "lebensdauer_jahre": null,
+      "lebensdauer_stunden": null
+    },
+    {
+      "typ_ref": "P-01",
+      "katalog_id": {
+        "wert": "pumpe.umwaelz",
+        "einheit": null,
+        "dokument": "02_Datenblatt_P-01.pdf",
+        "seite": 1,
+        "zitat": "Heizungs-Umwälzpumpe",
+        "konfidenz": 0.95
+      },
+      "hersteller": {
+        "wert": "Lindenhof Test Systems",
+        "einheit": null,
+        "dokument": "02_Datenblatt_P-01.pdf",
+        "seite": 1,
+        "zitat": "Hersteller: Lindenhof Test Systems (frei erfunden)",
+        "konfidenz": 0.9
+      },
+      "typbezeichnung": {
+        "wert": "TESTPUMP H25",
+        "einheit": null,
+        "dokument": "02_Datenblatt_P-01.pdf",
+        "seite": 1,
+        "zitat": "P-01 | TESTPUMP H25",
+        "konfidenz": 0.97
+      },
+      "leistung_kw": {
+        "wert": 0.09,
+        "einheit": "kW",
+        "dokument": "02_Datenblatt_P-01.pdf",
+        "seite": 1,
+        "zitat": "Versorgung / max. Aufnahme 230 V AC, 50 Hz / 90 W",
+        "konfidenz": 0.88
+      },
+      "lebensdauer_jahre": null,
+      "lebensdauer_stunden": null
+    },
+    {
+      "typ_ref": "MB-01",
+      "katalog_id": {
+        "wert": "lueftung.monoblock",
+        "einheit": null,
+        "dokument": "02_Datenblatt_MB-01.pdf",
+        "seite": 1,
+        "zitat": "Lüftungsmonoblock; Wärmerückgewinnung Plattenwärmeübertrager",
+        "konfidenz": 0.95
+      },
+      "hersteller": {
+        "wert": "Lindenhof Test Systems",
+        "einheit": null,
+        "dokument": "02_Datenblatt_MB-01.pdf",
+        "seite": 1,
+        "zitat": "Hersteller: Lindenhof Test Systems (frei erfunden)",
+        "konfidenz": 0.9
+      },
+      "typbezeichnung": {
+        "wert": "TESTAIR M1500",
+        "einheit": null,
+        "dokument": "02_Datenblatt_MB-01.pdf",
+        "seite": 1,
+        "zitat": "MB-01 | TESTAIR M1500",
+        "konfidenz": 0.97
+      },
+      "leistung_kw": {
+        "wert": 1.2,
+        "einheit": "kW",
+        "dokument": "02_Datenblatt_MB-01.pdf",
+        "seite": 1,
+        "zitat": "Versorgung 230 V AC, 50 Hz; Gesamtanschluss 1,20 kW",
+        "konfidenz": 0.88
+      },
+      "lebensdauer_jahre": null,
+      "lebensdauer_stunden": null
+    },
+    {
+      "typ_ref": "VAV-01",
+      "katalog_id": {
+        "wert": "lueftung.vav_regler",
+        "einheit": null,
+        "dokument": "02_Datenblatt_VAV-01.pdf",
+        "seite": 1,
+        "zitat": "Volumenstromregler Zuluft; Bauart Runder variabler Volumenstromregler",
+        "konfidenz": 0.95
+      },
+      "hersteller": {
+        "wert": "Lindenhof Test Systems",
+        "einheit": null,
+        "dokument": "02_Datenblatt_VAV-01.pdf",
+        "seite": 1,
+        "zitat": "Hersteller: Lindenhof Test Systems (frei erfunden)",
+        "konfidenz": 0.9
+      },
+      "typbezeichnung": {
+        "wert": "TESTFLOW V160",
+        "einheit": null,
+        "dokument": "02_Datenblatt_VAV-01.pdf",
+        "seite": 1,
+        "zitat": "VAV-01 | TESTFLOW V160",
+        "konfidenz": 0.97
+      },
+      "leistung_kw": null,
+      "lebensdauer_jahre": null,
+      "lebensdauer_stunden": null
+    },
+    {
+      "typ_ref": "CO2-01",
+      "katalog_id": {
+        "wert": "automation.raumsensor_co2",
+        "einheit": null,
+        "dokument": "02_Datenblatt_CO2-01.pdf",
+        "seite": 1,
+        "zitat": "Raumsensor CO / Temperatur",
+        "konfidenz": 0.9
+      },
+      "hersteller": {
+        "wert": "Lindenhof Test Systems",
+        "einheit": null,
+        "dokument": "02_Datenblatt_CO2-01.pdf",
+        "seite": 1,
+        "zitat": "Hersteller: Lindenhof Test Systems (frei erfunden)",
+        "konfidenz": 0.9
+      },
+      "typbezeichnung": {
+        "wert": "TESTSENSE C2T",
+        "einheit": null,
+        "dokument": "02_Datenblatt_CO2-01.pdf",
+        "seite": 1,
+        "zitat": "CO2-01 | TESTSENSE C2T",
+        "konfidenz": 0.97
+      },
+      "leistung_kw": {
+        "wert": 0.002,
+        "einheit": "kW",
+        "dokument": "02_Datenblatt_CO2-01.pdf",
+        "seite": 1,
+        "zitat": "Versorgung / Aufnahme 24 V DC / 2 W",
+        "konfidenz": 0.88
+      },
+      "lebensdauer_jahre": null,
+      "lebensdauer_stunden": null
+    }
+  ],
+  "elemente": [
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "EG-01",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-01 Empfang 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-01",
+      "raum_nummer": "EG-01",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-01 Empfang 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "VAV-01",
+      "raum_nummer": "EG-01",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-01 Empfang 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "CO2-01",
+      "raum_nummer": "EG-01",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-01 Empfang 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "EG-02",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-02 Büro 1 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-01",
+      "raum_nummer": "EG-02",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-02 Büro 1 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "VAV-01",
+      "raum_nummer": "EG-02",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-02 Büro 1 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "CO2-01",
+      "raum_nummer": "EG-02",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-02 Büro 1 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "EG-03",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-03 Besprechung 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-01",
+      "raum_nummer": "EG-03",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-03 Besprechung 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "VAV-01",
+      "raum_nummer": "EG-03",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-03 Besprechung 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "CO2-01",
+      "raum_nummer": "EG-03",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-03 Besprechung 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "EG-04",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-04 Büro 2 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-01",
+      "raum_nummer": "EG-04",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-04 Büro 2 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "VAV-01",
+      "raum_nummer": "EG-04",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-04 Büro 2 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "CO2-01",
+      "raum_nummer": "EG-04",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-04 Büro 2 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-02",
+      "raum_nummer": "EG-05",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-05 Treppe 4 × LT-02",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "EG-06",
+      "standort_text": null,
+      "menge": 2,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-06 Technik 2 × LT-01 | 1 × MB-01 | 1 × P-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "MB-01",
+      "raum_nummer": "EG-06",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-06 Technik 2 × LT-01 | 1 × MB-01 | 1 × P-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "P-01",
+      "raum_nummer": "EG-06",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-06 Technik 2 × LT-01 | 1 × MB-01 | 1 × P-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-02",
+      "raum_nummer": "EG-07",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-07 WC / Reinigung 4 × LT-02 | 1 × HK-02",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-02",
+      "raum_nummer": "EG-07",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-07 WC / Reinigung 4 × LT-02 | 1 × HK-02",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-02",
+      "raum_nummer": "EG-08",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-08 Teeküche 4 × LT-02 | 1 × HK-02",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-02",
+      "raum_nummer": "EG-08",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-08 Teeküche 4 × LT-02 | 1 × HK-02",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-02",
+      "raum_nummer": "EG-09",
+      "standort_text": null,
+      "menge": 8,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "EG-09 Korridor 8 × LT-02",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "OG-01",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-01 Büro 3 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-01",
+      "raum_nummer": "OG-01",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-01 Büro 3 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "VAV-01",
+      "raum_nummer": "OG-01",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-01 Büro 3 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "CO2-01",
+      "raum_nummer": "OG-01",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-01 Büro 3 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "OG-02",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-02 Büro 4 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-01",
+      "raum_nummer": "OG-02",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-02 Büro 4 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "VAV-01",
+      "raum_nummer": "OG-02",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-02 Büro 4 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "CO2-01",
+      "raum_nummer": "OG-02",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-02 Büro 4 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "OG-03",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-03 Sitzung 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-01",
+      "raum_nummer": "OG-03",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-03 Sitzung 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "VAV-01",
+      "raum_nummer": "OG-03",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-03 Sitzung 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "CO2-01",
+      "raum_nummer": "OG-03",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-03 Sitzung 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "OG-04",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-04 Büro 5 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-01",
+      "raum_nummer": "OG-04",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-04 Büro 5 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "VAV-01",
+      "raum_nummer": "OG-04",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-04 Büro 5 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "CO2-01",
+      "raum_nummer": "OG-04",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-04 Büro 5 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-02",
+      "raum_nummer": "OG-05",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-05 Treppe 4 × LT-02",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "OG-06",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-06 Projektbüro 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-01",
+      "raum_nummer": "OG-06",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-06 Projektbüro 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "VAV-01",
+      "raum_nummer": "OG-06",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-06 Projektbüro 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "CO2-01",
+      "raum_nummer": "OG-06",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-06 Projektbüro 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "OG-07",
+      "standort_text": null,
+      "menge": 2,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-07 Archiv 2 × LT-01 | 1 × HK-02 | 1 × VAV-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-02",
+      "raum_nummer": "OG-07",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-07 Archiv 2 × LT-01 | 1 × HK-02 | 1 × VAV-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "VAV-01",
+      "raum_nummer": "OG-07",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-07 Archiv 2 × LT-01 | 1 × HK-02 | 1 × VAV-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-01",
+      "raum_nummer": "OG-08",
+      "standort_text": null,
+      "menge": 4,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-08 Aufenthalt 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "HK-01",
+      "raum_nummer": "OG-08",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-08 Aufenthalt 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "VAV-01",
+      "raum_nummer": "OG-08",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-08 Aufenthalt 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "CO2-01",
+      "raum_nummer": "OG-08",
+      "standort_text": null,
+      "menge": 1,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-08 Aufenthalt 4 × LT-01 | 1 × HK-01 | 1 × VAV-01 1 × CO2-01",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "LT-02",
+      "raum_nummer": "OG-09",
+      "standort_text": null,
+      "menge": 8,
+      "dokument": "01_Grundriss_OG.pdf",
+      "seite": 1,
+      "zitat": "OG-09 Korridor 8 × LT-02",
+      "konfidenz": 0.95
+    },
+    {
+      "typ_ref": "WP-01",
+      "raum_nummer": null,
+      "standort_text": "WP-01: Aussenaufstellung nördlich der Technik",
+      "menge": 1,
+      "dokument": "01_Grundriss_EG.pdf",
+      "seite": 1,
+      "zitat": "WP-01: Aussenaufstellung nördlich der Technik",
+      "konfidenz": 0.7
+    }
+  ]
+}

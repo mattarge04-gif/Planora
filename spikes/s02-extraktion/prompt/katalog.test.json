@@ -1,0 +1,24 @@
+{
+  "katalog_version": "test-0.1",
+  "hinweis": "Wegwerf-Testkatalog fuer Spike S2. Enthaelt bewusst Ablenker (aehnliche Typen), damit die Zuordnung nicht trivial ist.",
+  "eintraege": [
+    { "katalog_id": "leuchte.panel", "name": "LED-Panel / Flaechenleuchte (Decke)" },
+    { "katalog_id": "leuchte.downlight", "name": "Downlight / Einbaustrahler rund" },
+    { "katalog_id": "leuchte.linear", "name": "Linienleuchte / Lichtband" },
+    { "katalog_id": "leuchte.notlicht", "name": "Not- und Sicherheitsleuchte" },
+    { "katalog_id": "heizung.heizkoerper", "name": "Heizkoerper (Platten-, Glieder-, Roehren-)" },
+    { "katalog_id": "heizung.fussbodenverteiler", "name": "Fussbodenheizungs-Verteiler" },
+    { "katalog_id": "heizung.waermepumpe_luft_wasser", "name": "Waermepumpe Luft/Wasser" },
+    { "katalog_id": "heizung.waermepumpe_sole_wasser", "name": "Waermepumpe Sole/Wasser" },
+    { "katalog_id": "heizung.kessel_gas", "name": "Gas-Heizkessel" },
+    { "katalog_id": "pumpe.umwaelz", "name": "Umwaelzpumpe (Heizung/Kaelte)" },
+    { "katalog_id": "lueftung.monoblock", "name": "Lueftungsgeraet / Monoblock mit WRG" },
+    { "katalog_id": "lueftung.vav_regler", "name": "Volumenstromregler (VAV/CAV)" },
+    { "katalog_id": "lueftung.brandschutzklappe", "name": "Brandschutzklappe" },
+    { "katalog_id": "automation.raumsensor_co2", "name": "Raumsensor CO2 / Temperatur / Feuchte" },
+    { "katalog_id": "automation.raumbediengeraet", "name": "Raumbediengeraet" },
+    { "katalog_id": "kaelte.split", "name": "Split-Klimageraet" },
+    { "katalog_id": "sanitaer.wassererwaermer", "name": "Wassererwaermer / Boiler" },
+    { "katalog_id": "elektro.unterverteilung", "name": "Elektro-Unterverteilung" }
+  ]
+}

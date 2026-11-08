@@ -1,0 +1,194 @@
+{
+ "F01": {
+  "J1": 2030,
+  "RL": 4,
+  "ampel": "gruen",
+  "ereignis_jahre": [
+   2030
+  ],
+  "kosten_rappen": null
+ },
+ "F02": {
+  "J1": 2031,
+  "RL": 5,
+  "ampel": "gruen",
+  "ereignis_jahre": [
+   2031
+  ],
+  "kosten_rappen": null
+ },
+ "F03": {
+  "J1": 2046,
+  "RL": 20,
+  "ampel": "gruen",
+  "ereignis_jahre": [],
+  "kosten_rappen": null
+ },
+ "F04": {
+  "J1": 2039,
+  "RL": 13,
+  "ampel": "gruen",
+  "ereignis_jahre": [
+   2039
+  ],
+  "kosten_rappen": null
+ },
+ "F05": {
+  "J1": 2027,
+  "RL": 1,
+  "ampel": "gelb",
+  "ereignis_jahre": [
+   2027
+  ],
+  "kosten_rappen": null
+ },
+ "F06": {
+  "J1": 2026,
+  "RL": 0,
+  "ampel": "rot",
+  "ereignis_jahre": [
+   2026
+  ],
+  "kosten_rappen": null
+ },
+ "F07": {
+  "J1": 2026,
+  "RL": 0,
+  "ampel": "rot",
+  "ereignis_jahre": [
+   2026
+  ],
+  "kosten_rappen": null
+ },
+ "F08": {
+  "J1": 2035,
+  "RL": 9,
+  "ampel": "gruen",
+  "ereignis_jahre": [
+   2035
+  ],
+  "kosten_rappen": null
+ },
+ "F09": {
+  "J1": 2028,
+  "RL": 2,
+  "ampel": "gelb",
+  "ereignis_jahre": [
+   2028,
+   2036,
+   2044
+  ],
+  "kosten_rappen": null
+ },
+ "F10": {
+  "J1": 2015,
+  "RL": 0,
+  "ampel": "rot",
+  "ereignis_jahre": [
+   2026,
+   2030,
+   2045
+  ],
+  "kosten_rappen": null
+ },
+ "F11": {
+  "J1": 2029,
+  "RL": 3,
+  "ampel": "gelb",
+  "ereignis_jahre": [
+   2029
+  ],
+  "kosten_rappen": null
+ },
+ "F12": {
+  "J1": 2031,
+  "RL": 5,
+  "ampel": "gruen",
+  "ereignis_jahre": [
+   2031,
+   2036,
+   2041
+  ],
+  "kosten_rappen": [
+   "389260",
+   "409117",
+   "429986"
+  ]
+ },
+ "F13": {
+  "J1": 2027,
+  "RL": 1,
+  "ampel": "gelb",
+  "ereignis_jahre": [
+   2027,
+   2028,
+   2029,
+   2030,
+   2031,
+   2032,
+   2033,
+   2034,
+   2035,
+   2036,
+   2037,
+   2038,
+   2039,
+   2040,
+   2041,
+   2042,
+   2043,
+   2044,
+   2045
+  ],
+  "kosten_rappen": [
+   "17",
+   "18",
+   "20",
+   "22",
+   "24",
+   "27",
+   "29",
+   "32",
+   "35",
+   "39",
+   "43",
+   "47",
+   "52",
+   "57",
+   "63",
+   "69",
+   "76",
+   "83",
+   "92"
+  ]
+ },
+ "F14": {
+  "J1": 2027,
+  "RL": 1,
+  "ampel": "gelb",
+  "ereignis_jahre": [
+   2027
+  ],
+  "kosten_rappen": [
+   "97059"
+  ]
+ },
+ "F15": {
+  "J1": 2037,
+  "RL": 11,
+  "ampel": "gruen",
+  "ereignis_jahre": [
+   2037
+  ],
+  "kosten_rappen": null
+ },
+ "F16": {
+  "J1": 2032,
+  "RL": 6,
+  "ampel": "gruen",
+  "ereignis_jahre": [
+   2032
+  ],
+  "kosten_rappen": null
+ }
+}

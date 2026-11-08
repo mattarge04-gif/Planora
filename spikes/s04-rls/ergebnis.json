@@ -1,0 +1,82 @@
+{
+ "tests": [
+  {
+   "name": "(h) planora_app: NOBYPASSRLS, kein Superuser, besitzt keine Tabelle",
+   "bestanden": true,
+   "detail": {
+    "rolbypassrls": false,
+    "rolsuper": false,
+    "besitzt": 0
+   }
+  },
+  {
+   "name": "(a) Katalogpruefung: alle Mandantentabellen RLS+FORCE+Policy; vergessene Tabelle wird erkannt",
+   "bestanden": true,
+   "detail": {
+    "vorher": [],
+    "nachher": [
+     "vergessen"
+    ]
+   }
+  },
+  {
+   "name": "(c) ohne Mandantenkontext: Abfrage wirft Fehler",
+   "bestanden": true,
+   "detail": {
+    "fehler": "kein Mandantenkontext gesetzt"
+   }
+  },
+  {
+   "name": "(b) Mandant A liest/schreibt nichts von B",
+   "bestanden": true,
+   "detail": {
+    "fremd_gelesen": 0,
+    "eigen": 500,
+    "insert_fremd": "new row violates row-level security policy for table \"raum\"",
+    "update_fremd_zeilen": 0
+   }
+  },
+  {
+   "name": "(e) Querreferenz in fremden Mandanten scheitert am zusammengesetzten FK",
+   "bestanden": true,
+   "detail": {
+    "sqlstate": "23503"
+   }
+  },
+  {
+   "name": "(d) Pool-Leak: 10000 parallele Requests, Pool 10 -> 0 Fremdzeilen",
+   "bestanden": true,
+   "detail": {
+    "fremdzeilen": 0,
+    "fehler": 0,
+    "dauer_s": 0.6,
+    "req_pro_s": 17292
+   }
+  },
+  {
+   "name": "(d') Negativkontrolle: falsches Muster (Session-SET) leckt Kontext an den naechsten Request",
+   "bestanden": true,
+   "detail": {
+    "naechster_request_sieht_zeilen_von_A_ohne_eigenen_kontext": 500
+   }
+  },
+  {
+   "name": "Audit: Sammelbestaetigung 100 Angaben <= 2 s; Hash-Kette lueckenlos (auch bei 20 parallelen Bestaetigungen)",
+   "bestanden": true,
+   "detail": {
+    "ms_100": 17,
+    "ms_20x100_parallel": 19,
+    "kettenlaenge_A": 1550,
+    "kette_ok": true
+   }
+  },
+  {
+   "name": "Audit: planora_app kann audit_eintrag nicht loeschen",
+   "bestanden": true,
+   "detail": {
+    "fehler": "permission denied for table audit_eintrag"
+   }
+  }
+ ],
+ "pg_version": "PostgreSQL 18.6 on x86_64-windows, compiled by msvc-19.44.35228, 64-bit"
+}

@@ -1,0 +1,733 @@
+{
+ "E1": {
+  "typfelder_treffer": "54/54",
+  "typfelder_quote": 1.0,
+  "erfundene_werte": 0,
+  "elementzeilen_korrekt": "55/55",
+  "elementzeilen_falsch_positiv": 0,
+  "anzahl_je_typ_korrekt": "9/9",
+  "summe_instanzen": 113,
+  "validator_stufen_typfelder": {
+   "tief": 7,
+   "hoch": 26,
+   "mittel": 4
+  },
+  "praezision_hoch": "26/26",
+  "falsch_aber_validierung_bestanden": 0,
+  "grounding_elementzeilen": {
+   "exakt": 55
+  },
+  "fehler": [],
+  "felder": {
+   "LT-01.katalog_id": {
+    "ok": true,
+    "grounding": "fehlt",
+    "wert_im_zitat": true,
+    "stufe": "tief"
+   },
+   "LT-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-01.lebensdauer_stunden": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.katalog_id": {
+    "ok": true,
+    "grounding": "fehlt",
+    "wert_im_zitat": true,
+    "stufe": "tief"
+   },
+   "LT-02.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.lebensdauer_stunden": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-01.katalog_id": {
+    "ok": true,
+    "grounding": "fehlt",
+    "wert_im_zitat": true,
+    "stufe": "tief"
+   },
+   "HK-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-02.katalog_id": {
+    "ok": true,
+    "grounding": "fehlt",
+    "wert_im_zitat": true,
+    "stufe": "tief"
+   },
+   "HK-02.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-02.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-02.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "WP-01.katalog_id": {
+    "ok": true,
+    "grounding": "fehlt",
+    "wert_im_zitat": true,
+    "stufe": "tief"
+   },
+   "WP-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "WP-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "WP-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "MB-01.katalog_id": {
+    "ok": true,
+    "grounding": "fehlt",
+    "wert_im_zitat": true,
+    "stufe": "tief"
+   },
+   "MB-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "MB-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "MB-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "mittel"
+   },
+   "P-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "P-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "P-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "P-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "mittel"
+   },
+   "VAV-01.katalog_id": {
+    "ok": true,
+    "grounding": "fehlt",
+    "wert_im_zitat": true,
+    "stufe": "tief"
+   },
+   "VAV-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "VAV-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "CO2-01.katalog_id": {
+    "ok": true,
+    "grounding": "unscharf",
+    "wert_im_zitat": true,
+    "stufe": "mittel"
+   },
+   "CO2-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "CO2-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "CO2-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "mittel"
+   }
+  }
+ },
+ "E2": {
+  "typfelder_treffer": "54/54",
+  "typfelder_quote": 1.0,
+  "erfundene_werte": 0,
+  "elementzeilen_korrekt": "55/55",
+  "elementzeilen_falsch_positiv": 0,
+  "anzahl_je_typ_korrekt": "9/9",
+  "summe_instanzen": 113,
+  "validator_stufen_typfelder": {
+   "hoch": 35,
+   "mittel": 2
+  },
+  "praezision_hoch": "35/35",
+  "falsch_aber_validierung_bestanden": 0,
+  "grounding_elementzeilen": {
+   "exakt": 45,
+   "fehlt": 10
+  },
+  "fehler": [],
+  "felder": {
+   "LT-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-01.lebensdauer_stunden": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.lebensdauer_stunden": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-02.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-02.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-02.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-02.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "WP-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "WP-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "WP-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "WP-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "MB-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "MB-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "MB-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "MB-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "mittel"
+   },
+   "P-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "P-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "P-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "P-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "VAV-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "VAV-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "VAV-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "CO2-01.katalog_id": {
+    "ok": true,
+    "grounding": "unscharf",
+    "wert_im_zitat": true,
+    "stufe": "mittel"
+   },
+   "CO2-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "CO2-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "CO2-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   }
+  }
+ },
+ "E3": {
+  "typfelder_treffer": "54/54",
+  "typfelder_quote": 1.0,
+  "erfundene_werte": 0,
+  "elementzeilen_korrekt": "55/55",
+  "elementzeilen_falsch_positiv": 0,
+  "anzahl_je_typ_korrekt": "9/9",
+  "summe_instanzen": 113,
+  "validator_stufen_typfelder": {
+   "hoch": 36,
+   "mittel": 1
+  },
+  "praezision_hoch": "36/36",
+  "falsch_aber_validierung_bestanden": 0,
+  "grounding_elementzeilen": {
+   "exakt": 55
+  },
+  "fehler": [],
+  "felder": {
+   "LT-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-01.lebensdauer_stunden": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "LT-02.lebensdauer_stunden": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-02.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-02.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-02.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "HK-02.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "WP-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "WP-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "WP-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "WP-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "MB-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "MB-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "MB-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "MB-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "P-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "P-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "P-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "P-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "VAV-01.katalog_id": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "VAV-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "VAV-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "CO2-01.katalog_id": {
+    "ok": true,
+    "grounding": "unscharf",
+    "wert_im_zitat": true,
+    "stufe": "mittel"
+   },
+   "CO2-01.hersteller": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "CO2-01.typbezeichnung": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   },
+   "CO2-01.leistung_kw": {
+    "ok": true,
+    "grounding": "exakt",
+    "wert_im_zitat": true,
+    "stufe": "hoch"
+   }
+  }
+ }
+}

@@ -1,0 +1,1483 @@
+{
+  "project_id": "LH-TEST-001",
+  "revision": "01",
+  "date": "2026-11-08",
+  "fictional": true,
+  "units": {
+    "length": "m",
+    "area": "m2",
+    "airflow": "m3/h"
+  },
+  "coordinate_system": "Ursprung Südwest; x Ost; y Nord; je Geschoss identisch",
+  "rooms": [
+    {
+      "room_id": "EG-01",
+      "floor": "EG",
+      "name": "Empfang",
+      "x_m": 0,
+      "y_m": 9.6,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 150,
+      "extract_m3h": 120
+    },
+    {
+      "room_id": "EG-02",
+      "floor": "EG",
+      "name": "Büro 1",
+      "x_m": 6,
+      "y_m": 9.6,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 150,
+      "extract_m3h": 120
+    },
+    {
+      "room_id": "EG-03",
+      "floor": "EG",
+      "name": "Besprechung",
+      "x_m": 12,
+      "y_m": 9.6,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 180,
+      "extract_m3h": 120
+    },
+    {
+      "room_id": "EG-04",
+      "floor": "EG",
+      "name": "Büro 2",
+      "x_m": 18,
+      "y_m": 9.6,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 120,
+      "extract_m3h": 60
+    },
+    {
+      "room_id": "EG-05",
+      "floor": "EG",
+      "name": "Treppe",
+      "x_m": 0,
+      "y_m": 0,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 0,
+      "extract_m3h": 0
+    },
+    {
+      "room_id": "EG-06",
+      "floor": "EG",
+      "name": "Technik",
+      "x_m": 6,
+      "y_m": 0,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 0,
+      "extract_m3h": 30
+    },
+    {
+      "room_id": "EG-07",
+      "floor": "EG",
+      "name": "WC / Reinigung",
+      "x_m": 12,
+      "y_m": 0,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 0,
+      "extract_m3h": 90
+    },
+    {
+      "room_id": "EG-08",
+      "floor": "EG",
+      "name": "Teeküche",
+      "x_m": 18,
+      "y_m": 0,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 0,
+      "extract_m3h": 60
+    },
+    {
+      "room_id": "EG-09",
+      "floor": "EG",
+      "name": "Korridor",
+      "x_m": 0,
+      "y_m": 6.4,
+      "width_m": 24,
+      "depth_m": 3.2,
+      "nominal_area_m2": 76.8,
+      "clear_height_m": 2.8,
+      "supply_m3h": 0,
+      "extract_m3h": 0
+    },
+    {
+      "room_id": "OG-01",
+      "floor": "OG",
+      "name": "Büro 3",
+      "x_m": 0,
+      "y_m": 9.6,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 150,
+      "extract_m3h": 120
+    },
+    {
+      "room_id": "OG-02",
+      "floor": "OG",
+      "name": "Büro 4",
+      "x_m": 6,
+      "y_m": 9.6,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 150,
+      "extract_m3h": 120
+    },
+    {
+      "room_id": "OG-03",
+      "floor": "OG",
+      "name": "Sitzung",
+      "x_m": 12,
+      "y_m": 9.6,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 180,
+      "extract_m3h": 180
+    },
+    {
+      "room_id": "OG-04",
+      "floor": "OG",
+      "name": "Büro 5",
+      "x_m": 18,
+      "y_m": 9.6,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 120,
+      "extract_m3h": 120
+    },
+    {
+      "room_id": "OG-05",
+      "floor": "OG",
+      "name": "Treppe",
+      "x_m": 0,
+      "y_m": 0,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 0,
+      "extract_m3h": 0
+    },
+    {
+      "room_id": "OG-06",
+      "floor": "OG",
+      "name": "Projektbüro",
+      "x_m": 6,
+      "y_m": 0,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 120,
+      "extract_m3h": 120
+    },
+    {
+      "room_id": "OG-07",
+      "floor": "OG",
+      "name": "Archiv",
+      "x_m": 12,
+      "y_m": 0,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 60,
+      "extract_m3h": 60
+    },
+    {
+      "room_id": "OG-08",
+      "floor": "OG",
+      "name": "Aufenthalt",
+      "x_m": 18,
+      "y_m": 0,
+      "width_m": 6,
+      "depth_m": 6.4,
+      "nominal_area_m2": 38.4,
+      "clear_height_m": 2.8,
+      "supply_m3h": 120,
+      "extract_m3h": 180
+    },
+    {
+      "room_id": "OG-09",
+      "floor": "OG",
+      "name": "Korridor",
+      "x_m": 0,
+      "y_m": 6.4,
+      "width_m": 24,
+      "depth_m": 3.2,
+      "nominal_area_m2": 76.8,
+      "clear_height_m": 2.8,
+      "supply_m3h": 0,
+      "extract_m3h": 0
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "LT-01-001",
+      "type_id": "LT-01",
+      "room_id": "EG-01",
+      "x_m": 1.6,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-002",
+      "type_id": "LT-01",
+      "room_id": "EG-01",
+      "x_m": 4.4,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-003",
+      "type_id": "LT-01",
+      "room_id": "EG-01",
+      "x_m": 1.6,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "LT-01-004",
+      "type_id": "LT-01",
+      "room_id": "EG-01",
+      "x_m": 4.4,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "HK-01-001",
+      "type_id": "HK-01",
+      "room_id": "EG-01",
+      "x_m": 3,
+      "y_m": 15.75
+    },
+    {
+      "asset_id": "VAV-01-001",
+      "type_id": "VAV-01",
+      "room_id": "EG-01",
+      "x_m": 5.3,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "CO2-01-001",
+      "type_id": "CO2-01",
+      "room_id": "EG-01",
+      "x_m": 0.5,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "LT-01-005",
+      "type_id": "LT-01",
+      "room_id": "EG-02",
+      "x_m": 7.6,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-006",
+      "type_id": "LT-01",
+      "room_id": "EG-02",
+      "x_m": 10.4,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-007",
+      "type_id": "LT-01",
+      "room_id": "EG-02",
+      "x_m": 7.6,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "LT-01-008",
+      "type_id": "LT-01",
+      "room_id": "EG-02",
+      "x_m": 10.4,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "HK-01-002",
+      "type_id": "HK-01",
+      "room_id": "EG-02",
+      "x_m": 9,
+      "y_m": 15.75
+    },
+    {
+      "asset_id": "VAV-01-002",
+      "type_id": "VAV-01",
+      "room_id": "EG-02",
+      "x_m": 11.3,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "CO2-01-002",
+      "type_id": "CO2-01",
+      "room_id": "EG-02",
+      "x_m": 6.5,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "LT-01-009",
+      "type_id": "LT-01",
+      "room_id": "EG-03",
+      "x_m": 13.6,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-010",
+      "type_id": "LT-01",
+      "room_id": "EG-03",
+      "x_m": 16.4,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-011",
+      "type_id": "LT-01",
+      "room_id": "EG-03",
+      "x_m": 13.6,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "LT-01-012",
+      "type_id": "LT-01",
+      "room_id": "EG-03",
+      "x_m": 16.4,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "HK-01-003",
+      "type_id": "HK-01",
+      "room_id": "EG-03",
+      "x_m": 15,
+      "y_m": 15.75
+    },
+    {
+      "asset_id": "VAV-01-003",
+      "type_id": "VAV-01",
+      "room_id": "EG-03",
+      "x_m": 17.3,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "CO2-01-003",
+      "type_id": "CO2-01",
+      "room_id": "EG-03",
+      "x_m": 12.5,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "LT-01-013",
+      "type_id": "LT-01",
+      "room_id": "EG-04",
+      "x_m": 19.6,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-014",
+      "type_id": "LT-01",
+      "room_id": "EG-04",
+      "x_m": 22.4,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-015",
+      "type_id": "LT-01",
+      "room_id": "EG-04",
+      "x_m": 19.6,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "LT-01-016",
+      "type_id": "LT-01",
+      "room_id": "EG-04",
+      "x_m": 22.4,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "HK-01-004",
+      "type_id": "HK-01",
+      "room_id": "EG-04",
+      "x_m": 21,
+      "y_m": 15.75
+    },
+    {
+      "asset_id": "VAV-01-004",
+      "type_id": "VAV-01",
+      "room_id": "EG-04",
+      "x_m": 23.3,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "CO2-01-004",
+      "type_id": "CO2-01",
+      "room_id": "EG-04",
+      "x_m": 18.5,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "LT-02-001",
+      "type_id": "LT-02",
+      "room_id": "EG-05",
+      "x_m": 1.6,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-02-002",
+      "type_id": "LT-02",
+      "room_id": "EG-05",
+      "x_m": 4.4,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-02-003",
+      "type_id": "LT-02",
+      "room_id": "EG-05",
+      "x_m": 1.6,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "LT-02-004",
+      "type_id": "LT-02",
+      "room_id": "EG-05",
+      "x_m": 4.4,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "LT-01-017",
+      "type_id": "LT-01",
+      "room_id": "EG-06",
+      "x_m": 7.6,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-01-018",
+      "type_id": "LT-01",
+      "room_id": "EG-06",
+      "x_m": 10.4,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-02-005",
+      "type_id": "LT-02",
+      "room_id": "EG-07",
+      "x_m": 13.6,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-02-006",
+      "type_id": "LT-02",
+      "room_id": "EG-07",
+      "x_m": 16.4,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-02-007",
+      "type_id": "LT-02",
+      "room_id": "EG-07",
+      "x_m": 13.6,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "LT-02-008",
+      "type_id": "LT-02",
+      "room_id": "EG-07",
+      "x_m": 16.4,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "HK-02-001",
+      "type_id": "HK-02",
+      "room_id": "EG-07",
+      "x_m": 15,
+      "y_m": 0.5
+    },
+    {
+      "asset_id": "LT-02-009",
+      "type_id": "LT-02",
+      "room_id": "EG-08",
+      "x_m": 19.6,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-02-010",
+      "type_id": "LT-02",
+      "room_id": "EG-08",
+      "x_m": 22.4,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-02-011",
+      "type_id": "LT-02",
+      "room_id": "EG-08",
+      "x_m": 19.6,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "LT-02-012",
+      "type_id": "LT-02",
+      "room_id": "EG-08",
+      "x_m": 22.4,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "HK-02-002",
+      "type_id": "HK-02",
+      "room_id": "EG-08",
+      "x_m": 21,
+      "y_m": 0.5
+    },
+    {
+      "asset_id": "LT-02-013",
+      "type_id": "LT-02",
+      "room_id": "EG-09",
+      "x_m": 1.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-014",
+      "type_id": "LT-02",
+      "room_id": "EG-09",
+      "x_m": 4.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-015",
+      "type_id": "LT-02",
+      "room_id": "EG-09",
+      "x_m": 7.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-016",
+      "type_id": "LT-02",
+      "room_id": "EG-09",
+      "x_m": 10.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-017",
+      "type_id": "LT-02",
+      "room_id": "EG-09",
+      "x_m": 13.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-018",
+      "type_id": "LT-02",
+      "room_id": "EG-09",
+      "x_m": 16.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-019",
+      "type_id": "LT-02",
+      "room_id": "EG-09",
+      "x_m": 19.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-020",
+      "type_id": "LT-02",
+      "room_id": "EG-09",
+      "x_m": 22.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-01-019",
+      "type_id": "LT-01",
+      "room_id": "OG-01",
+      "x_m": 1.6,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-020",
+      "type_id": "LT-01",
+      "room_id": "OG-01",
+      "x_m": 4.4,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-021",
+      "type_id": "LT-01",
+      "room_id": "OG-01",
+      "x_m": 1.6,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "LT-01-022",
+      "type_id": "LT-01",
+      "room_id": "OG-01",
+      "x_m": 4.4,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "HK-01-005",
+      "type_id": "HK-01",
+      "room_id": "OG-01",
+      "x_m": 3,
+      "y_m": 15.75
+    },
+    {
+      "asset_id": "VAV-01-005",
+      "type_id": "VAV-01",
+      "room_id": "OG-01",
+      "x_m": 5.3,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "CO2-01-005",
+      "type_id": "CO2-01",
+      "room_id": "OG-01",
+      "x_m": 0.5,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "LT-01-023",
+      "type_id": "LT-01",
+      "room_id": "OG-02",
+      "x_m": 7.6,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-024",
+      "type_id": "LT-01",
+      "room_id": "OG-02",
+      "x_m": 10.4,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-025",
+      "type_id": "LT-01",
+      "room_id": "OG-02",
+      "x_m": 7.6,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "LT-01-026",
+      "type_id": "LT-01",
+      "room_id": "OG-02",
+      "x_m": 10.4,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "HK-01-006",
+      "type_id": "HK-01",
+      "room_id": "OG-02",
+      "x_m": 9,
+      "y_m": 15.75
+    },
+    {
+      "asset_id": "VAV-01-006",
+      "type_id": "VAV-01",
+      "room_id": "OG-02",
+      "x_m": 11.3,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "CO2-01-006",
+      "type_id": "CO2-01",
+      "room_id": "OG-02",
+      "x_m": 6.5,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "LT-01-027",
+      "type_id": "LT-01",
+      "room_id": "OG-03",
+      "x_m": 13.6,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-028",
+      "type_id": "LT-01",
+      "room_id": "OG-03",
+      "x_m": 16.4,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-029",
+      "type_id": "LT-01",
+      "room_id": "OG-03",
+      "x_m": 13.6,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "LT-01-030",
+      "type_id": "LT-01",
+      "room_id": "OG-03",
+      "x_m": 16.4,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "HK-01-007",
+      "type_id": "HK-01",
+      "room_id": "OG-03",
+      "x_m": 15,
+      "y_m": 15.75
+    },
+    {
+      "asset_id": "VAV-01-007",
+      "type_id": "VAV-01",
+      "room_id": "OG-03",
+      "x_m": 17.3,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "CO2-01-007",
+      "type_id": "CO2-01",
+      "room_id": "OG-03",
+      "x_m": 12.5,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "LT-01-031",
+      "type_id": "LT-01",
+      "room_id": "OG-04",
+      "x_m": 19.6,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-032",
+      "type_id": "LT-01",
+      "room_id": "OG-04",
+      "x_m": 22.4,
+      "y_m": 11.3
+    },
+    {
+      "asset_id": "LT-01-033",
+      "type_id": "LT-01",
+      "room_id": "OG-04",
+      "x_m": 19.6,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "LT-01-034",
+      "type_id": "LT-01",
+      "room_id": "OG-04",
+      "x_m": 22.4,
+      "y_m": 13.9
+    },
+    {
+      "asset_id": "HK-01-008",
+      "type_id": "HK-01",
+      "room_id": "OG-04",
+      "x_m": 21,
+      "y_m": 15.75
+    },
+    {
+      "asset_id": "VAV-01-008",
+      "type_id": "VAV-01",
+      "room_id": "OG-04",
+      "x_m": 23.3,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "CO2-01-008",
+      "type_id": "CO2-01",
+      "room_id": "OG-04",
+      "x_m": 18.5,
+      "y_m": 12.8
+    },
+    {
+      "asset_id": "LT-02-021",
+      "type_id": "LT-02",
+      "room_id": "OG-05",
+      "x_m": 1.6,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-02-022",
+      "type_id": "LT-02",
+      "room_id": "OG-05",
+      "x_m": 4.4,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-02-023",
+      "type_id": "LT-02",
+      "room_id": "OG-05",
+      "x_m": 1.6,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "LT-02-024",
+      "type_id": "LT-02",
+      "room_id": "OG-05",
+      "x_m": 4.4,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "LT-01-035",
+      "type_id": "LT-01",
+      "room_id": "OG-06",
+      "x_m": 7.6,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-01-036",
+      "type_id": "LT-01",
+      "room_id": "OG-06",
+      "x_m": 10.4,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-01-037",
+      "type_id": "LT-01",
+      "room_id": "OG-06",
+      "x_m": 7.6,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "LT-01-038",
+      "type_id": "LT-01",
+      "room_id": "OG-06",
+      "x_m": 10.4,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "HK-01-009",
+      "type_id": "HK-01",
+      "room_id": "OG-06",
+      "x_m": 9,
+      "y_m": 0.5
+    },
+    {
+      "asset_id": "VAV-01-009",
+      "type_id": "VAV-01",
+      "room_id": "OG-06",
+      "x_m": 11.3,
+      "y_m": 3.2
+    },
+    {
+      "asset_id": "CO2-01-009",
+      "type_id": "CO2-01",
+      "room_id": "OG-06",
+      "x_m": 6.5,
+      "y_m": 3.2
+    },
+    {
+      "asset_id": "LT-01-039",
+      "type_id": "LT-01",
+      "room_id": "OG-07",
+      "x_m": 13.6,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-01-040",
+      "type_id": "LT-01",
+      "room_id": "OG-07",
+      "x_m": 16.4,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "HK-02-003",
+      "type_id": "HK-02",
+      "room_id": "OG-07",
+      "x_m": 15,
+      "y_m": 0.5
+    },
+    {
+      "asset_id": "VAV-01-010",
+      "type_id": "VAV-01",
+      "room_id": "OG-07",
+      "x_m": 17.3,
+      "y_m": 3.2
+    },
+    {
+      "asset_id": "LT-01-041",
+      "type_id": "LT-01",
+      "room_id": "OG-08",
+      "x_m": 19.6,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-01-042",
+      "type_id": "LT-01",
+      "room_id": "OG-08",
+      "x_m": 22.4,
+      "y_m": 1.7
+    },
+    {
+      "asset_id": "LT-01-043",
+      "type_id": "LT-01",
+      "room_id": "OG-08",
+      "x_m": 19.6,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "LT-01-044",
+      "type_id": "LT-01",
+      "room_id": "OG-08",
+      "x_m": 22.4,
+      "y_m": 4.3
+    },
+    {
+      "asset_id": "HK-01-010",
+      "type_id": "HK-01",
+      "room_id": "OG-08",
+      "x_m": 21,
+      "y_m": 0.5
+    },
+    {
+      "asset_id": "VAV-01-011",
+      "type_id": "VAV-01",
+      "room_id": "OG-08",
+      "x_m": 23.3,
+      "y_m": 3.2
+    },
+    {
+      "asset_id": "CO2-01-010",
+      "type_id": "CO2-01",
+      "room_id": "OG-08",
+      "x_m": 18.5,
+      "y_m": 3.2
+    },
+    {
+      "asset_id": "LT-02-025",
+      "type_id": "LT-02",
+      "room_id": "OG-09",
+      "x_m": 1.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-026",
+      "type_id": "LT-02",
+      "room_id": "OG-09",
+      "x_m": 4.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-027",
+      "type_id": "LT-02",
+      "room_id": "OG-09",
+      "x_m": 7.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-028",
+      "type_id": "LT-02",
+      "room_id": "OG-09",
+      "x_m": 10.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-029",
+      "type_id": "LT-02",
+      "room_id": "OG-09",
+      "x_m": 13.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-030",
+      "type_id": "LT-02",
+      "room_id": "OG-09",
+      "x_m": 16.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-031",
+      "type_id": "LT-02",
+      "room_id": "OG-09",
+      "x_m": 19.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "LT-02-032",
+      "type_id": "LT-02",
+      "room_id": "OG-09",
+      "x_m": 22.5,
+      "y_m": 8
+    },
+    {
+      "asset_id": "MB-01-001",
+      "type_id": "MB-01",
+      "room_id": "EG-06",
+      "x_m": 8.0,
+      "y_m": 3.6
+    },
+    {
+      "asset_id": "P-01-001",
+      "type_id": "P-01",
+      "room_id": "EG-06",
+      "x_m": 10.4,
+      "y_m": 1.0
+    },
+    {
+      "asset_id": "WP-01-001",
+      "type_id": "WP-01",
+      "room_id": "AUSSEN-NORD",
+      "x_m": 8.0,
+      "y_m": 18.0
+    }
+  ],
+  "types": [
+    {
+      "id": "MB-01",
+      "name": "Lüftungsmonoblock",
+      "model": "TESTAIR M1500",
+      "group": "Lüftung",
+      "rows": [
+        [
+          "Aufstellung",
+          "EG-06 Technik; Innenaufstellung"
+        ],
+        [
+          "Luftmenge Nenn / maximal",
+          "1 500 / 1 800 m³/h je Luftstrom"
+        ],
+        [
+          "Externer Druck am Nennpunkt",
+          "250 Pa Zuluft / 250 Pa Abluft"
+        ],
+        [
+          "Wärmerückgewinnung",
+          "Plattenwärmeübertrager; Temperaturgrad 78 % (Testwert)"
+        ],
+        [
+          "Filter Zuluft / Abluft",
+          "ePM1 60 % / ePM10 50 % (fiktive Klassenangabe)"
+        ],
+        [
+          "Ventilatoren",
+          "2 EC-Ventilatoren; je 0,55 kW Anschlussleistung"
+        ],
+        [
+          "Versorgung",
+          "230 V AC, 50 Hz; Gesamtanschluss 1,20 kW"
+        ],
+        [
+          "Abmessungen L × B × H",
+          "2 400 × 1 000 × 1 250 mm"
+        ],
+        [
+          "Gewicht / Luftanschlüsse",
+          "380 kg / 4 × DN 315"
+        ],
+        [
+          "Regelung",
+          "BACnet/IP; Freigabe, Störung, Luftmengen-Sollwerte"
+        ],
+        [
+          "Nacherwärmer",
+          "Wasser; 5,0 kW am fiktiven Betriebspunkt 55/45 °C"
+        ],
+        [
+          "Wartung",
+          "900 mm Bedienraum vor der Serviceseite freihalten"
+        ]
+      ]
+    },
+    {
+      "id": "HK-01",
+      "name": "Heizkörper Standard",
+      "model": "TESTHEAT P22-1000",
+      "group": "Heizung",
+      "rows": [
+        [
+          "Bauart",
+          "Plattenheizkörper Typ 22"
+        ],
+        [
+          "Abmessungen B × H × T",
+          "1 000 × 600 × 102 mm"
+        ],
+        [
+          "Wärmeleistung",
+          "1 000 W bei 55/45/20 °C (synthetischer Betriebspunkt)"
+        ],
+        [
+          "Vorlauf / Rücklauf / Raum",
+          "55 / 45 / 20 °C"
+        ],
+        [
+          "Wasservolumen / Leergewicht",
+          "5,8 l / 31 kg"
+        ],
+        [
+          "Wasservolumenstrom",
+          "86 l/h bei 10 K Spreizung, gerundet"
+        ],
+        [
+          "Max. Betriebsdruck / Temperatur",
+          "6 bar / 90 °C"
+        ],
+        [
+          "Anschluss",
+          "2 × G 1/2 unten rechts"
+        ],
+        [
+          "Regelung",
+          "Thermostatventil; Sollwertbereich 16 bis 26 °C"
+        ],
+        [
+          "Montage / Oberfläche",
+          "Wandkonsolen / weiss, RAL 9016"
+        ]
+      ]
+    },
+    {
+      "id": "HK-02",
+      "name": "Heizkörper Kompakt",
+      "model": "TESTHEAT P22-600",
+      "group": "Heizung",
+      "rows": [
+        [
+          "Bauart",
+          "Plattenheizkörper Typ 22"
+        ],
+        [
+          "Abmessungen B × H × T",
+          "600 × 600 × 102 mm"
+        ],
+        [
+          "Wärmeleistung",
+          "600 W bei 55/45/20 °C (synthetischer Betriebspunkt)"
+        ],
+        [
+          "Vorlauf / Rücklauf / Raum",
+          "55 / 45 / 20 °C"
+        ],
+        [
+          "Wasservolumen / Leergewicht",
+          "3,5 l / 19 kg"
+        ],
+        [
+          "Wasservolumenstrom",
+          "52 l/h bei 10 K Spreizung, gerundet"
+        ],
+        [
+          "Max. Betriebsdruck / Temperatur",
+          "6 bar / 90 °C"
+        ],
+        [
+          "Anschluss",
+          "2 × G 1/2 unten rechts"
+        ],
+        [
+          "Regelung",
+          "Thermostatventil"
+        ],
+        [
+          "Montage / Oberfläche",
+          "Wandkonsolen / weiss, RAL 9016"
+        ]
+      ]
+    },
+    {
+      "id": "LT-01",
+      "name": "LED-Panel Büro",
+      "model": "TESTLIGHT P600",
+      "group": "Elektro",
+      "rows": [
+        [
+          "Bauart",
+          "LED-Deckenpanel; Anbau"
+        ],
+        [
+          "Abmessungen B × L × H",
+          "595 × 595 × 35 mm"
+        ],
+        [
+          "Systemleistung / Lichtstrom",
+          "36 W / 4 320 lm"
+        ],
+        [
+          "Lichtausbeute",
+          "120 lm/W, aus den Testwerten berechnet"
+        ],
+        [
+          "Lichtfarbe / Farbwiedergabe",
+          "4 000 K / Ra 80"
+        ],
+        [
+          "Versorgung / Schutzklasse",
+          "230 V AC, 50 Hz / I"
+        ],
+        [
+          "Schutzart",
+          "IP40"
+        ],
+        [
+          "Steuerung",
+          "DALI-2; dimmbar 10 bis 100 % (Testannahme)"
+        ],
+        [
+          "Lebensdauer",
+          "50 000 h L80/B10 (fiktiv, ungeprüft)"
+        ],
+        [
+          "Hinweis zur Lichtplanung",
+          "Keine LDT-/IES-Datei; Beleuchtungsstärke und UGR nicht nachgewiesen"
+        ]
+      ]
+    },
+    {
+      "id": "LT-02",
+      "name": "LED-Downlight",
+      "model": "TESTLIGHT D180",
+      "group": "Elektro",
+      "rows": [
+        [
+          "Bauart",
+          "LED-Einbau-Downlight"
+        ],
+        [
+          "Abmessungen / Ausschnitt",
+          "Ø 180 × 80 mm / Ø 165 mm"
+        ],
+        [
+          "Systemleistung / Lichtstrom",
+          "14 W / 1 540 lm"
+        ],
+        [
+          "Lichtausbeute",
+          "110 lm/W, aus den Testwerten berechnet"
+        ],
+        [
+          "Lichtfarbe / Farbwiedergabe",
+          "3 000 K / Ra 80"
+        ],
+        [
+          "Versorgung / Schutzklasse",
+          "230 V AC, 50 Hz / II"
+        ],
+        [
+          "Schutzart von unten",
+          "IP44 (fiktive Angabe)"
+        ],
+        [
+          "Steuerung",
+          "Ein/Aus über Präsenzkontakt"
+        ],
+        [
+          "Lebensdauer",
+          "40 000 h L80/B10 (fiktiv, ungeprüft)"
+        ],
+        [
+          "Hinweis",
+          "Keine photometrische Datei; keine Eignungsprüfung für reale Räume"
+        ]
+      ]
+    },
+    {
+      "id": "VAV-01",
+      "name": "Volumenstromregler Zuluft",
+      "model": "TESTFLOW V160",
+      "group": "Lüftung",
+      "rows": [
+        [
+          "Bauart",
+          "Runder variabler Volumenstromregler"
+        ],
+        [
+          "Anschluss / Baulänge",
+          "DN 160 / 400 mm"
+        ],
+        [
+          "Regelbereich",
+          "40 bis 250 m³/h"
+        ],
+        [
+          "Betriebs-Sollwerte im Projekt",
+          "60 / 120 / 150 / 180 m³/h, je nach Raum"
+        ],
+        [
+          "Versorgung",
+          "24 V AC/DC; 3 VA"
+        ],
+        [
+          "Sollwert / Rückmeldung",
+          "0 bis 10 V / 0 bis 10 V"
+        ],
+        [
+          "Differenzdruck Testbereich",
+          "50 bis 300 Pa"
+        ],
+        [
+          "Gehäuse",
+          "Verzinktes Stahlblech"
+        ],
+        [
+          "Einbau",
+          "Zugänglich in der Zuluftleitung; Einbaulage horizontal"
+        ],
+        [
+          "Hinweis",
+          "Nur Raum-Zuluftregler; keine Brandschutzfunktion"
+        ]
+      ]
+    },
+    {
+      "id": "P-01",
+      "name": "Heizungs-Umwälzpumpe",
+      "model": "TESTPUMP H25",
+      "group": "Heizung",
+      "rows": [
+        [
+          "Aufstellung",
+          "EG-06 Technik; gemeinsamer Heizkreis"
+        ],
+        [
+          "Nennbetriebspunkt",
+          "1,8 m³/h bei 35 kPa Förderdruck"
+        ],
+        [
+          "Regelung",
+          "Differenzdruck proportional; 0 bis 10 V Sollwert"
+        ],
+        [
+          "Versorgung / max. Aufnahme",
+          "230 V AC, 50 Hz / 90 W"
+        ],
+        [
+          "Anschluss / Einbaulänge",
+          "DN 25 / 180 mm"
+        ],
+        [
+          "Medientemperatur",
+          "5 bis 90 °C"
+        ],
+        [
+          "Max. Betriebsdruck",
+          "6 bar"
+        ],
+        [
+          "Werkstoff",
+          "Gussgehäuse, Edelstahlwelle"
+        ],
+        [
+          "Rückmeldung",
+          "Potentialfreier Sammelstörkontakt"
+        ],
+        [
+          "Abgrenzung",
+          "Keine Rohrnetzberechnung; Förderdruck ist eine Testannahme"
+        ]
+      ]
+    },
+    {
+      "id": "CO2-01",
+      "name": "Raumsensor CO₂ / Temperatur",
+      "model": "TESTSENSE C2T",
+      "group": "Automation",
+      "rows": [
+        [
+          "Montage",
+          "Wand, ca. 1,5 m über Fertigboden"
+        ],
+        [
+          "CO₂-Messbereich",
+          "0 bis 2 000 ppm"
+        ],
+        [
+          "Fiktive Messgenauigkeit",
+          "± (50 ppm + 3 % vom Messwert)"
+        ],
+        [
+          "Temperaturbereich / Genauigkeit",
+          "0 bis 50 °C / ± 0,5 K (fiktiv)"
+        ],
+        [
+          "Versorgung / Aufnahme",
+          "24 V DC / 2 W"
+        ],
+        [
+          "Kommunikation",
+          "Modbus RTU, RS-485"
+        ],
+        [
+          "Abmessungen B × H × T",
+          "86 × 86 × 28 mm"
+        ],
+        [
+          "Schutzart",
+          "IP30"
+        ],
+        [
+          "Regelidee",
+          "Zuluft-Sollwert nach CO₂; Min./Max. je Raum separat"
+        ],
+        [
+          "Hinweis",
+          "Keine Sensoradressen und keine Regelsoftware enthalten"
+        ]
+      ]
+    },
+    {
+      "id": "WP-01",
+      "name": "Wärmepumpe Heizung",
+      "model": "TESTTHERM AW18",
+      "group": "Heizung",
+      "rows": [
+        [
+          "Aufstellung",
+          "Aussenfläche nördlich EG-06; im Plan als Verweis"
+        ],
+        [
+          "Bauart",
+          "Luft/Wasser; ausschliesslich Heizung im Testprojekt"
+        ],
+        [
+          "Heizleistung / COP",
+          "18,0 kW / 3,0 am fiktiven Punkt A-7/W55"
+        ],
+        [
+          "Elektrische Aufnahme am Testpunkt",
+          "6,0 kW; maximaler Anschlusswert 8,0 kW"
+        ],
+        [
+          "Versorgung",
+          "400 V AC, 3 Phasen + N + PE, 50 Hz"
+        ],
+        [
+          "Abmessungen B × T × H",
+          "1 400 × 600 × 1 200 mm"
+        ],
+        [
+          "Gewicht / Hydraulikanschlüsse",
+          "180 kg / Vor- und Rücklauf DN 25"
+        ],
+        [
+          "Vorlauftemperatur Testbetrieb",
+          "55 °C; Rücklauf 45 °C"
+        ],
+        [
+          "Regelung",
+          "Modbus TCP; Freigabe und Sollwert"
+        ],
+        [
+          "Abgrenzung",
+          "Heizlast, Schall, Abstände, Kältemittel und Abtauung nicht ausgelegt"
+        ]
+      ]
+    }
+  ]
+}

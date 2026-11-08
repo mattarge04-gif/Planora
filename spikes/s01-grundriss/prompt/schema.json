@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "grundriss_raeume@0.1.0 Ausgabe",
+  "type": "object",
+  "required": ["prompt_id", "variante", "lauf", "geschosse"],
+  "properties": {
+    "prompt_id": { "const": "grundriss_raeume@0.1.0" },
+    "variante": { "enum": ["A", "B", "C"] },
+    "lauf": { "type": "string" },
+    "geschosse": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["geschoss", "raeume"],
+        "properties": {
+          "geschoss": { "enum": ["EG", "OG"] },
+          "raeume": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["nummer", "bezeichnung", "stempel_flaeche_m2", "rechteck", "konfidenz"],
+              "properties": {
+                "nummer": { "type": ["string", "null"] },
+                "bezeichnung": { "type": ["string", "null"] },
+                "stempel_flaeche_m2": { "type": ["number", "null"] },
+                "rechteck": {
+                  "type": "object",
+                  "required": ["x0", "y0", "x1", "y1"],
+                  "properties": {
+                    "x0": { "type": "number", "minimum": 0, "maximum": 1 },
+                    "y0": { "type": "number", "minimum": 0, "maximum": 1 },
+                    "x1": { "type": "number", "minimum": 0, "maximum": 1 },
+                    "y1": { "type": "number", "minimum": 0, "maximum": 1 }
+                  }
+                },
+                "konfidenz": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "rooms": 18,
+  "types": 9,
+  "assets": 113,
+  "counts_by_type": {
+    "MB-01": 1,
+    "HK-01": 10,
+    "HK-02": 3,
+    "LT-01": 44,
+    "LT-02": 32,
+    "VAV-01": 11,
+    "P-01": 1,
+    "CO2-01": 10,
+    "WP-01": 1
+  },
+  "nominal_area_m2": 768,
+  "supply_m3h": 1500,
+  "extract_m3h": 1500,
+  "lighting_power_W": 2032,
+  "radiator_power_W": 11800
+}

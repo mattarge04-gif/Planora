@@ -1,0 +1,21 @@
+{
+  "hinweis": "Testtabelle FA-22 des Test-Architekten. Erwartungswerte erzeugt ein unabhaengiges Orakel (orakel.py, Python Decimal, direkt aus den Formeln in 03 Kap. 8). Parameter: Knick k=0,75, Nutzungsgrenze g=0,25, Stichtag 2026, Ampel N=3, Teuerung 1 %, Horizont 20.",
+  "faelle": [
+    { "id": "F01", "text": "ohne Bewertung, Standard", "L": "20", "E": 2010, "bewertung": null },
+    { "id": "F02", "text": "Bewertung z=0,4 (Knick)", "L": "20", "E": 2010, "bewertung": { "jahr": 2026, "z": "0.4" } },
+    { "id": "F03", "text": "Bewertung z=1,0 (wie neu)", "L": "20", "E": 2010, "bewertung": { "jahr": 2026, "z": "1.0" } },
+    { "id": "F04", "text": "z=0,7 -> RL 12,5 -> half-up 13", "L": "20", "E": 2010, "bewertung": { "jahr": 2026, "z": "0.7" } },
+    { "id": "F05", "text": "z=0,3 progressiver Ast (Wurzel)", "L": "20", "E": 2010, "bewertung": { "jahr": 2026, "z": "0.3" } },
+    { "id": "F06", "text": "z=g=0,25 -> Ersatz faellig", "L": "20", "E": 2010, "bewertung": { "jahr": 2026, "z": "0.25" } },
+    { "id": "F07", "text": "z=0,0", "L": "20", "E": 2010, "bewertung": { "jahr": 2026, "z": "0.0" } },
+    { "id": "F08", "text": "Einbaujahr unbekannt, Bewertung genuegt (ZHAW Ansatz 2)", "L": "30", "E": null, "bewertung": { "jahr": 2024, "z": "0.5" } },
+    { "id": "F09", "text": "kurze Lebensdauer 8 J. -> mehrere Zyklen im 20-J.-Plan (FA-27)", "L": "8", "E": 2020, "bewertung": null },
+    { "id": "F10", "text": "ueberfaellig (J1 < Stichtag)", "L": "15", "E": 2000, "bewertung": null },
+    { "id": "F11", "text": "gelb: J1 = s + 3", "L": "19", "E": 2010, "bewertung": null },
+    { "id": "F12", "text": "Kosten mit Teuerung, Menge 3", "L": "5", "E": 2026, "bewertung": null, "preis": { "rappen": "123456", "preisjahr": 2026 }, "menge": 3 },
+    { "id": "F13", "text": "Rappen half-up 16,5 -> 17 (Banker wuerde 16)", "L": "1", "E": 2026, "bewertung": null, "preis": { "rappen": "15", "preisjahr": 2026 }, "menge": 1, "teuerung": "0.1" },
+    { "id": "F14", "text": "Preisjahr in der Zukunft relativ zum Ereignis (negativer Exponent)", "L": "20", "E": 2007, "bewertung": null, "preis": { "rappen": "100000", "preisjahr": 2030 }, "menge": 1 },
+    { "id": "F15", "text": "Lebensdauer mit Nachkommastelle 16,7 -> 17", "L": "16.7", "E": 2020, "bewertung": null },
+    { "id": "F16", "text": "Bewertung in der Vergangenheit, z=0,55", "L": "25", "E": 2001, "bewertung": { "jahr": 2021, "z": "0.55" } }
+  ]
+}

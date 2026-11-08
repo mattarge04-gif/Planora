@@ -1,0 +1,5 @@
+# Lokale Werkzeuge und Laufzeitdaten der Wegwerf-Spikes
+_werkzeuge/venv/
+**/node_modules/
+s03-3d/dist/
+s04-rls/.pgdata/

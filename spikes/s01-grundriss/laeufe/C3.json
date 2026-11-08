@@ -1,0 +1,35 @@
+{
+  "prompt_id": "grundriss_raeume@0.1.0",
+  "variante": "C",
+  "lauf": "C3",
+  "geschosse": [
+    {
+      "geschoss": "EG",
+      "raeume": [
+        {"nummer": "EG-01", "bezeichnung": "Empfang", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.0167, "y0": 0.0250, "x1": 0.2573, "y1": 0.4080}, "konfidenz": 0.85},
+        {"nummer": "EG-02", "bezeichnung": "Büro 1", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.2573, "y0": 0.0250, "x1": 0.4973, "y1": 0.4080}, "konfidenz": 0.85},
+        {"nummer": "EG-03", "bezeichnung": "Besprechung", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.4973, "y0": 0.0250, "x1": 0.7373, "y1": 0.4080}, "konfidenz": 0.85},
+        {"nummer": "EG-04", "bezeichnung": "Büro 2", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.7373, "y0": 0.0250, "x1": 0.9768, "y1": 0.4080}, "konfidenz": 0.85},
+        {"nummer": "EG-09", "bezeichnung": "Korridor", "stempel_flaeche_m2": 76.8, "rechteck": {"x0": 0.0167, "y0": 0.4080, "x1": 0.9768, "y1": 0.6000}, "konfidenz": 0.8},
+        {"nummer": "EG-05", "bezeichnung": "Treppe", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.0167, "y0": 0.6000, "x1": 0.2573, "y1": 0.9857}, "konfidenz": 0.85},
+        {"nummer": "EG-06", "bezeichnung": "Technik", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.2573, "y0": 0.6000, "x1": 0.4973, "y1": 0.9857}, "konfidenz": 0.85},
+        {"nummer": "EG-07", "bezeichnung": "WC / Reinigung", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.4973, "y0": 0.6000, "x1": 0.7373, "y1": 0.9857}, "konfidenz": 0.85},
+        {"nummer": "EG-08", "bezeichnung": "Teeküche", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.7373, "y0": 0.6000, "x1": 0.9768, "y1": 0.9857}, "konfidenz": 0.85}
+      ]
+    },
+    {
+      "geschoss": "OG",
+      "raeume": [
+        {"nummer": "OG-01", "bezeichnung": "Büro 3", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.0167, "y0": 0.0250, "x1": 0.2573, "y1": 0.4080}, "konfidenz": 0.85},
+        {"nummer": "OG-02", "bezeichnung": "Büro 4", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.2573, "y0": 0.0250, "x1": 0.4973, "y1": 0.4080}, "konfidenz": 0.85},
+        {"nummer": "OG-03", "bezeichnung": "Sitzung", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.4973, "y0": 0.0250, "x1": 0.7373, "y1": 0.4080}, "konfidenz": 0.85},
+        {"nummer": "OG-04", "bezeichnung": "Büro 5", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.7373, "y0": 0.0250, "x1": 0.9768, "y1": 0.4080}, "konfidenz": 0.85},
+        {"nummer": "OG-09", "bezeichnung": "Korridor", "stempel_flaeche_m2": 76.8, "rechteck": {"x0": 0.0167, "y0": 0.4080, "x1": 0.9768, "y1": 0.6000}, "konfidenz": 0.8},
+        {"nummer": "OG-05", "bezeichnung": "Treppe", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.0167, "y0": 0.6000, "x1": 0.2573, "y1": 0.9857}, "konfidenz": 0.85},
+        {"nummer": "OG-06", "bezeichnung": "Projektbüro", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.2573, "y0": 0.6000, "x1": 0.4973, "y1": 0.9857}, "konfidenz": 0.85},
+        {"nummer": "OG-07", "bezeichnung": "Archiv", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.4973, "y0": 0.6000, "x1": 0.7373, "y1": 0.9857}, "konfidenz": 0.85},
+        {"nummer": "OG-08", "bezeichnung": "Aufenthalt", "stempel_flaeche_m2": 38.4, "rechteck": {"x0": 0.7373, "y0": 0.6000, "x1": 0.9768, "y1": 0.9857}, "konfidenz": 0.85}
+      ]
+    }
+  ]
+}
