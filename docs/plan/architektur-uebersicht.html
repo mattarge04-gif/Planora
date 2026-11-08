@@ -1,0 +1,450 @@
+<title>Planora Architekturkarte</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Karte von aussen nach innen. Container, Module, Abläufe, Zustände, Daten, API. Sprungleiste oben. */
+:root{
+  --bg:#f4f6f7; --surface:#fff; --fg:#14232f; --muted:#5b6b77; --line:#d7dfe4; --soft:#eaf0f2;
+  --accent:#0f7f80; --accent-soft:#d7eeee; --later:#8a6d3b; --later-soft:#f3ead8;
+  --f-display:"Archivo","Segoe UI",system-ui,sans-serif; --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f171d;--surface:#16212a;--fg:#e4ecf0;--muted:#93a4b0;--line:#2a3944;--soft:#1c2a34;--accent:#3fb8b8;--accent-soft:#163b3d;--later:#d9b46f;--later-soft:#3a2f1a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f171d;--surface:#16212a;--fg:#e4ecf0;--muted:#93a4b0;--line:#2a3944;--soft:#1c2a34;--accent:#3fb8b8;--accent-soft:#163b3d;--later:#d9b46f;--later-soft:#3a2f1a;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1200px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:40px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(28px,4vw,40px);font-weight:800}
+h2{font-size:22px;font-weight:800}
+h3{font-size:16px;font-weight:600}
+p{margin:0;max-width:72ch}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+nav{display:flex;flex-wrap:wrap;gap:8px}
+nav a{font-family:var(--f-mono);font-size:12.5px;color:var(--fg);text-decoration:none;border:1px solid var(--line);background:var(--surface);padding:4px 10px;border-radius:4px}
+nav a:hover,nav a:focus-visible{border-color:var(--accent);outline:none}
+section{display:grid;gap:14px;scroll-margin-top:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;overflow-x:auto}
+pre.mermaid{margin:0;background:transparent;font-family:var(--f-body);min-width:640px;text-align:center}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+.chip{display:inline-block;font-family:var(--f-mono);font-size:11px;padding:1px 7px;border-radius:999px;white-space:nowrap}
+.v1{background:var(--accent-soft);color:var(--accent)} .sp{background:var(--later-soft);color:var(--later)}
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:13.5px}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--soft);vertical-align:top}
+th{font-family:var(--f-mono);font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr.grp td{background:var(--bg);font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+code,.m{font-family:var(--f-mono);font-size:12.5px}
+.verb{font-family:var(--f-mono);font-size:11px;font-weight:500;padding:1px 6px;border-radius:3px;background:var(--soft)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.grid2>*{min-width:0}
+.note{color:var(--muted);font-size:13.5px}
+footer{color:var(--muted);font-size:12.5px}
+</style>
+
+<div class="wrap">
+<header style="display:grid;gap:12px">
+  <div class="eyebrow">Planora V1 · Stand 08.11.2026 · aus docs/architektur/03 + E23–E27</div>
+  <h1>Architekturkarte</h1>
+  <p>Alles auf einer Seite: Server und Dienste, Module, die drei Hauptabläufe, Zustände eines Dokuments, alle Datenpunkte und die API. <span class="chip v1">V1</span> gehört in die erste Version, <span class="chip sp">später</span> ist vorbereitet, wird aber nicht gebaut. API-Pfade sind ein Vorschlag aus dem Modulkatalog [A].</p>
+  <nav>
+    <a href="#system">1 System</a><a href="#module">2 Module</a><a href="#ablauf-erfassen">3 Erfassen</a><a href="#ablauf-klick">4 Klick im 3D</a><a href="#ablauf-suche">5 Suche</a><a href="#zustand">6 Dokument-Zustände</a><a href="#daten">7 Datenmodell</a><a href="#api">8 API</a>
+  </nav>
+</header>
+
+<section id="system">
+  <h2>1 · System: Server und Dienste</h2>
+  <p class="note">Nur <code>api</code> und Keycloak sind von aussen erreichbar. Nur der <code>worker</code> spricht mit der KI. Alles läuft in Zürich, Backups in Genf, die KI in der EU.</p>
+  <div class="panel"><pre class="mermaid">
+flowchart LR
+  subgraph browser["Browser des FM"]
+    spa["Web-App<br/>React + 3D (R3F)<br/>PDF.js-Viewer"]
+  end
+  subgraph zh["Exoscale Zürich"]
+    lb["Load Balancer<br/>TLS"]
+    kc["Keycloak<br/>Login, SSO Entra"]
+    api["api<br/>Fastify"]
+    wrk["worker<br/>Hintergrund-Jobs"]
+    doc["docproc<br/>OCR + Docling"]
+    av["ClamAV<br/>Virenscan"]
+    emb["Embedding-Dienst<br/>mehrsprachig [A]"]
+    pg[("PostgreSQL<br/>Daten + Jobs + Audit<br/>+ pgvector Suchindex")]
+    s3[("Objektspeicher<br/>Dokumente, Vorschauen,<br/>3D-Modelle")]
+  end
+  subgraph ge["Exoscale Genf"]
+    off[("Offsite-Backup")]
+  end
+  ki["Claude über<br/>AWS Bedrock EU"]
+  mail["E-Mail-Versand"]
+  spa --> lb --> api
+  lb --> kc
+  api --> kc
+  api --> pg
+  api --> s3
+  api --> emb
+  wrk --> pg
+  wrk --> s3
+  wrk --> av
+  wrk --> doc
+  wrk --> emb
+  wrk --> ki
+  wrk --> mail
+  doc --> s3
+  pg -.täglich.-> off
+  s3 -.nächtlich.-> off
+  </pre></div>
+</section>
+
+<section id="module">
+  <h2>2 · Module im Programm</h2>
+  <p class="note">Ein Programm, 15 Module mit festen Grenzen. Pfeil heisst "darf aufrufen". Rückmeldungen laufen über Jobs, nie rückwärts.</p>
+  <div class="legend"><span><span class="chip v1">V1</span> wird gebaut</span><span><span class="chip sp">später</span> Zusatzmodul im Kundenauftrag</span></div>
+  <div class="panel"><pre class="mermaid">
+flowchart BT
+  plattform["plattform<br/>DB mit Mandant, IDs, Audit, Jobs"]
+  mandant["mandant<br/>Parameter, KI-Schalter"]
+  identitaet["identitaet<br/>Login, Rollen, Rechte"]
+  katalog["katalog<br/>Bauteile, 3D-Modelle,<br/>Lebensdauer-Tabelle, Ampel"]
+  struktur["struktur<br/>Gebäude, Geschoss, Raum"]
+  dokumente["dokumente<br/>Upload, Ablage,<br/>Vorschau im Browser"]
+  bestand["bestand<br/>Typen, Elemente,<br/>Angaben mit Herkunft"]
+  zustand["zustand<br/>ZHAW-Bewertung"]
+  erneuerung["erneuerung<br/>Restlebensdauer, Ampel"]
+  extraktion["extraktion<br/>KI-Pipeline"]
+  suche["suche<br/>Name, Volltext, Inhalt"]
+  szene["szene<br/>3D-Lesemodell"]
+  hinweis["hinweise<br/>E-Mail 'bald ersetzen'"]
+  preise["preise"]
+  invest["investitionsplan"]
+  austausch["austausch<br/>Stratus"]
+  mandant --> plattform
+  identitaet --> mandant
+  katalog --> plattform
+  struktur --> identitaet
+  dokumente --> identitaet
+  bestand --> struktur
+  bestand --> katalog
+  bestand --> dokumente
+  zustand --> bestand
+  erneuerung --> bestand
+  erneuerung --> zustand
+  extraktion --> dokumente
+  extraktion --> bestand
+  extraktion --> struktur
+  suche --> dokumente
+  suche --> bestand
+  szene --> struktur
+  szene --> bestand
+  szene --> erneuerung
+  hinweis --> erneuerung
+  invest --> erneuerung
+  invest --> preise
+  austausch --> bestand
+  classDef v1 fill:#d7eeee,stroke:#0f7f80,color:#14232f
+  classDef sp fill:#f3ead8,stroke:#8a6d3b,color:#14232f,stroke-dasharray:4 3
+  class plattform,mandant,identitaet,katalog,struktur,dokumente,bestand,zustand,erneuerung,extraktion,suche,szene,hinweis v1
+  class preise,invest,austausch sp
+  </pre></div>
+</section>
+
+<section id="ablauf-erfassen">
+  <h2>3 · Ablauf: Gebäude erfassen (Upload → KI → Bestätigung)</h2>
+  <p class="note">Die KI schlägt nur vor. Erst was ein Mensch bestätigt, erscheint als gültiger Wert im 3D und in der Lebensdauer-Rechnung.</p>
+  <div class="panel"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant B as Browser
+  participant A as api
+  participant S as Speicher
+  participant W as worker
+  participant D as docproc + ClamAV
+  participant K as Claude (EU)
+  participant P as PostgreSQL
+  B->>A: POST /dokumente/upload
+  A->>P: dokument status=hochladen
+  A-->>B: einmalige Upload-URL (Quarantäne)
+  B->>S: Datei hochladen
+  B->>A: POST /dokumente/{id}/upload-fertig
+  W->>D: Virenscan + Prüfsumme (gleiche Bytes)
+  W->>S: nach dok/ kopieren, Vorschau-PDF erzeugen
+  W->>D: OCR + Text und Tabellen je Seite
+  W->>P: dokument_seite + Suchabschnitte + Embeddings
+  alt KI für Mandant aktiv
+    W->>K: Dokumentart, dann Auslesen (nur Katalog-IDs)
+    W->>P: Prüfer: Zitat stimmt? Katalog passt?
+    W->>P: angabe + element status=vorgeschlagen
+  else KI aus
+    W->>P: status=manuell_erfassen
+  end
+  B->>A: GET /pruefliste
+  B->>A: POST /angaben/entscheiden (bestätigen / korrigieren)
+  A->>P: angabe=bestaetigt, element_effektiv neu
+  </pre></div>
+</section>
+
+<section id="ablauf-klick">
+  <h2>4 · Ablauf: Klick im 3D → Dokument im Browser</h2>
+  <p class="note">Der Kern von V1. Das Dokument öffnet sich im Seitenpanel, ohne Download, auf der richtigen Seite mit markierter Stelle.</p>
+  <div class="panel"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor FM as Facility Manager
+  participant B as Web-App (3D)
+  participant A as api
+  participant P as PostgreSQL
+  participant S as Speicher
+  FM->>B: Gebäude öffnen
+  B->>A: GET /gebaeude/{id}/szene
+  A->>P: Geschosse, Räume, Elemente, Ampel
+  A-->>B: kompakte Szene (Rechtecke, Katalog-IDs, Pins)
+  B->>S: 3D-Modelle (GLB, im Cache)
+  FM->>B: Klick auf Monoblock
+  B->>A: GET /elemente/{id}
+  A-->>B: Kennwerte + Herkunft + Restlebensdauer + Dokumente
+  FM->>B: Klick auf "Quelle: Datenblatt S. 1"
+  B->>A: GET /dokumente/{id}/vorschau?seite=1
+  A-->>B: kurzlebiger Link (5 min, nur dieser Mandant)
+  B->>S: PDF seitenweise laden
+  B-->>FM: PDF.js zeigt Seite 1, Zitat gelb markiert
+  </pre></div>
+</section>
+
+<section id="ablauf-suche">
+  <h2>5 · Ablauf: Intelligente Suche</h2>
+  <p class="note">Drei Suchwege laufen gleichzeitig und werden gemeinsam sortiert. Jeder Treffer springt direkt in den Viewer. Alle Indizes sind pro Mandant getrennt.</p>
+  <div class="panel"><pre class="mermaid">
+flowchart LR
+  q["Suchfeld<br/>'Funktionsbeschrieb Lüftung'"] --> api["GET /suche"]
+  api --> ki["Claude Haiku<br/>versteht Frage,<br/>Synonyme DE/FR/IT"]
+  ki --> n["Dateiname<br/>Trigramm"]
+  ki --> v["Volltext<br/>tsvector DE/FR/IT"]
+  ki --> e["Inhalt<br/>pgvector Embeddings"]
+  n --> r["zusammenführen<br/>+ neu sortieren"]
+  v --> r
+  e --> r
+  r --> t["Treffer: Dokument, Seite,<br/>Ausschnitt, Element"]
+  t --> view["Klick → Viewer<br/>auf Seite, markiert"]
+  </pre></div>
+</section>
+
+<section id="zustand">
+  <h2>6 · Zustände eines Dokuments</h2>
+  <div class="panel"><pre class="mermaid">
+stateDiagram-v2
+  [*] --> hochladen
+  hochladen --> quarantaene: Upload fertig
+  quarantaene --> abgelehnt: Virus / falscher Typ
+  quarantaene --> geprueft: Scan ok
+  geprueft --> aufbereitet: OCR, Text, Vorschau, Suchindex
+  aufbereitet --> ki_laeuft: KI aktiv
+  aufbereitet --> manuell_erfassen: KI aus
+  ki_laeuft --> vorgeschlagen: Werte ausgelesen
+  ki_laeuft --> fehler: nach 3 Versuchen
+  fehler --> aufbereitet: neu starten
+  vorgeschlagen --> erledigt: alles entschieden
+  manuell_erfassen --> erledigt
+  abgelehnt --> [*]
+  erledigt --> [*]
+  </pre></div>
+</section>
+
+<section id="daten">
+  <h2>7 · Datenmodell: alle Datenpunkte</h2>
+  <p class="note">Jede Mandantentabelle hat zusätzlich <code>id</code> (UUIDv7), <code>mandant_id</code>, <code>version</code>, <code>erstellt_am/von</code>, <code>geaendert_am/von</code>. Geld in Rappen, Masse in Metern, Zeit in UTC.</p>
+  <div class="panel"><pre class="mermaid">
+erDiagram
+  MANDANT ||--o{ LIEGENSCHAFT : hat
+  LIEGENSCHAFT ||--o{ GEBAEUDE : hat
+  GEBAEUDE ||--o{ GESCHOSS : hat
+  GESCHOSS ||--o{ RAUM : hat
+  RAUM ||--o{ ELEMENT : enthaelt
+  ELEMENTTYP ||--o{ ELEMENT : typisiert
+  KATALOG_EINTRAG ||--o{ ELEMENTTYP : klassifiziert
+  ELEMENT ||--o{ ANGABE : Kennwerte
+  ELEMENTTYP ||--o{ ANGABE : Kennwerte
+  DOKUMENT ||--o{ ANGABE : belegt
+  DOKUMENT ||--o{ DOKUMENT_SEITE : hat
+  DOKUMENT_SEITE ||--o{ SUCH_ABSCHNITT : indexiert
+  DOKUMENT ||--o{ DOKUMENT_VERKNUEPFUNG : verknuepft
+  ELEMENT ||--o{ ZUSTANDSBEWERTUNG : hat
+  MANDANT ||--o{ MITGLIEDSCHAFT : hat
+  BENUTZER ||--o{ MITGLIEDSCHAFT : hat
+  GEBAEUDE {
+    date uebergabedatum
+    text name
+  }
+  GESCHOSS {
+    text bezeichnung
+    int reihenfolge
+    numeric hoehe_m
+    uuid grundriss_dokument_id
+    text status
+  }
+  RAUM {
+    text nummer
+    text bezeichnung
+    numeric x_m
+    numeric y_m
+    numeric breite_m
+    numeric tiefe_m
+    text quelle_art
+  }
+  KATALOG_EINTRAG {
+    text katalog_id PK
+    text gruppe
+    text glb_datei
+    text icon
+    int ld_mittel_jahre
+    int ampel_gelb_jahre
+  }
+  ELEMENTTYP {
+    text katalog_id
+    text hersteller
+    text typbezeichnung
+  }
+  ELEMENT {
+    uuid elementtyp_id
+    uuid raum_id
+    text anlagekennzeichen
+    int menge
+    jsonb position
+    text status
+  }
+  ANGABE {
+    text merkmal
+    jsonb wert
+    text einheit
+    text quelle_art
+    uuid dokument_id
+    int seite
+    text zitat
+    jsonb bbox
+    numeric konfidenz
+    text status
+  }
+  DOKUMENT {
+    text sha256
+    text dateiname
+    text mime
+    int seiten
+    text dokumentart
+    text kbob_dtc
+    text status
+  }
+  SUCH_ABSCHNITT {
+    int seite
+    text text
+    tsvector volltext
+    vector embedding
+    text sprache
+  }
+  ZUSTANDSBEWERTUNG {
+    date datum
+    numeric zustandswert
+    text notiz
+    uuid foto_dokument_id
+  }
+  </pre></div>
+
+  <div class="grid2">
+    <div class="tscroll"><table>
+      <thead><tr><th>Tabelle</th><th>Zweck</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="2">Zugang und Mandant</td></tr>
+        <tr><td class="m">mandant, mandant_parameter</td><td>Kunde, KI-Schalter, Sprache, ZHAW-Parameter, Ampel-Standard</td></tr>
+        <tr><td class="m">benutzer, mitgliedschaft</td><td>Person, Rolle pro Mandant, optional auf Liegenschaften beschränkt</td></tr>
+        <tr><td class="m">audit_eintrag</td><td>Jede Änderung alt/neu, nur anhängen, Hash-Kette</td></tr>
+        <tr class="grp"><td colspan="2">Katalog und Lebensdauer</td></tr>
+        <tr><td class="m">katalog_eintrag, katalog_text</td><td>Bauteiltyp, 3D-Modell, Icon, Standard-Lebensdauer, Namen DE/FR/IT</td></tr>
+        <tr><td class="m">klassifikation_mapping</td><td>ETIM / eBKP-H optional, austauschbar</td></tr>
+        <tr><td class="m">mandant_lebensdauer, mandant_ampel</td><td>Lebensdauer-Tabelle des Kunden pro Typ, Ampel-Schwelle pro Bauteil</td></tr>
+      </tbody></table></div>
+    <div class="tscroll"><table>
+      <thead><tr><th>Tabelle</th><th>Zweck</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="2">Dokumente und Suche</td></tr>
+        <tr><td class="m">dokument, dokument_seite</td><td>Datei, Prüfsumme, Art, KBOB-Code, Text pro Seite</td></tr>
+        <tr><td class="m">dokument_verknuepfung</td><td>Dokument hängt an Typ, Element, Geschoss oder Gebäude</td></tr>
+        <tr><td class="m">such_abschnitt</td><td>Textstück mit Volltext- und Inhaltsindex <span class="chip v1">neu E26</span></td></tr>
+        <tr class="grp"><td colspan="2">KI-Betrieb</td></tr>
+        <tr><td class="m">extraktion_lauf, ki_aufruf</td><td>Welcher Prompt, welches Modell, Tokens, Kosten, ohne Inhalt</td></tr>
+        <tr><td class="m">ki_budget, raum_vorschlag</td><td>Kostenbremse pro Monat, Raum-Vorschläge aus Grundriss</td></tr>
+        <tr class="grp"><td colspan="2">Später</td></tr>
+        <tr><td class="m">preis_*, planstand, ersatz_planung</td><td><span class="chip sp">später</span> Preise und Investitionsplan</td></tr>
+      </tbody></table></div>
+  </div>
+</section>
+
+<section id="api">
+  <h2>8 · API (REST, <code>/api/v1</code>)</h2>
+  <p class="note">Jede schreibende Anfrage schickt die erwartete <code>version</code> mit. Bei einem Konflikt antwortet die API mit 409 und dem aktuellen Stand. Der Mandant kommt immer aus der Sitzung, nie aus der URL.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>Methode</th><th>Pfad</th><th>Zweck</th><th>Modul</th></tr></thead>
+    <tbody id="apibody"></tbody>
+  </table></div>
+</section>
+
+<footer>Quelle: docs/architektur/03-architektur.md (Kap. 2–5), ADRs 0001–0021, Kontext E23–E27. Embedding-Dienst und Suchtabelle sind neu und noch nicht durch den Architekten geprüft [A]. Gehört zu Welle 4.</footer>
+</div>
+
+<script>
+const API = [
+ ["Login und Sitzung","identitaet",[
+  ["GET","/auth/login","Weiterleitung zu Keycloak / Microsoft-SSO"],
+  ["GET","/auth/callback","Rückkehr vom Login, Sitzung setzen"],
+  ["POST","/auth/logout","Abmelden"],
+  ["GET","/me","Benutzer, Rollen, aktiver Mandant, Sprache"],
+  ["POST","/me/mandant","Mandant wechseln (FM-Dienstleister)"]]],
+ ["Mandant","mandant",[
+  ["GET","/mandant/parameter","KI-Schalter, Sprache, ZHAW-Werte, Ampel-Standard"],
+  ["PATCH","/mandant/parameter","Parameter ändern (Admin)"]]],
+ ["Katalog und Lebensdauer","katalog",[
+  ["GET","/katalog?sprache=de","Alle Bauteiltypen mit Icon, 3D-Modell, Standardwerten"],
+  ["GET","/lebensdauer-tabelle","Lebensdauer-Tabelle des Mandanten"],
+  ["PUT","/lebensdauer-tabelle/{elementtypId}","Lebensdauer pro Typ anpassen"],
+  ["PUT","/ampel/{katalogId}","Ampel-Schwelle pro Bauteiltyp"]]],
+ ["Gebäudestruktur","struktur",[
+  ["GET","/liegenschaften","Portfolio-Liste"],
+  ["POST","/gebaeude","Gebäude anlegen"],
+  ["GET","/gebaeude/{id}/baum","Geschosse und Räume als Baum"],
+  ["POST","/gebaeude/{id}/geschosse","Geschoss anlegen, Grundriss zuordnen"],
+  ["GET","/geschosse/{id}/raum-vorschlaege","KI-Vorschläge für Räume"],
+  ["PATCH","/raeume/{id}","Rechteck verschieben oder umbenennen"],
+  ["POST","/geschosse/{id}/bestaetigen","Raum-Vorschläge übernehmen"]]],
+ ["Dokumente und Viewer","dokumente",[
+  ["POST","/dokumente/upload","Upload beginnen, einmalige URL erhalten"],
+  ["POST","/dokumente/{id}/upload-fertig","Upload melden, Scan startet"],
+  ["GET","/dokumente/{id}","Metadaten, Status, Verknüpfungen"],
+  ["GET","/dokumente/{id}/vorschau?seite=n","Kurzlebiger Link zum Ansehen im Browser"],
+  ["GET","/dokumente/{id}/seiten/{n}/text","Text einer Seite, für Markierung"],
+  ["POST","/dokumente/{id}/verknuepfungen","An Element, Typ oder Geschoss hängen"]]],
+ ["Bestand und Prüfung","bestand",[
+  ["GET","/gebaeude/{id}/elemente","Elemente mit Filter (Geschoss, Typ, Ampel)"],
+  ["GET","/elemente/{id}","Kennwerte, Herkunft, Restlebensdauer, Dokumente"],
+  ["POST","/elemente","Element manuell anlegen"],
+  ["PATCH","/elemente/{id}","Element ändern, eigene Lebensdauer setzen"],
+  ["GET","/pruefliste","Offene KI-Vorschläge und unbekannte Elemente"],
+  ["POST","/angaben/entscheiden","Bestätigen, korrigieren oder verwerfen (Sammelaktion)"]]],
+ ["KI-Erfassung","extraktion",[
+  ["POST","/dokumente/{id}/verarbeiten","KI-Auslesen starten"],
+  ["POST","/geschosse/{id}/grundriss-analysieren","Räume aus Grundriss erkennen"],
+  ["GET","/extraktion/laeufe/{id}","Fortschritt und Fehler"],
+  ["GET","/ki/budget","Verbrauch und Limit des Monats"]]],
+ ["3D-Szene","szene",[
+  ["GET","/gebaeude/{id}/szene","Kompakte Szene: Rechtecke, Elemente, Pins, Ampel"]]],
+ ["Zustand und Lebensdauer","zustand / erneuerung",[
+  ["POST","/zustandsbewertungen","Zustand vor Ort erfassen (ZHAW), mit Foto"],
+  ["GET","/gebaeude/{id}/erneuerung?stichtag=","Liste: was wann zu ersetzen ist, mit Ampel"]]],
+ ["Suche","suche",[
+  ["GET","/suche?q=&modus=alle|name|volltext|inhalt","Treffer mit Dokument, Seite, Ausschnitt"]]],
+ ["Hinweise und Export","hinweise / export",[
+  ["GET","/hinweise/einstellungen","Wer bekommt welche E-Mail"],
+  ["PUT","/hinweise/einstellungen","E-Mail-Hinweise einstellen"],
+  ["POST","/export/erneuerungsliste","Excel-Export der Liste"],
+  ["POST","/mandant/export","Gesamtexport aller Daten (revDSG)"]]],
+];
+const VC = {GET:"var(--accent)",POST:"#c27a12",PUT:"#6a4fb3",PATCH:"#6a4fb3"};
+document.getElementById("apibody").innerHTML = API.map(([g,mod,rows])=>
+  `<tr class="grp"><td colspan="4">${g}</td></tr>` + rows.map(([v,p,z])=>
+  `<tr><td><span class="verb" style="color:${VC[v]}">${v}</span></td><td><code>${p}</code></td><td>${z}</td><td class="m">${mod}</td></tr>`).join("")
+).join("");
+</script>
