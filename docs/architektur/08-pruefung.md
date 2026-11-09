@@ -191,3 +191,20 @@ Auflagen fuer writing-plans (nur (B), 7):
 
 [A] Frage 3: Unter weitergeltenden PO-Annahmen §2 [A] noch keine tragfaehige writing-plans-Grundlage, weil PP5-1/2 zwei Sicherheitsentscheide korrigieren muessen; die sieben (B)-Auflagen blockieren nicht.
 [F] PP4-Status: 5 geschlossen, 3 (B)-Auflage, 2 offen-(A); Befunde: 2 (A) hoch und 1 (B) tief, dazu 7 gebuendelte (B)-Auflagen. Ausschliesslich diesen Anhang ergaenzt, kein Commit.
+
+## Pruefpunkt 6 (M1-Spec V4, 5e1d230)
+Urteil: OK mit Auflagen
+
+[F] Geprueft ausschliesslich §15 der Spec in `git show 5e1d230` gegen PP5-1/2; Dokumentpruefung, kein Produktnachweis.
+[A] Klassen wie PP5: (A) fehlender/falscher Architekturentscheid blockiert; (B) offener Umsetzungs-/Abnahmenachweis blockiert nicht.
+
+| Befund | Status als (A) | Begruendung |
+|---|---|---|
+| PP5-1 | geschlossen fuer M1 | §15.1 entfernt externen Dispatch und die betreffenden Module aus M1 bis vor Stufe 4. Fuer M9 ersetzt bestaetigtes Container-Prozessende vor dem wirksamen Aus den unzureichenden Lease-/Timer-Nachweis; Provider-Ausgang ausschliesslich im ki-worker. |
+| PP5-2 | geschlossen | §15.2 sperrt nach jedem Restore auch Admins; Erstfreigabe je Admin ueber vertrauenswuerdigen Host-Zugang ausserhalb restaurierter App-Rechte. SMTP-Reset hebt die Sperre nicht auf. |
+
+[F] §15 fuehrt keinen neuen (A)-Fehler ein; die offene On-Prem-Zustaendigkeit aendert den festgelegten Host-Freigabeweg nicht und bleibt vor Betriebsfreigabe zu klaeren.
+(B)-Auflagen: M1-Lieferumfang ohne externe Module nachweisen; A6 um gesperrte restaurierte Admins, unwirksamen SMTP-Reset und auditierte Host-Erstfreigabe samt Einmal-Token ergaenzen.
+(B)-Auflagen fuer M9: A5 einschliesslich DB-Verlust, pausiertem Sender, Stopp/Kill, bestaetigtem Prozessende und gesperrtem Wiederanlauf planen; S13 T3 bleibt Teilnachweis.
+(B) Die uebrigen PP5-Auflagen gelten weiter; Dispatch-/Budgetnachweise nach M9 verschieben und Neuplanung auf M1 ca. 15 PT / +8 PT aktualisieren.
+[A] Unter weitergeltenden PO-Annahmen ist writing-plans aus Sicht dieser beiden Architekturblocker moeglich; keine Bau-/Kundendatenfreigabe. Nur diesen Anhang ergaenzt, kein Commit.
