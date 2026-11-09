@@ -1,6 +1,6 @@
 # 05 – Teststrategie Planora V1 und Ergebnisse der Machbarkeitstests (Welle 3)
 
-> **Hinweis Welle 4 (2026-11-09):** Vorrang haben E24 und E34–E37 (`00-kontext.md`), ADR 0027–0031 und `07-analyse-b2b.md`. Kap. 1–10 enthalten alte Release-Gates (RLS, Keycloak, Bedrock, FR/IT, Exoscale) und sind **keine aktuelle Freigabegrundlage**; geltende Ergaenzungen in Kap. 11, Nachfuehrung in Welle 4b (Abnahmematrix N1–N6 × Lieferstufe × Modul).
+> **Hinweis Welle 4 (2026-11-09):** Vorrang haben E24 und E34–E37 (`00-kontext.md`), ADR 0027–0031 und `07-analyse-b2b.md`. Kap. 1–10 enthalten alte Release-Gates (RLS, Keycloak, Bedrock, FR/IT, Exoscale) und sind **keine aktuelle Freigabegrundlage**; **Aktuelle Freigabegrundlage ist Kap. 12** (Abnahmematrix N1–N6 × Lieferstufe × Modul, Welle 4b); Kap. 12.3 zeigt je alter Pruefung, ob sie bleibt (mit Lieferstufe), umgewidmet wird oder entfaellt. Historische Messwerte in Kap. 1 und 9 bleiben unveraendert.
 
 Stand: 2026-11-08 · Rolle: Test-Architekt (BMAD QA, Orca-Task task_e629c5a2d92f) · Status: **Entwurf zur Freigabe**
 Basis: `00-kontext.md`, `01-domaene.md` (FA-01..FA-38), `02-tech-recherche.md`, `03-architektur.md` (Kap. 13 Spikes), `adr/0001–0021`.
@@ -10,6 +10,8 @@ Spike-Ordner: `spikes/sNN-name/` je mit README (Ziel, Vorgehen, Messwerte, Urtei
 ---
 
 ## 1. Zusammenfassung
+
+> Welle 4b: historischer Messbericht Welle 3, unveraendert; Uebernahme der Empfehlungen siehe Kap. 12.3. → Kap. 12
 
 ### 1.1 Spike-Ergebnisse auf einen Blick
 
@@ -50,6 +52,8 @@ Spike-Ordner: `spikes/sNN-name/` je mit README (Ziel, Vorgehen, Messwerte, Urtei
 
 ## 2. Grundsaetze
 
+> Welle 4b: gelten weiter mit den Abweichungen in Kap. 12.3 (kein "RLS aktiv", Speicher = ausgelieferter lokaler Speicher). → Kap. 12
+
 1. **Korrektheit vor Abdeckung.** Tests sind nach den Qualitaetszielen in 03 Kap. 1.2 priorisiert: Datenkorrektheit, Mandantentrennung, Nachvollziehbarkeit vor Performance.
 2. **Jeder Fehler aus Kap. 11 in 03 hat mindestens einen Test**, der ihn ausloest (Fehlerinjektion), nicht nur den Gutfall.
 3. **Echte Infrastruktur fuer Adapter:** Postgres-Tests laufen gegen echtes PostgreSQL mit RLS aktiv (CI-Container; lokal `embedded-postgres` wie in S4 [F]), S3 gegen MinIO o.ae. [A], nie gegen Mocks.
@@ -61,6 +65,8 @@ Spike-Ordner: `spikes/sNN-name/` je mit README (Ziel, Vorgehen, Messwerte, Urtei
 ---
 
 ## 3. Testpyramide je Modul
+
+> Welle 4b: Modul-Lieferstufen und Gates siehe Kap. 12.2; `preise`, Grundriss und `austausch` sind keine Demo-Module. → Kap. 12
 
 Ebenen: **U** Unit (reine Logik, ms) · **A** Adapter/Integration (echtes PG/S3, Sekunden) · **K** Komponente/API (Fastify-Inject, PG, Fake-KI) · **E** End-to-End (Browser, Playwright) · **G** Golden Set (echte KI, nicht im PR-Lauf) · **P** Performance/Last.
 Anteile sind Richtwerte [A].
@@ -90,6 +96,8 @@ Anteile sind Richtwerte [A].
 ---
 
 ## 4. Golden Set fuer KI-Regression
+
+> Welle 4b: gilt erst ab Lieferstufe 4 mit direktem Produktionsadapter (Kap. 12 A26); Grundriss- und FR/IT-Anteile entfallen. → Kap. 12
 
 ### 4.1 Inhalt
 
@@ -130,6 +138,8 @@ Jedes Dokument hat eine Solldatei (`<dok>.soll.json`): erwartete Raeume (Rechtec
 
 ## 5. Mandantentrennung (RLS) – Testsuite
 
+> Welle 4b: RLS-1–6 entfallen (N1); RLS-7 → A5, RLS-8/9/10 → A4/A14, RLS-11 → A6; bleibende Schutzziele A7 (Kap. 12.3). Abschnitt historisch. → Kap. 12
+
 Pflicht in jeder CI, Merge-blockierend (ADR 0010, bewiesen lokal in S4 [F]):
 
 | ID | Test | Erwartung |
@@ -151,6 +161,8 @@ Zusaetzlich jaehrlich externer Pentest mit Fokus Mandantentrennung (03 Kap. 9.3)
 ---
 
 ## 6. Abnahmekriterien je FA
+
+> Welle 4b: FA-01/03/05/12/24–28 entfallen bzw. zurueckgestellt, FA-29 neu begrenzt; uebrige FA mit Lieferstufe in Kap. 12.2/12.3. → Kap. 12
 
 Testart: U/A/K/E/G/P wie Kap. 3; **M** = manuelle Abnahme mit Protokoll. "Spike" = bereits im Prototyp gezeigt.
 
@@ -199,6 +211,8 @@ Testart: U/A/K/E/G/P wie Kap. 3; **M** = manuelle Abnahme mit Protokoll. "Spike"
 
 ## 7. Fehlerbaum und FMEA der Top-Risiken
 
+> Welle 4b: historisch (Investitionsplan); neues Top-Ereignis "falsche Ampel" und neue FMEA-Ausrichtung siehe Kap. 12.3. → Kap. 12
+
 ### 7.1 Fehlerbaum "Falsche Zahl im Investitionsplan" (Top-Ereignis, Qualitaetsziel Rang 1)
 
 ```text
@@ -242,6 +256,8 @@ Hoechste Prioritaet nach RPZ: **F7, F2, F10**.
 
 ## 8. Was in der CI laeuft
 
+> Welle 4b: Zuordnung je CI-Stufe in Kap. 12.3 (Stufe 2a entfaellt, RLS-Suite/Pool-Leak/ZAP-Pflicht entfallen, K01 auf ausgeliefertem Speicher). → Kap. 12
+
 | Stufe | Ausloeser | Inhalt | Dauer-Ziel [A] | Blockiert Merge |
 |---|---|---|---|---|
 | 1 Schnell | jeder Push | Lint (ESLint inkl. Architektur-Grenzen, `domain/`-Verbote E-T8; Semgrep CE; Secret-Scan Gitleaks; Migrations-Lint Squawk), Typpruefung, alle U-Tests inkl. FA-22-Tabelle und Eigenschaftstests mit 1'000 Snapshots | ≤ 3 min | ja |
@@ -258,6 +274,8 @@ Nie in der CI: echte Kundendokumente, Produktions-Secrets, echte KI ausser Stufe
 ---
 
 ## 9. Testplaene der nicht ausgefuehrten Spikes und Restschritte
+
+> Welle 4b: S4/S7/S9/S12 entfallen; S5/S6 als direkte Claude API ab Stufe 4; S11 als Instanzmigration (Kap. 12 A15, A26). Abschnitt historisch. → Kap. 12
 
 ### 9.1 Nicht ausgefuehrt (Cloud-Konten oder Dritte noetig)
 
@@ -286,6 +304,8 @@ Nie in der CI: echte Kundendokumente, Produktions-Secrets, echte KI ausser Stufe
 
 ## 10. Grenzen dieser Welle
 
+> Welle 4b: gilt weiter fuer die historischen Messwerte. → Kap. 12
+
 - Alle KI-Ergebnisse stammen aus dem **Abo-Modus** (Claude-Subagenten mit Read-Werkzeug), nicht aus `claude-sonnet-5-5` ueber Bedrock. Prompt und Schema sind so abgelegt, dass derselbe Test per API wiederholbar ist (S5).
 - Lindenhof ist **sauber, vektorbasiert, regelmaessig und synthetisch**. Alle KI-Messwerte sind eine **Obergrenze**, kein Beweis fuer echte Unterlagen (R12).
 - 3D wurde nur auf einer dedizierten GPU und im Software-Renderer gemessen.
@@ -294,10 +314,11 @@ Nie in der CI: echte Kundendokumente, Produktions-Secrets, echte KI ausser Stufe
 ## 11. Neu ab Welle 4 (B2B, E34–E37)
 
 Stand 2026-11-09. Quelle: `07-analyse-b2b.md` Kap. 6, ADR 0027–0031, Spine AD-3/9/16/25/26. Alle Pruefungen sind Vorschlaege [A]; Lieferstufe in Klammern [A, Plan V2].
-[A] Entfallend bzw. ersetzt (Details 07 Kap. 6): RLS-1–6, Pool-Leak- und Mandanten-FK-Suite, Exoscale-/Bedrock-/Keycloak-Gates (S4, S7, S9, Teile S5/S6/S11), Grundriss-, Preis- und FR/IT-Gates. RLS-7 wird GRANT-Test, RLS-8/9 werden Rollen-/Liegenschafts-/Objektzugriffstests, RLS-10 prueft berechtigten Ausloeser und Modul-Schalter, RLS-11 (Audit) bleibt. Kap. 1–10 werden in Welle 4b auf eine Abnahmematrix Entscheid × Lieferstufe × Modul umgestellt; der historische Messbericht bleibt.
+[A] Entfallend bzw. ersetzt (Details 07 Kap. 6): RLS-1–6, Pool-Leak- und Mandanten-FK-Suite, Exoscale-/Bedrock-/Keycloak-Gates (S4, S7, S9, Teile S5/S6/S11), Grundriss-, Preis- und FR/IT-Gates. RLS-7 wird GRANT-Test, RLS-8/9 werden Rollen-/Liegenschafts-/Objektzugriffstests, RLS-10 prueft berechtigten Ausloeser und Modul-Schalter, RLS-11 (Audit) bleibt. Kap. 1–10 sind in Welle 4b ueber die Abnahmematrix in **Kap. 12** verknuepft; der historische Messbericht bleibt.
 
 ### 11.1 Installation und Instanztrennung (Stufe 1, ADR 0027, 0031)
-- Saubere unterstuetzte Linux-VM → Compose-Paket, Secrets, TLS, Erstadmin per Einrichtungs-Token → Import/Upload/Viewer/3D/Ampel **ohne** Claude-Schluessel.
+- Saubere unterstuetzte Linux-VM → Compose-Paket, Secrets, TLS, Erstadmin per Einrichtungs-Token → Formular/Excel-Import, Upload, Viewer, 3D **ohne** Claude-Schluessel (Stufe 1, Kap. 12 A1).
+- Stufe 2 (getrennt, Welle 4b, Befund 11 in `08-pruefung.md`): dieselbe Installation zeigt zusaetzlich Lebensdauer und Ampel ohne Claude-Schluessel; Abnahme ueber das fachlich freigegebene Orakel (Kap. 12 A17).
 - Zweite isolierte Instanz mit anderen Daten, Secrets und Backup-Ziel: keine gemeinsamen Volumes, kein Restore-Manifest der falschen Instanz, keine URLs/Links, die auf Kunde B zeigen.
 
 ### 11.2 Lokaler Login (Stufe 1, ADR 0028)
@@ -330,3 +351,97 @@ Stand 2026-11-09. Quelle: `07-analyse-b2b.md` Kap. 6, ADR 0027–0031, Spine AD-
 
 ### 11.9 KI (Stufe 4, ADR 0030, 0017)
 - Golden Sets, Injection-Dokumente, Quote und Budget mit dem direkten Produktionsadapter und echten, freigegebenen TGA-Daten; Abo-Ergebnisse gelten nicht als API-Nachweis. Feste fachliche Mindestbaseline statt kumulativ erlaubtem Qualitaetsverlust.
+
+---
+
+## 12. Abnahmematrix N1–N6 × Lieferstufe × Modul (Welle 4b)
+
+Stand 2026-11-09 (Welle 4b). Quelle: `07-analyse-b2b.md` Kap. 6, Befund 11 in `08-pruefung.md`, `03-architektur.md` Kap. 0/11/13. Dieses Kapitel ist die **aktuelle Freigabegrundlage** fuer Tests; Kap. 1–10 gelten nur, soweit sie hier mit Lieferstufe uebernommen sind. Alle Schwellen bleiben [A], bis der PO das Siemens-Abnahmeset festlegt ([?] `08-pruefung.md` PO-Entscheid Nr. 8).
+
+### 12.1 Vorgaben N1–N6
+
+[A] Die Vorgaben N1–N6 werden in `07-analyse-b2b.md` referenziert; ihre Originalliste liegt nicht im Repo. Zuordnung hier aus 07 und E34–E37 erschlossen, Bestaetigung durch PO/Koordinator:
+
+| N | Vorgabe | Quelle |
+|---|---|---|
+| N1 | Eine Instanz pro Kunde (Single-Tenant), keine Mandanten in der App | E34, ADR 0031 |
+| N2 | Ein Compose-Paket, CH-VM von uns oder On-Premise, Self-Hosting | E35, ADR 0027 |
+| N3 | KI nur ueber die Claude API, einzige fachliche externe API; App voll nutzbar ohne KI; KI pro Instanz abschaltbar | E36, ADR 0030 |
+| N4 | Lokaler Login mit Rollen; SSO spaeter | E34, ADR 0028 |
+| N5 | Eine Codebasis, Kundenfeatures als Module mit Schalter pro Instanz; Lieferung in Stufen 1–4 | E37, ADR 0029 |
+| N6 | Gestrichen bis nach der Demo (Plan V2, Kasten "Gestrichen"); E24 bleibt | Plan V2, E24 |
+
+### 12.2 Matrix
+
+Spalte "Gate vor" = welcher Meilenstein ohne bestandenen Nachweis nicht freigegeben wird. **Gate "Kundendaten"** = vor den ersten echten Siemens-Daten in einer Instanz (nach M1, vor Stufe 2). Tests werden ab M1 laufend in jedem Modul geschrieben; M11 deckt Integration, Abnahme und Haertung ab, nicht die Modultests (07 Kap. 9).
+
+| ID | Pruefung | N | Stufe | Modul | Herkunft (Kap.) | Gate vor |
+|---|---|---|---|---|---|---|
+| A1 | Installation aus sauberer VM: Compose, Secrets, TLS, Erstadmin per Token; Upload/Viewer/3D/Formular/Excel **ohne** Claude-Schluessel | N2, N3 | 1 | plattform, identitaet, dokumente, szene, interview | 11.1 | Stufe 1 |
+| A2 | Zweite isolierte Instanz: keine geteilten Volumes/Netze/Secrets/Backup-Ziele, kein fremdes Restore-Manifest, keine Links auf andere Instanz | N1, N2 | 1 | Betrieb | 11.1 | Kundendaten |
+| A3 | Lokaler Login: Passwortregeln, Rate-Limit/Sperre, Hashing, kein Standardpasswort, Recovery, CSRF/Origin, Session-Fixation, Timeouts, sofortiger Session-Entzug | N4 | 1 | identitaet | 11.2 | Kundendaten |
+| A4 | Rechte-Matrix Rolle × Recht × Liegenschaft an API, Szene, Viewer-URLs, Derivaten, Downloads, Exporten, Jobs (Ausloeserrecht zum Ausfuehrungszeitpunkt); Rechteentzug wirkt auf laufende Downloads/Jobs | N4 | 1 (Suche: 3) | identitaet, alle | 5 (RLS-8/9/10 → umgewidmet), 6 (FA-02/04) | Kundendaten |
+| A5 | DB-Rechte: `planora_app` ohne Owner/DDL, Audit nur lesend, Katalog read-only (ersetzt RLS-7) | N1 | 1 | plattform | 5 (RLS-7 → GRANT-Test) | Kundendaten |
+| A6 | Audit: Trigger, Unveraenderlichkeit, Hash-Kette je Instanz unter Parallelitaet, pseudonyme Akteur-ID ab Erstschreiben, Pseudonymisierung ohne Umschreiben (RLS-11 bleibt) | N1, N4 | 1 | plattform | 5 (RLS-11), 6 (FA-06) | Kundendaten |
+| A7 | Sicherheitsziele ohne RLS: keine SQL-Injection (parametrisierte Abfragen, Semgrep-Regeln), saubere Transaktionsgrenzen (kein externer Aufruf in offener Tx), sichere Audit-Akteurzuordnung | N1 | 1 | alle | 2, 5 (bleibende Ziele aus RLS-1–6) | Kundendaten |
+| A8 | Upload K01: serverseitiger Abschluss, Scan/Hash/Freigabe derselben Bytes, Doppelabschluss, alter Teil-Upload, Crash beim Abschluss – **auf dem ausgelieferten Speicher**; Quarantaene unzugaenglich | N2 | 1 | dokumente | 8 (Stufe 6), 11.7 | Kundendaten |
+| A9 | Parser/AV/Betrieb: EICAR, Magic Bytes, AV aus/veraltet (fail closed), ZIP-/Pixel-/Seitenlimits, externe Office-Links, volle Disk, OOM, Neustart; API/DB bleiben benutzbar | N2 | 1 | dokumente, docproc | 3, 11.7 | Kundendaten |
+| A10 | Viewer: Vorschau-PDF, Seiten-Sprung, Markierung (`markierung`), Rechte je Abruf, Office/Scan-Konvertierung mit Siemens-Beispielformaten | N3 | 1 | dokumente | 6 (FA-09/10/11), S8 | Stufe 1 |
+| A11 | Formular/Excel: gleiches Schema → gleiche Welt; atomare Bestaetigung; Herkunft Zeile/Zelle; Wiederimport/Merge mit stabilen IDs; 1'000 Zeilen; de-CH-Zahlen/Datum; Formel-/Fehlerzellen; geaenderte Daten nach Vorschau; Formel-Injection im Export | N3 | 1 | interview, bestand | 6 (FA-38), 11.6 | Stufe 1 |
+| A12 | 3D/2D: InstancedMesh-Budget (03 Kap. 7.3), Leistungsstufen, 2D mit allen Funktionen, Tastatur/Touch, **Kunden-Laptop und Kunden-VDI** | N5 | 1 | szene, web | 1.1 (S3/S3b, historisch), 6 (FA-33–36), 8 (Stufe 7) | Stufe 1 |
+| A13 | Optimistic Locking: 409 bei Versionskonflikt, Sammelbestaetigung meldet Konflikte je Eintrag | – | 1 | alle schreibenden Module | 3, 6 | Stufe 1 |
+| A14 | Feature-Schalter: aus/an, API trotz versteckter UI → abgewiesen, fehlende Abhaengigkeit, unberechtigter Toggle, wartende/laufende Jobs, Update mit altem Manifest, Daten bleiben, Audit; kritische Modulpaare statt 2^n | N5 | 1 | plattform, alle optionalen | 11.4 | Stufe 1 |
+| A15 | Update/Migration: befuellte N-1 → N, paralleler Migrator abgelehnt, Abbruch/Neustart bei Backfill und `CONCURRENTLY`, altes Job-Schema abgelehnt, Rueckweg geuebt, keine Doppelanlage bei Wiederholung | N2, N5 | 1 | migrator, worker | 11.3 (S11 umgewidmet) | erstes Update beim Kunden |
+| A16 | Backup/Restore: DB + Originale/Derivate + Konfiguration + Schluessel auf frischer VM, Hash-/Referenzvollpruefung, fehlendes Objekt/Schluessel sperrt Restore, Loeschjournal, Sessions invalidiert, KI gesperrt bis Pruefung, RPO/RTO gemessen | N2 | 1 | Betrieb | 11.5 | Kundendaten |
+| A17 | Lebensdauer-/Ampel-Orakel: Tabelle des Test-Architekten (FA-22 ohne Kostenanteil) mit **fachlicher Freigabe**, Rangkonflikte (E11), Stunden/Jahre (FA-17), Stichtag/Jahreswechsel, Rundung, unbekannte Werte → grau | N5 | 2 | erneuerung | 3, 6 (FA-15–23), S10 | Stufe 2 |
+| A18 | Typaenderungs-Fan-out: Aenderung am Elementtyp aktualisiert alle Elemente in Liste, 3D/2D und Export konsistent; konsistenter Stichtagsstand je Anfrage | – | 2 | bestand, erneuerung | 3, 7.2 | Stufe 2 |
+| A19 | Determinismus: Eigenschaftstest "zweimal rechnen → identische Bytes" auf 2 Runner-Typen | – | 2 | erneuerung | 3, 8 (Stufe 4) | Stufe 2 |
+| A20 | Zustand ZHAW (nur falls im Scope): Kurve gegen Originalartikel und Beispielrechnungen, Fachfreigabe ([?] `08-pruefung.md` PO-Entscheid Nr. 8) | – | 2 [?] | zustand | S10 | Stufe 2 (falls Scope) |
+| A21 | Lebensdauer-Excel-Export (FA-29 neu begrenzt): Werte, Quelle, Rechenweg, de-CH | – | 2 | export | 6 (FA-29) | Stufe 2 |
+| A22 | Barrierefreiheit (axe), Ampel nicht nur Farbe, Kundenbrowser | – | 1–2 | web | 2, 8 (Stufe 3) | Stufe 2 |
+| A23 | Last: API p95, Liste 10'000 Elemente, Upload-Spitzen (k6) auf Ziel-VM-Groesse | N2 | 2 | api | 8 (Stufe 4) | Stufe 2 |
+| A24 | Suche ohne Internet/Claude-Key: Name, Volltext, lokale Semantik, Recall auf bekanntem Korpus, Liegenschaftsscope fuer Snippets/Vektortreffer, Reindexierung bei Upload/Loeschung/Revision/Modellwechsel, CPU/RAM auf Ziel-VM | N3 | 3 | suche | 11.8 | Stufe 3 |
+| A25 | KI aus = 0 neue Requests (Netzmitschnitt), auch bei Abschalten waehrend laufender Jobs (Race) | N3 | 4 | extraktion, interview | 5 (FA-37), 11.4, 11.9 | Stufe 4 |
+| A26 | Golden Set mit direktem Produktionsadapter und echten freigegebenen TGA-Daten; Injection-Dokumente; feste fachliche Mindestbaseline; Budget-Reconciliation, Doppelabrechnung nach Crash | N3 | 4 | extraktion, interview | 4, 11.9 (S2/S5/S6 umgewidmet) | Stufe 4 |
+| A27 | Manueller Sicherheitsreview Login/Upload/Viewer; IT-Freigabe Siemens; externer Pentest nur falls Siemens ihn verlangt ([?] `08-pruefung.md` PO-Entscheid Nr. 1) | N2, N4 | 1 | – | 8 (Stufe 6/7) | Kundendaten |
+| A28 | Lizenz-/SBOM-Pruefung inkl. Container und Modellgewichte; Secret-Scan; Schwachstellen-Scan der Images | N2, N6 | 1 (Gewichte: 3) | Lieferkette | 8 (Stufe 1/6) | Paketfreigabe |
+
+### 12.3 Uebernahme aus Kap. 1–10 (Befund 11)
+
+| Kap. / Pruefung (alt) | Status ab Welle 4b | Uebernommen als |
+|---|---|---|
+| 1.1 Spike-Ergebnisse S1–S13 | **historisch, unveraendert**; gelten nur als Messung der Spike-Umgebung | Nachweise neu in 03 Kap. 13.2 |
+| 2 Grundsaetze 1–7 | bleiben; Nr. 3 ohne "RLS aktiv", Speicher = ausgelieferter lokaler Speicher statt MinIO o.ae. [A] | A7, A8 |
+| 3 Testpyramide je Modul | bleibt fuer `domain`/`adapters`; Module `preise`, Grundriss, `austausch` entfallen bzw. [?] | A11–A19 |
+| 4 Golden Set | bleibt ab **Stufe 4**; Grundriss-Recall/IoU und DE/FR/IT-Gates entfallen; Bedrock-Staging → Test-Schluessel direkte API | A26 |
+| 5 RLS-1–6 (Policy, Kontext, Pool-Leak, Mandanten-FK) | **entfallen** (N1); bleibende Schutzziele SQL-Injection, Transaktionen, Akteurzuordnung | A7 |
+| 5 RLS-7 | ersetzt durch GRANT-Test | A5 |
+| 5 RLS-8/9 | umgewidmet: Rollen-/Liegenschafts-/Objektzugriff | A4 |
+| 5 RLS-10 | umgewidmet: berechtigter Ausloeser + Modulschalter im Job | A4, A14 |
+| 5 RLS-11 | bleibt (Audit-Unveraenderlichkeit, Parallelitaet) | A6 |
+| 6 FA-01, FA-03 (Mandanten, Mandantenwechsel) | **entfallen** (N1) | – |
+| 6 FA-05 (Entra/SSO) | zurueckgestellt (N4/N6) | – |
+| 6 FA-12 (Grundriss), FA-24–28 (Kosten, Teuerung, Investitionsplan, Folgezyklen, Verschiebung) | zurueckgestellt (E24, N6) | – |
+| 6 FA-29 (Excel-Export) | neu begrenzt auf Lebensdauer/Ampel | A21 |
+| 6 uebrige FA im Scope (u.a. FA-02, 04, 06–11, 13–23, 30–38) | bleiben mit Stufe laut Matrix | A3–A26 |
+| 7 Fehlerbaum "Falsche Zahl im Investitionsplan" | historisch; neues Top-Ereignis **"falsche Ampel"** (gleiche Aeste ohne Preis/Teuerung) | A17–A19 |
+| 7.2 FMEA | historisch; neu auszurichten auf falsche Ampel, Datenverlust, Upload-Bypass, Updatefehler, falsche Instanzkonfiguration [A, Owner Test-Architekt, vor Stufe 2] | A8, A14–A17 |
+| 8 CI Stufe 1 Schnell | bleibt (ohne Semgrep-Regel `mitMandant()`) | A7, A28 |
+| 8 CI Stufe 2 Integration | bleibt ohne RLS-Suite; mit Constraint-/GRANT-/Audit-Tests, ausgeliefertem Speicher | A5, A6, A8 |
+| 8 CI Stufe 2a Externe APIs (E32) | **entfaellt** (N3/N6) | – |
+| 8 CI Stufe 3 E2E | bleibt; Suche erst ab Stufe 3 | A10–A12, A24 |
+| 8 CI Stufe 4 Nightly | bleibt ohne Pool-Leak; Planstand ohne Geld | A19, A23 |
+| 8 CI Stufe 5 Golden Set | ab Stufe 4, direkte API | A26 |
+| 8 CI Stufe 6 Staging | ohne RLS-7/Exoscale und ohne ZAP-Pflicht; K01 auf ausgeliefertem Speicher, Restore-Bericht bleibt | A8, A16 |
+| 8 CI Stufe 7 Manuell | FA-05 entfaellt; FA-30, FA-33 (Laptop + Kunden-VDI) bleiben; Grundriss-Korrekturzeit entfaellt | A12, A27 |
+| 9 Nicht ausgefuehrte Spikes S4/S5/S7/S9/S12 | S4/S7/S9/S12 entfallen; S5/S6 als direkte API ab Stufe 4; S11 als Instanzmigration | A15, A26 |
+| 10 Grenzen dieser Welle | bleiben gueltig fuer die historischen Messwerte | – |
+| 11.1–11.9 | uebernommen; 11.1 getrennt in Stufe-1-Installation (A1) und Stufe-2-Ampel (A17) | A1–A26 |
+
+### 12.4 Reihenfolge und Owner
+
+- **M1 (Server-Paket + Login):** A1–A9, A13–A16, A27, A28 als Gates vor Kundendaten; Tests entstehen mit dem Paket, nicht erst in M11.
+- **Stufe 1 (M2–M6):** A10–A12, A14 je Modul fortlaufend.
+- **Stufe 2 (M7):** A17–A23; A17 erst mit fachlicher Freigabe der Orakel-Tabelle durch den Chef/FM-Fachmann [A].
+- **Stufe 3 (M8):** A24. **Stufe 4 (M9/M10):** A25, A26.
+- Das Zurueckstellen eines Werkzeugs (N6, z.B. ZAP) verschiebt nicht dessen Schutzziel: A27 bleibt Gate vor Kundendaten.
