@@ -1,10 +1,10 @@
 # 06 – Pflicht-Bausteine (Open Source) fuer Planora V1
 
-> **Hinweis Welle 4 (2026-11-09):** Vorrang haben E24 und E34–E37 (`00-kontext.md`), ADR 0027–0031 und `07-analyse-b2b.md`. Die Pflichtliste gilt **nicht mehr pauschal**: zurueckgestellt bis nach der Demo sind u.a. Tolgee, GlitchTip, Uptime Kuma, cosign, Renovate, OWASP ZAP, RLS-pgTAP, Keycloak und die E32-APIs; Aufteilung je Lieferstufe in Welle 4b (`07-analyse-b2b.md` Kap. 7). K01 gilt erst nach Nachweis als geschlossen.
+> **Hinweis Welle 4 (2026-11-09):** Vorrang haben E24 und E34–E37 (`00-kontext.md`), ADR 0027–0031 und `07-analyse-b2b.md`. Die Pflichtliste gilt **nicht mehr pauschal**: zurueckgestellt bis nach der Demo sind u.a. Tolgee, GlitchTip, Uptime Kuma, cosign, Renovate, OWASP ZAP, RLS-pgTAP, Keycloak und die E32-APIs; Aufteilung je Lieferstufe: **Kap. 0** (Welle 4b, `07-analyse-b2b.md` Kap. 7). K01 gilt erst nach Race-/Crash-Nachweis auf dem gelieferten Speicher als geschlossen.
 
-Stand: 2026-11-09 · Status: **verbindlich (PO-Entscheid E31)** · eingearbeitet in `03-architektur.md` (Kap. 2.2, 5, 6, 10, 15), Spine (AD-20, AD-21, Stack), ADR 0009, 0014, 0016 und neu ADR 0022–0024, `05-tests.md`.
+Stand: 2026-11-09 (Welle 4b) · Status: **verbindlich je Lieferstufe nach Kap. 0** (PO-Entscheid E31, eingeschraenkt durch E24/E34–E37); Kap. 1–9 = historischer Stand der E31-Einarbeitung · eingearbeitet in `03-architektur.md` (Kap. 2.2, 5, 6, 10, 15), Spine (AD-20, AD-21, Stack), ADR 0009, 0014, 0016 und neu ADR 0022–0024, `05-tests.md`.
 
-> **Regel E31:** Alle in Kapitel 2 und 5 als **Pflicht** aufgefuehrten Bausteine werden in Planora V1 eingebaut. Eigenbau fuer eine dieser Funktionen ist nur mit neuem PO-Entscheid erlaubt. Die Funde in Kapitel 4 und 5.7 sind Architekturvorgaben, keine Vorschlaege.
+> **Regel E31 (historisch, ersetzt durch Kap. 0):** Alle in Kapitel 2 und 5 als **Pflicht** aufgefuehrten Bausteine werden in Planora V1 eingebaut. Eigenbau fuer eine dieser Funktionen ist nur mit neuem PO-Entscheid erlaubt. Die Funde in Kapitel 4 und 5.7 sind Architekturvorgaben, keine Vorschlaege.
 Anlass: E28 "fertige Bausteine statt Eigenbau". Abgleich von (a) der Bibliotheks- und Referenzliste aus der Recherche (Screenshots), (b) den Listen unter [sindresorhus/awesome](https://github.com/sindresorhus/awesome) mit der Architektur (`03-architektur.md`, Spine, ADR 0001–0021, E23–E30).
 Kennzeichnung wie ueblich: **[F]** Fakt mit Quelle · **[A]** Annahme · **[?]** offen. Versionen werden **nicht** hier festgelegt, sondern im Scaffold gepinnt (Spine "Deferred").
 
@@ -12,7 +12,38 @@ Gelesene awesome-Unterlisten (2026-11-09): awesome-selfhosted, awesome-postgres,
 
 ---
 
-## 1. Kurzfassung (verbindlich)
+## 0. Pflichtliste nach Lieferstufe (Welle 4b, massgeblich)
+
+> Welle 4b (E24, E31, E34–E37, 2026-11-09), gemaess `07-analyse-b2b.md` Kap. 7. **Diese Liste ersetzt die pauschale Regel "alle Bausteine aus Kap. 2 und 5 sind Pflicht ab Scaffold".** Ein Baustein ist ab der genannten Lieferstufe Pflicht; vorher wird er nicht eingebaut. Kap. 1–9 bleiben als Begruendung und historischer Stand der E31-Einarbeitung erhalten; wo sie widersprechen, gilt dieses Kapitel. Synchron mit `03-architektur.md` Kap. 15, ADR 0024 und Spine AD-21.
+
+| Bereich | Stufe 1–2 (Demo: installierte App mit Kundendaten) | Stufe 3 (lokale Suche) | Stufe 4 (Claude-Interview, KI-Auslesen) | spaeteres Modul / zurueckgestellt |
+|---|---|---|---|---|
+| Upload | Uppy (Multipart; Abschluss nur serverseitig) – auf den gewaehlten **lokalen Speicher** angepasst, nicht mehr SOS ([?] `08-pruefung.md` PO-Entscheid Nr. 3); file-type, ClamAV, sharp | – | – | – |
+| Viewer | PDF.js, React PDF Highlighter, Gotenberg, OCRmyPDF (Vorschau/OCR **ohne** Docling und ohne Suche) | – | – | – |
+| Erfassung | react-hook-form + zod (Formular), exceljs (Excel-Vorlage, Zeilenvorschau) | – | Claude API (Agent, Tool-Schema) | – |
+| 3D/2D | three, React Three Fiber, drei (`InstancedMesh`); 2D-Ansicht [A: Konva nur, falls fuer den funktionalen 2D-Fallback noetig; gesondert beurteilen] | – | – | react-konva, zundo, flatbush fuer den **Grundriss-Editor** (ADR 0014) |
+| Frontend allgemein | React, Vite, TanStack Query/Table/Virtual, Zustand, shadcn/ui, kbar, i18next (nur `de`) | – | – | Tolgee, FR/IT-Sprachdateien (ADR 0019) |
+| Backend | Fastify, pino (Redaction), zod, pg-boss, @fastify/rate-limit, etablierte Auth-Bibliothek fuer lokalen Login [A, Wahl vor M1, ADR 0028] | – | – | Keycloak/SSO, Pwned Passwords |
+| Hinweise/E-Mail | Hinweise in der App; Nodemailer + MJML nur falls SMTP vorhanden [A]; Mailpit lokal/CI | – | – | Nager.Date/Feiertage (ADR 0025) |
+| Dokumentstruktur | – | Docling Serve [A, falls fuer Tabellen/Abschnitte benoetigt] | – | – |
+| Suche | – | PostgreSQL-Volltext (`german`), pgvector, lokaler Embedding-Server + Modell [A, Kandidat `bge-m3`; [?] `08-pruefung.md` PO-Entscheid Nr. 10] | Claude-Reranking/Antwort mit Quellen [?] (`08-pruefung.md` PO-Entscheid Nr. 11) | Voyage AI entfaellt (E36: lokale Embeddings) |
+| KI | – | – | Claude API direkt (ADR 0030), Kostenbremse (ADR 0017), Golden-Set-Runner | Bedrock (dauerhaft ersetzt) |
+| Datenbank-CI | Squawk; Tests fuer Constraints, GRANTs, Audit-Trigger [A: pgTAP moeglich, **ohne** RLS-Suite] | – | – | – |
+| Betrieb | Healthchecks je Container; schlanke Backup-/Job-Alarmierung (Dead-Man-Switch, z.B. Healthchecks – **nicht** durch N6 gestrichen); Backup-Werkzeug [A, ADR 0027] | Ressourcenlimits Embedding-Server | – | GlitchTip, Uptime Kuma; kein Voll-Observability-Stack und keine externe Telemetrie als Demo-Pflicht |
+| Lieferkette | Trivy, Syft (SBOM inkl. Container), Gitleaks, Semgrep CE, Lizenzpruefung inkl. Container und Modellgewichte | Lizenz der Embedding-Gewichte pruefen | – | cosign, Renovate |
+| Tests | Playwright, @axe-core/playwright, k6 | Recall-Korpus Suche | Golden Set inkl. Prompt-Injection-Faelle | OWASP ZAP (Schutzziel bleibt: manueller Sicherheitsreview Login/Upload/Viewer) |
+| Oeffentliche APIs | keine (E36; Stammdaten manuell) | – | – | geo.admin.ch/GWR, Nager.Date, Pwned Passwords – nur nach erneutem PO-Entscheid zu "nur Claude" ([?] `08-pruefung.md` PO-Entscheid Nr. 6) |
+
+**Abgrenzungen (07 Kap. 7):**
+- **Docling und Embeddings sind vom Viewer entkoppelt:** Vorschau, Seiten-Sprung und Markierung brauchen nur Gotenberg/OCRmyPDF/PDF.js; die Markierung nutzt das einheitliche Feld `markierung` (03 Kap. 4.4), nicht zwingend Docling-Boxen.
+- **Begruendungen mit RLS, Managed-PG/Aiven, SOS und Voyage** in Kap. 1, 4.1, 4.4 und 6 sind historisch (Stand E31 vor E34–E37); die Bausteinwahl bleibt nur, soweit sie oben steht.
+- **Lizenzen:** Die Allowlist (Kap. 7) wird vor Paketfreigabe fuer ausgelieferte **Container, Datenbank und Modellgewichte** ergaenzt (u.a. PostgreSQL License, GPL-2.0 bei ClamAV, AGPL/kommerziell bei Ghostscript in OCRmyPDF-Paketen, AGPL bei MinIO falls gewaehlt – Quellen in `07-analyse-b2b.md` Kap. 8 und `08-pruefung.md`); «separater Prozess» gilt nicht pauschal als Freigabe; CI-Werkzeuge (k6, Renovate) sind von ausgelieferten Images zu unterscheiden. [?] Freigabe des Lizenzpakets: `08-pruefung.md` PO-Entscheid Nr. 3.
+- **Ausschluesse neu beurteilen (Kap. 6):** "Zitadel / Better Auth statt Keycloak" ist durch E34 ueberholt – fuer den lokalen Login wird eine etablierte Bibliothek gewaehlt (ADR 0028, Kandidaten [A]). PostgreSQL-Suche statt eigener Suchmaschine und eine lokale Modulschalter-Tabelle statt Feature-Flag-Server bleiben sinnvoll (jetzt begruendet mit "ein Datenspeicher pro Instanz, weniger Betrieb", nicht mit RLS).
+- **Netz:** KI-Inhaltsabfluss ausschliesslich an Anthropic; Cloud-OCR/-Virenscanner bleiben ausgeschlossen; lokale Erfassung ist immer ohne Netz nutzbar.
+
+---
+
+## 1. Kurzfassung (Stand E31, historisch; massgeblich ist Kap. 0)
 
 1. **Alle 8 Bibliotheken aus der Screenshot-Liste werden eingebaut.** 3 davon waren schon gesetzt (PDF.js, React Three Fiber, Docling). Neu Pflicht: **Uppy** (Upload), **Gotenberg** (Office → PDF fuer den Viewer), **React-Konva** (Grundriss-Korrektur), **pgvector** (Suche, E26/E27), **React PDF Highlighter** (Sprung + Markierung, E23).
 2. **Groesster Architekturgewinn: Upload.** Uppy mit S3-Multipart, bei dem der Server jeden Teil signiert und den Abschluss selbst ausfuehrt, ersetzt die einfache PUT-URL aus ADR 0016 und schliesst dabei den **kritischen Review-Befund K01** strukturell (Abschnitt 4.1).
@@ -59,6 +90,8 @@ Regel: Bei MIT-Projekten darf Code mit Lizenzhinweis uebernommen werden; bei GPL
 ## 4. Schnittstellen und Architekturpunkte (verbindlich angepasst)
 
 ### 4.1 Upload: Uppy + serverseitig abgeschlossener S3-Multipart-Upload (ADR 0016, K01)
+
+> Welle 4b: Speicher ist nicht mehr Exoscale SOS, sondern der lokale Speicher der Instanz ([?] `08-pruefung.md` PO-Entscheid Nr. 3); Prefixe/Signierung entfallen bzw. werden durch Objekt-/Rollenrechte ersetzt (03 Kap. 5.1, AD-20). Abschnitt historisch.
 
 **Heute (ADR 0016):** API gibt eine signierte PUT-URL fuer `quarantaene/…`; Scan-Job wird beim Upload-Beginn angelegt. Review K01: die URL ist bis Ablauf wiederverwendbar; zwischen Scan und Kopie kann die Datei ausgetauscht werden.
 
@@ -119,6 +152,8 @@ sequenceDiagram
 
 ### 4.4 Suche (E26/E27, Modul `suche`): Postgres-Volltext + pgvector
 
+> Welle 4b: Stufe 3; keine `mandant_id`/RLS, kein Voyage, kein Managed-PG; Embeddings lokal; Claude-Reranking erst Stufe 4 [?] (Kap. 0). Abschnitt historisch.
+
 - `such_abschnitt` (je Dokument, Seite, Abschnitt aus Docling): `text`, `sprache`, `tsv tsvector` (Konfiguration je Sprache: german/french/italian/english sind in PostgreSQL eingebaut), `embedding vector(n)`, `bbox`, `mandant_id` + RLS wie alle Tabellen (AD-3).
 - Anfrage: drei Wege parallel (Dokumentname, `tsvector`, Vektor), zusammengefuehrt per **Reciprocal Rank Fusion** in SQL; Reranking mit Haiku (E27), nur wenn KI fuer den Mandanten aktiv ist. Treffer enthalten Seite + `bbox` → Sprung und Markierung im Viewer wie 4.2.
 - **RLS + Vektorindex:** Bei HNSW-Index filtert RLS erst nach der Indexsuche; bei vielen Mandanten sinkt die Trefferzahl [A]. Gegenmittel: iterativer Index-Scan von pgvector (`hnsw.iterative_scan`, ab 0.8 [A: Version auf Exoscale pruefen]) oder Index pro grossem Mandant. Im Spike mit 2 Mandanten testen.
@@ -126,6 +161,8 @@ sequenceDiagram
 - `pg_search`/ParadeDB (BM25, awesome-postgres) waere besser im Ranking, ist auf Managed-PG (Aiven) aber voraussichtlich nicht installierbar [?] → nicht V1.
 
 ### 4.5 Grundriss-Korrektur-UI (ADR 0014): React-Konva + Zustand
+
+> Welle 4b: zurueckgestellt bis nach der Demo (ADR 0014); kein Demo-Baustein (Kap. 0).
 
 - Unterlage: Seite per PDF.js als Bild gerendert; darueber eine Konva-Ebene mit Rechtecken (`Rect` + `Transformer` fuer Ziehen/Skalieren), Farbe nach Konfidenz, Mehrfachauswahl, Tastatur-Feinschritt.
 - Zustand: **Zustand** fuer Editor-Daten, **zundo** (MIT) fuer Rueckgaengig/Wiederholen – dasselbe Muster wie As-Built-Editor und Floor Maker.
@@ -177,6 +214,8 @@ Nicht Pflicht (nur Referenz): pgrls und restoredrill (zu jung; der Restore-Test 
 
 ### 5.4 Betrieb und Beobachtung
 
+> Welle 4b: Demo-Pflicht nur Healthchecks/Dead-Man-Switch; GlitchTip und Uptime Kuma zurueckgestellt (Kap. 0).
+
 | Baustein | Lizenz | Wofuer |
 |---|---|---|
 | **GlitchTip** (Sentry-kompatibel, selbst gehostet) | MIT | Fehlertracking Frontend + Backend in CH; Sentry-SDKs verwenden, ohne Daten in US-SaaS |
@@ -185,6 +224,8 @@ Nicht Pflicht (nur Referenz): pgrls und restoredrill (zu jung; der Restore-Test 
 | **Mailpit** | MIT [A] | E-Mails lokal/CI abfangen (Modul `hinweise`) |
 
 ### 5.5 Sicherheit und Lieferkette (Kap. 10.2 "Werkzeuge im Scaffold", Pentest-Vorbereitung E28)
+
+> Welle 4b: cosign, Renovate, OWASP ZAP zurueckgestellt; Semgrep-Regeln zu `mitMandant()` entfallen (keine RLS) (Kap. 0).
 
 | Baustein | Lizenz | Wofuer |
 |---|---|---|
@@ -214,11 +255,15 @@ Hochgeladene Dokumente sind **nicht vertrauenswuerdige Eingabe an Claude** (indi
 
 ### 5.8 Uebersetzung (E20, E28 "FR/IT-Gegenlesen")
 
+> Welle 4b: zurueckgestellt bis nach der Demo (ADR 0019); Demo DE/de-CH.
+
 **Tolgee** (Apache-2.0, selbst gehostet, Pflicht): verwaltet die Sprachdateien von AD-18 (i18next-Format); externe FR/IT-Gegenleser (E28) arbeiten im Browser mit Kontext-Screenshots statt in JSON-Dateien. Die Sprachdateien bleiben im Repo die Quelle fuer den Build (Export aus Tolgee per CI).
 
 ---
 
 ## 6. Bewusst nicht nehmen
+
+> Welle 4b: Begruendungen mit RLS/Mandanten sind historisch; Neubeurteilung (u.a. Better Auth) siehe Kap. 0 "Abgrenzungen".
 
 | Kandidat (Liste) | Grund |
 |---|---|
@@ -236,6 +281,8 @@ Hochgeladene Dokumente sind **nicht vertrauenswuerdige Eingabe an Claude** (indi
 
 ## 7. Lizenz-Regeln fuer die Uebernahme
 
+> Welle 4b: Allowlist fuer ausgelieferte Container, Datenbank und Modellgewichte vor Paketfreigabe ergaenzen; Prozessgrenze ist keine pauschale Freigabe (Kap. 0, ADR 0024, Befund 9 in `08-pruefung.md`).
+
 - **Bibliotheken im eigenen Code (Browser, Node):** nur MIT, BSD, ISC, Apache-2.0, MPL-2.0 (Datei-Copyleft) [A, Jurist bestaetigt im Rahmen E28]. Kein GPL/AGPL im ausgelieferten Code – auch wegen On-Prem-Lieferung (Kap. 10.7).
 - **Eigenstaendige Dienste/Container** (ClamAV GPL-2.0, LibreOffice in Gotenberg MPL, ggf. Weblate GPL): unveraendert betreiben, getrennter Prozess, Quellen-/Lizenzhinweis in der On-Prem-Lieferung.
 - **Werkzeuge nur in CI/Entwicklung** (k6, Renovate AGPL): unkritisch, werden nicht ausgeliefert.
@@ -245,6 +292,8 @@ Hochgeladene Dokumente sind **nicht vertrauenswuerdige Eingabe an Claude** (indi
 ---
 
 ## 8. Eingearbeitete Aenderungen (E31)
+
+> Historisch (Stand E31, 2026-11-09, vor E34–E37). Die Stufen-Zuordnung steht in Kap. 0.
 
 | # | Dokument | Aenderung |
 |---|---|---|
@@ -264,6 +313,8 @@ Pruefpunkte im Scaffold (aendern **nicht** den Entscheid, nur die Konfiguration)
 ---
 
 ## 9. Oeffentliche APIs (Abgleich mit public-apis)
+
+> Welle 4b: 9.1 und 9.4 sind bis nach der Demo zurueckgestellt (E36, ADR 0025): kein GWR-/Feiertags-/HIBP-Aufruf, keine Netzfreigaben, keine `feiertag`-Tabelle in der Demo. Wiederaufnahme nur nach erneutem PO-Entscheid zu "nur Claude" ([?] `08-pruefung.md` PO-Entscheid Nr. 6). Der Verweis auf Bedrock in 9.3 ist ueberholt (Claude API direkt, ADR 0030). Abschnitt historisch.
 
 Quelle: [public-apis/public-apis](https://github.com/public-apis/public-apis), alle Kategorien durchgesehen (2026-11-09). **Status: 9.1 verbindlich (PO-Entscheid E32, ADR 0025)**; 9.2 spaeter, 9.3 ausgeschlossen. Live-Aufrufe konnten aus der Arbeitsumgebung nicht getestet werden [A].
 
