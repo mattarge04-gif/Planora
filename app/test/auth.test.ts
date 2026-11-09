@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import { randomBytes } from "node:crypto";
 import { frischeDb } from "./hilfe.js";
@@ -9,11 +9,12 @@ const ORIGIN = "http://localhost:3999";
 let db: Awaited<ReturnType<typeof frischeDb>>; let app: FastifyInstance;
 const pw = randomBytes(12).toString("base64url"); const email = "admin@planora.invalid";
 const post = (url: string, body: object, h: Record<string, string> = {}, remoteAddress = "127.0.0.1") => app.inject({ method: "POST", url, remoteAddress, headers: { "content-type": "application/json", origin: ORIGIN, ...h }, payload: JSON.stringify(body) });
+const postausgang: { an: string; url: string }[] = [];
 const cookie = (r: any) => ([] as string[]).concat(r.headers["set-cookie"] ?? []).map((c) => c.split(";")[0]).join("; ");
 
 beforeAll(async () => {
   db = await frischeDb();
-  const auth = baueAuth(db.pool, { baseURL: ORIGIN, secret: randomBytes(32).toString("hex") });
+  const auth = baueAuth(db.pool, { baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), sendeReset: async (an, url) => { postausgang.push({ an, url }); } });
   app = Fastify(); registriereAuth(app, auth, ORIGIN);
   app.get("/api/ich", async (req, reply) => { const s = await auth.api.getSession({ headers: new Headers(req.headers as any) }); return s ? { id: s.user.id } : reply.code(401).send(); });
 });
@@ -122,5 +123,35 @@ describe("Login", () => {
     const codes = r.map((x) => x.statusCode).sort();
     expect(codes.filter((c) => c === 401).length).toBe(10);
     expect(codes.filter((c) => c === 429).length).toBe(10);
+  });
+
+  it("PP7-6: Recovery per Reset-Link: Token nur gehasht, 30 min gueltig, einmalig, entzieht Sitzungen", async () => {
+    const m = "reset@planora.invalid"; const p = randomBytes(12).toString("base64url"); const ip = "198.18.3.1";
+    await loeseSetupTokenEin(db.pool, await erzeugeSetupToken(db.pool), m, "Reset", p);
+    const alt = cookie(await post("/api/auth/sign-in/email", { email: m, password: p }, {}, ip));
+    expect((await app.inject({ url: "/api/ich", headers: { cookie: alt } })).statusCode).toBe(200);
+    expect((await post("/api/auth/request-password-reset", { email: m }, {}, ip)).statusCode).toBe(200);
+    await vi.waitFor(() => expect(postausgang.some((x) => x.an === m)).toBe(true));
+    const token = new URL(postausgang.filter((x) => x.an === m).at(-1)!.url).pathname.split("/").at(-1)!;
+    expect(token.length).toBeGreaterThan(10);
+    const v = (await db.pool.query("select identifier, value, extract(epoch from expires_at - now())::int s from verification")).rows;
+    expect(v.length).toBe(1);
+    expect(JSON.stringify(v)).not.toContain(token);
+    expect(v[0].s).toBeGreaterThan(1790); expect(v[0].s).toBeLessThanOrEqual(1800);
+    const neu = randomBytes(12).toString("base64url");
+    expect((await post("/api/auth/reset-password", { newPassword: neu, token }, {}, ip)).statusCode).toBe(200);
+    expect((await app.inject({ url: "/api/ich", headers: { cookie: alt } })).statusCode).toBe(401);
+    const nochmal = await post("/api/auth/reset-password", { newPassword: p, token }, {}, ip);
+    expect(nochmal.statusCode).toBe(400); expect(nochmal.json().code).toBe("INVALID_TOKEN");
+    expect((await post("/api/auth/sign-in/email", { email: m, password: neu }, {}, ip)).statusCode).toBe(200);
+  });
+  it("PP7-6: abgelaufener Reset-Token wird abgelehnt", async () => {
+    const m = "reset@planora.invalid"; const ip = "198.18.3.2";
+    expect((await post("/api/auth/request-password-reset", { email: m }, {}, ip)).statusCode).toBe(200);
+    await vi.waitFor(() => expect(postausgang.filter((x) => x.an === m).length).toBe(2));
+    const token = new URL(postausgang.filter((x) => x.an === m).at(-1)!.url).pathname.split("/").at(-1)!;
+    await db.pool.query("update verification set expires_at = now() - interval '1 second'");
+    const r = await post("/api/auth/reset-password", { newPassword: randomBytes(12).toString("base64url"), token }, {}, ip);
+    expect(r.statusCode).toBe(400); expect(r.json().code).toBe("INVALID_TOKEN");
   });
 });

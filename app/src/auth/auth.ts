@@ -65,6 +65,8 @@ export function baueAuth(pool: pg.Pool, o: AuthOptionen) {
       customRules: { "/sign-in/*": RATE_LIMIT.anmelden, "/request-password-reset": RATE_LIMIT.reset },
     },
     logger: { disabled: true },
+    // Reset-/Verifikations-Token nur als SHA-256 im identifier speichern (Better Auth verification.storeIdentifier) (PP7-6)
+    verification: { storeIdentifier: "hashed" },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         // PP7-1: Passwortwechsel nur mit Entzug aller anderen Sitzungen (Spec §5)
@@ -93,6 +95,7 @@ export function baueAuth(pool: pg.Pool, o: AuthOptionen) {
     },
     emailAndPassword: {
       enabled: true, disableSignUp: true, revokeSessionsOnPasswordReset: true,
+      resetPasswordTokenExpiresIn: 1800, // Reset-Link 30 min (Spec §5, PP7-6)
       sendResetPassword: async ({ user, url }) => { if (!o.sendeReset) throw new Error("Kein Reset-Versand konfiguriert"); await o.sendeReset(user.email, url); },
       password: { hash: hashPasswort, verify: async ({ hash, password }) => a2verify(hash, password) },
     },
