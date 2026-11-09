@@ -126,6 +126,23 @@ describe("Dateisystem-Ablage", () => {
     await expect(dateiAblage(wurzel).schreibeNeu(Readable.from(["x"]))).rejects.toThrow(/ungueltiger Schluessel/);
     expect(await fs.readdir(aussen)).toEqual([]);
   });
+  it("PP8-6: weist eine Wurzel unter einem verlinkten Vorfahren fuer alle Operationen zurueck", async () => {
+    const { wurzel } = await ablageNeu();
+    const aussen = await fs.mkdtemp(join(tmpdir(), "planora-aussen-"));
+    ordner.push(aussen);
+    await fs.symlink(aussen, join(wurzel, "link"), process.platform === "win32" ? "junction" : "dir");
+    const echt = dateiAblage(join(aussen, "ablage"), { belegung: async () => 0.1 });
+    const { schluessel } = await echt.schreibeNeu(Readable.from(["fremd"]));
+    for (const unter of [join(wurzel, "link", "ablage"), join(wurzel, "link", "neu", "ablage")]) {
+      const ablage = dateiAblage(unter, { belegung: async () => 0.1 });
+      await expect(ablage.schreibeNeu(Readable.from(["x"]))).rejects.toThrow(/verlinkt/);
+      await expect(inhalt(ablage.lese(schluessel))).rejects.toThrow(/verlinkt/);
+      await expect(ablage.existiert(schluessel)).rejects.toThrow(/verlinkt/);
+      await expect(ablage.entferne(schluessel)).rejects.toThrow(/verlinkt/);
+    }
+    expect(await echt.existiert(schluessel)).toBe(true);
+    expect(await fs.readdir(aussen)).toEqual(["ablage"]);
+  });
   it("nimmt den geteilten GC-Lock auch bei bereits vorhandenem Hash", async () => {
     const { wurzel, ablage } = await ablageNeu();
     await ablage.schreibeNeu(Readable.from(["vorhanden"]));

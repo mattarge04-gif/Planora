@@ -36,8 +36,24 @@ export function dateiAblage(wurzel: string, opts: {
     return resolve(basis, schluessel);
   }
 
+  // Die Wurzel und alle Vorfahren muessen echte Verzeichnisse sein: realpath des naechsten
+  // existierenden Vorfahren muss mit dem konfigurierten Pfad uebereinstimmen.
+  // Betriebsvorgabe: Wurzel liegt auf einem eigenen Volume, nur fuer den App-Benutzer
+  // beschreibbar; ein Verzeichnistausch zwischen Pruefung und Zugriff ist damit ausgeschlossen.
+  async function wurzelPruefen(): Promise<void> {
+    const gleich = (a: string, b: string) => process.platform === "win32" ? a.toLowerCase() === b.toLowerCase() : a === b;
+    for (let p = basis; ; p = dirname(p)) {
+      let echt: string;
+      try { echt = await fs.realpath(p); }
+      catch (e) { if (istFehler(e, "ENOENT") && dirname(p) !== p) continue; throw e; }
+      if (!gleich(echt, p)) throw new Error("ungueltiger Schluessel: Ablagewurzel liegt unter verlinktem Pfad");
+      return;
+    }
+  }
+
   // lstat prueft jeden Bestandteil, nicht nur das Dateiende (auch Windows-Junctions).
   async function pruefePfad(ziel: string): Promise<boolean> {
+    await wurzelPruefen();
     const teile = relative(basis, ziel).split(sep).filter(Boolean);
     let aktuell = basis;
     for (let i = -1; i < teile.length; i++) {
@@ -66,6 +82,7 @@ export function dateiAblage(wurzel: string, opts: {
   }
 
   async function schreiben(daten: Readable) {
+    await wurzelPruefen();
     await ordnerAnlegen(join(basis, "tmp"));
     if ((await belegung()) >= max) throw new Error("Speicher voll");
     const tmp = join(basis, "tmp", randomBytes(12).toString("hex"));
