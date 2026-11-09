@@ -3,11 +3,13 @@ import Fastify from "fastify";
 import { frischeDb } from "./hilfe.js";
 import { registriereModulGuard, schalteEin, schalteAus, modulAktiv } from "../src/module/schalter.js";
 import { randomUUID } from "node:crypto";
+import { neuerPool } from "../src/db/pool.js";
 
 let db: Awaited<ReturnType<typeof frischeDb>>;
+let appPool: ReturnType<typeof neuerPool>; // Schalten laeuft unter der Laufzeitrolle, nicht als Superuser
 const apps: ReturnType<typeof Fastify>[] = [];
-beforeAll(async () => { db = await frischeDb(); });
-afterAll(async () => { await db.ende(); });
+beforeAll(async () => { db = await frischeDb(); appPool = neuerPool(db.cfg, "planora_app"); });
+afterAll(async () => { await appPool.end(); await db.ende(); });
 afterEach(async () => { await Promise.all(apps.splice(0).map((app) => app.close())); });
 
 function server(stufe: 1|2|3) {
@@ -30,39 +32,53 @@ describe("Modul-Guard", () => {
   });
   it("Einschalten mit Abhaengigkeit, Abschalten mit Kaskade in einer Transaktion, auditiert", async () => {
     const a = randomUUID();
-    await expect(schalteEin(db.pool, "hinweise", 2, a)).rejects.toThrow(/braucht lebensdauer/);
-    await schalteEin(db.pool, "lebensdauer", 2, a); await schalteEin(db.pool, "hinweise", 2, a);
+    await expect(schalteEin(appPool, "hinweise", 2, a)).rejects.toThrow(/braucht lebensdauer/);
+    await schalteEin(appPool, "lebensdauer", 2, a); await schalteEin(appPool, "hinweise", 2, a);
     const app = server(2);
     expect((await app.inject("/api/hinweise/liste")).statusCode).toBe(200);
-    const aus = await schalteAus(db.pool, "lebensdauer", a);
+    const aus = await schalteAus(appPool, "lebensdauer", a);
     expect(aus.sort()).toEqual(["hinweise", "lebensdauer"]);
     expect((await app.inject("/api/hinweise/liste")).statusCode).toBe(404);
     const n = (await db.pool.query("select count(*)::int n from audit_eintrag where art like 'modul.%'")).rows[0].n;
     expect(n).toBe(4); // 2x ein, 2x aus
   });
+  it("PP8-2: planora_app schaltet nur ueber die Funktionen, nicht direkt per DML", async () => {
+    const c = await appPool.connect();
+    try {
+      expect((await c.query("select current_user u")).rows[0].u).toBe("planora_app");
+      await expect(c.query("update modul_schalter set aktiv=true")).rejects.toThrow(/permission denied/);
+      await expect(c.query("insert into modul_schalter(modul_id, aktiv) values ('zustand', true)")).rejects.toThrow(/permission denied/);
+    } finally { c.release(); }
+    const fremd = await db.pool.connect();
+    try {
+      await fremd.query("set role planora_backup");
+      await expect(fremd.query("select modul_ein('zustand', null, 'x')")).rejects.toThrow(/permission denied/);
+      await expect(fremd.query("select modul_aus('zustand', null)")).rejects.toThrow(/permission denied/);
+    } finally { await fremd.query("reset role"); fremd.release(); }
+  });
   it("nicht geliefertes Modul → 404 und nicht einschaltbar", async () => {
     expect((await server(2).inject("/api/suche/x")).statusCode).toBe(404);
     expect((await server(1).inject("/api/export/x")).statusCode).toBe(404);
-    await expect(schalteEin(db.pool, "suche", 2, randomUUID())).rejects.toThrow(/nicht geliefert/);
+    await expect(schalteEin(appPool, "suche", 2, randomUUID())).rejects.toThrow(/nicht geliefert/);
   });
   it("Kernmodule sind auch ueber den Abschaltpfad nicht schaltbar", async () => {
-    await expect(schalteAus(db.pool, "szene", randomUUID())).rejects.toThrow(/kern nicht schaltbar/);
+    await expect(schalteAus(appPool, "szene", randomUUID())).rejects.toThrow(/kern nicht schaltbar/);
   });
   it("rollt die ganze Kaskade samt Audit bei einem Audit-Fehler zurueck", async () => {
     const a = randomUUID();
-    await schalteEin(db.pool, "lebensdauer", 2, a);
-    await schalteEin(db.pool, "hinweise", 2, a);
+    await schalteEin(appPool, "lebensdauer", 2, a);
+    await schalteEin(appPool, "hinweise", 2, a);
     const vorher = (await db.pool.query("select count(*)::int n from audit_eintrag")).rows[0].n;
     await db.pool.query(`create function audit_ablehnen() returns trigger language plpgsql as $$
       begin if new.art='modul.aus' and new.daten->>'id'='hinweise' then raise exception 'Audit unmoeglich'; end if; return new; end $$;
       create trigger audit_ablehnen before insert on audit_eintrag for each row execute function audit_ablehnen()`);
     try {
-      await expect(schalteAus(db.pool, "lebensdauer", a)).rejects.toThrow(/Audit unmoeglich/);
+      await expect(schalteAus(appPool, "lebensdauer", a)).rejects.toThrow(/Audit unmoeglich/);
       expect((await db.pool.query("select modul_id from modul_schalter where aktiv order by modul_id")).rows.map((r) => r.modul_id)).toEqual(["hinweise", "lebensdauer"]);
       expect((await db.pool.query("select count(*)::int n from audit_eintrag")).rows[0].n).toBe(vorher);
     } finally {
       await db.pool.query("drop trigger audit_ablehnen on audit_eintrag; drop function audit_ablehnen()");
-      await schalteAus(db.pool, "lebensdauer", a);
+      await schalteAus(appPool, "lebensdauer", a);
     }
   });
   it("DB-Fehler im Guard → 503", async () => {

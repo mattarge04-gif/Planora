@@ -16,10 +16,9 @@ export async function modulAktiv(c: pg.ClientBase, id: ModulId, stufe: Stufe): P
 export async function schalteEin(pool: pg.Pool, id: ModulId, stufe: Stufe, auditId: string) {
   const c = await pool.connect();
   try {
-    await c.query("begin"); await c.query("lock table modul_schalter in share row exclusive mode");
+    await c.query("begin"); await c.query("select modul_schalter_sperren()");
     const r = pruefeEinschalten(await aktiveOptionen(c), id, stufe); if (!r.ok) throw new Error(r.grund);
-    await c.query(`insert into modul_schalter(modul_id, aktiv, geaendert_von, manifest_version) values ($1,true,$2,$3)
-      on conflict (modul_id) do update set aktiv=true, geaendert_am=now(), geaendert_von=$2, manifest_version=$3`, [id, auditId, MANIFEST_VERSION]);
+    await c.query("select modul_ein($1,$2,$3)", [id, auditId, MANIFEST_VERSION]);
     await auditEreignis(c, auditId, "modul.ein", { id }); await c.query("commit");
   } catch (e) { await c.query("rollback"); throw e; } finally { c.release(); }
 }
@@ -29,9 +28,9 @@ export async function schalteAus(pool: pg.Pool, id: ModulId, auditId: string) {
   if (m.art === "kern") throw new Error("kern nicht schaltbar");
   const c = await pool.connect();
   try {
-    await c.query("begin"); await c.query("lock table modul_schalter in share row exclusive mode");
+    await c.query("begin"); await c.query("select modul_schalter_sperren()");
     const raus = kaskadeAbschalten(await aktiveOptionen(c), id);
-    for (const m of raus) { await c.query("update modul_schalter set aktiv=false, geaendert_am=now(), geaendert_von=$2 where modul_id=$1", [m, auditId]); await auditEreignis(c, auditId, "modul.aus", { id: m, ausgeloest_durch: id }); }
+    for (const m of raus) { await c.query("select modul_aus($1,$2)", [m, auditId]); await auditEreignis(c, auditId, "modul.aus", { id: m, ausgeloest_durch: id }); }
     await c.query("commit"); return raus;
   } catch (e) { await c.query("rollback"); throw e; } finally { c.release(); }
 }
