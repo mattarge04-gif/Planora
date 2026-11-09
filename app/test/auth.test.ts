@@ -22,7 +22,10 @@ afterAll(async () => { await app.close(); await db.ende(); });
 
 describe("Login", () => {
   it("Selbstregistrierung ist gesperrt", async () => {
-    expect((await post("/api/auth/sign-up/email", { email: "x@y.invalid", password: pw, name: "x" })).statusCode).not.toBe(200);
+    const r = await post("/api/auth/sign-up/email", { email: "x@y.invalid", password: pw, name: "x" });
+    expect(r.statusCode).toBe(400);
+    expect(r.json().code).toBe("EMAIL_PASSWORD_SIGN_UP_DISABLED");
+    expect((await db.pool.query(`select count(*)::int n from "user" where email='x@y.invalid'`)).rows[0].n).toBe(0);
   });
   it("Setup-Token legt Erstadmin an, einmalig; Hash ist Argon2id (19 MiB/2/1)", async () => {
     const t = await erzeugeSetupToken(db.pool);
@@ -93,7 +96,7 @@ describe("Login", () => {
   });
   it("Reset-Anfragen: 3 / h je IP, dann 429", async () => {
     const ip = "203.0.113.9";
-    for (let i = 0; i < 3; i++) expect((await post("/api/auth/request-password-reset", { email: "niemand@planora.invalid" }, {}, ip)).statusCode).not.toBe(429);
+    for (let i = 0; i < 3; i++) expect((await post("/api/auth/request-password-reset", { email: "niemand@planora.invalid" }, {}, ip)).statusCode).toBe(200);
     expect((await post("/api/auth/request-password-reset", { email: "niemand@planora.invalid" }, {}, ip)).statusCode).toBe(429);
   });
 
@@ -153,5 +156,23 @@ describe("Login", () => {
     await db.pool.query("update verification set expires_at = now() - interval '1 second'");
     const r = await post("/api/auth/reset-password", { newPassword: randomBytes(12).toString("base64url"), token }, {}, ip);
     expect(r.statusCode).toBe(400); expect(r.json().code).toBe("INVALID_TOKEN");
+  });
+
+  it("PP7-9: Passwort-Reset hebt zu_bestaetigen und gesperrt nicht auf (Spec §15.2)", async () => {
+    const m = "restore@planora.invalid"; const ip = "198.18.4.1";
+    const { benutzerId } = await loeseSetupTokenEin(db.pool, await erzeugeSetupToken(db.pool), m, "Restore", randomBytes(12).toString("base64url"));
+    for (const status of ["zu_bestaetigen", "gesperrt"]) {
+      await db.pool.query("update konto_status set status=$2 where benutzer_id=$1", [benutzerId, status]);
+      const vorher = postausgang.filter((x) => x.an === m).length;
+      expect((await post("/api/auth/request-password-reset", { email: m }, {}, ip)).statusCode).toBe(200);
+      await vi.waitFor(() => expect(postausgang.filter((x) => x.an === m).length).toBe(vorher + 1));
+      const token = new URL(postausgang.filter((x) => x.an === m).at(-1)!.url).pathname.split("/").at(-1)!;
+      const neu = randomBytes(12).toString("base64url");
+      expect((await post("/api/auth/reset-password", { newPassword: neu, token }, {}, ip)).statusCode).toBe(200);
+      expect((await db.pool.query("select status from konto_status where benutzer_id=$1", [benutzerId])).rows[0].status).toBe(status);
+      const r = await post("/api/auth/sign-in/email", { email: m, password: neu }, {}, ip);
+      expect(r.statusCode).toBe(401); expect(r.json().code).toBe("INVALID_EMAIL_OR_PASSWORD");
+      expect((await db.pool.query("select count(*)::int n from session where user_id=$1", [benutzerId])).rows[0].n).toBe(0);
+    }
   });
 });
