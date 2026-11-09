@@ -283,3 +283,30 @@ Neuer Befund:
 [F] Testlauf: temporaerer Detached-Worktree auf `6e8cb90`; `npm.cmd ci` erfolgreich (0 Vulnerabilities), `npx.cmd vitest run`: **5 Dateien / 46 Tests PASS**, `npx.cmd tsc --noEmit`: **PASS**.
 [F] Zusaetzliche Inline-Gegenproben gegen separates PostgreSQL bestanden fuer PP8-1 bis PP8-6 im oben bezeichneten Umfang; PP8b-1 reproduziert. Keine vorhandenen Tests abgeschwaecht; keine neuen (A)-Befunde.
 [F] Worktree anschliessend entfernt, Hauptbranch blieb `m1a-app-kern`; nur diesen Anhang ergaenzt, keine Code-/Testdateien geaendert, kein Commit. Ergebnis: **0 neue (A), 1 neuer (B)**; Betriebsauflage PP8-6 bleibt.
+
+## Pruefpunkt 7b (Nachpruefung Spur A)
+Urteil: OK mit Auflagen
+
+Geprueft: alle 11 Commits aus `git log 32ee74f..m1a-spur-a` und vollstaendiger `git diff 32ee74f m1a-spur-a`; Stand `5a41cb9`. (A) blockiert Merge, (B) Nacharbeit; Pfade unter `app/`.
+
+| Befund | Status / Nachweis |
+|---|---|
+| PP7-1 | Geschlossen: fehlendes/false Entzugsflag ergibt 400; true ergibt 200 und andere Sitzung danach 401. Unabhaengige Gegenprobe bestanden. |
+| PP7-2 | Geschlossen: beide rememberMe-Varianten ergeben 43200 s; nach 13 h trotz frischer Aktivitaet 401. Trigger begrenzt auch Updates. |
+| PP7-3 | Geschlossen: Passwortwechsel nach 31 min sowie geschuetzte Auth-Endpunkte bei gesperrtem Konto ergeben 401; oeffentliche Login-/Reset-Pfade bleiben erreichbar. |
+| PP7-4 | Geschlossen: unabh. Barriere nach Aktiv-Read/vor Sitzungsanlage, dann Sperr-Commit ergibt 401 und 0 Sitzungen; umgekehrte Reihenfolge im Regressionstest bestanden. |
+| PP7-5 | Ursprungsbefund geschlossen: IP nur aus req.ip, Headerwechsel ergibt 10x401/2x429; Konto ueber wechselnde IPs nach 10 Fehlversuchen gesperrt. Neue (B)-Auflage PP7b-1. |
+| PP7-6 | Geschlossen: Token nicht im DB-Klartext, 1800 s, Reset 200, alte Sitzung 401, Wiederverwendung/abgelaufener Token 400; unabhaengig bestaetigt. |
+| PP7-7 | Geschlossen: pseudonyme Erfolgs-/Fehler-/Limitereignisse, unbekanntes Konto ohne Zuordnung; Regressionstests pruefen Inhalte und ausbleibende Geheimnisse. |
+| PP7-8 | Geschlossen: Setup normalisiert/validiert E-Mail; Mixed-Case-Login und ungueltige Adresse mit weiter einloesbarem Setup-Token getestet. |
+| PP7-9 | Geschlossen: genaue Status-/Fehlercodes, keine Registrierung, echte Recovery; Reset belaesst gesperrt/zu_bestaetigen und verhindert Login. |
+| PP7-10 | Offen (B): Betreiber erhaelt weiterhin allgemeines audit.lesen; Ereignisfilter vor Integration der Audit-Leseroute bereitstellen und negativ testen. Noch keine Leseroute. |
+| PP7-11 | Ursprungsrennen geschlossen: unabhaengiger Entzug mit Commit waehrend Pruefung ergibt 401 statt FK-500. Neues Lock-Reihenfolgeproblem siehe PP7b-2. |
+
+Neue Befunde (beide B, reproduziert):
+- PP7b-1, `src/db/migrationen/004_auth.sql:39,41`: Reservierungen zaehlen bei Sperrsetzung als Fehler. Neun erfolgreiche Logins vor Abschluss halten, zehnten Versuch falsch abschliessen, Erfolge freigeben: 9x200/1x401, Zaehler 1, trotzdem 15 min gesperrt; naechstes richtiges Login 429. Offene Reservierungen und bestaetigte Fehler getrennt zaehlen; gemischte Parallelitaet testen.
+- PP7b-2, `src/auth/sitzung.ts:45,67,70`: Pruefung sperrt Sitzung vor Konto, Kontosperre umgekehrt. Barriere mit gehaltenem Konto-Lock, wartender Anfrage, dann Statusupdate/Entzug: Sperre committet, Anfrage liefert 500/40P01. Einheitliche Lock-Reihenfolge und kontrollierte Deadlock-Behandlung mit Regressionstest ergaenzen.
+
+Testlauf im temporaeren Detached-Worktree auf `5a41cb9`: `npm.cmd ci` erfolgreich (0 Vulnerabilities); `npx.cmd vitest run`: **5 Dateien / 52 Tests PASS**; `npx.cmd tsc --noEmit`: **PASS**.
+Zusaetzliche Inline-Gegenproben gegen separates PostgreSQL: PP7-1 bis PP7-6 und PP7-11 bestanden; beide neuen Fehler deterministisch reproduziert. Keine vorhandenen Erwartungen abgeschwaecht; Better-Auth-Limit 100/15 min ist Flutschutz, eigene Konto-/IP-Sperre 10/15 min.
+Ergebnis: alle sechs bisherigen (A) geschlossen, keine neuen (A); PP7-10 und zwei neue (B) bleiben als Nacharbeit. Temporaeren Worktree entfernt, Branch `m1a-app-kern` beibehalten; ausschliesslich diesen Anhang ergaenzt, keine Code-/Testdateien geaendert, kein Commit.
