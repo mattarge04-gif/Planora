@@ -2,7 +2,7 @@
 
 Status: vorgeschlagen, ersetzt ADR 0003 · 2026-11-09 · Bezug: E36, E37, E26/E27, ADR 0017, `07-analyse-b2b.md` Kap. 2 (0003), Kap. 8 Punkt 5
 
-> **Abweichung von der bisherigen NFR (teilweise):** Die NFR «Datenstandort Schweiz» gilt fuer DB, Dokumente und Backups weiter. Inhalte, die bei eingeschalteter KI an Claude gehen, werden nicht in CH/EU verarbeitet (siehe Kontext). Das bisherige EU-Bedrock-Versprechen (ADR 0003) entfaellt.
+> **Abweichung von der bisherigen NFR (teilweise):** Die NFR «Datenstandort Schweiz» gilt fuer DB, Dokumente und Backups bei vereinbartem CH-Betrieb; bei On-Premise bestimmen Kunde und Vertrag Standort und Backup-Ziel [?]. Fuer Inhalte, die bei eingeschalteter KI an Claude gehen, ist **keine CH/EU-Bindung zugesichert** (`global` erlaubt jede verfuegbare Geografie, siehe Kontext). Das bisherige EU-Bedrock-Versprechen (ADR 0003) entfaellt.
 
 ## Kontext
 [F] E36: KI nur ueber die Claude API direkt (Anthropic), ersetzt Bedrock; App funktioniert ohne KI (Formular/Excel); KI pro Instanz abschaltbar; Embeddings fuer die Suche lokal. E37: Bedrock dauerhaft ersetzt.

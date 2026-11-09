@@ -1,5 +1,7 @@
 # 05 – Teststrategie Planora V1 und Ergebnisse der Machbarkeitstests (Welle 3)
 
+> **Hinweis Welle 4 (2026-11-09):** Vorrang haben E24 und E34–E37 (`00-kontext.md`), ADR 0027–0031 und `07-analyse-b2b.md`. Kap. 1–10 enthalten alte Release-Gates (RLS, Keycloak, Bedrock, FR/IT, Exoscale) und sind **keine aktuelle Freigabegrundlage**; geltende Ergaenzungen in Kap. 11, Nachfuehrung in Welle 4b (Abnahmematrix N1–N6 × Lieferstufe × Modul).
+
 Stand: 2026-11-08 · Rolle: Test-Architekt (BMAD QA, Orca-Task task_e629c5a2d92f) · Status: **Entwurf zur Freigabe**
 Basis: `00-kontext.md`, `01-domaene.md` (FA-01..FA-38), `02-tech-recherche.md`, `03-architektur.md` (Kap. 13 Spikes), `adr/0001–0021`.
 Kennzeichnung: **[F]** gemessen oder mit Quelle belegt · **[A]** Annahme · **[?]** offen.

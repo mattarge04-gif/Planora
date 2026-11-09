@@ -1,5 +1,7 @@
 # 06 – Pflicht-Bausteine (Open Source) fuer Planora V1
 
+> **Hinweis Welle 4 (2026-11-09):** Vorrang haben E24 und E34–E37 (`00-kontext.md`), ADR 0027–0031 und `07-analyse-b2b.md`. Die Pflichtliste gilt **nicht mehr pauschal**: zurueckgestellt bis nach der Demo sind u.a. Tolgee, GlitchTip, Uptime Kuma, cosign, Renovate, OWASP ZAP, RLS-pgTAP, Keycloak und die E32-APIs; Aufteilung je Lieferstufe in Welle 4b (`07-analyse-b2b.md` Kap. 7). K01 gilt erst nach Nachweis als geschlossen.
+
 Stand: 2026-11-09 · Status: **verbindlich (PO-Entscheid E31)** · eingearbeitet in `03-architektur.md` (Kap. 2.2, 5, 6, 10, 15), Spine (AD-20, AD-21, Stack), ADR 0009, 0014, 0016 und neu ADR 0022–0024, `05-tests.md`.
 
 > **Regel E31:** Alle in Kapitel 2 und 5 als **Pflicht** aufgefuehrten Bausteine werden in Planora V1 eingebaut. Eigenbau fuer eine dieser Funktionen ist nur mit neuem PO-Entscheid erlaubt. Die Funde in Kapitel 4 und 5.7 sind Architekturvorgaben, keine Vorschlaege.

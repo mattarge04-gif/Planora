@@ -1,5 +1,7 @@
 # 04 – Red-Team-Review Planora V1 (Welle 3)
 
+> **Hinweis Welle 4 (2026-11-09):** Vorrang haben E24 und E34–E37 (`00-kontext.md`), ADR 0027–0031 und `07-analyse-b2b.md`. Dieser Review beurteilt den Stand vor dem B2B-Modell (Mandanten, RLS, Keycloak, Bedrock, Exoscale) und ist **historisch**. Neueinordnung der Befunde: `07-analyse-b2b.md` Kap. 5. K01 bleibt offen bis zum Race-/Crash-Nachweis.
+
 Stand: 2026-11-08 · Rolle: unabhaengiger Red-Team-Reviewer · Pruefgegenstand: Architekturentwurf, kein Produktivcode.
 
 **Gesamturteil: nicht bereit fuer einen Enterprise-Pilot mit echten Kundendaten und entscheidungsrelevanten Investitionsplaenen.** Die Grundrichtung (modularer Monolith, PostgreSQL-RLS, bestaetigte Angaben, reiner Rechenkern, manueller Fallback) ist tragfaehig. Die beschriebenen Schutzmassnahmen lassen aber noch wesentliche Fehlerpfade offen; mehrere Zusagen sind unbewiesen oder widersprechen konkreteren Regeln. Eine isolierte Demo mit synthetischen Daten ist davon zu unterscheiden.

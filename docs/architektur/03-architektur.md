@@ -481,6 +481,8 @@ flowchart LR
 
 ## 7. 3D-Pipeline
 
+> [A] **In Welle 4b anzupassen, siehe 07 Kap. 3:** GWR- und Grundriss-Vorbelegung gelten nicht mehr (zurueckgestellt); Erfassung ueber Formular/Excel (Stufe 1), Agent erst Stufe 4; Standard ist InstancedMesh (E33), Angaben zu BatchedMesh sind Altstand.
+
 ### 7.0 Geschlossene Welt (E33, ADR 0026)
 
 ```mermaid
@@ -626,7 +628,7 @@ Lokaler Login im Fastify-BFF mit etablierter Auth-Bibliothek [A, Kandidaten in A
 Pruefung je Request und je Job: Session → Modul aktiv → Rolle → Liegenschaft des Zielobjekts. Gilt auch fuer Viewer-URLs, Derivate, Downloads und Suchtreffer. Unit-Tests je Recht × Rolle (Matrix-Test). [?] PO: Welche Liegenschafts-/Eigentuemergrenzen gelten innerhalb eines Kunden (07 Kap. 8 Punkt 8)?
 
 ### 9.3 Instanzgrenze (ADR 0031)
-Pro Kunde eigene DB, Volumes, Secrets, Netze und Backup-Ziele; keine geteilten Container mit Kundendaten. Innerhalb der Instanz minimale DB-Rechte (`planora_app` ohne Owner/DDL, Audit nur lesend). [A] Wer Host- oder DB-Owner-Zugriff hat, kann technisch Fachdaten lesen; das steht im Betriebsvertrag, Betreiberzugriffe werden protokolliert. Externer Pentest vor Produktivdaten (Plan V2) mit Fokus Login, Rollen, Upload, Viewer [A].
+Pro Kunde eigene DB, Volumes, Secrets, Netze und Backup-Ziele; keine geteilten Container mit Kundendaten. Innerhalb der Instanz minimale DB-Rechte (`planora_app` ohne Owner/DDL, Audit nur lesend). [A] Wer Host- oder DB-Owner-Zugriff hat, kann technisch Fachdaten lesen; das steht im Betriebsvertrag, Betreiberzugriffe werden protokolliert. IT-Freigabe des Kunden vor Produktivdaten ist Pflicht; ein externer Pentest (Fokus Login, Rollen, Upload, Viewer) nur, falls der Kunde ihn verlangt (Plan V2) [A].
 
 ### 9.4 Verschluesselung
 - Transport: TLS 1.2+ (bevorzugt 1.3), HSTS am Reverse Proxy; interne Verbindungen im isolierten Compose-Netz [A].
@@ -686,7 +688,7 @@ Asynchroner Job, ZIP in der lokalen Ablage, Download-Link 24 h gueltig [A]: `man
 - **Offline-Lieferung** (On-Premise ohne Internet): Images als Archiv importierbar [A]. [?] PO: Netzfreigaben und Updatebezug On-Premise (07 Kap. 8 Punkt 6).
 
 ### 10.3 Updates und Migrationen pro Instanz
-Ablauf: Backup → `migrator` mit Migrationslock und Journal (verhindert parallelen Lauf) → `api`/`worker` mit neuem Image → Health-Pruefung → Freigabe. Expand/contract wie bisher: (1) neue Spalte/Tabelle nullable oder mit Default, (2) Code schreibt beides, (3) Backfill als Job in Bloecken, (4) Code liest neu, (5) alte Spalte im naechsten Release entfernen. Indexe `CONCURRENTLY` (nichttransaktionaler Schritt, im Journal einzeln markiert). `lock_timeout` 5 s [A]. Schema und Job-Payloads bleiben **N/N-1-kompatibel**; Worker lehnen unbekannte Job-Schemaversionen ab statt sie falsch auszufuehren. Rueckweg: vorheriges Image; bei nicht rueckwaertskompatiblem Schritt geuebter Restore. Katalog-/Regelwerk-Updates erhalten lokale Overrides und bestehende Zuordnungen (ADR 0011, 0026).
+Ablauf: Backup → `migrator` mit Migrationslock und Journal (verhindert parallelen Lauf) → `api`/`worker` mit neuem Image → Health-Pruefung → Freigabe. Expand/contract wie bisher: (1) neue Spalte/Tabelle nullable oder mit Default, (2) Code schreibt beides, (3) Backfill als Job in Bloecken, (4) Code liest neu, (5) alte Spalte im naechsten Release entfernen. Indexe `CONCURRENTLY` (nichttransaktionaler Schritt, im Journal einzeln markiert). `lock_timeout` 5 s [A]. Schema und Job-Payloads sollen **N/N-1-kompatibel** bleiben ([A] technisches Ziel; betreuter Versionsumfang ist PO-Entscheid [?]); Worker lehnen unbekannte Job-Schemaversionen ab statt sie falsch auszufuehren. Rueckweg: vorheriges Image; bei nicht rueckwaertskompatiblem Schritt geuebter Restore. Katalog-/Regelwerk-Updates erhalten lokale Overrides und bestehende Zuordnungen (ADR 0011, 0026).
 [?] PO: Wer installiert/erzwingt Updates, welche Wartungsfenster, welche Versionen werden betreut (07 Kap. 8 Punkt 2)?
 
 ### 10.4 Backup und Restore pro Instanz
