@@ -1,6 +1,6 @@
 import type pg from "pg";
 import type { FastifyInstance } from "fastify";
-import { MANIFEST_VERSION, modul, kaskadeAbschalten, modulFuerRoute, pruefeEinschalten, type ModulId, type Stufe } from "./manifest.js";
+import { MANIFEST_VERSION, modul, kaskadeAbschalten, modulFuerRoute, pruefeEinschalten, istApiRoute, routeIstFrei, type ModulId, type Stufe } from "./manifest.js";
 import { auditEreignis } from "../audit/audit.js";
 
 export async function aktiveOptionen(c: pg.ClientBase) {
@@ -35,13 +35,18 @@ export async function schalteAus(pool: pg.Pool, id: ModulId, auditId: string) {
     await c.query("commit"); return raus;
   } catch (e) { await c.query("rollback"); throw e; } finally { c.release(); }
 }
+/** Vor allen Routen registrieren: prueft beim Start, dass jede /api-Route einem Modul gehoert oder explizit frei ist. */
 export function registriereModulGuard(app: FastifyInstance, pool: pg.Pool, stufe: Stufe) {
+  app.addHook("onRoute", (r) => {
+    if (istApiRoute(r.url) && !routeIstFrei(r.url) && !modulFuerRoute(r.url)) throw new Error(`API-Route ${r.url} ist keinem Modul zugeordnet`);
+  });
   // Fastify hat beim onRequest bereits geroutet: Zuordnung ueber das registrierte Routenmuster,
   // nie ueber die rohe URL (sonst umgehen kodierte Segmente wie /api/%68inweise den Guard).
   app.addHook("onRequest", async (req, reply) => {
     const route = req.routeOptions.url;
     if (route === undefined) return; // keine Route gefunden: Router antwortet selbst mit 404
-    const m = modulFuerRoute(route); if (!m) return;
+    const m = modulFuerRoute(route);
+    if (!m) { if (istApiRoute(route) && !routeIstFrei(route)) return reply.code(404).send({ fehler: "nicht gefunden" }); return; }
     if (m.lieferstufe > stufe) return reply.code(404).send({ fehler: "nicht gefunden" });
     if (m.art === "kern") return;
     let aktiv: boolean;

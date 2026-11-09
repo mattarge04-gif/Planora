@@ -31,6 +31,10 @@ export function kaskadeAbschalten(aktiv: Set<ModulId>, id: ModulId): ModulId[] {
   while (neu) { neu = false; for (const a of aktiv) if (!raus.has(a) && byId.get(a)!.braucht.some((b) => raus.has(b))) { raus.add(a); neu = true; } }
   return [...raus];
 }
+/** Bewusst modulfreie API-Routen (exakte Muster). Jede andere /api-Route muss einem Modul gehoeren. */
+export const FREIE_API_ROUTEN: readonly string[] = ["/api/ich"];
+export function routeIstFrei(muster: string) { return FREIE_API_ROUTEN.includes(muster.split("?", 1)[0]); }
+export function istApiRoute(muster: string) { return muster === "/api" || muster.startsWith("/api/"); }
 export function modulFuerRoute(url: string): Modul | undefined {
   const pfad = url.split("?", 1)[0];
   return MANIFEST.find((m) => m.routen.some((r) => {

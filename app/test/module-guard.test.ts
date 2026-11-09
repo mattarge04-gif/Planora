@@ -88,6 +88,20 @@ describe("Modul-Guard", () => {
       expect((await kaputtApp.inject(url)).statusCode, url).toBe(503);
     }
   });
+  it("PP8-5: nicht zugeordnete /api-Route scheitert beim Start, explizit freie Route bleibt erlaubt", async () => {
+    const app = Fastify();
+    apps.push(app);
+    registriereModulGuard(app, { connect: async () => { throw new Error("db weg"); } } as any, 2);
+    await expect((async () => { app.get("/api/unbekannt", async () => ({ ok: true })); await app.ready(); })()).rejects.toThrow(/keinem Modul zugeordnet/);
+    const frei = Fastify();
+    apps.push(frei);
+    registriereModulGuard(frei, { connect: async () => { throw new Error("db weg"); } } as any, 2);
+    frei.get("/api/ich", async () => ({ ok: true }));
+    frei.get("/gesund", async () => ({ ok: true }));
+    await frei.ready();
+    expect((await frei.inject("/api/ich")).statusCode).toBe(200);
+    expect((await frei.inject("/gesund")).statusCode).toBe(200);
+  });
   it("prueft auch einen SQL-Fehler und Modulwurzeln geschlossen", async () => {
     const app = server(2);
     await db.pool.query("alter table modul_schalter rename to modul_schalter_weg");
