@@ -5,15 +5,17 @@ purpose: build-substrate
 altitude: initiative
 paradigm: 'Modularer Monolith mit hexagonalen Modulen (Ports & Adapters), Pipes-and-Filters fuer die KI-Pipeline'
 scope: 'Planora V1 Gesamtsystem: Struktur, Dokumente, KI-Auslesen, Katalog, Preise, Erneuerungsrechnung, Zustand, 3D, Austausch, Betrieb'
-status: final
+status: in-ueberarbeitung-welle-4
 created: '2026-11-08'
 updated: '2026-11-09'
-binds: ['E1-E22', 'E31', 'E32', 'E33', 'FA-01..FA-38']
+binds: ['E1-E22', 'E31', 'E32', 'E33', 'E34-E37', 'FA-01..FA-38']
 sources: ['docs/architektur/00-kontext.md', 'docs/architektur/01-domaene.md', 'docs/architektur/02-tech-recherche.md']
 companions: ['docs/architektur/03-architektur.md', 'docs/architektur/adr/', 'docs/architektur/06-bausteine-open-source.md']
 ---
 
 # Architecture Spine — Planora V1
+
+> **Welle 4 / B2B (E34–E37, 2026-11-09):** eine Instanz pro Kunde, Compose-Paket, lokaler Login, Claude API direkt, Kundenmodule mit Schalter. Angepasst: AD-3, AD-9, AD-16, AD-21, AD-22; neu: AD-25, AD-26 (Grundlage `07-analyse-b2b.md` Kap. 4, ADR 0027–0031). [A] Uebrige AD-Eintraege, Diagramm (`mandant` → `instanz`), Stack und Deferred werden in Welle 4b nachgezogen; bei Widerspruch gelten die hier angepassten Eintraege und `03-architektur.md` Kap. 0.
 
 ## Design Paradigm
 
@@ -71,10 +73,10 @@ flowchart BT
 - **Prevents:** zwei Besitzer einer Tabelle, divergierende Schreibpfade.
 - **Rule:** Jede Tabelle gehoert genau einem Modul (Tabelle in 03 Kap. 3.3); nur dieses Modul schreibt sie; andere lesen ueber dessen API.
 
-### AD-3 — Mandantentrennung
-- **Binds:** alle Mandantentabellen, Worker, Objektspeicher
-- **Prevents:** Mandantenleck durch vergessenen Filter, Pool-Leck, Querreferenz.
-- **Rule:** `mandant_id NOT NULL`, ENABLE+FORCE RLS, `planora_app` ohne Owner/BYPASSRLS; Kontext nur via `mitMandant()` mit `SET LOCAL`; `app.mandant()` wirft bei fehlendem Kontext; FKs immer `(mandant_id, x_id)`; Objekt-Schluessel `m/<mandant_id>/…`.
+### AD-3 — Instanz-Isolation (E34, ADR 0031) [Welle 4, ersetzt Mandantentrennung/RLS]
+- **Binds:** Compose-Paket, PostgreSQL, Dokumentablage, Secrets, Backups, alle Fachtabellen
+- **Prevents:** Datenvermischung zwischen Kunden durch geteilte DB, Volumes, Secrets, Netze oder Backup-Ziele; ueberbreite DB-Rechte.
+- **Rule:** pro Kunde eigene DB, eigene Volumes, eigene Secrets, eigenes Netz und eigenes Backup-Ziel; keine geteilten Container mit Kundendaten; keine Mandantenwahl, keine `mandant_id`-Pflicht, keine RLS-Pflicht; normale FKs; `planora_app` ohne Owner/DDL; Autorisierung in der App nach AD-9. (Bis Welle 4: RLS mit `FORCE`, `mitMandant()`, Mandanten-FKs, ADR 0010.)
 
 ### AD-4 — Herkunft als Datenmodell
 - **Binds:** bestand, extraktion, austausch, preise-Import
@@ -101,10 +103,10 @@ flowchart BT
 - **Prevents:** Doppelverarbeitung, Jobs ohne Fachdatensatz.
 - **Rule:** nur pg-boss; Job in derselben Transaktion wie Fachaenderung; fachlicher Idempotenzschluessel; Nutzlast mit `mandant_id`, `korrelations_id`.
 
-### AD-9 — AuthN vs. AuthZ
-- **Binds:** identitaet, api
-- **Prevents:** Rechte an zwei Orten.
-- **Rule:** Keycloak nur Identitaet; Rollen/Mandanten/Liegenschaften nur in `mitgliedschaft`; BFF-Session, keine Tokens im Browser.
+### AD-9 — AuthN vs. AuthZ (E34, ADR 0028) [Welle 4 angepasst]
+- **Binds:** identitaet, api, worker
+- **Prevents:** Rechte an zwei Orten, selbstgebaute Kryptografie, weiterlaufende Sessions nach Entzug.
+- **Rule:** lokaler Login mit etablierter Auth-Bibliothek und speicherhartem Passwort-Hashing; Erstadmin ohne Standardpasswort; Rollen und Liegenschafts-Scope nur in Planora-Tabellen; BFF-Session, keine Tokens im Browser; Sperre/Rollenentzug/Passwortwechsel entziehen Sessions sofort, Jobs pruefen aktuelle Rechte. Spaeteres SSO-Modul liefert nur Identitaet. (Bis Welle 4: Keycloak nur Identitaet, Rollen in `mitgliedschaft`, ADR 0007.)
 
 ### AD-10 — Audit
 - **Binds:** alle Fachtabellen
@@ -136,10 +138,10 @@ flowchart BT
 - **Prevents:** ueberschriebene Preise, nicht reproduzierbare Plaene.
 - **Rule:** Preise nur einfuegen mit `gueltig_ab`; Auswahl juengster Eintrag ≤ Stichtag nach Rangfolge; Quellen nur ueber Port `PreisQuelle`.
 
-### AD-16 — KI-Zugang und Kostenbremse
-- **Binds:** extraktion
-- **Prevents:** Datenabfluss bei KI aus, Kostenexplosion.
-- **Rule:** nur Port `KiProvider`; Pruefung KI-Schalter an drei Stellen; Budget reservieren vor Aufruf; Antwort-Cache; jeder Aufruf in `ki_aufruf`.
+### AD-16 — KI-Zugang und Kostenbremse (E36, ADR 0030, 0017) [Welle 4 angepasst]
+- **Binds:** extraktion, interview (Agent), suche (optionales Reranking), worker
+- **Prevents:** Datenabfluss bei KI aus, Kostenexplosion, Abhaengigkeit der Grundfunktionen von KI.
+- **Rule:** nur Port `KiProvider` mit Adapter `anthropic-direkt` (Claude API) plus Fake; KI ist ein Modul (AD-25), pro Instanz standardmaessig aus, Einschalten nur mit Zustimmung und eigenem Schluessel der Instanz; Pruefung an der Dispatch-Grenze (KI aus → 0 neue Requests); Budget je Instanz reservieren vor Aufruf; Antwort-Cache; jeder Aufruf in `ki_aufruf`. Stufen 1–3 und lokale Suche laufen ohne API-Schluessel. (Bis Welle 4: Bedrock EU-Profil, Budget je Mandant.)
 
 ### AD-17 — Fremdformate
 - **Binds:** austausch, dokumente
@@ -164,12 +166,12 @@ flowchart BT
 ### AD-21 — Pflicht-Bausteine und Lizenzen (E31, ADR 0024)
 - **Binds:** all
 - **Prevents:** Eigenbau fuer geloeste Probleme, Lizenzrisiken in der Auslieferung.
-- **Rule:** Bausteine aus ADR 0024 sind Pflicht; Eigenbau derselben Funktion nur mit PO-Entscheid. Ausgelieferter Code nur MIT/BSD/ISC/Apache-2.0/MPL-2.0; SBOM + Lizenzpruefung in CI brechen den Build.
+- **Rule:** Bausteine aus ADR 0024 sind Pflicht **je Lieferstufe** (Demo / Suche / KI / spaeteres Modul); durch Plan V2 gestrichene Werkzeuge (u.a. Tolgee, GlitchTip, Uptime Kuma, cosign, Renovate, ZAP) sind bis nach der Demo zurueckgestellt [A, 07 Kap. 7]. Eigenbau derselben Funktion nur mit PO-Entscheid. Ausgelieferter Code nur MIT/BSD/ISC/Apache-2.0/MPL-2.0; das On-Prem-Lizenzinventar umfasst Container, transitive Abhaengigkeiten und Modellgewichte; «separater Prozess» ersetzt keine konkrete Lizenzpruefung (z.B. AGPL bei Speicher/Ghostscript, ADR 0027); SBOM + Lizenzpruefung in CI brechen den Build. [Welle 4 angepasst]
 
-### AD-22 — Oeffentliche APIs (E32, ADR 0025)
-- **Binds:** struktur, hinweise, zustand, identitaet (Keycloak)
-- **Prevents:** Abhaengigkeit von fremden Diensten im Kernablauf, ungepruefte Fremddaten, Datenabfluss.
-- **Rule:** Nur geo.admin.ch/GWR, Nager.Date, Pwned Passwords; je Dienst ein Port mit Adapter, Cache in PG und manuellem Rueckfall; GWR-Werte nur als `angabe` (`quelle_art=import`, Quelle `gwr`), Bestaetigung Pflicht; nie Dokument- oder Personendaten an externe APIs; CI nur mit Fakes.
+### AD-22 — Externe Aufrufe (E36; ADR 0025 zurueckgestellt) [Welle 4 angepasst]
+- **Binds:** alle Module, worker, Compose-Netz
+- **Prevents:** Abhaengigkeit von fremden Diensten im Kernablauf, Datenabfluss, ungepruefte Fremddaten.
+- **Rule:** Einzige fachliche externe API ist die Claude API (nur bei aktivem Modul KI, AD-16). Kein GWR-, Feiertags- oder HIBP-Aufruf und keine dafuer verpflichtenden Adapter/Caches in der Demo; Stammdaten manuell. Wiederaufnahme nur als Modul (AD-25) mit neuem PO-Entscheid. Nie Dokument- oder Personendaten an andere externe Dienste; CI nur mit Fakes. [?] Ob Betriebsverkehr (ClamAV-Signaturen, Image-/Modell-Downloads, SMTP, Zeit) unter diese Regel faellt, ist offen (07 Kap. 8 Punkt 6). (Bis Welle 4: geo.admin.ch/GWR, Nager.Date, Pwned Passwords verbindlich, E32.)
 
 ### AD-23 — Geschlossene 3D-Welt (E33, ADR 0026)
 - **Binds:** interview, szene, struktur, bestand, katalog, web
@@ -180,6 +182,16 @@ flowchart BT
 - **Binds:** web
 - **Prevents:** unbrauchbares 3D auf Geraeten ohne GPU.
 - **Rule:** Zeichnen nur bei Aenderung; Stufen normal/schwach/2D automatisch nach Renderer und gemessener Bildrate, manuell umschaltbar; kein Postprocessing, keine Echtzeit-Schatten; jede Funktion auch in 2D/Tabelle.
+
+### AD-25 — Feature-Schalter / Kundenmodule (E37, ADR 0029) [Welle 4 neu]
+- **Binds:** plattform, alle optionalen Module, api, worker, web
+- **Prevents:** kundenspezifische Branches, nur in der UI versteckte Funktionen, kaputte Modulabhaengigkeiten, Datenverlust beim Abschalten.
+- **Rule:** eine Codebasis; Modulmanifest im Code (Lieferstufe, Abhaengigkeiten, Routen, Job-Typen); optionale Module Default aus; `modulAktiv(id)` wird serverseitig an jeder HTTP-Route und in jedem Job-Handler vor Rolle/Recht geprueft; Einschalten nur mit erfuellten Abhaengigkeiten; Abschalten erhaelt alle Daten; Schalten nur Instanz-Admin, jede Aenderung im Audit. Keine externe Flag-Plattform. [?] Wer bezahlte Module freischalten darf, ist offen (07 Kap. 8 Punkt 3).
+
+### AD-26 — Betrieb und Instanz-Update (E35, ADR 0027) [Welle 4 neu]
+- **Binds:** Compose-Paket, migrator, worker, Backup, alle Schemaaenderungen
+- **Prevents:** auseinanderlaufende Kundeninstallationen, abgebrochene Updates ohne Rueckweg, Backups ohne passende Dokumente oder Schluessel.
+- **Rule:** dasselbe Compose-Paket fuer CH-VM und On-Premise mit Versionsmanifest (Image-Digests, Schema-, Katalog-/Regelwerk- und Modulmanifest-Version); Update je Instanz: Backup → `migrator` mit Lock und Journal → neue Images → Health-Pruefung; Schema und Job-Payloads N/N-1-kompatibel, Worker lehnen unbekannte Job-Schemaversionen ab; Backup = DB + referenzierte Dokumente + Konfiguration als konsistentes Paar, Kopie ausserhalb der VM; Restore auf frischer VM ist Abnahmenachweis. Lokale Katalog-/Lebensdauer-Overrides ueberleben Updates.
 
 ## Consistency Conventions
 
