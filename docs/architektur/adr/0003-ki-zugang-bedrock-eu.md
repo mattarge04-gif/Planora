@@ -1,5 +1,10 @@
 # 0003 – KI-Zugang AWS Bedrock eu-central-2 mit EU-Inferenzprofil
 
+> **Status ab Welle 4: ersetzt durch ADR 0030 (E34–E37, 2026-11-09).**
+> [F] E36: KI nur ueber die Claude API direkt (Anthropic), Bedrock dauerhaft ersetzt (E37); App funktioniert ohne KI.
+> [A] Nur direkter Anthropic-Adapter plus Fake; AWS-/Vertex-Adapter, IAM, Profil-ARN und EU-Bedrock-Zusage entfallen. KI ab Stufe 4, pro Instanz standardmaessig aus.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E4, E7, NFR "Datenstandort Schweiz", FA-12..FA-18, FA-37
 
 > **Abweichung vom PO-Entscheid (teilweise):** E7 und die NFR fordern verwaltete Dienste und Datenstandort in der Schweiz. Fuer den **KI-Pfad** ist das nach heutigem Stand nicht erreichbar. Dokumentinhalte, die an die KI gehen, werden **in der EU** verarbeitet. Alle anderen Daten (Datenbank, Dokumente, Backups, Logs) bleiben in der Schweiz.

@@ -1,5 +1,10 @@
 # 0012 – Herkunftsmodell "Angabe" je Kennwert
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Herkunft wird je Eingabekanal typisiert: Formular, Excel-Zeile/Zelle, Dokument/Seite/Zitat, spaeter Interview-Antwort (Stufe 4).
+> [A] Eine Resolver-Tabelle je Typ/Element; Excel-Werte erst nach validierter Zeilenvorschau bestaetigen. «Mandant» ist als «Instanz» zu lesen.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: Datenmodell-Grundsaetze 00-kontext, FA-15, FA-16, FA-18, FA-21, FA-35
 
 ## Kontext

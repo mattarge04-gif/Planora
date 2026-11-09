@@ -1,5 +1,10 @@
 # 0005 – ORM Drizzle; RLS, Trigger und Rechte als handgeschriebenes SQL
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Drizzle, geprueftes Hand-SQL und getrennte Runtime-/Migrator-Rechte bleiben.
+> [A] RLS-Policies, `app.mandant()` und der Policy-Katalogtest entfallen (ADR 0031). Neu: Migrationslock, Journal, nichttransaktionale Schritte und N/N-1-Kompatibilitaet pro Instanz (ADR 0027).
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E7, FA-01, FA-06
 
 ## Kontext

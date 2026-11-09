@@ -1,5 +1,10 @@
 # 0017 – KI-Kostenbremse und Schutzschalter
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Ab Stufe 4: Budget und Abschaltung je Instanz statt ueber Mandanten; direkte API (ADR 0030) und Interview-Verbrauch einbezogen.
+> [A] Reservierungs-Reconciliation, Token-Maxima und ungewisse Abrechnung nach Absturz definieren; Schalter «KI aus» laesst keine neuen Aufrufe zu.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: NFR, E5, 02 Kap. 2.4
 
 ## Kontext

@@ -1,5 +1,10 @@
 # 0020 – Austausch-Port mit Stratus-Adapter
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Preise/Investitionsplan aus dem Austauschvertrag entfernt; Formular-/Excel-Erfassung (Stufe 2) ist vom Stratus-Adapter getrennt, Stratus als spaeteres Modul.
+> [?] PO: E22 ist durch E34–E37 nicht ausdruecklich aufgehoben – gehoert Stratus-Austausch zur Demo oder nicht?
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E22, E9, FA-29
 
 ## Kontext

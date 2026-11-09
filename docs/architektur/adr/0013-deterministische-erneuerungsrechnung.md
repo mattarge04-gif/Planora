@@ -1,5 +1,10 @@
 # 0013 – Deterministische Erneuerungs- und Investitionsrechnung
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Demo-Kern: Lebensdauer, Quellenrangfolge, Ersatzjahr, Vollstaendigkeit und Ampel; Stichtag, Regelversion und deterministische Rechnung bleiben.
+> [F] E24: Preis-/Teuerungs-/Investitionslogik ist nicht V1. [A] Sie wird als spaeteres Kundenmodul abgetrennt.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E6, E11, E14–E17, FA-17, FA-20..FA-29, FA-31
 
 ## Kontext

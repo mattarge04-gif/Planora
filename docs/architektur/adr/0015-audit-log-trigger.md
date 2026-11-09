@@ -1,5 +1,10 @@
 # 0015 – Audit-Log per Datenbank-Trigger mit Hash-Kette
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Trigger, minimale Rechte und Hash-Kette bleiben, Kette instanzbezogen statt mandantenbezogen; keine Mandantenwechsel-Ereignisse.
+> [A] Neu erfasst: Login, Rollen- und Modulschalter-Aenderung, Import, Instanz-Update. Grenzen gegen Host-/DB-Owner werden benannt (ADR 0031).
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: FA-06, NFR Nachvollziehbarkeit, ISO-27001-Naehe
 
 ## Kontext

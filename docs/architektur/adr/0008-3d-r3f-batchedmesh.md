@@ -1,5 +1,10 @@
 # 0008 – 3D: Three.js/R3F mit BatchedMesh, Sprite-Pins und deterministischem Auto-Layout
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [F] E33 gilt weiter: InstancedMesh, Leistungsstufen normal/schwach/2D (Titel nennt noch BatchedMesh, historisch).
+> [A] Einstieg ueber Formular/Excel und Weltgenerator; Grundriss-Editor ist keine Voraussetzung mehr (ADR 0014 zurueckgestellt). Konva nur fuer den funktionalen 2D-Fallback separat beurteilen.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen, angepasst durch E33 · 2026-11-08 / 2026-11-09 · Bezug: E2, E8, FA-33..FA-36
 
 ## Kontext

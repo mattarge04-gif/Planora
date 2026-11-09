@@ -1,5 +1,10 @@
 # 0024 – Pflicht-Bausteine (Open Source) und Lizenzregeln
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Pflichtliste nach Demo / Suche / KI / spaeterem Modul aufteilen und Streichungen aus Plan V2 uebernehmen; RLS nicht mehr Eigenbau-Kern.
+> [A] Container, transitive Abhaengigkeiten und Modellgewichte in die On-Prem-SBOM; «separater Prozess = unkritisch» durch konkrete Lizenzpruefung ersetzen (vgl. ADR 0027 zu MinIO/AGPL).
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: akzeptiert (PO-Entscheid E31) · 2026-11-09 · Bezug: E28 ("fertige Bausteine statt Eigenbau"), E7
 
 ## Kontext

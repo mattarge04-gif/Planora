@@ -1,5 +1,10 @@
 # 0010 – Mandantentrennung: Row-Level-Security + zusammengesetzte Fremdschluessel
 
+> **Status ab Welle 4: ersetzt durch ADR 0031 (E34–E37, 2026-11-09).**
+> [F] E34: eine Instanz pro Kunde, RLS zurueckgestellt.
+> [A] Instanzgrenze statt RLS: eigene DB, Volumes, Secrets, Netze und Backup-Ziele pro Kunde. Normale FKs, minimale DB-Rechte und App-Autorisierung bleiben; Details ADR 0031.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E5, E7, FA-01, FA-03
 
 ## Kontext

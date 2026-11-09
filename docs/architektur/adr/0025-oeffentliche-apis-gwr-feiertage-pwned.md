@@ -1,5 +1,10 @@
 # 0025 – Oeffentliche APIs: geo.admin.ch/GWR, Nager.Date, Pwned Passwords
 
+> **Status ab Welle 4: zurueckgestellt bis nach Demo (E34–E37, 2026-11-09).**
+> [F] E36: oeffentliche APIs aus E32 bis nach der Demo zurueckgestellt.
+> [A] Kein GWR-/Feiertags-/HIBP-Aufruf in der Demo, Stammdaten manuell. Wiederaufnahme muss mit der Vorgabe «einzige externe API Claude» neu abgeglichen werden.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: akzeptiert (PO-Entscheid E32) · 2026-11-09 · Bezug: E3 (minimaler Kundenaufwand), E22, E29, revDSG, `06-bausteine-open-source.md` Kap. 9
 
 ## Kontext

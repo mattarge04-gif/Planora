@@ -1,5 +1,10 @@
 # 0018 – Preisdatenbank pro Typ mit Quellen-Port
 
+> **Status ab Welle 4: zurueckgestellt bis nach Demo (E34–E37, 2026-11-09).**
+> [F] E24: keine Preise, Feeds, Teuerung oder Investitionsplanung in V1.
+> [A] Spaeteres Kundenmodul (ADR 0029) mit eigener Fachabnahme fuer Preisbasis, Einheiten und Herkunft.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E15, E16, FA-24, FA-25
 
 ## Kontext

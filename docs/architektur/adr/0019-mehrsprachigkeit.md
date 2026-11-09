@@ -1,5 +1,10 @@
 # 0019 – Mehrsprachigkeit DE/FR/IT ab V1
 
+> **Status ab Welle 4: zurueckgestellt bis nach Demo (E34–E37, 2026-11-09).**
+> [A] Lieferumfang Demo: DE/de-CH. FR/IT, Tolgee und Vollstaendigkeits-Gates zurueckgestellt (Plan V2, Kasten «Gestrichen»).
+> [A] Sprachneutrale IDs und trennbare Texte bleiben, damit FR/IT spaeter ohne Umbau moeglich ist.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E20, E12, FA-29
 
 ## Kontext

@@ -1,5 +1,10 @@
 # 0023 – Suche: PostgreSQL-Volltext + pgvector mit Reciprocal Rank Fusion
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Stufe 3: PostgreSQL-Volltext, pgvector/RRF und lokaler Embedding-Server (E36); Voyage, Managed-PG- und Mandanten-RLS-Annahmen entfallen.
+> [A] Modell/Server/Lizenz/RAM/CPU noch zu verifizieren (`bge-m3` Kandidat); Liegenschaftsrechte auch fuer Snippets/Vektortreffer; Claude-Reranking erst Stufe 4 (vgl. offene Frage in E37).
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: akzeptiert (PO-Entscheid E31), Embedding-Anbieter offen (E27) · 2026-11-09 · Bezug: E26, E27, E30, E7
 
 ## Kontext

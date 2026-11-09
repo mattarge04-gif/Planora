@@ -1,5 +1,10 @@
 # 0002 – Hosting Exoscale (Zuerich, Offsite Genf)
 
+> **Status ab Welle 4: ersetzt durch ADR 0027 (E34–E37, 2026-11-09).**
+> [F] E35: ein Docker-Compose-Paket pro Kunde, CH-VM (von uns betrieben) oder On-Premise; Exoscale-Managed dauerhaft ersetzt (E37).
+> [A] Managed-PG/SOS/LB/SKS, HA-/PITR-Automatik und gemeinsame Mandantenkalkulation entfallen. Backup, Restore, TLS und Updates: ADR 0027.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E7, NFR Datenstandort CH
 
 ## Kontext

@@ -1,5 +1,10 @@
 # 0001 – Modularer Monolith mit hexagonalen Modulen und drei Prozessrollen
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [F] Eine Codebasis (E37). [A] Rollen `api`/`worker`/`migrator` und Modulgrenzen bleiben; bezahlte Erweiterungen sind Kernmodule mit Schalter pro Instanz (ADR 0029).
+> [A] Keycloak ist kein Grundcontainer mehr (ADR 0028); Modul-Abhaengigkeiten und Datenverhalten beim Abschalten regelt ADR 0029.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E7, alle FA
 
 ## Kontext

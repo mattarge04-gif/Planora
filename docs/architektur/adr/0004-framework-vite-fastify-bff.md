@@ -1,5 +1,10 @@
 # 0004 – Framework: Vite-SPA + Fastify als Backend-for-Frontend
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] React/Vite, Fastify als BFF, Cookie-Session und API-Schema bleiben.
+> [A] OIDC-Code-Flow mit Keycloak entfaellt; lokale Authentifizierung nach ADR 0028 (Session-Rotation, Logout/Sperre, CSRF/Origin, Passwort-Reset ohne externe Pflichtdienste).
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E7, FA-30 (Tablet), FA-33..FA-36
 
 ## Kontext

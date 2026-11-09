@@ -1,5 +1,10 @@
 # 0007 – AuthN mit Keycloak, AuthZ in der Planora-Datenbank
 
+> **Status ab Welle 4: ersetzt durch ADR 0028 (E34–E37, 2026-11-09).**
+> [F] E34: V1 mit einfachem lokalem Login und Rollen; Keycloak und Microsoft-SSO zurueckgestellt (spaeter Kundenmodul).
+> [A] Mandantenwechsel und IdP-Brokering entfallen. Rollen stehen weiterhin nur in Planora-Tabellen; ein spaeteres SSO-Modul liefert nur Identitaet, keine zweite Rollenquelle.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: NFR SSO, FA-03, FA-04, FA-05
 
 ## Kontext

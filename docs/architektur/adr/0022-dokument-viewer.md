@@ -1,5 +1,10 @@
 # 0022 – Dokument-Viewer: Vorschau-PDF beim Upload, PDF.js, Markierung per Docling-Box
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Viewer, lokale Office-/Scan-Konvertierung und unveraenderte Originale bleiben Stufe 2; Pfade ohne `m/<mandant_id>`.
+> [A] URLs nach Objekt-/Rollenrechten; Box-Feld/Koordinatensystem und Vorschau-Version vereinheitlichen. Suche und KI sind keine Voraussetzung zum Oeffnen.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: akzeptiert (PO-Entscheid E31) · 2026-11-09 · Bezug: E23, E26, FA-11
 
 ## Kontext

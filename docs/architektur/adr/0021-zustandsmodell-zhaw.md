@@ -1,5 +1,10 @@
 # 0021 – Zustandsmodell nach ZHAW und Lebensdauer-Tabelle des Mandanten
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Lebensdauer-Tabelle und Overrides instanzbezogen («Mandant» = Instanz), nur Deutsch; angenaeherte ZHAW-Kurve braucht fachliche Freigabe.
+> [?] PO: Umfasst die Demo die volle Zustandsbewertung oder zunaechst Alter/Lebensdauer/Ampel?
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E11, E14, FA-22, FA-30..FA-32
 
 ## Kontext

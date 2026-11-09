@@ -1,5 +1,10 @@
 # 0016 – Upload-Sicherheit: Quarantaene und Virenscan
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Quarantaene, ClamAV und serverseitiger Multipart-Abschluss bleiben; Prefixe/Signierung auf den gewaehlten lokalen Speicher (ADR 0027) und Objekt-Rechte statt Mandantenprefix.
+> [A] K01 gilt erst nach Race-/Crash-Test auf dem ausgelieferten Speicher als geschlossen. AV-Ausfall, volle Disk und Signaturversorgung auch On-Premise festlegen.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen, angepasst durch E31 · 2026-11-08 / 2026-11-09 · Bezug: FA-07, FA-08, NFR Security
 
 ## Kontext

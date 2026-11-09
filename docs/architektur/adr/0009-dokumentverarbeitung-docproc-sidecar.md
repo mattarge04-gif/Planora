@@ -1,5 +1,10 @@
 # 0009 – Dokumentverarbeitung: Python-Sidecar "docproc" (OCRmyPDF, Docling) + Claude
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Lokale Vorschau/OCR (Stufe 2) getrennt von optionaler Indexierung (Stufe 3) und Claude-Extraktion (Stufe 4); Container und Modellgewichte je Stufe paketiert.
+> [A] Azure-DI-Reserve und Grundriss-Analyse entfallen; Parser ohne Fach-Credentials, kontrollierte Byte-Uebergabe, keine freien URLs, kein Internet.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen, angepasst durch E31 · 2026-11-08 / 2026-11-09 · Bezug: E4, E7, FA-07..FA-15
 
 > **Abweichung vom PO-Entscheid (gering):** E7 nennt einen Monolithen in TypeScript. Die besten lokal betreibbaren Werkzeuge fuer OCR und Tabellenstruktur sind Python-Bibliotheken. Planora betreibt deshalb einen **zustandslosen Python-Hilfscontainer ohne Fachlogik und ohne Datenbankzugriff**. Die gesamte Fachlogik bleibt im TypeScript-Monolithen.

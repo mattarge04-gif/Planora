@@ -1,5 +1,10 @@
 # 0014 – Grundriss-Erkennung hybrid mit Pflicht-Korrektur und manuellem Fallback
 
+> **Status ab Welle 4: zurueckgestellt bis nach Demo (E34–E37, 2026-11-09).**
+> [A] Grundriss-Erkennung, Korrektur-Editor und Spike S1 sind keine Voraussetzung mehr; Erfassung ueber Formular/Excel und Weltgenerator (ADR 0026).
+> [A] Grundrisse bleiben als Dokumente hochlad- und betrachtbar; eine spaetere Erkennung braucht ein eigenes Modul (ADR 0029).
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen, ergaenzt durch E31 · 2026-11-08 / 2026-11-09 · Bezug: E3, FA-12
 
 ## Kontext

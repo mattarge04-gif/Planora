@@ -1,5 +1,10 @@
 # 0006 – Job-Queue pg-boss mit transaktionaler Job-Erzeugung
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Transaktionale Job-Erzeugung und idempotente Facheffekte bleiben; `mandant_id`/Mandantenkontext entfaellt aus Payload und Handler.
+> [A] Handler pruefen aktuelle Rechte, Modulschalter (ADR 0029) und Job-Schemaversion; Wiederanlauf nach Instanz-Update (ADR 0027). Keine Exactly-once-Zusage fuer Claude-Abrechnung.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E7 (Hintergrund-Worker), KI-Pipeline
 
 ## Kontext

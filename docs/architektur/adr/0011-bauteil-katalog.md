@@ -1,5 +1,10 @@
 # 0011 – Bauteil-Katalog: global, versioniert; ETIM und eBKP-H nur als Mappings
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Versionierter Produktkatalog wird mit jeder Instanz ausgeliefert; lokale Kunden-Overrides bleiben bei Katalog-Updates erhalten, keine gemeinsame Laufzeitdatenbank.
+> [A] Demo nur DE, Preis-/Kostenbezug entfaellt (E24); stabile IDs, GLB-Hashes und optionale Mappings bleiben.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: vorgeschlagen · 2026-11-08 · Bezug: E8, E11, E12, E13, E17, E20, FA-14, FA-19..FA-21
 
 ## Kontext

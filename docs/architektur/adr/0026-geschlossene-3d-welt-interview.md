@@ -1,5 +1,10 @@
 # 0026 – Geschlossene 3D-Welt: Regelwerk, Interview-Agent und Weltgenerator
 
+> **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
+> [A] Regelwerk, Beschreibungsschema, Generator und bestaetigte Weltvorschau bleiben Stufe 2; Formular/Excel zuerst, Claude-Interview erst Stufe 4 (ADR 0030).
+> [A] Bedrock, GWR- und Grundriss-Vorbelegung sowie FR/IT entfallen; Herkunft je Eingabekanal (ADR 0012) und Verhalten bestehender Welten bei Regelwerk-Updates definieren.
+> Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
+
 Status: akzeptiert (PO-Entscheid E33) · 2026-11-09 · Bezug: E2, E3 (minimaler Kundenaufwand), E8, E32 (GWR), AD-4, AD-6, AD-7
 
 ## Kontext
