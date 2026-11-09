@@ -189,4 +189,31 @@ describe("Login", () => {
     await expect(loeseSetupTokenEin(db.pool, t, "a b@planora.invalid", "X", pw)).rejects.toThrow(/E-Mail/);
     await loeseSetupTokenEin(db.pool, t, "gueltig@planora.invalid", "X", pw);
   });
+
+  it("PP7-7: Login-Erfolg und Fehlversuche werden pseudonym auditiert (ohne E-Mail, Passwort, Token)", async () => {
+    const m = "audit@planora.invalid"; const p = randomBytes(12).toString("base64url"); const ip = "198.18.6.1";
+    const { benutzerId } = await loeseSetupTokenEin(db.pool, await erzeugeSetupToken(db.pool), m, "Audit", p);
+    const aid = (await db.pool.query("select audit_id from konto_status where benutzer_id=$1", [benutzerId])).rows[0].audit_id;
+    const arten = async (a: string | null) => (await db.pool.query("select art, daten from audit_eintrag where art like 'login.%' and audit_id is not distinct from $1 order by id", [a])).rows;
+    expect((await post("/api/auth/sign-in/email", { email: m, password: p }, {}, ip)).statusCode).toBe(200);
+    expect((await post("/api/auth/sign-in/email", { email: m, password: "falsch" }, {}, ip)).statusCode).toBe(401);
+    await db.pool.query("update konto_status set status='gesperrt' where benutzer_id=$1", [benutzerId]);
+    expect((await post("/api/auth/sign-in/email", { email: m, password: p }, {}, ip)).statusCode).toBe(401);
+    expect((await arten(aid)).map((x) => [x.art, x.daten.grund ?? null])).toEqual([["login.ok", null], ["login.fehlgeschlagen", "anmeldedaten"], ["login.fehlgeschlagen", "konto_nicht_aktiv"]]);
+    // unbekanntes Konto: Eintrag ohne Zuordnung
+    const vorher = (await arten(null)).length;
+    expect((await post("/api/auth/sign-in/email", { email: "fremd@planora.invalid", password: "geheim-xyz" }, {}, ip)).statusCode).toBe(401);
+    expect((await arten(null)).length).toBe(vorher + 1);
+    const alles = JSON.stringify((await db.pool.query("select daten from audit_eintrag where art like 'login.%'")).rows);
+    for (const geheim of [m, p, "fremd@planora.invalid", "geheim-xyz", "falsch"]) expect(alles).not.toContain(geheim);
+  });
+  it("PP7-7: Sperre wegen Fehlversuchen wird auditiert", async () => {
+    const m = "sperre@planora.invalid"; // aus dem Kontosperre-Test bekannt
+    const aid = (await db.pool.query(`select ks.audit_id from konto_status ks join "user" u on u.id = ks.benutzer_id where u.email = $1`, [m])).rows[0].audit_id;
+    const anzahl = async () => (await db.pool.query("select count(*)::int n from audit_eintrag where art='login.zu_viele_fehlversuche' and audit_id=$1", [aid])).rows[0].n as number;
+    const vorher = await anzahl();
+    await db.pool.query("update anmelde_fehlversuch set anzahl = 10, gesperrt_bis = now() + interval '15 minutes' where schluessel = $1", ["konto:" + m]);
+    expect((await post("/api/auth/sign-in/email", { email: m, password: "x" }, {}, "198.18.6.2")).statusCode).toBe(429);
+    expect(await anzahl()).toBe(vorher + 1);
+  });
 });

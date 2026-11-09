@@ -52,6 +52,7 @@ function kontoSperreAlsAnmeldefehler<T extends (...a: any[]) => any>(fabrik: T):
 export type AuthOptionen = { baseURL: string; secret: string; sendeReset?: (email: string, url: string) => Promise<void> };
 export function baueAuth(pool: pg.Pool, o: AuthOptionen) {
   const db = drizzle(pool, { schema: authSchema });
+  const loginAudit = (auditId: string | null, art: string, daten: object = {}) => pool.query("select audit_schreiben($1,$2,$3)", [auditId, art, JSON.stringify(daten)]);
   return betterAuth({
     baseURL: o.baseURL, secret: o.secret, trustedOrigins: [o.baseURL],
     database: kontoSperreAlsAnmeldefehler(drizzleAdapter(db, { provider: "pg", schema: authSchema, transaction: true })),
@@ -76,14 +77,19 @@ export function baueAuth(pool: pg.Pool, o: AuthOptionen) {
         if (ctx.path !== "/sign-in/email") return;
         // PP7-5: Fehlversuchssperre je Konto und IP, atomar reserviert vor der Passwortpruefung
         const schluessel = anmeldeSchluessel(ctx);
+        const mail = normalisiereEmail(ctx.body?.email);
+        const konto = (await pool.query(`select ks.status, ks.audit_id from konto_status ks join "user" u on u.id = ks.benutzer_id where u.email = $1`, [mail])).rows[0] as { status: string; audit_id: string } | undefined;
         const warte = (await pool.query("select anmeldung_reservieren($1) w", [schluessel])).rows[0].w as number;
-        if (warte > 0) throw new APIError("TOO_MANY_REQUESTS", { code: "ZU_VIELE_FEHLVERSUCHE", message: "Zu viele Fehlversuche. Bitte spaeter erneut versuchen." }, { "X-Retry-After": String(warte) });
+        if (warte > 0) {
+          await loginAudit(konto?.audit_id ?? null, "login.zu_viele_fehlversuche");
+          throw new APIError("TOO_MANY_REQUESTS", { code: "ZU_VIELE_FEHLVERSUCHE", message: "Zu viele Fehlversuche. Bitte spaeter erneut versuchen." }, { "X-Retry-After": String(warte) });
+        }
         // Login-Sperre fuer Status != aktiv (gesperrt, zu_bestaetigen; Spec §5, §15.2): gleiche Antwort wie falsches Passwort,
         // Passwort wird trotzdem gehasht (gleiches Zeitverhalten wie der Pfad "Benutzer unbekannt" in Better Auth).
-        const r = await pool.query(`select ks.status from konto_status ks join "user" u on u.id = ks.benutzer_id where u.email = $1`, [normalisiereEmail(ctx.body?.email)]);
-        if (r.rowCount === 1 && r.rows[0].status !== "aktiv") {
+        if (konto && konto.status !== "aktiv") {
           await hashPasswort(String(ctx.body?.password ?? ""));
           await pool.query("select anmeldung_abschliessen($1, false)", [schluessel]);
+          await loginAudit(konto.audit_id, "login.fehlgeschlagen", { grund: "konto_nicht_aktiv" });
           throw APIError.from("UNAUTHORIZED", BASE_ERROR_CODES.INVALID_EMAIL_OR_PASSWORD);
         }
       }),
@@ -91,6 +97,10 @@ export function baueAuth(pool: pg.Pool, o: AuthOptionen) {
         if (ctx.path !== "/sign-in/email") return;
         const erfolg = !isAPIError(ctx.context.returned) && !!ctx.context.newSession;
         await pool.query("select anmeldung_abschliessen($1, $2)", [anmeldeSchluessel(ctx), erfolg]);
+        // PP7-7: pseudonymes Audit (nur audit_id, keine E-Mail/Passwort/Token); unbekanntes Konto -> audit_id null
+        const a = (await pool.query(`select ks.audit_id from konto_status ks join "user" u on u.id = ks.benutzer_id where u.email = $1`, [normalisiereEmail(ctx.body?.email)])).rows[0]?.audit_id ?? null;
+        if (erfolg) await loginAudit(a, "login.ok");
+        else await loginAudit(a, "login.fehlgeschlagen", { grund: "anmeldedaten" });
       }),
     },
     emailAndPassword: {
