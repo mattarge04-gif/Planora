@@ -288,3 +288,43 @@ Nie in der CI: echte Kundendokumente, Produktions-Secrets, echte KI ausser Stufe
 - Lindenhof ist **sauber, vektorbasiert, regelmaessig und synthetisch**. Alle KI-Messwerte sind eine **Obergrenze**, kein Beweis fuer echte Unterlagen (R12).
 - 3D wurde nur auf einer dedizierten GPU und im Software-Renderer gemessen.
 - Kein Produktivcode; alle Prototypen unter `spikes/` sind Wegwerfcode.
+
+## 11. Neu ab Welle 4 (B2B, E34–E37)
+
+Stand 2026-11-09. Quelle: `07-analyse-b2b.md` Kap. 6, ADR 0027–0031, Spine AD-3/9/16/25/26. Alle Pruefungen sind Vorschlaege [A]; Lieferstufe in Klammern [A, Plan V2].
+[A] Entfallend bzw. ersetzt (Details 07 Kap. 6): RLS-1–6, Pool-Leak- und Mandanten-FK-Suite, Exoscale-/Bedrock-/Keycloak-Gates (S4, S7, S9, Teile S5/S6/S11), Grundriss-, Preis- und FR/IT-Gates. RLS-7 wird GRANT-Test, RLS-8/9 werden Rollen-/Liegenschafts-/Objektzugriffstests, RLS-10 prueft berechtigten Ausloeser und Modul-Schalter, RLS-11 (Audit) bleibt. Kap. 1–10 werden in Welle 4b auf eine Abnahmematrix Entscheid × Lieferstufe × Modul umgestellt; der historische Messbericht bleibt.
+
+### 11.1 Installation und Instanztrennung (Stufe 1, ADR 0027, 0031)
+- Saubere unterstuetzte Linux-VM → Compose-Paket, Secrets, TLS, Erstadmin per Einrichtungs-Token → Import/Upload/Viewer/3D/Ampel **ohne** Claude-Schluessel.
+- Zweite isolierte Instanz mit anderen Daten, Secrets und Backup-Ziel: keine gemeinsamen Volumes, kein Restore-Manifest der falschen Instanz, keine URLs/Links, die auf Kunde B zeigen.
+
+### 11.2 Lokaler Login (Stufe 1, ADR 0028)
+- Falsche Passwoerter und Rate-Limit/Sperre; Hash-Verfahren und Parameter in der DB sichtbar korrekt; kein Standardpasswort nach Installation.
+- Sichere Recovery (E-Mail-Link nur mit SMTP, Admin-Reset, Notfall-Reset ueber Host mit Audit); CSRF und Session-Fixation; Leerlauf-/absoluter Timeout; Logout, Kontosperre, Rollenentzug und Passwortwechsel entziehen bestehende Sessions, Downloads und neue Jobs sofort.
+
+### 11.3 Update und Migration (Stufe 1, ADR 0027, Spine AD-26)
+- Befuellte Version N-1 inkl. Dokumenten, Katalog-Overrides und wartenden Jobs auf N aktualisieren; zweiter paralleler Migrator wird abgelehnt (Lock).
+- Fehler/Neustart waehrend Backfill und nichttransaktionalem Index; danach vorheriger Stand bzw. geuebter Restore. Rechte, Dateihashes, Zuordnungen und Job-Kompatibilitaet (altes Job-Schema wird abgelehnt, nicht falsch ausgefuehrt) nachweisen; Wiederholung ohne Doppelanlage.
+
+### 11.4 Feature-Schalter (ab Stufe 1, ADR 0029, Spine AD-25)
+- Aus/an; direkter API-Aufruf trotz versteckter UI → abgewiesen; fehlende Abhaengigkeit verhindert Einschalten; unberechtigter Toggle → 403; bereits wartende/laufende Jobs beim Abschalten; Update mit altem Manifest.
+- Abschalten erhaelt Daten; Rechte plus Freischaltung gelten serverseitig; jede Aenderung auditiert; «KI aus» ergibt 0 neue externe Requests (Netzmitschnitt). Kritische Modulpaare und unterstuetzte Konfigurationen statt 2^n-Volltest.
+
+### 11.5 Backup und Restore je Instanz (Stufe 1, ADR 0027)
+- DB plus alle referenzierten Originale/Derivate, Konfiguration und notwendige Schluessel auf frischer VM wiederherstellen; Hash- und Referenzvollpruefung; fehlendes Objekt bzw. fehlender Schluessel wird erkannt; Loeschjournal und abgelaufene Sessions beachtet.
+- RPO/RTO messen; Restore ohne urspruengliche VM und ohne Entwicklerzugang; KI nach Restore gesperrt, bis die Konfiguration geprueft ist.
+
+### 11.6 Formular/Excel-Erfassung (Stufe 1, ADR 0026, 0012)
+- Gemeinsames Schema erzeugt aus Formular und Excel dieselbe Welt; Vorschau/Bestaetigung atomar; Quellenzeile/-zelle als Herkunft erhalten; Duplikate, Wiederimport und Merge mit stabilen IDs.
+- 1'000 Zeilen, de-CH-Zahlen und -Datumsserien, unbekannte Typen, Formel-/Fehlerzellen, Abbruch/Fortsetzung, geaenderte Daten nach Vorschau; exportierte Fremdtexte werden nie als Formeln ausgefuehrt.
+
+### 11.7 Speicher, Parser, Betrieb (Stufe 1, ADR 0016, 0009)
+- EICAR, falsche Magic Bytes, AV nicht erreichbar/veraltet, ZIP-/Pixel-/Seitenlimits, externe Office-Links, volle Disk, OOM, Upload-Abbruch, Doppelabschluss, Neustart; K01-Race auf dem **ausgelieferten** Speicher.
+- Quarantaene bleibt unzugaenglich; API/DB bleiben trotz OCR-Last benutzbar; Backup-, Zertifikats- und Jobfehler werden erkennbar gemeldet.
+
+### 11.8 Suche (Stufe 3, ADR 0023)
+- Ohne Internet und ohne Claude-Schluessel: Name, Volltext, lokale Semantik gegen bekannten Trefferkorpus (Recall), Liegenschaftsscope auch fuer Snippets/Vektortreffer; Indexierung nach Upload, Loeschung und Revision.
+- Wechsel von Embedding-Modell/Dimension mit Reindexierung; CPU/RAM/Laufzeit auf der Ziel-VM messen; Query- und Dokument-Pipeline konsistent; keine Modell-Downloads zur Laufzeit.
+
+### 11.9 KI (Stufe 4, ADR 0030, 0017)
+- Golden Sets, Injection-Dokumente, Quote und Budget mit dem direkten Produktionsadapter und echten, freigegebenen TGA-Daten; Abo-Ergebnisse gelten nicht als API-Nachweis. Feste fachliche Mindestbaseline statt kumulativ erlaubtem Qualitaetsverlust.
