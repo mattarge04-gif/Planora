@@ -1,6 +1,6 @@
 # M1 – Server-Paket, lokaler Login, Feature-Schalter (Spec, Entwurf)
 
-Stand: 2026-11-09 · Branch `welle-4-b2b` · Status: **Entwurf V2 (nach Pruefpunkt 3), PO-Freigabe ausstehend**
+Stand: 2026-11-09 · Branch `welle-4-b2b` · Status: **Entwurf V3 (nach Pruefpunkt 4; §14 geht §4–§8 vor), PO-Freigabe ausstehend**
 Kennzeichnung: [F] Fakt mit Quelle · [A] Annahme/Vorschlag · [?] PO-Entscheid offen.
 Grundlage: E34–E37 (`docs/architektur/00-kontext.md`), ADR 0027–0031, `07-analyse-b2b.md`, `08-pruefung.md` (Pruefpunkt 2, Befunde 4–10, PO-Entscheide 1–12), `09-recherche-m1.md` (alle Versions-/Lizenzangaben dort mit Quelle, Abruf 2026-11-09).
 
@@ -79,7 +79,7 @@ type Modul = {
 
 **Schalten:** nur Rolle `betreiber`, auditiert. Einschalten verlangt aktive `braucht`-Module. **Abschalten mit Kaskade:** Der Betreiber sieht die abhaengigen aktiven Module und bestaetigt; alle werden in **einer** Transaktion abgeschaltet (z.B. `ki` → auch `interview_agent`, `extraktion`). Abschalten von `ki` folgt zusaetzlich §4.1.
 
-**Guard:** `modulAktiv(id)` = indizierter Read auf `modul_schalter` pro Anfrage/Jobstart, **kein Prozess-Cache**; DB-Fehler → geschlossen (503). Nicht gelieferte Module → 404. HTTP: vor Rechtepruefung → 404. Job-Start und jede Fortsetzung: Modul aktiv **und** aktuelle Rechte des Ausloesers, sonst `pausiert_modul` bzw. `abgelehnt_recht` (sichtbar, kein Retry-Loop). Gemessener Zuschlag p95 ≤ 1.1 ms bei 2000 Anfragen/20 parallel (lokal) [F, Spike S13 T2]; auf Zielhardware wiederholen.
+**Guard:** `modulAktiv(id)` = indizierter Read auf `modul_schalter` pro Anfrage/Jobstart, **kein Prozess-Cache**; DB-Fehler → geschlossen (503). Nicht gelieferte Module → 404. HTTP: vor Rechtepruefung → 404. Job-Start und jede Fortsetzung: Modul aktiv **und** aktuelle Rechte des Ausloesers, sonst `pausiert_modul` bzw. `abgelehnt_recht` (sichtbar, kein Retry-Loop). Gemessener Zuschlag p95 max. 1.11 ms bei 2000 Anfragen/20 parallel (lokal) [F, Spike S13 T2]; auf Zielhardware wiederholen.
 
 ### 4.1 Dispatch-Sperre externe Aufrufe (Befund 5, PP3-2)
 
@@ -88,7 +88,7 @@ Korrektheit beruht auf einer **Zeilensperre**, nicht auf NOTIFY:
 2. Unmittelbar **vor dem fetch** und **vor dem Ergebnis-Commit** prueft der Aufruf zusaetzlich `abschaltung_angefordert` (Spike S13: ohne diese Pruefung entstehen bei totem Listener Requests/Ergebnisse zwischen (a) und (c)). Der Netzwerkaufruf wird **innerhalb dieser Transaktion** gestartet und abgewartet (Timeout ≤ 120 s [A]); das Ergebnis wird in derselben Transaktion als Entwurf gespeichert und erst dann committet. Die Share-Sperre bleibt ueber den ganzen Aufruf bestehen.
 3. **Abschalten** = (a) Eintrag `abschaltung_angefordert(modul, zeit)` committen (eigene Transaktion), (b) laufende Aufrufe brechen ab: Signal per NOTIFY **und** Polling dieses Eintrags alle 1 s durch jeden laufenden Aufruf (NOTIFY nur fuer Tempo, nicht fuer Korrektheit), (c) `UPDATE modul_schalter SET aktiv=false` – wartet, bis alle Share-Sperren frei sind, und committet.
 4. Garantie: Nach dem Commit von (c) haelt keine Transaktion mehr eine Share-Sperre, und jede neue sieht `aktiv=false` → **0 Requests nach Abschalt-Commit**, und kein Ergebnis wird danach uebernommen. Abgebrochene Aufrufe werden als `abgebrochen_modul_aus` protokolliert (eigene kurze Transaktion).
-Gemessen [F, Spike S13 T3, 6 Varianten × 50 Laeufe]: 0 Requests und 0 Ergebnisse nach Abschalt-Commit; Dauer bis Commit p50 2 ms mit Listener, bis 0.83 s ohne. Das fruehere NOTIFY-Design (V1) verletzte die Garantie (bis 10 Verstoesse bei 20 parallelen Aufrufen).
+Gemessen [F, Spike S13 T3, Teilnachweis]: Zahlen und Grenzen siehe §14.6; finaler Nachweis A5 nach §14.1.
 5. Parallelitaet begrenzt: max. 5 gleichzeitige externe Aufrufe pro Instanz [A] (je eine DB-Verbindung). Listener-Ausfall verlangsamt nur das Abschalten (Polling), verletzt die Garantie nicht.
 6. Wartende Jobs → `pausiert_modul`; Entwuerfe bleiben unbestaetigt; Reaktivierung setzt fort mit erneuter Modul- und Rechtepruefung.
 
@@ -209,7 +209,7 @@ Altes Image nur, wenn die Matrix das neue Schema als kompatibel fuer das alte Re
 | 6 | Backup/Restore §7 inkl. Snapshot-Manifest, Journal-Outbox, Schluesselinventar, Reconcile | 3 |
 | 7 | Update §8 mit Zustandsmaschine und Rueckweg | 1.5 |
 | 8 | Audit, Lizenz-Dossier-Skript, Abnahmelaeufe A1–A8 | 1.5 |
-| | **Total M1** | **≈ 15 PT** (Plan V2: 7 PT; nach Spike S13 neu pruefen) |
+| | **Total M1** | **≈ 15 PT**, mit §14.7 **≈ 16 PT** (Plan V2: 7 PT) |
 
 **Planauswirkung [A]:** +8 PT gegenueber Plan V2. Rechnerische Untergrenze ohne Reserve (5 PT/Woche): Stufe 2 ≈ W13–W14, gesamt ≈ W20–W21. Neuplanung erst nach PO-Entscheid zu Umfang und Terminziel (PO 8); Plan V2 bleibt bis dahin unveraendert.
 
@@ -225,3 +225,42 @@ Altes Image nur, wenn die Matrix das neue Schema als kompatibel fuer das alte Re
 | Stufe 4 | PO 12 Claude-Datenfluss |
 
 Weitere offene Punkte: Ghostscript (§10), Mindestversionen Docker/Compose, Eigentuemergrenzen innerhalb eines Kunden (PO 2).
+
+## 14. Praezisierungen V3 (nach Pruefpunkt 4) – normativ, gehen §4–§8 vor
+
+### 14.1 Dispatch: Versandgrenze, DB-Verlust, Pool, Budget (PP4-1, PP4-2)
+- **Garantie neu formuliert:** Nach dem Abschalt-Commit **beginnt kein neuer lokaler Sendestart** und **wird kein Ergebnis uebernommen**. Eine Zustellung beim Provider fuer Aufrufe, die vorher begonnen haben, kann nicht zurueckgeholt werden; solche Aufrufe werden abgebrochen und ihr Ergebnis verworfen. Eine Provider-Ankunftsgarantie wird nicht gegeben.
+- **Lease statt nur Sperre:** Jeder laufende Aufruf haelt eine Zeile `dispatch_lease(id, prozess, erneuert_um)`, die er ueber eine **separate Steuerverbindung** jede Sekunde erneuert (DB-Zeit). Kann er 2 s lang nicht erneuern (DB-Verlust, Neustart), bricht er sofort ab (AbortController) und verwirft das Ergebnis. Zusaetzlich: Fehler/Ende der Dispatch-Verbindung loest denselben Abbruch aus.
+- **Abschalten (c)** committet erst, wenn (1) keine Share-Sperre mehr besteht **und** (2) keine Lease juenger als 5 s existiert. Damit ist der Stillstand aller Sender auch nach einem DB-Neustart nachgewiesen (ein Sender ohne Lease-Erneuerung hat sich nach 2 s selbst beendet).
+- **Pools:** Dispatch-Pool fest 5 Verbindungen (= max. parallele Aufrufe); Steuerpool getrennt, mindestens 3 Verbindungen (Lease, Polling, Protokoll, Schalter). Pool-Saettigung → neue Aufrufe warten, keine Steuerverbindung wird dafuer verwendet.
+- **Budget:** Reservierung **vor** dem Versand in einer **kurzen eigenen Transaktion** (Ledger-Zeile `reserviert`), nie in der langen Dispatch-Transaktion. Danach `verbraucht` (Usage aus der Antwort) oder `unklar` (Abbruch nach Sendestart); `unklar` wird mit dem Maximalbetrag verbucht und spaeter manuell/anhand Provider-Abrechnung bereinigt [A].
+- **Sperrreihenfolge:** Die lange Transaktion sperrt nur die Zeile `modul_schalter('ki')` (FOR SHARE); keine weiteren Zeilensperren darin. `lock_timeout` 5 s fuer (c), Wiederholung bis 150 s (> Aufruf-Timeout 120 s), danach Abbruch mit Meldung.
+- **Reaktivierung:** in **einer** Transaktion `DELETE abschaltung_angefordert` + `UPDATE aktiv=true`.
+- **Nachweis A5 (final, in M1 zu erbringen):** deterministische Barrieren (alle 5 Aufrufe nachweislich im fetch), Antwortdauer > 1 s, Pause nach DB-Pruefung, toter Listener, **Backend-Kill und DB-Neustart waehrend des Aufrufs**, Pool-Saettigung, Ergebnis-Commit-Zeitpunkt aus der DB (`xact_commit`-Zeit bzw. Commit-Zeile), nicht aus dem Client. Spike S13 T3 ist nur ein **Teilnachweis** (Fassung d5e18e9, ohne die Zusatzpruefungen aus 04eea04).
+
+### 14.2 Journal: lueckenlos, verschluesselt, Endstand unbekannt (PP4-4)
+- `seq` aus einer Zaehlerzeile `journal_zaehler` (`UPDATE … SET seq=seq+1 RETURNING seq`) in derselben Transaktion – lueckenlos, serialisiert (geringes Volumen). Keine PG-Sequenz.
+- Objekte werden vor dem PUT mit age verschluesselt (Empfaenger Recovery-Key) und unveraenderlich abgelegt (`journal/<instanz_id>/<seq>.age`). Zusaetzlich jede Minute `journal/<instanz_id>/stand.age` mit `letzte_quittierte_seq` und Zeit.
+- **Grundsatz:** Ob nach dem letzten quittierten Eintrag noch lokale Eintraege existierten (Zielausfall + VM-Verlust), ist beim Restore **nicht feststellbar**. Deshalb gilt nach **jedem** Restore: Journal geordnet nach `seq` nachspielen; danach sind alle Nicht-Admin-Konten `zu_bestaetigen` (Login gesperrt), bis ein Admin die Benutzer-, Rollen- und Scope-Liste ausdruecklich bestaetigt hat (auditiert). Admins muessen ihr Passwort neu setzen. So kommen verlorene Sperren nicht stillschweigend zurueck.
+- A6-Fall: Backup bei seq=10, Zielausfall, Sperre seq=11, VM-Verlust → Restore → gesperrtes Konto bleibt bis zur Admin-Bestaetigung gesperrt.
+
+### 14.3 GC, Backup-Lease, Snapshot, Rechte (PP4-5, PP4-6, PP4-7)
+- **Serialisierung:** Advisory-Lock `ablage_gc`: GC haelt ihn **exklusiv** waehrend Pruefung und Entfernen je Stapel; die Registrierung `backup_lauf='laufend'` und `Ablage.schreibeNeu` (auch bei bereits vorhandenem Hash, inhaltsadressiert) nehmen ihn **geteilt**. Damit kann weder ein laufender GC nach Backup-Start noch eine neue Referenz auf eine gerade entfernte Datei entstehen.
+- **Backup-Lease:** Der Backup-Prozess erneuert `backup_lauf.heartbeat` jede Minute. Reconcile setzt `laufend → fehlgeschlagen` nur, wenn der Heartbeat aelter als 10 min ist **und** der Backup-Container nicht laeuft. Nach Restore werden alle `laufend`-Zeilen auf `fehlgeschlagen` gesetzt.
+- **Snapshot:** Die exportierende Verbindung bleibt bis zum erfolgreichen Ende von `pg_dump` offen; Abbruch von Exporter oder Dump → Satz `fehlgeschlagen`. Exitcodes **aller** Teilschritte (pg_dump, pg_dumpall, Manifest, restic backup, restic ls-Abgleich, restic check) werden geprueft.
+- **Rollen:** `planora_backup` liest (`pg_read_all_data`); Zustandsaenderungen an `backup_lauf` und Outbox-Quittungen nur ueber zwei `SECURITY DEFINER`-Funktionen, auf die die Rolle `planora_betrieb` EXECUTE hat (sonst keine Schreibrechte). Rollenexport mit `pg_dumpall --roles-only --no-role-passwords`; Passwoerter der DB-Rollen werden beim Restore aus dem Schluesselinventar neu gesetzt. A6 laeuft mit diesen Minimalrollen, nicht als Superuser.
+
+### 14.4 Update: Wiederanlauf und Rueckweg (PP4-8)
+- `update.json` wird bei jedem Zustandswechsel atomar geschrieben (temp + fsync + rename). `planora update --fortsetzen` nimmt am letzten bestaetigten Schritt wieder auf; Locks und Wartungsflag werden nur vom erfolgreichen Abschluss oder vom expliziten Rueckweg zurueckgesetzt.
+- Das Flag `wartung` sperrt zusaetzlich die **Job-Verarbeitung** im Worker (Worker holt keine Jobs, solange gesetzt) und alle Mutationen in der API.
+- **Schritt 6 neu:** neue `api` startet **mit gesetztem Wartungsflag**; Smoke-Checks laufen gegen eine Test-Session (wird danach geloescht); `worker` startet, verarbeitet aber nichts. **Freigabe** = Wartungsflag aus (eigener Schritt 7, auditiert).
+- **Rueckweg vor Freigabe:** `api`/`worker` erneut stoppen (wie Schritt 2), dann altes Image (falls Matrix kompatibel) oder Restore aus Schritt 3 – verlustfrei, da keine fachlichen Schreibzugriffe zugelassen waren. **Nach Freigabe** ist ein Rueckweg ein neuer, bewusst entschiedener Vorgang mit ausgewiesenem Datenverlustfenster.
+
+### 14.5 Instanzbindung (PP4-9)
+`instanz_id` (UUID, bei Installation erzeugt) steht in `instanz_einstellung`, im Schluesselinventar, in jedem Manifest und in jedem Journal-Objektpfad. `planora restore` verlangt die Ziel-`instanz_id` und bricht vor jedem Datenimport ab, wenn sie nicht zum Sicherungssatz passt. VM-Ersatz = Restore mit derselben `instanz_id`. A2/A6: Cross-Instance-Restore wird abgelehnt.
+
+### 14.6 Messwerte (PP4-10)
+Spike S13: T2 Guard-Zuschlag p95 max. **1.11 ms**. T3 V2: 0 Requests / 0 Ergebnisse nach Abschalt-Commit in den **4 V2-Varianten** (v2, v2_pause, v2_ohne_listener, v2_pause_ohne_listener; je 50 Laeufe bei max. 5 parallel, Requests zusaetzlich bei max. 20 parallel); Dauer bis Abschalt-Commit p50 2.2 / 252 / 453 / 735 ms, max. 828 ms (Antwortzeit Fake-Provider 500 ms). Ohne Listener wurde nichts abgebrochen (Polling langsamer als Antwort) – deshalb verlangt §14.1 Antwortdauer > 1 s im finalen Nachweis. V1 (Kontrolle): 2 bzw. 10 Verstoesse. Teilnachweis, siehe §14.1.
+
+### 14.7 Schaetzung
+Durch §14 steigt Aufgabe 4 (Dispatch) auf 2.5 PT und Aufgabe 6 (Backup/Restore) auf 3.5 PT → **M1 ≈ 16 PT** [A].
