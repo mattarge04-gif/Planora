@@ -4,3 +4,4 @@ _werkzeuge/venv/
 s03-3d/dist/
 s04-rls/.pgdata/
 s03b-einfach/dist/
+s13-m1-kern/.pgdata-*/

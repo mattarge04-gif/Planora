@@ -1,0 +1,14 @@
+{
+  "name": "s13-m1-kern",
+  "private": true,
+  "type": "module",
+  "description": "Wegwerf-Spike M1-Kern: Better Auth, Modul-Guard, Dispatch-Race",
+  "dependencies": {
+    "@node-rs/argon2": "2.2.2",
+    "better-auth": "1.7.18",
+    "drizzle-orm": "0.45.4",
+    "embedded-postgres": "18.6.0-beta.19",
+    "fastify": "5.12.8",
+    "pg": "8.23.1"
+  }
+}

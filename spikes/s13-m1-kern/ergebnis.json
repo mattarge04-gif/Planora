@@ -1,0 +1,90 @@
+{
+  "t1": {
+    "gemessen": "2026-11-09T19:45:05.781Z",
+    "node": "v24.18.0",
+    "pg": "18.6",
+    "tests": [
+      {
+        "name": "T1.1 Registrierung + Login, Hash ist Argon2id (19 MiB, t=2, p=1)",
+        "bestanden": true,
+        "detail": {
+          "registrierung": 200,
+          "login": 200,
+          "ich": 200,
+          "falschesPasswort": 401,
+          "hashPrefix": "$argon2id$v=19$m=19456,t=2,p=1$",
+          "hashMs": [
+            6
+          ]
+        }
+      },
+      {
+        "name": "T1.2a Widerruf per DB-DELETE wirkt bei naechster Anfrage (401)",
+        "bestanden": true,
+        "detail": {
+          "vor": [
+            200,
+            200
+          ],
+          "nach": [
+            401,
+            401
+          ]
+        }
+      },
+      {
+        "name": "T1.2b Widerruf per /revoke-sessions wirkt sofort (401 fuer alle)",
+        "bestanden": true,
+        "detail": {
+          "revoke": 200,
+          "vor": [
+            200,
+            200
+          ],
+          "nach": [
+            401,
+            401
+          ]
+        }
+      },
+      {
+        "name": "T1.3 Passwortwechsel mit revokeOtherSessions:true widerruft alle alten Sessions (401)",
+        "bestanden": true,
+        "detail": {
+          "ohneFlag_status": 200,
+          "ohneFlag_eigeneSession": 200,
+          "ohneFlag_andereSession": 200,
+          "mitFlag_status": 200,
+          "alteSessionA": 401,
+          "alteSessionB": 401,
+          "neueSession": 200
+        }
+      },
+      {
+        "name": "T1.3b Befund: Passwortwechsel OHNE Flag laesst andere Sessions gueltig (Default false)",
+        "bestanden": true,
+        "detail": {
+          "andereSession": 200
+        }
+      },
+      {
+        "name": "T1.4 CSRF/Origin: fremder Origin abgelehnt (mit Cookie, beim Login, Cross-Site-Navigation)",
+        "bestanden": true,
+        "detail": {
+          "fremdOrigin_mitCookie": 403,
+          "fremdOrigin_login": 403,
+          "crossSiteNavigation_login": 403,
+          "ohneOrigin_mitCookie": 403,
+          "ohneOrigin_fetchMitSecFetchMode_login": 403,
+          "ohneOrigin_ohneMetadaten_login_wieCurl": 200,
+          "sessionNochGueltig": 200
+        }
+      }
+    ],
+    "argon_ms": [
+      6,
+      5,
+      4
+    ]
+  }
+}
