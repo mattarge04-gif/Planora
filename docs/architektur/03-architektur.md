@@ -8,11 +8,33 @@ Quellenkuerzel: `Qn-Dom` = Quelle n in 01-domaene, `Qn-Tech` = Quelle n in 02-te
 **E31 (2026-11-09): Pflicht-Bausteine** laut `06-bausteine-open-source.md` und ADR 0022–0024 sind eingearbeitet (Kap. 2.2, 5, 6, 10, 15).
 **E32 (2026-11-09): oeffentliche APIs** geo.admin.ch/GWR, Nager.Date, Pwned Passwords (ADR 0025) sind eingearbeitet (Kap. 2.1, 3.3, 4.2, 9.7, 15).
 **E33 (2026-11-09): geschlossene 3D-Welt** mit Regelwerk, Interview-Agent und deterministischem Weltgenerator (ADR 0026), einfacher Look mit Leistungsstufen (ADR 0008 angepasst, Spike S3b) sind eingearbeitet (Kap. 3, 7, 15).
-Entscheide im Detail: `adr/0001`–`adr/0026` (Index: `adr/0000-adr-vorlage-und-index.md`). BMAD-Arbeitsprotokoll und Spine: `bmad/planning-artifacts/architecture/architecture-Planora-2026-11-08/`.
+Entscheide im Detail: `adr/0001`–`adr/0031` (Index: `adr/0000-adr-vorlage-und-index.md`). BMAD-Arbeitsprotokoll und Spine: `bmad/planning-artifacts/architecture/architecture-Planora-2026-11-08/`.
+**Welle 4 / B2B (E34–E37, 2026-11-09):** Gueltigkeit siehe **Kap. 0**; umgestellt sind Kap. 0, 2, 3, 9, 10, 12, die uebrigen Kapitel folgen in Welle 4b.
+
+---
+
+## 0. Gueltigkeit ab Welle 4 (B2B)
+
+[F] Die PO-Entscheide **E34–E37 (2026-11-09)** ersetzen widersprechende Vorgaben dieses Dokuments: B2B mit **einer Instanz pro Kunde**, ein **Docker-Compose-Paket** (eigene CH-VM von uns oder On-Premise), **lokaler Login mit Rollen**, **KI nur ueber die Claude API direkt**, Kundenfeatures als **Module mit Schalter pro Instanz**. E24 (keine Kosten/Investitionsplanung in V1) bleibt. Aenderungsliste: `07-analyse-b2b.md`.
+
+| Thema | Gilt ab Welle 4 | Ersetzt |
+|---|---|---|
+| Betrieb | ADR 0027: Compose-Paket pro Kunde, eigenes PostgreSQL, lokale Dokumentablage, Backup/Restore/Update pro Instanz, Versionsmanifest, N/N-1 | ADR 0002 (Exoscale-Managed) |
+| Login | ADR 0028: lokaler Login mit Rollen; SSO spaeter als Modul | ADR 0007 (Keycloak) |
+| Kundenmodule | ADR 0029: Modulmanifest, Schalter pro Instanz, Default aus, Pruefung an HTTP- und Job-Grenze | neu |
+| KI | ADR 0030: Claude API direkt, Stufe 4, pro Instanz standardmaessig aus; Kostenbremse ADR 0017 bleibt | ADR 0003 (Bedrock) |
+| Datentrennung | ADR 0031: Instanz-Isolation plus App-Autorisierung | ADR 0010 (RLS) |
+
+**Lieferstufen** [A, Plan V2 `docs/plan/umsetzungsplan.html`]: Stufe 1 = 3D + Dokumente, Erfassung per Formular/Excel · Stufe 2 = + Lebensdauer und Ampel (Ziel Uebergabe Siemens) · Stufe 3 = + lokale Suche · Stufe 4 = + Claude-Interview und KI-Auslesen.
+**Zurueckgestellt bis nach der Demo:** Grundriss-Erkennung (ADR 0014), Preise/Investitionsplan (ADR 0018, E24), FR/IT (ADR 0019), oeffentliche APIs (ADR 0025).
+
+**Stand dieses Dokuments:** Kapitel 0, 2, 3, 9, 10 und 12 sind auf Welle 4 umgestellt. Die uebrigen Kapitel tragen, wo sie Mandanten/RLS/Bedrock/Keycloak/Exoscale voraussetzen, den Hinweis «[A] in Welle 4b anzupassen, siehe 07 Kap. 3»; dort gilt im Zweifel dieses Kapitel 0. Die bisherige Fassung der umgestellten Kapitel liegt im Git-Verlauf (Stand vor Branch `welle-4-b2b`, Commit `e64fdb9`).
 
 ---
 
 ## 1. Zusammenfassung und Qualitaetsziele
+
+> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, RLS, Bedrock, Exoscale voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
 
 ### 1.1 Zusammenfassung (10 Punkte)
 
@@ -44,104 +66,100 @@ Bei Zielkonflikten gewinnt das hoeher stehende Ziel.
 
 ## 2. Kontext- und Containerdiagramm (C4)
 
-### 2.1 Systemkontext
+> Welle 4 (E34–E37): umgestellt auf eine Instanz pro Kunde (ADR 0027, 0031). Keycloak, Bedrock, Exoscale-Managed und oeffentliche APIs (E32) entfallen aus dem Bild.
+
+### 2.1 Systemkontext (eine Kundeninstanz)
 
 ```mermaid
 flowchart LR
-  fm["FM-Mitarbeitende<br/>(Mandanten-Admin, Bearbeiter,<br/>Bewerter, Leser)"]
-  ops["Planora-Betrieb<br/>(Matt)"]
-  idp["Kunden-IdP<br/>Microsoft Entra ID"]
-  planora[["Planora<br/>SaaS in CH (Exoscale)"]]
-  bedrock["AWS Bedrock<br/>eu-central-2, EU-Profil<br/>(Claude Sonnet/Haiku 5.5)"]
-  mail["E-Mail-Versand CH [A]"]
-  geo["geo.admin.ch (Bund)<br/>Adresse + GWR"]
-  nager["Nager.Date<br/>Feiertage (jaehrlich)"]
-  hibp["Pwned Passwords<br/>(nur Hash-Praefix)"]
-  fm -- "Browser/Tablet, HTTPS" --> planora
-  ops -- "Deploy, Monitoring" --> planora
-  planora -- "OIDC/SAML-Brokering" --> idp
-  planora -- "Seitenbilder + Text, nur wenn KI fuer Mandant aktiv" --> bedrock
-  planora -- "Benachrichtigungen" --> mail
-  planora -- "Adresstext / EGID" --> geo
-  planora -- "jaehrlicher Import" --> nager
-  planora -- "5 Zeichen SHA-1 (Keycloak)" --> hibp
+  fm["Mitarbeitende des Kunden<br/>(Instanz-Admin, Bearbeiter,<br/>Bewerter, Leser)"]
+  ops["Betrieb<br/>(Planora bei CH-VM,<br/>Kunden-IT bei On-Premise [?])"]
+  planora[["Planora-Instanz Kunde X<br/>Compose-Paket auf CH-VM<br/>oder On-Premise"]]
+  backup[("Backup-Ziel<br/>ausserhalb der VM [?]")]
+  claude["Claude API (Anthropic)<br/>nur Stufe 4, pro Instanz aus,<br/>Region us/global"]
+  mail["SMTP des Betreibers/Kunden<br/>optional [A]"]
+  fm -- "Browser, HTTPS" --> planora
+  ops -- "Installation, Update, Restore" --> planora
+  planora -- "verschluesselte Sicherung" --> backup
+  planora -. "Seitenbilder/Text bzw. Interview,<br/>nur wenn Modul KI an" .-> claude
+  planora -. "Passwort-Reset, Hinweise" .-> mail
 ```
 
-### 2.2 Container
+[F] E36: Claude ist die einzige fachliche externe API. [?] Ob Betriebsverkehr (ClamAV-Signaturen, Image-/Modell-Downloads, SMTP, Zeit) darunter faellt, ist offen (07 Kap. 8 Punkt 6).
+
+### 2.2 Container (pro Kunde identisch)
 
 ```mermaid
 flowchart TB
   subgraph browser["Browser"]
     spa["SPA React 19 + R3F<br/>(Vite-Build, statisch)"]
   end
-  subgraph exo["Exoscale ch-dk-2 (Zuerich)"]
-    lb["Load Balancer + TLS"]
-    api["Prozess api<br/>Fastify BFF, Node"]
-    wrk["Prozess worker<br/>pg-boss-Handler, Node"]
-    mig["Prozess migrator<br/>(laeuft vor Deploy)"]
-    doc["docproc<br/>Docling Serve, OCRmyPDF, Gotenberg<br/>kein DB-Zugriff, kein Internet"]
+  subgraph vm["Kunden-VM (CH) oder Kundenserver – ein Compose-Paket"]
+    rp["Reverse Proxy + TLS [A]"]
+    api["Prozess api<br/>Fastify BFF, lokaler Login (ADR 0028)"]
+    wrk["Prozess worker<br/>pg-boss-Handler"]
+    mig["Prozess migrator<br/>(laeuft vor Update)"]
+    doc["docproc<br/>OCRmyPDF, Gotenberg, Docling<br/>kein DB-Zugriff, kein Internet"]
     av["ClamAV"]
-    kc["Keycloak 26.8"]
-    pg[("Managed PostgreSQL<br/>Business, HA, PITR<br/>Fachdaten + pgboss + Audit")]
-    sos[("SOS Objektspeicher<br/>quarantaene/ dok/ abgeleitet/ planstand/ export/")]
-    mon["Monitoring<br/>OTel Collector, Prometheus,<br/>Loki, Grafana [A], GlitchTip, Healthchecks"]
+    emb["Embedding-Server lokal<br/>(nur Stufe 3, Modell [A])"]
+    pg[("PostgreSQL selbst betrieben<br/>Fachdaten + pgboss + Audit")]
+    abl[("Dokumentablage lokal (Volume)<br/>quarantaene/ dok/ abgeleitet/ export/<br/>Speicherwahl [?], ADR 0027")]
+    bk["Backup-Job<br/>DB + Ablage + Konfiguration"]
   end
-  subgraph gva["Exoscale ch-gva-2 (Genf)"]
-    off[("SOS Offsite<br/>pg_dump verschluesselt,<br/>Dokument-Replikat")]
-  end
-  bedrock["AWS Bedrock eu-central-2"]
-  spa --> lb --> api
-  lb --> kc
+  claude["Claude API (Stufe 4, optional)"]
+  ziel[("Backup-Ziel ausserhalb der VM")]
+  spa --> rp --> api
   api --> pg
-  api --> sos
-  api --> kc
+  api --> abl
   wrk --> pg
-  wrk --> sos
+  wrk --> abl
   wrk --> doc
   wrk --> av
-  wrk --> bedrock
-  doc --> sos
+  wrk -.-> emb
+  wrk -. "nur Modul KI an" .-> claude
+  doc --> abl
   mig --> pg
-  api -.-> mon
-  wrk -.-> mon
-  pg -. "taeglich" .-> off
-  sos -. "naechtlich" .-> off
+  bk --> pg
+  bk --> abl
+  bk -.-> ziel
 ```
 
-Regeln: Nur `api` und `keycloak` sind von aussen erreichbar. `docproc`, `ClamAV` sind nur aus dem Worker-Netz erreichbar. Nur `worker` spricht mit Bedrock.
+Regeln: Nur der Reverse Proxy ist von aussen erreichbar. `docproc`, `ClamAV` und der Embedding-Server sind nur aus dem internen Netz der Instanz erreichbar und haben kein Internet. Nur `worker` spricht mit der Claude API, und nur wenn das Modul KI aktiv ist (ADR 0029, 0030). Keine Container, Volumes, Netze oder Secrets werden zwischen Kundeninstanzen geteilt (ADR 0031). Monitoring: schlanke Healthchecks und Backup-/Job-Alarmierung [A]; Voll-Observability-Stack ist keine Demo-Pflicht (07 Kap. 7).
 
 ---
 
 ## 3. Module des Monolithen
 
+> Welle 4 (E34–E37): Modul `mandant` wird `instanz` (Instanzparameter, kein Mandantenkontext); `mitMandant()`/Mandantenwechsel entfallen; jedes Modul hat eine Lieferstufe und einen Schalter nach ADR 0029.
+
 ### 3.1 Innenstruktur jedes Moduls (ADR 0001)
 
 ```text
 src/
-  plattform/            # Kern: DB-Wrapper mitMandant(), IDs, Fehler, Konfig, Logging, Audit-Funktion, Job-Registry
+  plattform/            # Kern: DB-Transaktion mitTransaktion(), IDs, Fehler, Konfig, Logging, Audit-Funktion, Job-Registry, Modulmanifest + modulAktiv()
   module/<name>/
     api/index.ts        # einziger Import-Punkt fuer andere Module (Funktionen + Typen)
     domain/             # reine Logik, kein IO, kein Date.now()
     ports/              # Interfaces (Repository, Provider)
-    adapters/           # Postgres, S3, HTTP, KI
-    jobs/               # pg-boss-Handler
-    http/               # Fastify-Routen (duenn: Validierung → api → Antwort)
+    adapters/           # Postgres, Dokumentablage, HTTP, KI
+    jobs/               # pg-boss-Handler (pruefen modulAktiv + aktuelle Rechte)
+    http/               # Fastify-Routen (duenn: Modul-Schalter → Recht → Validierung → api → Antwort)
 web/                    # SPA
-docproc/                # Python-Sidecar
-katalog/                # katalog.vN.json + GLB-Quellen
-eval/                   # Golden-Set-Definitionen (ohne Kundendokumente)
+docproc/                # fertige Container (ADR 0009)
+katalog/                # katalog.vN.json, welt-regelwerk.vN.json, GLB-Quellen
+eval/                   # Golden-Set-Definitionen (ohne Kundendokumente, ab Stufe 4)
 ```
 
-Testbarkeit: `domain/` mit reinen Unit-Tests; `adapters/` gegen echte Postgres-Testinstanz (Container) mit RLS aktiv; jedes Modul ersetzt fremde Module in Tests durch Fakes ihrer `api/index.ts`-Typen.
+Testbarkeit: `domain/` mit reinen Unit-Tests; `adapters/` gegen echte PostgreSQL-Testinstanz (Container); jedes Modul ersetzt fremde Module in Tests durch Fakes ihrer `api/index.ts`-Typen.
 
 ### 3.2 Abhaengigkeitsrichtung
 
 ```mermaid
 flowchart BT
-  plattform["plattform (Kern)"]
+  plattform["plattform (Kern, Modulmanifest)"]
   identitaet --> plattform
-  mandant --> plattform
-  identitaet --> mandant
+  instanz --> plattform
+  identitaet --> instanz
   katalog --> plattform
   struktur --> identitaet
   dokumente --> identitaet
@@ -151,58 +169,59 @@ flowchart BT
   zustand --> bestand
   erneuerung --> bestand
   erneuerung --> zustand
-  erneuerung --> mandant
+  erneuerung --> instanz
+  hinweise --> erneuerung
+  szene --> struktur
+  szene --> bestand
+  szene --> erneuerung
+  interview --> struktur
+  interview --> bestand
+  interview --> katalog
+  interview --> instanz
+  interview --> szene
+  suche --> dokumente
+  suche --> identitaet
   extraktion --> dokumente
   extraktion --> bestand
   extraktion --> struktur
   extraktion --> katalog
-  extraktion --> mandant
-  szene --> struktur
-  szene --> bestand
-  szene --> erneuerung
+  extraktion --> instanz
   export --> erneuerung
   export --> bestand
   export --> dokumente
-  preise --> katalog
-  preise --> mandant
-  erneuerung --> preise
-  austausch --> bestand
-  austausch --> struktur
-  austausch --> erneuerung
-  interview --> struktur
-  interview --> bestand
-  interview --> katalog
-  interview --> mandant
-  interview --> szene
 ```
 
-Pfeil = "darf aufrufen". Alles darf `plattform` nutzen. Rueckwaerts-Aufrufe und Zyklen sind verboten; Rueckmeldungen laufen ueber Jobs/Ereignisse (pg-boss), z.B. `bestand` → Ereignis `angabe.entschieden` → Handler in `szene` invalidiert Cache.
+Pfeil = "darf aufrufen". Alles darf `plattform` nutzen. Rueckwaerts-Aufrufe und Zyklen sind verboten; Rueckmeldungen laufen ueber Jobs/Ereignisse (pg-boss). Zurueckgestellte Module (`preise`, Grundriss-Teil von `extraktion`, `austausch`) sind im Graph nicht enthalten; sie kommen bei Wiederaufnahme als Module nach ADR 0029 mit eigenen Kanten dazu.
 
 ### 3.3 Modulkatalog
 
-| Modul | Zweck | Oeffentliche API (Auszug) | Abhaengig von | Datenhoheit (Tabellen) |
-|---|---|---|---|---|
-| **plattform** | Querschnitt: Transaktion mit Mandantenkontext, IDs (UUIDv7), Fehlerformat, Konfiguration, Logging/Tracing, Audit-Ereignis, Job-Registrierung, Feature-Flags | `mitMandant(ctx, fn)`, `neueId()`, `auditEreignis()`, `jobs.senden()` | – | `feature_flag`, `audit_eintrag` (Schreiben nur per Trigger/Funktion) |
-| **identitaet** | Login (OIDC-BFF), Sessions, Benutzer, Mitgliedschaften, Rollen, Liegenschafts-Scope, Autorisierung | `aktuellerKontext(req)`, `pruefe(recht, liegenschaftId)`, `mandantWechseln()`, `mitgliedschaftenVerwalten()` | mandant | `benutzer`, `mitgliedschaft`, `mitgliedschaft_liegenschaft`, `sitzung` |
-| **mandant** | Mandantenstammdaten und Parameter: KI-Schalter + Zustimmung, ZHAW-Parameter, Teuerung, Ampel-Default, Sprache, Budget, Betriebsstunden-Defaults | `parameter(mandantId)`, `kiErlaubt(mandantId)`, `parameterAendern()` | plattform | `mandant`, `mandant_parameter`, `ki_zustimmung` |
-| **katalog** | Globaler Bauteil-Katalog (Katalog-ID fuehrend), Texte DE/FR/IT, Klassifikations-Mappings (ETIM, eBKP-H, weitere), Planora-Standard-Lebensdauern, Lebensdauer-Tabelle des Mandanten pro Typ (E11), Ampel-Schwellen pro Bauteiltyp (E17) | `eintrag(katalogId, sprache)`, `alle(version)`, `mapping(katalogId, system)`, `lebensdauerTabelle(mandantId)`, `ampelSchwelle(mandantId, katalogId)` | plattform | `katalog_version`, `katalog_eintrag`, `katalog_text`, `klassifikation_mapping`, `mandant_lebensdauer`, `mandant_ampel` |
-| **struktur** | Liegenschaft → Gebaeude → Geschoss → Raum; Raum-Vorschlaege aus Grundriss annehmen; Adresse/GWR-Vorschlaege ueber Port `GebaeudeRegister` (ADR 0025) | `baum(gebaeudeId)`, `raumVorschlaegeErfassen()`, `geschossBestaetigen()`, `adresseSuchen()`, `gwrVorschlaege(egid)`, CRUD | identitaet | `liegenschaft`, `gebaeude`, `geschoss`, `raum`, `raum_vorschlag`, `register_cache` (global) |
-| **dokumente** | Upload, Quarantaene/Scan, Ablage, Metadaten inkl. KBOB-Fachbereich und Dokumenttypcode (E21), Verknuepfungen, Vorschau-URLs | `uploadBeginnen()`, `status()`, `seitenText(dokId, seite)`, `verknuepfen()`, `vorschauUrl()` | identitaet | `dokument`, `dokument_seite`, `dokument_verknuepfung` |
-| **bestand** | Elementtypen, Elemente, Angaben (Herkunft), Pruefliste, Projektion `element_effektiv` | `vorschlaegeErfassen(lauf, angaben[])`, `entscheiden(angabeIds, aktion, version)`, `effektiv(elementIds)`, `pruefliste()`, CRUD | struktur, katalog, dokumente | `elementtyp`, `element`, `angabe`, `element_effektiv` |
-| **zustand** | Zustandsbewertungen vor Ort nach ZHAW-Methode (E14), Sammelbewertung, Historie, Vorschlag naechste Inspektion | `bewerten(elementIds, zustandswert, notiz, foto?)`, `aktuelleBewertung(elementIds)` | bestand | `zustandsbewertung` |
-| **erneuerung** | Reiner Rechenkern, Erneuerungsliste, Investitionsplan, manuelle Verschiebung, Planstaende | `berechne(eingabe)` (rein), `liste(filter, stichtag)`, `plan(horizont)`, `verschieben()`, `planstandEinfrieren()` | bestand, zustand, mandant, preise | `ersatz_planung` (Verschiebungen), `planstand` |
-| **preise** | Preisdatenbank pro Typ (E15): Herstellerpreise global, Mandantenpreise, Preishistorie mit `gueltig_ab`, Port `PreisQuelle` (V1: manuell, Excel/CSV-Import; spaeter Feeds) | `preis(elementtypId|katalogId, stichtag)`, `importieren(datei, zuordnung)`, `quelleSynchronisieren(quelleId)` | katalog, mandant | `preisquelle`, `hersteller_artikel`, `preis_eintrag`, `mandant_preis` |
-| **austausch** | Export/Import mit Drittsystemen, V1 Stratus (E22), Port `AustauschFormat` | `exportieren(format, gebaeudeIds)`, `importVorschau(format, datei)`, `importieren()` | bestand, struktur, erneuerung | `austausch_auftrag` |
-| **extraktion** | KI-Pipeline: Klassifikation, Auslesen, Grundriss-Analyse, Validierung, Kostenbremse, Prompt-/Modellversionen, Port `KiProvider` | `dokumentVerarbeiten(dokId)`, `grundrissAnalysieren(dokId, seite)`, `budgetStatus()` | dokumente, bestand, struktur, katalog, mandant | `extraktion_lauf`, `ki_aufruf`, `ki_budget`, `ki_cache` |
-| **szene** | Lese-Modell fuer 3D: kompakte Szene je Gebaeude, **Weltgenerator** (reine Funktion nach Welt-Regelwerk, ADR 0026), Auto-Layout, Cluster-Vorberechnung | `szene(gebaeudeId)` → Binaer/JSON mit `datenstand`; `weltErzeugen(beschreibung, regelwerkVersion)` (rein) | struktur, bestand, erneuerung | keine eigenen Fachdaten (nur Cache) |
-| **interview** (E33) | Gefuehrte Erfassung durch den Kunden: Gebaeude → Geschosse → Einheiten → Bauteile; Interview-Agent (Claude, geschlossenes Tool-Schema `weltbeschreibung`) oder Formular-Assistent/Excel-Vorlage ohne KI; Vorschau der 3D-Welt vor Bestaetigung (ADR 0026) | `interviewStarten(gebaeudeId?)`, `antworten(interviewId, text)`, `beschreibung(interviewId)`, `vorschau(interviewId)`, `uebernehmen(interviewId, version)` | struktur, bestand, katalog, mandant, szene | `interview`, `interview_nachricht` |
-| **export** | Excel-Export (Liste, Plan), Mandanten-Gesamtexport, Loeschlauf | `excel(planstandId)`, `mandantExport()`, `mandantLoeschen()` | erneuerung, bestand, dokumente | `export_auftrag` |
+| Modul | Stufe / Schalter [A] | Zweck | Oeffentliche API (Auszug) | Abhaengig von | Datenhoheit (Tabellen) |
+|---|---|---|---|---|---|
+| **plattform** | Kern, immer an | Transaktionen, IDs (UUIDv7), Fehlerformat, Konfiguration, Logging, Audit-Ereignis, Job-Registrierung, **Modulmanifest und Modul-Schalter** (ADR 0029) | `mitTransaktion(ctx, fn)`, `neueId()`, `auditEreignis()`, `jobs.senden()`, `modulAktiv(id)` | – | `modul_schalter`, `audit_eintrag` (Schreiben nur per Trigger/Funktion) |
+| **identitaet** | 1, immer an | Lokaler Login (ADR 0028), Sessions, Benutzer, Rollen, Liegenschafts-Scope, Autorisierung, Recovery | `aktuellerKontext(req)`, `pruefe(recht, liegenschaftId)`, `benutzerVerwalten()`, `sitzungenEntziehen(benutzerId)` | instanz | `benutzer`, `anmeldedaten`, `rolle_zuordnung`, `rolle_liegenschaft`, `sitzung` |
+| **instanz** | 1, immer an | Instanzparameter: Anzeige-/ZHAW-/Ampel-Defaults, Betriebsstunden-Defaults; KI-Zustimmung und Budget ab Stufe 4 | `parameter()`, `parameterAendern()`, `kiErlaubt()` | plattform | `instanz_einstellung`, `ki_zustimmung` |
+| **katalog** | 1, immer an | Versionierter Bauteil-Katalog je Instanz (Katalog-ID fuehrend), Texte DE, Klassifikations-Mappings, Planora-Standard-Lebensdauern, lokale Lebensdauer-Tabelle und Ampel-Schwellen (E11, E17) | `eintrag(katalogId)`, `alle(version)`, `mapping(katalogId, system)`, `lebensdauerTabelle()`, `ampelSchwelle(katalogId)` | plattform | `katalog_version`, `katalog_eintrag`, `katalog_text`, `klassifikation_mapping`, `lebensdauer_tabelle`, `ampel_schwelle` |
+| **struktur** | 1, immer an | Liegenschaft → Gebaeude → Geschoss → Einheit/Raum; Stammdaten manuell (GWR zurueckgestellt) | `baum(gebaeudeId)`, CRUD | identitaet | `liegenschaft`, `gebaeude`, `geschoss`, `raum` |
+| **dokumente** | 1, immer an | Upload, Quarantaene/Scan, lokale Ablage, Metadaten (E21), Verknuepfungen, **Viewer**: Vorschau-PDF, Seiten-Sprung, Markierung (ADR 0016, 0022) | `uploadBeginnen()`, `status()`, `seitenText()`, `verknuepfen()`, `vorschauUrl()` | identitaet | `dokument`, `dokument_seite`, `dokument_verknuepfung` |
+| **interview** (Erfassung) | 1: Formular/Excel immer an · 4: Agent hinter Modul KI | Gefuehrte Erfassung Gebaeude → Geschosse → Einheiten → Bauteile; Formular-Assistent und Excel-Vorlage mit validierter Zeilenvorschau; spaeter Claude-Agent mit demselben Schema (ADR 0026) | `erfassungStarten(gebaeudeId?)`, `excelVorschau(datei)`, `beschreibung(id)`, `vorschau(id)`, `uebernehmen(id, version)`, ab Stufe 4 `antworten(id, text)` | struktur, bestand, katalog, instanz, szene | `interview`, `interview_nachricht` |
+| **bestand** | 1, immer an | Elementtypen, Elemente, Angaben mit Herkunft je Eingabekanal, Pruefliste, Projektion `element_effektiv` | `vorschlaegeErfassen()`, `entscheiden()`, `effektiv()`, `pruefliste()`, CRUD | struktur, katalog, dokumente | `elementtyp`, `element`, `angabe`, `element_effektiv` |
+| **szene** | 1, immer an | 3D-Lesemodell, deterministischer Weltgenerator (ADR 0026), Leistungsstufen normal/schwach/2D | `szene(gebaeudeId)`, `weltErzeugen(beschreibung, regelwerkVersion)` (rein) | struktur, bestand, erneuerung | keine Fachdaten (nur Cache) |
+| **zustand** | 2 [?, Scope ZHAW offen] | Zustandsbewertung nach ZHAW (E14), Historie | `bewerten()`, `aktuelleBewertung()` | bestand | `zustandsbewertung` |
+| **erneuerung** | 2, immer an ab Stufe 2 | **Lebensdauer und Ampel**: reiner Rechenkern fuer Ersatzjahr, Quellenrangfolge, Vollstaendigkeit, Ampel; **ohne** Preise/Investitionsplan (E24) | `berechne(eingabe)` (rein), `liste(filter, stichtag)` | bestand, zustand, instanz | `planstand` [A, ohne Geldbetraege] |
+| **hinweise** [A] | 2, Schalter | Hinweise «bald ersetzen» in der App, optional E-Mail; Datenhoheit aus E30 neu zu pruefen | `hinweiseFuer(benutzer)` | erneuerung | `hinweis` [A] |
+| **export** | 2, immer an | Excel-Export Bestand/Lebensdauer, Instanz-Gesamtexport, Loeschlauf | `excel()`, `instanzExport()` | erneuerung, bestand, dokumente | `export_auftrag` |
+| **suche** | 3, Schalter (Default aus) | Dokumentname, Volltext, lokale Semantik (pgvector, RRF, lokaler Embedding-Server); Treffer nach Liegenschaftsrechten (ADR 0023) | `suchen(anfrage, filter)`, `indexieren(dokId)` | dokumente, identitaet | `such_abschnitt` |
+| **extraktion** | 4, Schalter «KI» (Default aus) | Klassifikation und Auslesen ueber Claude API (ADR 0030), Validierung, Kostenbremse (ADR 0017) | `dokumentVerarbeiten(dokId)`, `budgetStatus()` | dokumente, bestand, struktur, katalog, instanz | `extraktion_lauf`, `ki_aufruf`, `ki_budget`, `ki_cache` |
+| *preise* | zurueckgestellt (E24, ADR 0018) | spaeteres Kundenmodul | – | – | – |
+| *austausch* | [?] PO, Stratus-Scope (ADR 0020) | spaeteres Modul; Excel-Import gehoert zu `interview` | – | – | – |
 
-Hinweis: Die Grundriss-Analyse lebt in `extraktion` (KI-Teil) und `struktur` (Vorschlaege annehmen, Raeume besitzen). Die Korrektur-UI schreibt ueber `struktur`.
+[A] Tabellen- und Spaltennamen fuer `identitaet`, `instanz` und `hinweise` sind Vorschlaege; das Datenmodell (Kap. 4) wird in Welle 4b nachgezogen.
 
 ---
 
 ## 4. Datenmodell
+
+> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, RLS voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
 
 ### 4.1 Kernentitaeten
 
@@ -308,6 +327,8 @@ Aufloesung des effektiven Werts (rein, deterministisch): nur `bestaetigt` → Ra
 ---
 
 ## 5. KI-Pipeline Ende-zu-Ende
+
+> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, Bedrock voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
 
 ### 5.1 Ablauf
 
@@ -431,6 +452,8 @@ Bei Scans ohne verlaesslichen OCR-Text ist "hoch" ausgeschlossen. Nichts wird je
 
 ## 6. Grundriss → Raum-Rechtecke
 
+> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: Grundriss-Erkennung ist zurueckgestellt bis nach der Demo (ADR 0014); Erfassung ueber Formular/Excel (Kap. 3, Modul `interview`). Grundrisse bleiben als Dokumente hochlad- und betrachtbar.
+
 Hybrider Ablauf (ADR 0014):
 
 ```mermaid
@@ -516,6 +539,8 @@ flowchart LR
 
 ## 8. Erneuerungs- und Investitionsrechnung
 
+> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
+
 Reiner Rechenkern (ADR 0013). Eingabe: Schnappschuss, `stichtag` S (Jahr s), Horizont H (10|20), `regelwerk_version`.
 
 ### 8.1 Lebensdauer L (Jahre), Rangfolge der Quellen (E11)
@@ -583,114 +608,113 @@ N = Schwelle **pro Bauteiltyp**: `mandant_ampel(katalog_id)` > `katalog_eintrag.
 
 ## 9. Sicherheit und Datenschutz
 
-### 9.1 Authentifizierung (ADR 0007, 0004)
-Keycloak 26.8, Realm `planora`; Entra ID pro Kunde via OIDC/SAML-Brokering; lokale Konten mit erzwungener MFA (FA-05). BFF: Session serverseitig, Cookie `httpOnly; Secure; SameSite=Lax`, Leerlauf-Timeout 30 min, absolut 12 h [A]. Logout invalidiert Server-Session und Keycloak-Session.
+> Welle 4 (E34–E37): lokaler Login statt Keycloak, Instanzgrenze statt RLS, Claude API direkt statt Bedrock, lokale Secrets statt AWS/Exoscale. Oeffentliche APIs (E32) und Preisexport entfallen.
+
+### 9.1 Authentifizierung (ADR 0028, 0004)
+Lokaler Login im Fastify-BFF mit etablierter Auth-Bibliothek [A, Kandidaten in ADR 0028]; speicherhartes Passwort-Hashing [A]; Rate-Limit und Sperre; Erstadmin ueber einmaligen Einrichtungs-Token, kein Standardpasswort. Session serverseitig, Cookie `httpOnly; Secure; SameSite=Lax`, Rotation nach Login und Rechteaenderung, Leerlauf-Timeout 30 min, absolut 12 h [A]. Logout, Sperre, Rollenentzug und Passwortwechsel entziehen bestehende Sessions sofort. [?] PO: MFA fuer lokale Konten in Stufe 1/2 Pflicht oder optional? SSO (z.B. Entra ID) spaeter als Modul (ADR 0029), ohne zweite Rollenquelle.
 
 ### 9.2 Rollenmodell (Autorisierung nur in Planora-DB)
 
 | Rolle | Rechte | Scope |
 |---|---|---|
-| Mandanten-Admin | alles im Mandanten: Benutzer/Rollen, KI-Schalter + Zustimmung, Parameter, Budgets, Export, Loeschauftrag | ganzer Mandant |
-| Bearbeiter | Struktur, Dokumente, KI starten, Vorschlaege pruefen/bestaetigen, Kosten, Planung, Planstand einfrieren | Liegenschaften laut Mitgliedschaft |
-| Bewerter [A] | lesen + Zustandsbewertung (FA-30..32) | Liegenschaften |
+| Instanz-Admin | Benutzer/Rollen, Modul-Schalter (ADR 0029), Parameter, KI-Zustimmung und Budget (ab Stufe 4), Export, Loeschauftrag | ganze Instanz |
+| Bearbeiter | Struktur, Erfassung (Formular/Excel), Dokumente, Vorschlaege pruefen/bestaetigen, ab Stufe 4 KI starten | Liegenschaften laut Zuordnung |
+| Bewerter [A] | lesen + Zustandsbewertung | Liegenschaften |
 | Leser | lesen, Excel-Export | Liegenschaften |
-| Plattform-Betrieb | **kein** Zugriff auf Fachdaten; Betriebsmetriken; Break-Glass nur mit schriftlicher Kundenfreigabe, zeitlich auf 4 h begrenzt [A], vollstaendig auditiert | – |
+| Betrieb (Planora oder Kunden-IT) | kein Fachzugriff in der App; Installation, Update, Backup/Restore auf Host-Ebene | Host |
 
-Pruefung je Request: Session → aktiver Mandant → Mitgliedschaft → Rolle → Liegenschaft des Zielobjekts. Unit-Tests je Recht × Rolle (Matrix-Test).
+Pruefung je Request und je Job: Session → Modul aktiv → Rolle → Liegenschaft des Zielobjekts. Gilt auch fuer Viewer-URLs, Derivate, Downloads und Suchtreffer. Unit-Tests je Recht × Rolle (Matrix-Test). [?] PO: Welche Liegenschafts-/Eigentuemergrenzen gelten innerhalb eines Kunden (07 Kap. 8 Punkt 8)?
 
-### 9.3 RLS-Durchsetzung inkl. Test
-ADR 0010; CI-Pflichttests (a)–(e); zusaetzlich jaehrlicher externer Pentest mit Fokus Mandantentrennung [A, vor erstem Enterprise-Vertrag].
+### 9.3 Instanzgrenze (ADR 0031)
+Pro Kunde eigene DB, Volumes, Secrets, Netze und Backup-Ziele; keine geteilten Container mit Kundendaten. Innerhalb der Instanz minimale DB-Rechte (`planora_app` ohne Owner/DDL, Audit nur lesend). [A] Wer Host- oder DB-Owner-Zugriff hat, kann technisch Fachdaten lesen; das steht im Betriebsvertrag, Betreiberzugriffe werden protokolliert. Externer Pentest vor Produktivdaten (Plan V2) mit Fokus Login, Rollen, Upload, Viewer [A].
 
 ### 9.4 Verschluesselung
-- Transport: TLS 1.2+ (bevorzugt 1.3), HSTS; intern TLS zu Managed PG und SOS.
-- Ruhend: Provider-Verschluesselung von DBaaS und SOS [?, Exoscale schriftlich bestaetigen, S7]; Offsite-Dumps zusaetzlich clientseitig verschluesselt (age [A]) mit Schluessel ausserhalb Exoscale.
+- Transport: TLS 1.2+ (bevorzugt 1.3), HSTS am Reverse Proxy; interne Verbindungen im isolierten Compose-Netz [A].
+- Ruhend: Datentraegerverschluesselung der VM bzw. des Kundenservers [A, bei On-Premise Sache des Kunden [?]]; Backups clientseitig verschluesselt (z.B. age [A]), Schluessel ausserhalb der VM.
 - Felder: keine besonders schuetzenswerten Personendaten in V1 [A] → keine Feldverschluesselung.
 
 ### 9.5 Secrets
-Nie im Repository (auch nicht verschluesselt) [A, konservativ nach Arbeitsregel 7]. Ablage in einem Passwort-Tresor mit 2FA; Auslieferung beim Deploy als Umgebungsdatei (Rechte 0600) auf die VMs; spaeter Kubernetes-Secrets. AWS: eigener IAM-Benutzer nur mit `bedrock:InvokeModel` auf das konkrete Inferenzprofil, Schluessel-Rotation 90 Tage [A]. DB-Passwoerter je Rolle getrennt, Rotation 90 Tage und bei Personalwechsel [A]. Secret-Scanning in CI.
+Nie im Repository und nie im Compose-Paket. Pro Instanz eigene Secrets (DB-Passwoerter je Rolle, Session-Schluessel, Backup-Schluessel, ab Stufe 4 Claude-API-Schluessel) als Secret-Dateien auf dem Host (Rechte 0600) [A]; Ablage der Betreiberkopie im Passwort-Tresor mit 2FA. Rotation bei Personalwechsel und nach Vorfall [A]. Secret-Scanning in CI. Fehlende Secrets → Container startet nicht (fail closed).
 
 ### 9.6 Audit-Log
-ADR 0015: Trigger, append-only, Hash-Kette, taegliche Kettenpruefung; Fachereignisse (Login, Export, KI-Aufruf, Mandantenwechsel, Break-Glass). Abruf pro Objekt in der UI (FA-06).
+ADR 0015, instanzbezogen: Trigger, append-only, Hash-Kette, taegliche Kettenpruefung; Fachereignisse Login, Fehlversuche, Rollen-/Modul-Schalter-Aenderung, Import, Export, Instanz-Update, KI-Aufruf (Stufe 4). Abruf pro Objekt in der UI (FA-06).
 
 ### 9.7 revDSG
-- Planora ist Auftragsbearbeiterin (Art. 9 DSG [F, Q22-Dom]); Standard-ADV, Subprozessorliste: Exoscale (+ Aiven [?]), AWS (Bedrock, nur bei KI an), E-Mail-Dienst [A].
-- Bekanntgabe ins Ausland (Art. 16 [F, Q24-Dom]): nur KI-Pfad in EU/EWR (Anhang 1 DSV [A, juristisch bestaetigen]); im Vertrag und in der KI-Zustimmung des Mandanten benannt.
+- Bei CH-VM ist Planora Auftragsbearbeiterin (Art. 9 DSG [F, Q22-Dom]); Subprozessoren: VM-Anbieter CH [?, Wahl offen], Anthropic nur bei eingeschalteter KI. Bei On-Premise bearbeitet der Kunde selbst; Planora nur bei Supportzugriff [A].
+- Bekanntgabe ins Ausland (Art. 16 [F, Q24-Dom]): nur der KI-Pfad (Stufe 4) an Anthropic, Region `us`/`global` (ADR 0030); muss im Vertrag und in der KI-Zustimmung benannt werden. [?] PO/Jurist: Zulaessigkeit und Garantien klaeren (07 Kap. 8 Punkt 5).
 - Verzeichnis der Bearbeitungstaetigkeiten, Datenschutzerklaerung, Auskunfts-/Loeschprozess.
 - Personendaten in V1: Benutzerkonten, Audit-Akteure, Namen/Unterschriften in Dokumenten [A, 01 Kap. 5.1].
-- Oeffentliche APIs (E32, ADR 0025): geo.admin.ch erhaelt nur Adresstext/EGID, Nager.Date nur Jahr/Land, Pwned Passwords nur einen 5-Zeichen-Hash-Praefix → keine Personendaten, keine Auftragsbearbeiter [A, Jurist bestaetigt].
 
-### 9.8 Datenfluss zur KI
-Nur wenn `mandant.ki_aktiv` + Zustimmung + globaler Schalter + Budget. Inhalt: Seitenbilder/Text ausgewaehlter Seiten, Katalogliste, Prompt. Nie: Benutzerdaten, Audit, andere Mandanten. Bedrock speichert Prompts nicht persistent, Logs in Quellregion [F, Q24-Tech]. Rohantworten speichert Planora im eigenen Objektspeicher (`abgeleitet/`), geloescht mit dem Dokument.
+### 9.8 Datenfluss zur KI (Stufe 4)
+Nur wenn Modul KI aktiv + Zustimmung + Budget + eigener API-Schluessel der Instanz (ADR 0029, 0030). Inhalt: Seitenbilder/Text ausgewaehlter Seiten bzw. Interview-Antworten, Katalogliste, Prompt. Nie: Benutzerdaten, Audit. [F] Direkte API: Inferenz `us`/`global`, Standardaufbewahrung bis 30 Tage mit Ausnahmen (Quellen ADR 0030, Abruf 2026-11-09). Rohantworten speichert Planora in der lokalen Ablage (`abgeleitet/`), geloescht mit dem Dokument. Stufen 1–3 erzeugen keinen externen Inhaltsabfluss.
 
 ### 9.9 Loeschkonzept
 
 | Objekt | Ausloeser | Ablauf | Frist |
 |---|---|---|---|
-| Dokument | Bearbeiter loescht | Papierkorb, danach Objekt + Seiten + Rohantworten geloescht; Angaben behalten `zitat`, Dokumentbezug "geloescht" | 30 Tage [A] |
+| Dokument | Bearbeiter loescht | Papierkorb, danach Original, Seiten, Derivate, Suchindex und Rohantworten geloescht; Angaben behalten `zitat`, Dokumentbezug "geloescht" | 30 Tage [A] |
 | Element/Struktur | Bearbeiter | Status `ausgebaut`/geloescht; Historie bleibt im Audit | sofort |
-| Benutzer | Admin oder Austritt | Mitgliedschaften entfernt; Personendaten pseudonymisiert, Audit behaelt Pseudonym | 30 Tage [A] |
-| Mandant | Vertragsende | Export bereitgestellt → Sperre → Loeschlauf (alle Zeilen mit `mandant_id`, Prefix `m/<id>/` in allen Buckets) → Loeschprotokoll an Kunden | 30 Tage nach Vertragsende [A]; Backups laufen nach max. 90 Tagen aus [A] |
+| Benutzer | Admin oder Austritt | Sessions entzogen, Konto gesperrt; Personendaten pseudonymisiert, Audit behaelt Pseudonym | 30 Tage [A] |
+| Instanz | Vertragsende | Export bereitgestellt → Instanz gestoppt → DB, Volumes und Secrets der Instanz geloescht → Loeschprotokoll an Kunden | 30 Tage nach Vertragsende [A]; Backups laufen nach Frist aus [A, 07 Kap. 8 Punkt 7] |
 | Quarantaene | automatisch | geloescht | 7 Tage [A] |
 
-### 9.10 Mandanten-Export
-Asynchroner Job, ZIP im Objektspeicher, Download-Link 24 h gueltig [A]: `manifest.json` (Formatversion, Zeitpunkt, SHA-256 je Datei), `daten/*.jsonl` je Entitaet (inkl. Angaben mit Herkunft, Bewertungen, Audit), `dokumente/` (Originale), `excel/` (Erneuerungsliste, Investitionsplan des aktuellen Stands). Format dokumentiert und versioniert (Grundlage fuer Portabilitaet und E9).
+### 9.10 Instanz-Export
+Asynchroner Job, ZIP in der lokalen Ablage, Download-Link 24 h gueltig [A]: `manifest.json` (Formatversion, Instanz-Version aus dem Versionsmanifest, Zeitpunkt, SHA-256 je Datei), `daten/*.jsonl` je Entitaet (inkl. Angaben mit Herkunft, Bewertungen, Audit), `dokumente/` (Originale), `excel/` (Bestand, Lebensdauer, Ampel). Kein Preis-/Investitionsexport (E24). Format dokumentiert und versioniert (Portabilitaet, Exit).
 
 ### 9.11 Austausch mit Stratus (E22)
-Modul `austausch`, Port `AustauschFormat` (je Format ein Adapter: `export(gebaeudeIds)`, `importVorschau(datei)`, `import(bestaetigteZeilen)`). V1-Adapter `stratus`: Export der Element-Ebene (Element, Katalog-Gruppe, optional eBKP-H, Einbaujahr, Lebensdauer mit Quelle, Zustandswert, Ersatzjahr, Kosten) und Import von Liegenschafts-/Gebaeude-Stammdaten. Das Stratus-Austauschformat ist nicht oeffentlich dokumentiert [?] → Spike S13; bis dahin Excel/CSV mit dokumentierter Spaltenstruktur [A]. Importe laufen immer ueber eine Vorschau mit Bestaetigung und erzeugen Angaben mit `quelle_art=import` (Herkunft bleibt erhalten).
+[?] PO: E22 ist durch E34–E37 nicht ausdruecklich aufgehoben; ob ein Stratus-Austausch zur Demo gehoert, ist offen (ADR 0020). Bis zum Entscheid kein Stratus-Adapter im Lieferumfang; Excel-Erfassung (Modul `interview`) ist davon unabhaengig.
 
 ---
 
 ## 10. Betrieb
 
+> Welle 4 (E35, ADR 0027): ein Compose-Paket pro Kunde, CH-VM oder On-Premise. Exoscale-Managed (PITR/HA, SOS, LB, SKS), Keycloak, Bedrock und die Werkzeug-Pflicht aus E31 fuer GlitchTip, Uptime Kuma, cosign, Renovate, ZAP (Plan V2, «Gestrichen») entfallen fuer die Demo.
+
 ### 10.1 Umgebungen
 
 | Umgebung | Zweck | Daten | KI |
 |---|---|---|---|
-| lokal | Entwicklung (Docker Compose: PG, MinIO o.ae. als S3 [A], Keycloak, docproc, ClamAV) | synthetisch | Fake-Provider; Anthropic-API nur mit synthetischen Daten |
-| CI | Tests: Unit, Adapter gegen PG-Container mit RLS, RLS-Suite, Rechenkern, E2E | synthetisch | Fake; Golden-Set-Job mit Bedrock-Staging |
-| staging | Exoscale, gleiche Topologie wie prod (kleiner) | synthetisch + freigegebene Golden-Set-Dokumente | Bedrock, eigenes AWS-Konto |
-| prod | Exoscale ch-dk-2 | Kundendaten | Bedrock eu-central-2, EU-Profil |
+| lokal | Entwicklung mit demselben Compose-Paket (PG, Ablage, docproc, ClamAV) | synthetisch | Fake-Provider; Claude API nur mit synthetischen Daten |
+| CI | Unit, Adapter gegen PG-Container, Rechenkern, E2E, Installations-/Update-Test aus sauberer VM [A] | synthetisch | Fake |
+| Abnahme-Instanz | Paket wie beim Kunden, vor Produktivdaten (Plan V2) | synthetisch + freigegebene Testdaten | aus, ab Stufe 4 mit Test-Schluessel |
+| Kundeninstanz | eine pro Kunde: CH-VM (Betrieb Planora) oder On-Premise (Betrieb [?]) | Kundendaten | pro Instanz standardmaessig aus (ADR 0030) |
 
-### 10.2 Deployment
-- CI baut ein Image pro Commit (Tag = Git-SHA), Abhaengigkeiten exakt gepinnt (Renovate), SBOM mit **Syft**, Schwachstellen-Scan mit **Trivy**, Lizenzpruefung (license-checker/SBOM), Secret-Scan mit **Gitleaks**, statische Regeln mit **Semgrep CE**, Images signiert mit **cosign** (E31, ADR 0024). Vor dem externen Pentest laeuft ein **OWASP-ZAP**-Baseline-Scan gegen staging.
-- Ablauf: `migrator` (expand) → neue `api`-Container starten, Readiness `/health/ready` (DB, S3, Keycloak) → Umschalten im Reverse Proxy → alte Container 30 s drainen → `worker` neu (laufende Jobs enden oder werden idempotent wiederholt) → spaeter Release: `migrator` (contract).
-- Rueckrollen: vorheriges Image; moeglich, weil Schema N-1-kompatibel ist.
-- Start: Docker Compose auf 2 VMs (ADR 0002); SKS ab ca. 5 Mandanten oder SLA-Zusage [A].
+### 10.2 Paket und Installation
+- **Compose-Paket** mit fixierten Image-Digests, Versionsmanifest (ADR 0027), Beispielkonfiguration ohne Secrets, Volumes fuer DB/Ablage/Backups, Healthcheck je Container und Ressourcenbudgets je Dienst [A].
+- **Installation** aus sauberer, unterstuetzter Linux-VM [A: Distribution und Mindestgroesse im Scaffold festlegen]: Paket laden → Secrets/TLS setzen → `migrator` → Start → Erstadmin per Einrichtungs-Token (ADR 0028). Nachweis: Import/Upload/Viewer/3D/Ampel laufen ohne Claude-Schluessel.
+- **CI-Pruefungen** fuer jedes Release: SBOM (Syft), Schwachstellen-Scan (Trivy), Lizenzpruefung inkl. Container und Modellgewichte, Secret-Scan (Gitleaks), Semgrep CE [A, soweit Plan V2 sie nicht zurueckstellt].
+- **Offline-Lieferung** (On-Premise ohne Internet): Images als Archiv importierbar [A]. [?] PO: Netzfreigaben und Updatebezug On-Premise (07 Kap. 8 Punkt 6).
 
-### 10.3 Migrationen ohne Downtime
-Expand/contract: (1) neue Spalte/Tabelle nullable oder mit Default hinzufuegen, (2) Code schreibt beides, (3) Backfill als Job in Bloecken, (4) Code liest neu, (5) alte Spalte im naechsten Release entfernen. Verboten in einem Schritt: Umbenennen, Typaenderung mit Rewrite grosser Tabellen, `NOT NULL` ohne vorherigen Backfill. Indexe `CONCURRENTLY`. `lock_timeout` 5 s in Migrationen [A].
+### 10.3 Updates und Migrationen pro Instanz
+Ablauf: Backup → `migrator` mit Migrationslock und Journal (verhindert parallelen Lauf) → `api`/`worker` mit neuem Image → Health-Pruefung → Freigabe. Expand/contract wie bisher: (1) neue Spalte/Tabelle nullable oder mit Default, (2) Code schreibt beides, (3) Backfill als Job in Bloecken, (4) Code liest neu, (5) alte Spalte im naechsten Release entfernen. Indexe `CONCURRENTLY` (nichttransaktionaler Schritt, im Journal einzeln markiert). `lock_timeout` 5 s [A]. Schema und Job-Payloads bleiben **N/N-1-kompatibel**; Worker lehnen unbekannte Job-Schemaversionen ab statt sie falsch auszufuehren. Rueckweg: vorheriges Image; bei nicht rueckwaertskompatiblem Schritt geuebter Restore. Katalog-/Regelwerk-Updates erhalten lokale Overrides und bestehende Zuordnungen (ADR 0011, 0026).
+[?] PO: Wer installiert/erzwingt Updates, welche Wartungsfenster, welche Versionen werden betreut (07 Kap. 8 Punkt 2)?
 
-### 10.4 Backups, PITR, Restore-Tests
+### 10.4 Backup und Restore pro Instanz
 
-| Was | Mechanismus | Aufbewahrung |
+| Was | Mechanismus [A] | Aufbewahrung |
 |---|---|---|
-| PostgreSQL | Exoscale Business: PITR + taegliche Backups [F, Q11/Q12-Tech] | 15 Tage [F, Q11-Tech] |
-| PostgreSQL logisch | taeglicher `pg_dump`, age-verschluesselt, nach SOS ch-gva-2 | 90 Tage [A] |
-| Dokumente | inhaltsadressiert, unveraenderlich; naechtliche Replikation nach ch-gva-2 | wie Original + 30 Tage nach Loeschung [A] |
-| Keycloak | eigene Datenbank im selben Managed-PG-Dienst [A] → gleiche Sicherung | wie PG |
-| Konfiguration | Repo (ohne Secrets) + Tresor | – |
+| PostgreSQL | taeglicher konsistenter Dump (`pg_dump`), verschluesselt; WAL-Archivierung fuer kuerzeres RPO nur falls vereinbart [?] | [?] PO/Vertrag |
+| Dokumentablage | Originale/Derivate inhaltsadressiert, inkrementelle Sicherung zusammen mit dem DB-Dump als konsistentes Paar | wie DB + Loeschfrist |
+| Konfiguration | Versionsmanifest, Modul-Schalter (in DB), Compose-Konfiguration ohne Secrets | wie DB |
+| Secrets/Schluessel | separat im Tresor des Betreibers bzw. Kunden | – |
 
-**Restore-Tests:** monatlich automatisch: PITR-Klon auf Zeitpunkt T → Integritaetspruefung (Zeilenzahlen je Mandant, Audit-Hash-Kette, Stichprobe 100 Dokument-Hashes im Objektspeicher, Planstand-Nachrechnung) → Bericht. Quartalsweise: vollstaendige Wiederherstellung in ch-gva-2 aus Offsite-Daten mit Zeitmessung gegen RTO [A].
+Ziel: Kopie **ausserhalb der VM** (bei CH-VM anderer Standort/Anbieter [?]; bei On-Premise Kundenziel [?]). **Restore-Nachweis:** Wiederherstellung auf frischer VM ohne die urspruengliche VM und ohne Entwicklerzugang, Hash-/Referenzpruefung, Audit-Kette, Zeitmessung; KI bleibt nach Restore gesperrt, bis die Konfiguration geprueft ist. Haeufigkeit [A]: vor jedem Update und quartalsweise.
+[?] PO: Wer sichert, prueft, verschluesselt und restored je Betriebsart; wer verwahrt Schluessel und uebernimmt Vertretung (07 Kap. 8 Punkt 7)?
 
-### 10.5 RPO/RTO [A]
-
-| Szenario | RPO | RTO |
-|---|---|---|
-| Fehlbedienung/Datenkorruption (DB) | ≤ 5 min (PITR) | ≤ 4 h |
-| Ausfall DB-Knoten | 0 (HA-Replikat) | ≤ 15 min (Failover Exoscale) |
-| Verlust Zone ch-dk-2 | DB ≤ 24 h (Dump), Dokumente ≤ 24 h | ≤ 24 h |
-| Ausfall App-VM | 0 | ≤ 1 h (neue VM aus Image) |
-| Ausfall Bedrock | 0 | KI-Funktionen warten; Rest unberuehrt |
+### 10.5 RPO/RTO [A, neu zu vereinbaren]
+Eine Einzel-VM ist kein HA-System. Die bisherigen Werte (RPO 5 min, RTO 4 h, 99,5 %) stuetzten sich auf Managed-PITR/HA und sind nicht uebertragbar (07 Kap. 8 Punkt 7). Vorschlag zur PO-Entscheidung: RPO ≤ 24 h (taeglicher Dump), RTO ≤ 1 Arbeitstag bei CH-VM [A]; On-Premise nach Kundenvertrag [?]. Ausfall Claude API: KI-Funktionen warten, Rest unberuehrt.
 
 ### 10.6 Monitoring
-OpenTelemetry (Traces, Metriken) und strukturierte Logs (JSON, mit `korrelations_id`, `mandant_id`, **ohne** Dokumentinhalte/Prompts) → Collector → Prometheus/Loki/Grafana auf VM 2 [A]; Fehlertracking mit **GlitchTip** (Sentry-SDKs, selbst gehostet in CH); externer Uptime-Check mit **Uptime Kuma** auf eigener kleiner VM ausserhalb ch-dk-2; **Healthchecks** als Dead-Man's-Switch fuer Backup-Dump, Replikation und Restore-Test (E31). Alarme: Fehlerrate > 1 % 5 min, API p95 > 1 s, Job-Alter > 30 min, fehlgeschlagene Jobs, KI-Tageskosten > 80 % Grenze, Schutzschalter offen, Bruch Audit-Kette, Backup aelter als 26 h, Restore-Test fehlgeschlagen, Zertifikat < 14 Tage, Disk > 80 %, Bedrock-Profil mit Region ausserhalb EU/EWR/CH. Log-Aufbewahrung 90 Tage [A].
+Strukturierte Logs (JSON, mit `korrelations_id`, **ohne** Dokumentinhalte/Prompts), Healthchecks je Container, Alarm bei fehlgeschlagenem oder zu altem Backup, fehlgeschlagenen Jobs, Disk > 80 %, Zertifikat < 14 Tage, Bruch der Audit-Kette [A]. Schlanke Dead-Man's-Switch-Alarmierung fuer Backup/Jobs (z.B. Healthchecks, in N6 nicht gestrichen [A, 07 Kap. 7]); kein Voll-Observability-Stack als Demo-Pflicht; keine Telemetrie an Planora ohne Zustimmung (On-Premise).
 
-### 10.7 On-Premise-Variante
-Gleiche Images; Lieferung als Compose-Bundle (spaeter Helm). Voraussetzungen beim Kunden: PostgreSQL ≥ 16 [A], S3-kompatibler Speicher, OIDC-IdP (eigenes Keycloak mitgeliefert oder Kunden-IdP direkt), Container-Laufzeit. KI: aus (Default) oder Kunden-eigenes Bedrock-Konto via Konfiguration. Keine Telemetrie an Planora ohne Zustimmung. Updates als signierte Images mit Migrationen; Support-Matrix N und N-1.
+### 10.7 On-Premise
+Dasselbe Paket wie CH-VM (E35), keine Sonderbuilds. Voraussetzungen beim Kunden [A]: unterstuetzte Linux-VM mit Container-Laufzeit, Ressourcen laut Paket, TLS-Zertifikat, Backup-Ziel. KI: aus (Default), Einschalten nur mit Kundenzustimmung und Schluessel (ADR 0030). Support-Matrix N und N-1 (ADR 0027).
 
 ---
 
 ## 11. Fehlerfaelle und Robustheit
+
+> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, RLS, Bedrock, Keycloak voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
 
 | # | Szenario | Erkennung | Reaktion |
 |---|---|---|---|
@@ -724,40 +748,47 @@ Gleiche Images; Lieferung als Compose-Bundle (spaeter Helm). Voraussetzungen bei
 
 ## 12. Architektur-Entscheidungsprotokolle (ADRs)
 
-Alle unter `docs/architektur/adr/`, Status "vorgeschlagen":
+Alle unter `docs/architektur/adr/`; Index und Status-Werte: `adr/0000-adr-vorlage-und-index.md`. Status ab Welle 4 gemaess `07-analyse-b2b.md` Kap. 2; jede betroffene ADR traegt oben einen Statusblock, die bisherige Fassung bleibt als Historie.
 
-| Nr | Datei | Kurz |
-|---|---|---|
-| 0001 | `0001-modularer-monolith.md` | Modularer Monolith, hexagonale Module, Prozessrollen |
-| 0002 | `0002-hosting-exoscale.md` | Exoscale Zuerich + Genf |
-| 0003 | `0003-ki-zugang-bedrock-eu.md` | Bedrock EU-Profil — **Abweichung vom PO-Entscheid (teilweise)** |
-| 0004 | `0004-framework-vite-fastify-bff.md` | Vite-SPA + Fastify-BFF |
-| 0005 | `0005-orm-drizzle-sql-migrationen.md` | Drizzle + handgeschriebenes Sicherheits-SQL |
-| 0006 | `0006-queue-pg-boss.md` | pg-boss, transaktionale Jobs |
-| 0007 | `0007-auth-keycloak-authz-in-app.md` | Keycloak AuthN, AuthZ in App |
-| 0008 | `0008-3d-r3f-batchedmesh.md` | 3D BatchedMesh, Sprite-Pins, Auto-Layout |
-| 0009 | `0009-dokumentverarbeitung-docproc-sidecar.md` | Python-Sidecar — **Abweichung vom PO-Entscheid (gering)** |
-| 0010 | `0010-mandantentrennung-rls.md` | RLS + zusammengesetzte FKs |
-| 0011 | `0011-bauteil-katalog.md` | Globaler versionierter Katalog |
-| 0012 | `0012-herkunftsmodell-angabe.md` | Angabe-Modell (Provenance) |
-| 0013 | `0013-deterministische-erneuerungsrechnung.md` | Reiner Rechenkern, Planstand |
-| 0014 | `0014-grundriss-hybrid.md` | Grundriss hybrid + manuell |
-| 0015 | `0015-audit-log-trigger.md` | Audit per Trigger, Hash-Kette |
-| 0016 | `0016-upload-quarantaene-virenscan.md` | Quarantaene + ClamAV |
-| 0017 | `0017-ki-kostenbremse.md` | Budget, Cache, Schutzschalter |
-| 0018 | `0018-preisdatenbank.md` | Preisdatenbank pro Typ mit Quellen-Port (E15) |
-| 0019 | `0019-mehrsprachigkeit.md` | DE/FR/IT in UI und Stammdaten (E20) |
-| 0020 | `0020-austausch-stratus.md` | Austausch-Port, Stratus-Adapter (E22) |
-| 0021 | `0021-zustandsmodell-zhaw.md` | ZHAW-Zustandsmodell und Lebensdauer-Tabelle (E11, E14) |
-| 0022 | `0022-dokument-viewer.md` | Vorschau-PDF, PDF.js, Markierung per Docling-Box (E23, E31) — **akzeptiert** |
-| 0023 | `0023-suche-postgres-hybrid.md` | Volltext + pgvector, RRF (E26, E31) — **akzeptiert** |
-| 0024 | `0024-pflicht-bausteine-und-lizenzen.md` | Pflicht-Bausteine und Lizenzregeln (E28, E31) — **akzeptiert** |
-| 0025 | `0025-oeffentliche-apis-gwr-feiertage-pwned.md` | geo.admin.ch/GWR, Nager.Date, Pwned Passwords (E32) — **akzeptiert** |
-| 0026 | `0026-geschlossene-3d-welt-interview.md` | Welt-Regelwerk, Interview-Agent, Weltgenerator (E33) — **akzeptiert** |
+| Nr | Datei | Kurz | Status ab Welle 4 |
+|---|---|---|---|
+| 0001 | `0001-modularer-monolith.md` | Modularer Monolith, hexagonale Module, Prozessrollen | angepasst (Module mit Schalter, 0029) |
+| 0002 | `0002-hosting-exoscale.md` | Exoscale Zuerich + Genf | **ersetzt durch 0027** |
+| 0003 | `0003-ki-zugang-bedrock-eu.md` | Bedrock EU-Profil | **ersetzt durch 0030** |
+| 0004 | `0004-framework-vite-fastify-bff.md` | Vite-SPA + Fastify-BFF | angepasst (lokaler Login, 0028) |
+| 0005 | `0005-orm-drizzle-sql-migrationen.md` | Drizzle + handgeschriebenes SQL | angepasst (ohne RLS, Migrationslock/Journal) |
+| 0006 | `0006-queue-pg-boss.md` | pg-boss, transaktionale Jobs | angepasst (ohne Mandantenkontext, Modul-/Rechtepruefung) |
+| 0007 | `0007-auth-keycloak-authz-in-app.md` | Keycloak AuthN, AuthZ in App | **ersetzt durch 0028** |
+| 0008 | `0008-3d-r3f-batchedmesh.md` | 3D InstancedMesh (E33), Pins, Leistungsstufen | angepasst |
+| 0009 | `0009-dokumentverarbeitung-docproc-sidecar.md` | docproc-Container — **Abweichung vom PO-Entscheid (gering)** | angepasst (Stufen getrennt) |
+| 0010 | `0010-mandantentrennung-rls.md` | RLS + zusammengesetzte FKs | **ersetzt durch 0031** |
+| 0011 | `0011-bauteil-katalog.md` | Versionierter Katalog | angepasst (je Instanz ausgeliefert) |
+| 0012 | `0012-herkunftsmodell-angabe.md` | Angabe-Modell (Provenance) | angepasst (Herkunft je Eingabekanal) |
+| 0013 | `0013-deterministische-erneuerungsrechnung.md` | Reiner Rechenkern | angepasst (Lebensdauer/Ampel, ohne Kosten) |
+| 0014 | `0014-grundriss-hybrid.md` | Grundriss hybrid + manuell | zurueckgestellt bis nach Demo |
+| 0015 | `0015-audit-log-trigger.md` | Audit per Trigger, Hash-Kette | angepasst (instanzbezogen) |
+| 0016 | `0016-upload-quarantaene-virenscan.md` | Quarantaene + ClamAV | angepasst (lokaler Speicher) |
+| 0017 | `0017-ki-kostenbremse.md` | Budget, Cache, Schutzschalter | angepasst (Stufe 4, je Instanz) |
+| 0018 | `0018-preisdatenbank.md` | Preisdatenbank (E15) | zurueckgestellt bis nach Demo |
+| 0019 | `0019-mehrsprachigkeit.md` | DE/FR/IT (E20) | zurueckgestellt bis nach Demo (DE/de-CH) |
+| 0020 | `0020-austausch-stratus.md` | Austausch-Port, Stratus (E22) | angepasst, [?] Stratus-Scope |
+| 0021 | `0021-zustandsmodell-zhaw.md` | ZHAW-Zustandsmodell, Lebensdauer-Tabelle | angepasst, [?] Zustands-Scope Demo |
+| 0022 | `0022-dokument-viewer.md` | Vorschau-PDF, PDF.js, Markierung (E23, E31) | angepasst |
+| 0023 | `0023-suche-postgres-hybrid.md` | Volltext + pgvector, RRF (E26, E31) | angepasst (Stufe 3, lokale Embeddings) |
+| 0024 | `0024-pflicht-bausteine-und-lizenzen.md` | Pflicht-Bausteine und Lizenzregeln (E31) | angepasst (Stufenliste) |
+| 0025 | `0025-oeffentliche-apis-gwr-feiertage-pwned.md` | GWR, Nager.Date, Pwned Passwords (E32) | zurueckgestellt bis nach Demo (E36) |
+| 0026 | `0026-geschlossene-3d-welt-interview.md` | Welt-Regelwerk, Erfassung, Weltgenerator (E33) | angepasst (Formular/Excel zuerst, Agent Stufe 4) |
+| 0027 | `0027-betrieb-compose-paket-pro-kunde.md` | Compose-Paket pro Kunde, Backup/Restore/Update (E35) | **vorgeschlagen** (neu) |
+| 0028 | `0028-lokaler-login-rollen.md` | Lokaler Login mit Rollen (E34) | **vorgeschlagen** (neu) |
+| 0029 | `0029-feature-schalter-kundenmodule.md` | Modulmanifest und Schalter pro Instanz (E37) | **vorgeschlagen** (neu) |
+| 0030 | `0030-ki-claude-api-direkt.md` | Claude API direkt, Stufe 4, Default aus (E36) — **Abweichung von NFR Datenstandort (teilweise)** | **vorgeschlagen** (neu) |
+| 0031 | `0031-instanz-isolation-statt-rls.md` | Instanz-Isolation statt RLS (E34) | **vorgeschlagen** (neu) |
 
 ---
 
 ## 13. Risiken und zu beweisende Annahmen
+
+> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, RLS, Bedrock, Keycloak, Exoscale voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
 
 ### 13.1 Top-Risiken (10 + 3 aus den PO-Antworten)
 
@@ -799,6 +830,8 @@ Alle unter `docs/architektur/adr/`, Status "vorgeschlagen":
 
 ## 14. Bewusst nicht in V1
 
+> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
+
 - Alles aus E10: Wartungsauftraege, Stoerungsmeldungen, Tickets, Live-Sensordaten.
 - BIM-Bearbeitung, IFC-/DWG-Auslesen (nur Ablage, FA-08), Plansymbolerkennung, Reverse Engineering/Import aus Bestandssystemen (E9).
 - Nicht-rechteckige Raumgeometrie (E3); echte Element-Positionen aus Plaenen.
@@ -815,6 +848,8 @@ Alle unter `docs/architektur/adr/`, Status "vorgeschlagen":
 ---
 
 ## 15. Pflicht-Bausteine je Modul (E31)
+
+> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, RLS, Bedrock, Keycloak voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
 
 Verbindlich nach ADR 0024; Begruendung und Abgleich in `06-bausteine-open-source.md`.
 
@@ -843,6 +878,8 @@ Eigenbau bleibt nur fuer den fachlichen Kern: Rechenkern, Herkunftsmodell, Audit
 ---
 
 ## Anhang A – Verbleibende Annahmen mit sicherem Default (austauschbar)
+
+> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, Keycloak voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
 
 Die PO-Antworten E11–E22 sind verbindlich; hier stehen nur die Annahmen, die darueber hinaus getroffen wurden.
 
