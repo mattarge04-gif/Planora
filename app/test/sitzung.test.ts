@@ -196,4 +196,38 @@ describe("Sitzungsregeln", () => {
       await expect(db.pool.query("insert into session(id, expires_at, token, created_at, updated_at, user_id) values ($1, now() + interval '1 hour', $2, now(), now(), $3)", [randomUUID(), randomBytes(16).toString("hex"), benutzerId])).rejects.toThrow(/konto_nicht_aktiv/);
     } finally { await db.pool.query("update konto_status set status='aktiv' where benutzer_id=$1", [benutzerId]); }
   });
+
+  it("PP7-3: sitzungspflichtige Auth-Endpunkte nach Leerlauf > 30 min → 401, Passwort unveraendert", async () => {
+    const c = await login();
+    const sid = (await ich(c)).json().sessionId;
+    await db.pool.query("update sitzung_aktivitaet set zuletzt_aktiv = now() - interval '31 minutes' where session_id=$1", [sid]);
+    const neu = randomBytes(12).toString("base64url");
+    const r = await post("/api/auth/change-password", { currentPassword: pw, newPassword: neu, revokeOtherSessions: true }, { cookie: c }, "192.0.2.31");
+    expect(r.statusCode).toBe(401);
+    expect((await anmelden(neu)).statusCode).toBe(401);
+    expect((await anmelden()).statusCode).toBe(200);
+  });
+
+  it("PP7-3: gesperrtes Konto mit Rest-Sitzung erreicht keinen sitzungspflichtigen Auth-Endpunkt", async () => {
+    const c = await login();
+    await db.pool.query("update konto_status set status='gesperrt' where benutzer_id=$1", [benutzerId]);
+    try {
+      const neu = randomBytes(12).toString("base64url");
+      expect((await post("/api/auth/change-password", { currentPassword: pw, newPassword: neu, revokeOtherSessions: true }, { cookie: c }, "192.0.2.32")).statusCode).toBe(401);
+      expect((await post("/api/auth/update-user", { name: "Boese" }, { cookie: c }, "192.0.2.32")).statusCode).toBe(401);
+      expect((await post("/api/auth/revoke-other-sessions", {}, { cookie: c }, "192.0.2.32")).statusCode).toBe(401);
+      expect((await app.inject({ url: "/api/auth/get-session", headers: { cookie: c } })).statusCode).toBe(401);
+      expect((await app.inject({ url: "/api/auth/list-sessions", headers: { cookie: c } })).statusCode).toBe(401);
+      expect((await db.pool.query(`select name from "user" where id=$1`, [benutzerId])).rows[0].name).toBe("Admin");
+    } finally { await db.pool.query("update konto_status set status='aktiv' where benutzer_id=$1", [benutzerId]); }
+    expect((await anmelden()).statusCode).toBe(200);
+  });
+
+  it("PP7-3: oeffentlich bleiben nur Anmeldung und Passwort-Reset (ohne Sitzung kein 401)", async () => {
+    expect((await anmelden()).statusCode).toBe(200);
+    expect((await post("/api/auth/request-password-reset", { email: "niemand@planora.invalid" }, {}, "192.0.2.33")).statusCode).toBe(200);
+    expect((await post("/api/auth/reset-password", { newPassword: "x".repeat(12), token: "ungueltig" }, {}, "192.0.2.33")).statusCode).toBe(400);
+    expect((await app.inject({ url: "/api/auth/get-session" })).statusCode).toBe(401);
+    expect((await post("/api/auth/sign-out", {}, {}, "192.0.2.33")).statusCode).toBe(401);
+  });
 });

@@ -7,11 +7,23 @@ export type Kontext = { benutzerId: string; auditId: string; sessionId: string }
 declare module "fastify" { interface FastifyRequest { kontext?: Kontext } }
 const SCHREIBEND = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 export const LEERLAUF = "30 minutes";
+/**
+ * Better-Auth-Endpunkte ohne Sitzungspflicht (relativ zu /api/auth/). Alle anderen /api/auth/*-Endpunkte unterliegen
+ * denselben Status-, Leerlauf- und Ablaufregeln wie Planora-Routen (PP7-3). Positivliste: neue Endpunkte sind geschuetzt.
+ */
+const OEFFENTLICH_AUTH = new Set(["sign-in/email", "request-password-reset", "reset-password", "ok", "error"]);
+const istOeffentlicherAuthPfad = (pfad: string, methode: string) =>
+  OEFFENTLICH_AUTH.has(pfad) || (methode === "GET" && /^reset-password\/[^/]+$/.test(pfad));
 
 export function registriereSitzungsregeln(app: FastifyInstance, auth: Auth, pool: pg.Pool, erlaubteOrigins: string[]) {
   app.addHook("preHandler", async (req, reply) => {
-    if (!req.url.startsWith("/api/") || req.url.startsWith("/api/auth/")) return;
-    if (SCHREIBEND.has(req.method)) {
+    const route = req.routeOptions.url ?? "";
+    if (!route.startsWith("/api/")) return;
+    const istAuth = route === "/api/auth/*";
+    // Pfad aus dem vom Router dekodierten Parameter, nicht aus der rohen URL (keine Umgehung per %-Kodierung)
+    if (istAuth && istOeffentlicherAuthPfad((req.params as Record<string, string>)["*"] ?? "", req.method)) return;
+    // Auth-Endpunkte: Origin/CSRF prueft Better Auth selbst; X-Planora-Request gilt fuer Planora-Routen
+    if (!istAuth && SCHREIBEND.has(req.method)) {
       const origin = req.headers.origin;
       if (req.headers["x-planora-request"] !== "1" || !origin || !erlaubteOrigins.includes(origin)) return reply.code(403).send({ fehler: "Anfrage abgelehnt" });
     }
