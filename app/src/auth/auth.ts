@@ -1,4 +1,5 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, APIError, BASE_ERROR_CODES } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { pgTable, text, boolean, timestamp, integer, bigint } from "drizzle-orm/pg-core";
@@ -34,6 +35,19 @@ export function baueAuth(pool: pg.Pool, o: AuthOptionen) {
       customRules: { "/sign-in/*": RATE_LIMIT.anmelden, "/request-password-reset": RATE_LIMIT.reset },
     },
     logger: { disabled: true },
+    // Login-Sperre fuer Status != aktiv (gesperrt, zu_bestaetigen; Spec §5, §15.2): gleiche Antwort wie falsches Passwort,
+    // Passwort wird trotzdem gehasht (gleiches Zeitverhalten wie der Pfad "Benutzer unbekannt" in Better Auth).
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/sign-in/email") return;
+        const mail = typeof ctx.body?.email === "string" ? ctx.body.email.toLowerCase() : "";
+        const r = await pool.query(`select ks.status from konto_status ks join "user" u on u.id = ks.benutzer_id where u.email = $1`, [mail]);
+        if (r.rowCount === 1 && r.rows[0].status !== "aktiv") {
+          await hashPasswort(String(ctx.body?.password ?? ""));
+          throw APIError.from("UNAUTHORIZED", BASE_ERROR_CODES.INVALID_EMAIL_OR_PASSWORD);
+        }
+      }),
+    },
     emailAndPassword: {
       enabled: true, disableSignUp: true, revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => { if (!o.sendeReset) throw new Error("Kein Reset-Versand konfiguriert"); await o.sendeReset(user.email, url); },
