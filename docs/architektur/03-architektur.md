@@ -9,7 +9,7 @@ Quellenkuerzel: `Qn-Dom` = Quelle n in 01-domaene, `Qn-Tech` = Quelle n in 02-te
 **E32 (2026-11-09): oeffentliche APIs** geo.admin.ch/GWR, Nager.Date, Pwned Passwords (ADR 0025) sind eingearbeitet (Kap. 2.1, 3.3, 4.2, 9.7, 15).
 **E33 (2026-11-09): geschlossene 3D-Welt** mit Regelwerk, Interview-Agent und deterministischem Weltgenerator (ADR 0026), einfacher Look mit Leistungsstufen (ADR 0008 angepasst, Spike S3b) sind eingearbeitet (Kap. 3, 7, 15).
 Entscheide im Detail: `adr/0001`–`adr/0031` (Index: `adr/0000-adr-vorlage-und-index.md`). BMAD-Arbeitsprotokoll und Spine: `bmad/planning-artifacts/architecture/architecture-Planora-2026-11-08/`.
-**Welle 4 / B2B (E34–E37, 2026-11-09):** Gueltigkeit siehe **Kap. 0**; umgestellt sind Kap. 0–10 und 12 (Welle 4 und 4b); Kap. 11, 13–15 und Anhang A folgen in Welle 4b.
+**Welle 4 / B2B (E34–E37, 2026-11-09):** Gueltigkeit siehe **Kap. 0**; alle Kapitel sind umgestellt (Kap. 0, 2, 3, 9, 10, 12 in Welle 4; Kap. 1, 4–8, 11, 13–15, Anhang A in Welle 4b).
 
 ---
 
@@ -28,7 +28,7 @@ Entscheide im Detail: `adr/0001`–`adr/0031` (Index: `adr/0000-adr-vorlage-und-
 **Lieferstufen** [A, Plan V2 `docs/plan/umsetzungsplan.html`]: Stufe 1 = 3D + Dokumente, Erfassung per Formular/Excel · Stufe 2 = + Lebensdauer und Ampel (Ziel Uebergabe Siemens) · Stufe 3 = + lokale Suche · Stufe 4 = + Claude-Interview und KI-Auslesen.
 **Zurueckgestellt bis nach der Demo:** Grundriss-Erkennung (ADR 0014), Preise/Investitionsplan (ADR 0018, E24), FR/IT (ADR 0019), oeffentliche APIs (ADR 0025).
 
-**Stand dieses Dokuments:** Kapitel 0, 2, 3, 9, 10 und 12 sind auf Welle 4 umgestellt, Kapitel 1 und 4–8 in Welle 4b. Die uebrigen Kapitel tragen, wo sie Mandanten/RLS/Bedrock/Keycloak/Exoscale voraussetzen, den Hinweis «[A] in Welle 4b anzupassen, siehe 07 Kap. 3»; dort gilt im Zweifel dieses Kapitel 0. Die bisherige Fassung der umgestellten Kapitel liegt im Git-Verlauf (Stand vor Branch `welle-4-b2b`, Commit `e64fdb9`).
+**Stand dieses Dokuments:** Kapitel 0, 2, 3, 9, 10 und 12 sind in Welle 4 umgestellt, Kapitel 1, 4–8, 11, 13–15 und Anhang A in Welle 4b (gemaess 07 Kap. 3). Historische Spike-Ergebnisse und Tabellen sind als «historisch» gekennzeichnet erhalten (Kap. 6.2, 7.3, 13.3); bei Widerspruch gilt dieses Kapitel 0. Die bisherige Fassung der umgestellten Kapitel liegt im Git-Verlauf (Stand vor Branch `welle-4-b2b`, Commit `e64fdb9`).
 
 ---
 
@@ -776,35 +776,42 @@ Dasselbe Paket wie CH-VM (E35), keine Sonderbuilds. Voraussetzungen beim Kunden 
 
 ## 11. Fehlerfaelle und Robustheit
 
-> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, RLS, Bedrock, Keycloak voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
+> Welle 4b (E34–E37, 2026-11-09): umgestellt gemaess 07 Kap. 3. Entfallen: RLS-/Pool-Mandantenfehler, Bedrock-Profilrouting, Grundriss, Keycloak-/IdP-Faelle, Preisanteile. Neu: Betriebsfehler einer Einzelinstanz (Disk/OOM, Secrets, Update, Restore), lokaler Login, Modulschalter. Fassung vor Welle 4 im Git-Verlauf (`e64fdb9`).
 
-| # | Szenario | Erkennung | Reaktion |
-|---|---|---|---|
-| 1 | KI liefert Unsinn (falsche Werte, erfundene Typen) | Schema, Katalog-Enum, Grounding (Zitat nicht im Text), Plausibilitaet | Vorschlag "tief" → Pruefliste; nie automatisch bestaetigt; Rate im Monitoring, Golden-Set-Lauf bei Anstieg |
-| 2 | KI halluziniert plausiblen Wert mit echtem Zitat aus anderem Kontext | Querpruefung mit zweiter Quelle; Wert muss im Zitat stehen | Stufe "mittel"; Mensch bestaetigt mit Sprung auf Seite (FA-11) |
-| 3 | Bedrock nicht erreichbar / gedrosselt | Fehlerquote, Schutzschalter | Jobs pausieren, UI-Hinweis "KI verzoegert"; alle anderen Funktionen laufen; Retry-Plan 5.4 |
-| 4 | Bedrock-Profil routet ploetzlich in Nicht-EU-Region | monatliche Profilpruefung | Alarm, globaler KI-Schalter aus bis Klaerung |
-| 5 | Modell wird abgekuendigt / Verhalten aendert sich | Anbieter-Ankuendigung, Golden-Set-Abweichung | Modell-ID per Konfiguration wechseln nach Golden-Set-Freigabe |
-| 6 | Falsche Mandanten-ID (Programmfehler) | RLS-Fehler (`app.mandant()` wirft), FK-Verletzung bei Querreferenz | Request bricht ab (500, Alarm), keine Daten geschrieben/gelesen; Incident-Prozess |
-| 7 | Kontext-Leck ueber Connection-Pool | Pool-Leak-Test in CI; `SET LOCAL` nur im Wrapper; Lint | strukturell ausgeschlossen; Test blockiert Merge |
-| 8 | Kaputtes/verschluesseltes PDF | Parser-Fehler in Aufbereitung | Status `fehlgeschlagen` mit Grund pro Datei (FA-07); Original bleibt; manuelle Erfassung moeglich |
-| 9 | Virus/Makro | ClamAV, Magic Bytes | `abgelehnt`, Quarantaene 7 Tage, Meldung an Uploader und Admin |
-| 10 | 2'000-Seiten-Upload | Seitenzahl nach Aufbereitung, Kostenschaetzung | Aufbereitung in Bloecken; KI nur fuer vorausgewaehlte Seiten; > 600 Seiten oder > CHF 50 → Freigabe durch Admin (ADR 0017) |
-| 11 | 1 GB / 50 Dateien gleichzeitig | Upload-Vorgang | direkte S3-Uploads parallel, Status je Datei, Wiederaufnahme einzelner Dateien |
-| 12 | Gleichzeitige Bearbeitung desselben Objekts | `version`-Vergleich | 409 mit aktuellem Stand; UI zeigt Unterschied, Benutzer entscheidet; Sammelbestaetigung meldet Konflikte je Eintrag |
-| 13 | Doppelte Verarbeitung (Job zweimal, Retry nach Absturz) | Job-Schluessel, Zustandsautomat, KI-Cache | zweiter Lauf ohne Wirkung, keine Doppelkosten |
-| 14 | Worker stirbt mitten im Job | pg-boss Ablaufzeit | Job wird neu zugestellt, idempotent |
-| 15 | Budget erschoepft | Reservierung scheitert | `pausiert_budget`, Admin-Meldung, Freigabe in UI |
-| 16 | Excel mit unerwarteter Struktur | Spaltenzuordnung, Pflichtspalten | Benutzer ordnet zu; nicht zuordenbare Zeilen in Pruefliste (FA-38) |
-| 17 | Grundriss nicht erkennbar | 0 Vorschlaege / alle "tief" | manueller Zeichenmodus, Hinweis |
-| 18 | Element ohne Einbaudatum / Kosten / Lebensdauer | Rechenkern | "abgeleitet" bzw. "Kosten fehlen" bzw. Planora-Standard aus der Lebensdauer-Tabelle; nie stillschweigend 0 |
-| 19 | 3D zu langsam / kein WebGL | Bildratenmessung, Feature-Erkennung | stufenweise Degradation, 2D/Tabelle |
-| 20 | DB-Failover waehrend Schreibvorgang | Verbindungsfehler | Transaktion zurueckgerollt, Client-Retry bei idempotenten Aufrufen (Idempotenz-Schluessel im Header fuer POST [A]) |
-| 21 | Migration schlaegt fehl | migrator-Exit-Code | Deploy stoppt vor App-Wechsel; Migration ist transaktional; kein Rollout |
-| 22 | Restore-Test schlaegt fehl | monatlicher Bericht | Alarm, Behebung vor naechstem Release |
-| 23 | Audit-Kette gebrochen | taegliche Pruefung | Alarm, Untersuchung (Hinweis auf Manipulation mit Owner-Rechten) |
-| 24 | Keycloak down | Health-Check | keine neuen Logins; bestehende Sessions laufen bis Ablauf weiter (BFF) |
-| 25 | Kunden-IdP (Entra) falsch konfiguriert | Login-Fehler je Mandant | lokales Notfall-Admin-Konto pro Mandant mit MFA [A] |
+| # | Szenario | Stufe | Erkennung | Reaktion |
+|---|---|---|---|---|
+| 1 | KI liefert Unsinn (falsche Werte, erfundene Typen) | 4 | Schema, Katalog-Enum, Grounding, Plausibilitaet | Vorschlag "tief" → Pruefliste; nie automatisch bestaetigt; Rate im Monitoring, Golden-Set-Lauf bei Anstieg |
+| 2 | KI halluziniert plausiblen Wert mit echtem Zitat aus anderem Kontext | 4 | Querpruefung; Wert muss im Zitat stehen | Stufe "mittel"; Mensch bestaetigt mit Sprung auf Seite (FA-11) |
+| 3 | Claude API nicht erreichbar / gedrosselt / Schluessel ungueltig | 4 | Fehlerquote, Schutzschalter, 401/403 | Jobs pausieren, UI-Hinweis "KI verzoegert" bzw. Admin-Meldung; alle anderen Funktionen laufen; Retry-Plan 5.4 |
+| 4 | KI-Schalter wird waehrend laufender Jobs ausgeschaltet | 4 | Pruefung vor jedem Provider-Dispatch | keine weiteren Requests; laufender Request endet, Job → `pausiert_ki_aus`; Teilresultate bleiben unentschieden (Kap. 5.7) |
+| 5 | Modell wird abgekuendigt / Verhalten aendert sich | 4 | Anbieter-Ankuendigung, Golden-Set-Abweichung | Modell-ID per Konfiguration wechseln nach Golden-Set-Freigabe |
+| 6 | Kaputtes/verschluesseltes PDF, Office mit externen Links | 1 | Parser-Fehler, docproc ohne Netz | Status `fehlgeschlagen` mit Grund pro Datei (FA-07); Original bleibt; externe Links werden nicht aufgeloest |
+| 7 | Virus/Makro, falsche Magic Bytes | 1 | ClamAV, file-type | `abgelehnt`, Quarantaene 7 Tage [A], Meldung an Uploader und Admin |
+| 8 | ClamAV nicht erreichbar oder Signaturen veraltet | 1 | Healthcheck, Signaturalter | **fail closed:** Dokumente bleiben in `hochgeladen`, keine Freigabe; Alarm; Signaturzufuhr On-Premise [?] PO (`08-pruefung.md` PO-Entscheid Nr. 6) |
+| 9 | Doppelabschluss / alter Teil-Upload / Absturz waehrend Abschluss (K01) | 1 | Abschluss-Lock, Upload-Status | zweiter Abschluss ohne Wirkung; nach Absturz Neustart des Abschlusses, Scan nur ueber die finalen Bytes |
+| 10 | 2'000-Seiten-Upload, ZIP-/Pixel-Bombe | 1 | Seiten-, Pixel-, Groessenlimits | Aufbereitung in Bloecken bzw. Ablehnung mit Grund; ab Stufe 4 KI nur fuer vorausgewaehlte Seiten, > 600 Seiten → Freigabe durch Admin (ADR 0017) |
+| 11 | Disk voll (Ablage, DB, Backups) | 1 | Disk-Alarm > 80 % | Uploads werden mit klarer Meldung abgelehnt, bevor die DB betroffen ist; Lesen bleibt moeglich; Alarm an Betrieb |
+| 12 | Speichermangel/OOM durch OCR oder Embeddings | 1/3 | Container-Neustart, Healthcheck | Ressourcenbudgets je Container (Kap. 10.2); docproc/Embedding-Server stuerzen allein ab, `api`/DB bleiben benutzbar; Job wird idempotent wiederholt |
+| 13 | Gleichzeitige Bearbeitung desselben Objekts | 1 | `version`-Vergleich | 409 mit aktuellem Stand; UI zeigt Unterschied; Sammelbestaetigung meldet Konflikte je Eintrag |
+| 14 | Doppelte Verarbeitung (Job zweimal, Retry nach Absturz) | 1 | Job-Schluessel, Zustandsautomat, KI-Cache | zweiter Lauf ohne Wirkung, keine Doppelkosten |
+| 15 | Worker stirbt mitten im Job | 1 | pg-boss Ablaufzeit | Job wird neu zugestellt, idempotent |
+| 16 | Job eines abgeschalteten Moduls oder ohne aktuelles Recht des Ausloesers | 1 | `modulAktiv()` und Rechtepruefung im Handler | Job endet ohne Wirkung mit Status "uebersprungen", Audit-Eintrag; keine Daten veraendert |
+| 17 | Job mit altem/unbekanntem Payload-Schema nach Update | 1 | Schemaversion im Payload | Worker lehnt ab statt falsch auszufuehren; Job → "abgelehnt_version", Alarm; Behandlung im Update-Runbook (Kap. 10.3, [A] Befund 7 in `08-pruefung.md`) |
+| 18 | Budget erschoepft | 4 | Reservierung scheitert | `pausiert_budget`, Admin-Meldung, Freigabe in UI |
+| 19 | Excel mit unerwarteter Struktur, Formel-/Fehlerzellen, de-CH-Zahlen | 1 | Vorlagenpruefung, Zeilenvalidierung | Zeilenvorschau mit Fehler je Zeile/Zelle; nichts wird vor Bestaetigung geschrieben; Formeln werden als Wert bzw. Fehler gemeldet, nie ausgefuehrt (FA-38) |
+| 20 | Erfassung nach Vorschau geaendert | 1 | Erfassungs-Version | Uebernahme 409, neue Vorschau |
+| 21 | Element ohne Einbaudatum / Lebensdauer | 2 | Rechenkern | "abgeleitet" bzw. Planora-Standard aus der Lebensdauer-Tabelle; fehlt beides: grau "unvollstaendig"; nie stillschweigend 0 |
+| 22 | 3D zu langsam / kein WebGL / VDI ohne GPU | 1 | Bildratenmessung, Feature-Erkennung | stufenweise Degradation, 2D/Tabelle mit allen Funktionen |
+| 23 | DB-Verbindung bricht waehrend Schreibvorgang ab | 1 | Verbindungsfehler | Transaktion zurueckgerollt, Client-Retry bei idempotenten Aufrufen (Idempotenz-Schluessel im Header fuer POST [A]) |
+| 24 | Login: falsches Passwort, Brute Force, vergessenes Passwort | 1 | Rate-Limit, Fehlversuchszaehler | Sperre/Verzoegerung, Audit; Reset ueber einmaligen Token (E-Mail falls SMTP vorhanden, sonst durch Instanz-Admin) [A, ADR 0028] |
+| 25 | Letzter Instanz-Admin gesperrt oder Passwort verloren | 1 | – | Wiederherstellung nur durch Betrieb auf Host-Ebene mit Einrichtungs-Token-Verfahren, auditiert [A, ADR 0028]; kein Hintertuer-Konto |
+| 26 | Fehlendes oder falsches Secret beim Start | 1 | Startpruefung | Container startet nicht (fail closed), klare Meldung im Log ohne Secret-Wert |
+| 27 | Pflichtmodul fehlt / Manifest verlangt nicht vorhandene Abhaengigkeit | 1 | Manifestpruefung beim Start und beim Umschalten | Start bzw. Aktivierung abgelehnt, bestehender Zustand bleibt (ADR 0029) |
+| 28 | Instanz-Update bricht ab (Migration, Backfill, Index `CONCURRENTLY`) | 1 | migrator-Exit-Code, Journal | App-Wechsel stoppt; Migrationslock verhindert zweiten Lauf; Journal zeigt Schritt; Wiederholung ab Schritt bzw. Rueckweg laut Kap. 10.3 |
+| 29 | Backup fehlgeschlagen, zu alt oder an falsches Ziel | 1 | Dead-Man's-Switch, Manifest mit Instanz-ID | Alarm; Backup-Manifest mit fremder Instanz-ID wird beim Restore abgelehnt |
+| 30 | Restore mit fehlendem Objekt oder Schluessel | 1 | Hash-/Referenzpruefung | Restore bricht ab, Instanz wird nicht freigegeben; KI bleibt nach jedem Restore gesperrt bis Admin-Pruefung (Kap. 10.4) |
+| 31 | Audit-Kette gebrochen | 1 | taegliche Pruefung | Alarm, Untersuchung (Hinweis auf Manipulation mit Owner-Rechten) |
+| 32 | Embedding-Server fehlt oder Modell gewechselt | 3 | Healthcheck, `modell_id` im Index | Suche faellt auf Name/Volltext zurueck mit Hinweis; Modellwechsel nur mit Reindexierung |
 
 ---
 
@@ -850,9 +857,47 @@ Alle unter `docs/architektur/adr/`; Index und Status-Werte: `adr/0000-adr-vorlag
 
 ## 13. Risiken und zu beweisende Annahmen
 
-> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, RLS, Bedrock, Keycloak, Exoscale voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
+> Welle 4b (E34–E37, 2026-11-09): umgestellt gemaess 07 Kap. 3. R1/R4/R9 und S1/S4/S7/S9 sind als Voraussetzungen entfallen; R11/S12 liegen ausserhalb des E24-Scopes; S5/S6/S2 gelten fuer die direkte Claude API ab Stufe 4, S11 fuer Instanzmigrationen. Die bisherigen Tabellen stehen unveraendert in 13.3 (historisch).
 
-### 13.1 Top-Risiken (10 + 3 aus den PO-Antworten)
+### 13.1 Top-Risiken (Stand Welle 4b)
+
+| # | Risiko | Stufe | Auswirkung | Gegenmassnahme |
+|---|---|---|---|---|
+| R2 | Kennwert-Extraktion liefert plausible Falschwerte | 4 | falsche Lebensdauern/Ampeln, Vertrauensverlust | nur bestaetigte Werte rechnen; Grounding; Golden Set mit echten TGA-Daten und direktem Adapter; Herkunft sichtbar |
+| R3 | Kunde akzeptiert direkten Claude-Datenfluss ohne CH/EU-Bindung nicht | 4 | KI ungenutzt | KI standardmaessig aus; Formular/Excel vollwertig; [?] PO (`08-pruefung.md` PO-Entscheid Nr. 12) |
+| R5 | Ein-Personen-Entwicklung und Betrieb mehrerer Instanzen (Ausfall, Ueberlast, Vertretung) | 1 | Ausfallzeiten, Wissensverlust | ein identisches Paket, Runbooks, automatisierte Installations-/Update-/Restore-Tests, externer Review, ADRs; Vertretung [?] PO (`08-pruefung.md` PO-Entscheid Nr. 4) |
+| R6 | Planora-Standard-Lebensdauern ohne CRB-Lizenz (E11) zu wenig fundiert; eBKP-H-Codes mit Restrisiko (E13) | 2 | Vertrauen in Ersatzjahre/Ampel; Rechtsrisiko | Standardtabelle vom Chef mit Referenzquelle als Text, Instanz passt pro Typ/Element an; fachliche Freigabe der Ampel-Orakel |
+| R7 | Drizzle vor 1.0 bricht | 1 | Umbauaufwand | exakt pinnen, Sicherheits-SQL getrennt, Abfragen SQL-nah |
+| R8 | 3D-Performance auf Kunden-Laptop/VDI ungenuegend | 1 | schlechter Eindruck, Nutzung nur 2D | Budgets, Leistungsstufen, 2D mit allen Funktionen; Messung auf Siemens-Hardware |
+| R10 | KI-Kosten oder API-Ratenlimits ueberschreiten Erwartung | 4 | Kosten, lange Laufzeiten | Kostenbremse je Instanz, Seitenvorauswahl, Cache; Messung S5/S6 mit direkter API |
+| R12 | Kein echtes TGA-Testmaterial (E18) | 2/4 | Erfassungsvorlage und FA-13 unbewiesen | Excel-Vorlage mit Siemens-Beispielgebaeude abnehmen; FA-13 erst mit echten Dokumenten; [?] PO (`08-pruefung.md` PO-Entscheid Nr. 8) |
+| R13 | Stratus-Format unbekannt (E22) | – | Austausch verzoegert | Scope [?] PO (`08-pruefung.md` PO-Entscheid Nr. 9); Excel-Erfassung ist kein Stratus-Nachweis |
+| R14 | **Updateflotte:** Kundeninstanzen laufen auf verschiedenen Versionen, Sicherheitsupdates nicht eingespielt | 1 | Sicherheitsluecken, Supportaufwand, inkompatible Daten | Versionsmanifest, Migrationslock/Journal, N/N-1 als technisches Ziel [A]; betreuter Umfang und Owner [?] PO (`08-pruefung.md` PO-Entscheid Nr. 5) |
+| R15 | **Datenverlust bei Einzel-VM** (Disk-Defekt, Fehlbedienung, Ransomware) | 1 | existenzbedrohend fuer den Kunden | VM-unabhaengige verschluesselte Kopie, Restore-Uebung auf frischer VM, Alarm bei fehlendem Backup; Owner/Ziel [?] PO (`08-pruefung.md` PO-Entscheid Nr. 4) |
+| R16 | **Lokale Modellressourcen** (OCR, Embeddings) sprengen CPU/RAM der Kunden-VM | 1/3 | langsame oder abstuerzende Verarbeitung, API blockiert | Ressourcenbudgets je Container, Messung auf Ziel-VM, Modellwahl nach Messung; [?] PO (`08-pruefung.md` PO-Entscheid Nr. 10) |
+| R17 | **Falsche Modulkonfiguration** (Abhaengigkeit fehlt, Modul nur in UI versteckt, Schalter durch Host-Admin veraendert) | 1 | Funktion ungeschuetzt erreichbar oder Daten scheinbar verloren | Pruefung an HTTP- und Job-Grenze, Manifestpruefung, Audit, Daten-Erhalt beim Abschalten (ADR 0029); Freischaltrechte [?] PO (`08-pruefung.md` PO-Entscheid Nr. 7) |
+| R18 | **Lieferlizenzen On-Premise** (AGPL/GPL-Komponenten, Modellgewichte) | 1 | Rechtsrisiko bei Auslieferung | Stufen-/Image-Inventar mit Lizenzen vor Paketfreigabe (ADR 0024); [?] PO (`08-pruefung.md` PO-Entscheid Nr. 3) |
+
+### 13.2 Nachweise vor den Lieferstufen
+
+| Nachweis | Stufe | Annahme | Messbares Erfolgskriterium |
+|---|---|---|---|
+| S3/S3b 3D | 1 | InstancedMesh + Sprite-Pins + Leistungsstufen halten Budget | Kap. 7.3 auf Standard-Laptop **und** Kunden-VDI; 2D mit allen Funktionen. Historische Spike-Werte siehe 13.3 und Kap. 7.3 |
+| S8 docproc | 1 | OCRmyPDF/Gotenberg (und ab Stufe 3 Docling) laufen auf Ziel-VM | 2'000-Seiten-PDF ohne Absturz innerhalb des Ressourcenbudgets; API bleibt waehrenddessen benutzbar [A] |
+| S10 Rechenkern (Lebensdaueranteil) | 2 | Determinismus, Quellenrangfolge, Ampel | Ampel-/Lebensdauer-Orakel des Test-Architekten 100 % gruen, Faelle fachlich freigegeben; 2 Laeufe auf 2 Maschinen byte-identisch; ZHAW-Teil nur falls im Scope ([?] PO, `08-pruefung.md` PO-Entscheid Nr. 8) |
+| S11 Instanzmigration | 1 | Migrationslock/Journal, expand/contract, N-1 → N | befuellte N-1-Instanz auf N; paralleler Migrator abgelehnt; Abbruch/Neustart bei Backfill und `CONCURRENTLY`-Index; Rueckweg geuebt (`05-tests.md` Kap. 12) |
+| I1 Installation/Restore (neu) | 1 | Paket installierbar und wiederherstellbar ohne Entwickler | saubere VM → laufende Instanz nach Runbook; Restore auf frischer VM mit Hash-/Referenzpruefung; RPO/RTO gemessen |
+| S2 Extraktion | 4 | Claude + Validator liefert verlaessliche Vorschlaege | wie bisher (FA-13), aber gemessen mit **direktem Produktionsadapter** und echten freigegebenen TGA-Dokumenten; Abo-/Synthetik-Ergebnisse sind kein Nachweis |
+| S5 Claude API | 4 | Modelle, Tool-Schema, Limits der direkten API | Tool-Schema mit 50er-Enum funktioniert; 500 Seiten in ≤ 30 min innerhalb der Ratenlimits [A]; Prompt-Caching ja/nein dokumentiert; Datenregion/Retention vertraglich geklaert ([?] PO, `08-pruefung.md` PO-Entscheid Nr. 12) |
+| S6 KI-Kosten | 4 | Kosten pro Gebaeude tragbar | Abweichung Schaetzung vs. Ist ≤ 25 % [A]; Preise zum Messzeitpunkt mit Quelle |
+| Suche (neu) | 3 | lokales Embedding-Modell auf Ziel-VM | Recall auf bekanntem Korpus, Laufzeit/CPU/RAM gemessen, keine Hub-Downloads zur Laufzeit; Modell [A], [?] PO (`08-pruefung.md` PO-Entscheid Nr. 10) |
+| S13 Stratus | [?] | Austausch technisch moeglich (E22) | nur falls Stratus zum Scope gehoert ([?] PO, `08-pruefung.md` PO-Entscheid Nr. 9) |
+
+### 13.3 Historische Risiko- und Spike-Tabellen (Stand vor Welle 4, unveraendert)
+
+[F] Die folgenden Tabellen sind unveraendert aus der Fassung vor Welle 4 uebernommen. Sie dokumentieren die damaligen Annahmen und Erfolgskriterien; R1, R4, R9, R11 sowie S1, S4, S7, S9, S12 sind fuer die Stufen 1–4 nicht mehr massgeblich. Ergebnisse der Spikes stehen in `05-tests.md` und `spikes/`.
+
+#### 13.1 Top-Risiken (10 + 3 aus den PO-Antworten) (historisch)
 
 | # | Risiko | Auswirkung | Gegenmassnahme |
 |---|---|---|---|
@@ -870,7 +915,7 @@ Alle unter `docs/architektur/adr/`; Index und Status-Werte: `adr/0000-adr-vorlag
 | R12 | Kein echtes TGA-Testmaterial (E18) | FA-13-Schwellen unbewiesen bis Pilot liefert | oeffentliche Datenblaetter + synthetische Listen; Abnahme FA-13 erst mit echten Dokumenten; beim Pilotkunden aktiv TGA-Unterlagen anfordern |
 | R13 | Stratus-Format unbekannt (E22) | Austausch verzoegert | Adapter-Port, Excel/CSV-Zwischenformat, Kontakt Basler & Hofmann (S13) |
 
-### 13.2 Annahmen, die in Welle 3 (`spikes/`) bewiesen werden muessen
+#### 13.2 Annahmen, die in Welle 3 (`spikes/`) bewiesen werden muessen (historisch)
 
 | Spike | Annahme | Messbares Erfolgskriterium |
 |---|---|---|
@@ -890,73 +935,102 @@ Alle unter `docs/architektur/adr/`; Index und Status-Werte: `adr/0000-adr-vorlag
 
 ---
 
-## 14. Bewusst nicht in V1
+## 14. Bewusst nicht in V1 (Lieferstufen 1–4)
 
-> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
+> Welle 4b (E24, E34–E37, 2026-11-09): umgestellt gemaess 07 Kap. 3. "Datenbank pro Kunde" ist jetzt Basis (ADR 0031). Unterschieden wird zwischen **dauerhaft ersetzt** (keine spaetere Zusage), **zurueckgestellt bis nach der Demo** (spaeteres Kundenmodul nach ADR 0029) und **nicht geplant**.
 
+**Dauerhaft ersetzt (E37):** AWS Bedrock (→ Claude API direkt, ADR 0030), Exoscale-Managed-Dienste (→ Compose-Paket, ADR 0027), Mandanten-RLS als Kundengrenze (→ Instanz-Isolation, ADR 0031). Ein spaeterer Anbieterwechsel ist nicht beschlossen und wird nicht als Modul zugesagt.
+
+**Zurueckgestellt bis nach der Demo (spaeteres Kundenmodul, eigener PO-Entscheid):**
+- Kosten, Preisdatenbank, Teuerung, Investitionsplan, Ersatzzyklen, Budgetverschiebung (E24, ADR 0018; Kap. 8.4/8.5).
+- Grundriss-Erkennung und Korrektur-Editor (ADR 0014; Kap. 6).
+- FR/IT und Tolgee (ADR 0019); Demo DE/de-CH.
+- Oeffentliche APIs GWR, Nager.Date, Pwned Passwords (E32, ADR 0025); Wiederaufnahme nur nach erneutem PO-Entscheid zu N3/"nur Claude" ([?] `08-pruefung.md` PO-Entscheid Nr. 6).
+- Keycloak, SSO (z.B. Entra ID), SCIM (E34; spaeter Modul nach ADR 0028/0029 ohne zweite Rollenquelle).
+- Werkzeugpflicht GlitchTip, Uptime Kuma, cosign, Renovate, OWASP ZAP (Plan V2, "Gestrichen"); ihre Schutzziele bleiben (`05-tests.md` Kap. 12).
+- Stratus-Austausch (E22): [?] PO, ob Demo oder spaeteres Modul (`08-pruefung.md` PO-Entscheid Nr. 9); bis dahin kein Adapter.
+- Volle ZHAW-Zustandsbewertung: [?] PO, ob Demo-Umfang (`08-pruefung.md` PO-Entscheid Nr. 8).
+
+**Nicht geplant:**
 - Alles aus E10: Wartungsauftraege, Stoerungsmeldungen, Tickets, Live-Sensordaten.
-- BIM-Bearbeitung, IFC-/DWG-Auslesen (nur Ablage, FA-08), Plansymbolerkennung, Reverse Engineering/Import aus Bestandssystemen (E9).
+- BIM-Bearbeitung, IFC-/DWG-Auslesen (nur Ablage, FA-08), Plansymbolerkennung, Reverse Engineering/Import aus Bestandssystemen (E9; REA erst nach Pilot, E29).
 - Nicht-rechteckige Raumgeometrie (E3); echte Element-Positionen aus Plaenen.
-- Teuerung per Index (z.B. BFS-Baupreisindex) statt festem Satz (E16), Szenarien-Vergleich mehrerer Plaene.
-- Automatische Herstellerpreis-Feeds (E15): nur Port und Datenmodell in V1, Adapter nach Spike S12.
-- Automatische Uebersetzung von Kundendaten; weitere Sprachen ausser DE/FR/IT.
-- Vertragsausstattung nach FINMA-RS 2018/3 (E19: keine Finanzinstitute als Zielkunden).
-- SCIM-Provisionierung, kundenverwaltete Schluessel (BYOK), Datenbank pro Mandant in SaaS, Multi-Region-Aktiv-Aktiv, Kubernetes zum Start.
-- Lokales/selbst betriebenes KI-Modell, Fine-Tuning, Opus/Fable als Standardmodell.
+- Automatische Uebersetzung von Kundendaten.
+- Vertragsausstattung nach FINMA-RS 2018/3 (E19).
+- Kundenverwaltete Schluessel (BYOK), Hochverfuegbarkeit/automatisches Failover einer Instanz, Multi-Region, Kubernetes.
+- **Lokales generatives Modell** (LLM) und Fine-Tuning; Claude ist der einzige generative KI-Anbieter (E36). Davon zu unterscheiden: das **lokale Embedding-Modell** fuer die Suche ab Stufe 3 ist geplant (ADR 0023).
+- Kundenspezifische Branches, Sonderbuilds pro Kunde oder frei editierbare Laufzeit-Kataloge (E37).
+- Zentraler Lizenz-/Telemetriedienst als Pflicht fuer On-Premise ([?] Freischaltung, `08-pruefung.md` PO-Entscheid Nr. 7).
 - Native Mobile-App und Offline-Modus fuer die Begehung (Tablet-Browser genuegt, FA-30) [A].
-- Oeffentliche API fuer Dritte; Austauschformate ausser Stratus und Excel/CSV.
-- ISO-27001-Zertifizierung von Planora selbst (Ziel: dokumentierte Kontrollen + zertifizierter Hoster, 01 Kap. 5.2).
+- Oeffentliche API fuer Dritte; Austauschformate ausser Excel (Stratus siehe oben).
+- ISO-27001-Zertifizierung von Planora selbst (Ziel: dokumentierte Kontrollen, 01 Kap. 5.2).
 
 ---
 
-## 15. Pflicht-Bausteine je Modul (E31)
+## 15. Pflicht-Bausteine je Modul und Lieferstufe (E31)
 
-> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, RLS, Bedrock, Keycloak voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
+> Welle 4b (E31, E34–E37, 2026-11-09): umgestellt gemaess 07 Kap. 3/7; synchron zu ADR 0024 und `06-bausteine-open-source.md`. Bedrock, Keycloak, E32-APIs, FR/IT/Tolgee sowie GlitchTip, Uptime Kuma, cosign, Renovate, ZAP sind keine Demo-Pflicht; RLS-pgTAP entfaellt. Fassung vor Welle 4 im Git-Verlauf (`e64fdb9`).
 
-Verbindlich nach ADR 0024; Begruendung und Abgleich in `06-bausteine-open-source.md`.
+Ein Baustein ist ab der genannten Lieferstufe Pflicht; vorher wird er nicht eingebaut. Konkrete Versionen und Lizenzen werden im Stufen-/Image-Inventar vor Paketfreigabe gepinnt (ADR 0024, Befund 9 in `08-pruefung.md`).
 
-| Modul / Teil | Pflicht-Bausteine |
-|---|---|
-| `web` (allgemein) | React 19, Vite, TanStack Query, TanStack Table + Virtual, Zustand, react-hook-form + zod, shadcn/ui (Radix), i18next/react-i18next, kbar |
-| `web` Upload | Uppy (`@uppy/aws-s3`, Multipart) – AD-20 |
-| `web` Viewer | PDF.js, React PDF Highlighter (gleiche `pdfjs-dist`) – ADR 0022 |
-| `web` Grundriss | react-konva, zundo, flatbush – ADR 0014 |
-| `web` 3D | three, React Three Fiber, drei; InstancedMesh, `frameloop="demand"`, Leistungsstufen – ADR 0008 |
-| `interview` / `szene` (E33) | Claude ueber Bedrock mit Tool-Schema `weltbeschreibung`, zod-Validator, Weltgenerator als reine Funktion, react-hook-form fuer den Formular-Assistenten, exceljs fuer die Excel-Vorlage – ADR 0026 |
-| `api` | Fastify, pino (mit Redaction), zod, @fastify/rate-limit |
-| `dokumente` / `worker` | file-type, ClamAV, exceljs, sharp – ADR 0016 |
-| `docproc` | Docling Serve, OCRmyPDF, Gotenberg – ADR 0009 |
-| `suche` | PostgreSQL-Volltext (de/fr/it/en), pgvector, Embedding-Server (Anbieter E27) – ADR 0023 |
-| `hinweise` | Nodemailer + MJML; lokal/CI Mailpit |
-| Datenbank-CI | pgTAP (RLS-Suite), Squawk (Migrationen) |
-| Betrieb | GlitchTip, Healthchecks, Uptime Kuma |
-| Lieferkette | Renovate, Trivy, Syft, cosign, Gitleaks, Semgrep CE, license-checker, OWASP ZAP |
-| Tests | Playwright, @axe-core/playwright, k6 |
-| Uebersetzung | Tolgee (selbst gehostet), Sprachdateien im Repo bleiben Build-Quelle |
-| Oeffentliche APIs (E32) | geo.admin.ch/GWR (`struktur`), Nager.Date + `date-holidays` als Rueckfall (`hinweise`, `zustand`), Pwned Passwords (Keycloak) – ADR 0025 |
+| Modul / Teil | Stufe 1–2 (Demo) | Stufe 3 | Stufe 4 | spaeteres Modul |
+|---|---|---|---|---|
+| `web` allgemein | React 19, Vite, TanStack Query, TanStack Table + Virtual, Zustand, react-hook-form + zod, shadcn/ui (Radix), i18next (nur `de`), kbar | – | – | Tolgee, FR/IT |
+| `web` Upload | Uppy (Multipart bzw. Upload ueber `api` je Speicherwahl) – AD-20 | – | – | – |
+| `web` Viewer | PDF.js, React PDF Highlighter (gleiche `pdfjs-dist`) – ADR 0022 | – | – | – |
+| `web` 3D/2D | three, React Three Fiber, drei; `InstancedMesh`, `frameloop="demand"`, Leistungsstufen – ADR 0008; 2D-Ansicht [A: Konva nur falls fuer 2D noetig] | – | – | react-konva/zundo/flatbush fuer Grundriss-Editor (ADR 0014) |
+| `interview` / `szene` | Weltgenerator (rein), zod-Validator, react-hook-form (Formular), exceljs (Excel-Vorlage) – ADR 0026 | – | Claude API (Tool-Schema `weltbeschreibung`) – ADR 0030 | – |
+| `identitaet` | etablierte Auth-Bibliothek fuer lokalen Login [A, Wahl vor M1, ADR 0028], @fastify/rate-limit | – | – | SSO/OIDC, Keycloak, Pwned Passwords |
+| `api` | Fastify, pino (mit Redaction), zod | – | – | – |
+| `dokumente` / `worker` | pg-boss, file-type, ClamAV, exceljs, sharp – ADR 0016 | – | – | – |
+| `docproc` | OCRmyPDF, Gotenberg – ADR 0009 | Docling Serve [A, falls fuer Tabellen/Struktur benoetigt] | – | – |
+| `suche` | – | PostgreSQL-Volltext (`german`), pgvector, lokaler Embedding-Server [A, Modell offen] – ADR 0023 | Claude-Reranking/Antwort mit Quellen [?] (`08-pruefung.md` PO-Entscheid Nr. 11) | – |
+| `extraktion` | – | – | Claude API direkt, Kostenbremse – ADR 0017, 0030 | – |
+| `hinweise` | Hinweise in der App; Nodemailer + MJML nur falls SMTP vorhanden [A]; lokal/CI Mailpit | – | – | – |
+| `struktur` | manuelle Stammdaten | – | – | geo.admin.ch/GWR (ADR 0025) |
+| Datenbank-CI | Squawk (Migrationen); Constraint-/Audit-/Rechte-Tests (Werkzeug [A], pgTAP moeglich, ohne RLS-Suite) | – | – | – |
+| Betrieb | Healthchecks je Container, Dead-Man's-Switch fuer Backup/Jobs (z.B. Healthchecks [A]), Backup-Werkzeug [A, ADR 0027] | – | – | GlitchTip, Uptime Kuma |
+| Lieferkette | Trivy, Syft, Gitleaks, Semgrep CE, Lizenzpruefung inkl. Container und Modellgewichte | Lizenz der Embedding-Gewichte | – | cosign, Renovate |
+| Tests | Playwright, @axe-core/playwright, k6 | – | Golden-Set-Runner | OWASP ZAP (Schutzziel bleibt: manueller Sicherheitsreview) |
 
-Eigenbau bleibt nur fuer den fachlichen Kern: Rechenkern, Herkunftsmodell, Audit-Hash-Kette, KI-Kostenbremse, Mandantentrennung.
+Eigenbau bleibt nur fuer den fachlichen Kern: Rechenkern Lebensdauer/Ampel, Herkunftsmodell, Weltgenerator, Audit-Hash-Kette, Modulmanifest/Schalter, ab Stufe 4 KI-Kostenbremse. Keine externe Feature-Flag-Plattform: Modulschalter liegen in der Instanz-DB (ADR 0029).
 
 ---
 
-## Anhang A – Verbleibende Annahmen mit sicherem Default (austauschbar)
+## Anhang A – Verbleibende Annahmen und offene Entscheide
 
-> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, Keycloak voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
+> Welle 4b (E34–E37, 2026-11-09): umgestellt gemaess 07 Kap. 3. Instanzparameter statt Mandantenparameter, DE und lokaler Login; Preise, Teuerung und Entra-Defaults entfallen. Betriebs- und KI-Themen ohne PO-Entscheid stehen als offene Entscheide, nicht als vermeintlich sichere Defaults.
 
-Die PO-Antworten E11–E22 sind verbindlich; hier stehen nur die Annahmen, die darueber hinaus getroffen wurden.
+### A.1 Annahmen mit Default (austauschbar)
 
 | Thema | Default [A] | Austauschbar ueber |
 |---|---|---|
-| Planora-Standard-Lebensdauern (E11) | Tabelle vom Chef, je Katalog-ID min/mittel/max, Referenzquelle als Text | `katalog_eintrag`, `mandant_lebensdauer` |
+| Planora-Standard-Lebensdauern (E11) | Tabelle vom Chef, je Katalog-ID min/mittel/max, Referenzquelle als Text | `katalog_eintrag`, `lebensdauer_tabelle` |
 | Bandbreite bei Einzelwert | proportional zum Planora-Standard | Regelwerkversion |
-| ZHAW-Kurve (E14) | Knick 0,75 × L, Nutzungsgrenze 0,25, Skala in 0,1-Schritten | `mandant_parameter`, Katalog, Strategie `zhaw_vN` |
-| Teuerung (E16) | 1,0 %/a | `mandant_parameter.teuerung_satz` |
-| Ampel (E17) | Default 3 Jahre, pro Bauteiltyp ueberschreibbar | `katalog_eintrag`, `mandant_ampel` |
-| Preise (E15) | manuell + Import; Planora-Standardpreis je Katalog-ID | Port `PreisQuelle`, `mandant_preis` |
+| Ampel (E17) | Default 3 Jahre, pro Bauteiltyp ueberschreibbar; Basis technisches Ersatzjahr | `katalog_eintrag`, `ampel_schwelle`, `instanz_einstellung` |
+| Sprache | DE/de-CH (Zahlen `1'000,5`, Datum `TT.MM.JJJJ`) | Sprachdateien, `katalog_text` (FR/IT spaeter, ADR 0019) |
+| Login | lokale Konten, Session 30 min Leerlauf / 12 h absolut, Erstadmin per Einrichtungs-Token | `identitaet`, ADR 0028 |
+| Rollen-Scope | leere Liegenschaftszuordnung = alle Liegenschaften | `rolle_liegenschaft` |
+| Modulschalter | Zusatzmodule bei Installation aus | `modul_schalter`, ADR 0029 |
+| KI-Zustimmung | KI bei Installation aus (opt-in je Instanz) | `ki_zustimmung`, `modul_schalter` |
+| Konfidenzschwellen (Stufe 4) | 0,90 / 0,60 | Konfiguration, Golden-Set-Kalibrierung |
+| KI-Budget (Stufe 4) | Monats-/Tagesgrenze je Instanz, Werte vor Stufe 4 festlegen | `ki_budget`, Konfiguration |
 | ETIM/eBKP-H (E12/E13) | optionale Mappings, ETIM englisch, eBKP-H nur Code | `klassifikation_mapping` |
-| Stratus (E22) | Excel/CSV mit dokumentierter Struktur, bis das Format bekannt ist | Adapter `AustauschFormat` |
-| KI-Zustimmung | KI bei Mandantenanlage aus (opt-in) | `mandant.ki_aktiv` |
-| Verfuegbarkeit | 99,5 %/Monat, RPO 5 min, RTO 4 h | Betriebsvertrag |
-| Konfidenzschwellen | 0,90 / 0,60 | Konfiguration, Golden-Set-Kalibrierung |
-| Budget | CHF 200/Monat/Mandant, CHF 300/Tag global | `ki_budget`, Konfiguration |
-| Zielkunden Manor, Siemens (E19) | Entra ID als IdP | Keycloak-IdP je Mandant |
+| Quarantaene-/Papierkorbfristen | 7 / 30 Tage | Konfiguration |
+
+### A.2 Offene Entscheide statt Default [?]
+
+| Thema | Vorschlag [A] | PO-Entscheid |
+|---|---|---|
+| ZHAW-Zustandsbewertung in der Demo | zunaechst Alter/Lebensdauer/Ampel; ZHAW-Kurve nur nach Fachfreigabe (Knick 0,75 × L, Nutzungsgrenze 0,25 als Kandidat) | `08-pruefung.md` Nr. 8 |
+| Verfuegbarkeit, RPO/RTO | RPO 24 h, RTO 1 Arbeitstag bei CH-VM; keine HA; On-Premise nach Vertrag | `08-pruefung.md` Nr. 4 |
+| Backup-Ziel, Verschluesselung, Schluesselverwahrung | VM-unabhaengige verschluesselte CH-Kopie, Schluessel ausserhalb der VM | `08-pruefung.md` Nr. 4 |
+| Updates und betreute Versionen | N/N-1 als technisches Ziel | `08-pruefung.md` Nr. 5 |
+| Speicher fuer Dokumentablage | einfachster passender lokaler Adapter (Dateisystem-Volume) | `08-pruefung.md` Nr. 3 |
+| MFA und interne Rechtegrenzen | schriftliche Rollenmatrix vor Auth-Auswahl | `08-pruefung.md` Nr. 2 |
+| Netzverkehr ausser Claude (Signaturen, Images, SMTP, Zeit) | fachliche APIs und genehmigten Betriebsverkehr getrennt; Offline-Zufuhr vorsehen | `08-pruefung.md` Nr. 6 |
+| Freischaltung bezahlter Module | vertraglich, ohne zentralen Pflichtdienst | `08-pruefung.md` Nr. 7 |
+| Embedding-Modell und Hardware (Stufe 3) | `bge-m3` als Kandidat, Messung auf Ziel-VM | `08-pruefung.md` Nr. 10 |
+| E27-Teile in Stufe 3 oder 4 | Verschiebung auf Stufe 4 | `08-pruefung.md` Nr. 11 |
+| Claude-Datenfluss, Schluessel, Abrechnung | Instanz-eigener Schluessel, vertraglich vor Aktivierung | `08-pruefung.md` Nr. 12 |
+| Stratus (E22) | spaeteres Modul | `08-pruefung.md` Nr. 9 |
