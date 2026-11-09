@@ -86,5 +86,185 @@
       5,
       4
     ]
+  },
+  "t2": {
+    "gemessen": "2026-11-09T19:46:04.010Z",
+    "node": "v24.18.0",
+    "pg": "18.6",
+    "anfragen": 2000,
+    "parallel": 20,
+    "runden": 3,
+    "pool_max": 10,
+    "zusammenfassung": {
+      "/api/lebensdauer/leer": {
+        "ohne_p50": 1.09,
+        "ohne_p95": 1.87,
+        "mit_p50": 1.66,
+        "mit_p95": 2.59,
+        "zuschlag_p50_ms": 0.57,
+        "zuschlag_p95_ms": 0.72,
+        "fehler": 0
+      },
+      "/api/lebensdauer/daten": {
+        "ohne_p50": 1.51,
+        "ohne_p95": 2.02,
+        "mit_p50": 2.01,
+        "mit_p95": 3.13,
+        "zuschlag_p50_ms": 0.5,
+        "zuschlag_p95_ms": 1.11,
+        "fehler": 0
+      }
+    },
+    "runden_roh": {
+      "/api/lebensdauer/leer": {
+        "ohne": [
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 1.18,
+            "p95": 1.97,
+            "p99": 2.25,
+            "req_s": 15901
+          },
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 1.06,
+            "p95": 1.76,
+            "p99": 2.17,
+            "req_s": 17612
+          },
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 1.09,
+            "p95": 1.87,
+            "p99": 2.54,
+            "req_s": 17313
+          }
+        ],
+        "mit": [
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 1.8,
+            "p95": 2.59,
+            "p99": 2.93,
+            "req_s": 10818
+          },
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 1.66,
+            "p95": 2.65,
+            "p99": 3.24,
+            "req_s": 11389
+          },
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 1.63,
+            "p95": 2.42,
+            "p99": 2.78,
+            "req_s": 11862
+          }
+        ]
+      },
+      "/api/lebensdauer/daten": {
+        "ohne": [
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 1.55,
+            "p95": 2.21,
+            "p99": 2.69,
+            "req_s": 12660
+          },
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 1.39,
+            "p95": 1.95,
+            "p99": 2.17,
+            "req_s": 13891
+          },
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 1.51,
+            "p95": 2.02,
+            "p99": 2.34,
+            "req_s": 13118
+          }
+        ],
+        "mit": [
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 2.15,
+            "p95": 3.13,
+            "p99": 3.77,
+            "req_s": 8929
+          },
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 2.01,
+            "p95": 3.27,
+            "p99": 4,
+            "req_s": 9279
+          },
+          {
+            "n": 2000,
+            "fehler": 0,
+            "p50": 1.91,
+            "p95": 2.56,
+            "p99": 2.91,
+            "req_s": 10244
+          }
+        ]
+      }
+    },
+    "tests": [
+      {
+        "name": "T2.1 Guard-Zuschlag p95 <= 5 ms (2000 Anfragen, 20 parallel, Median aus 3 Runden)",
+        "bestanden": true,
+        "detail": {
+          "zuschlag_p95_max_ms": 1.11
+        }
+      },
+      {
+        "name": "T2.2 deaktiviertes Modul: Direktaufruf liefert 404 (Varianten), Kontrolle ohne Guard 200",
+        "bestanden": true,
+        "detail": {
+          "mitGuard": {
+            "/api/zustand/liste": 404,
+            "/api/zustand/liste?x=1": 404,
+            "/api/zustand/liste/": 404,
+            "/api/zustand//liste": 404,
+            "/api/Zustand/liste": 404,
+            "/api/zustand/../zustand/liste": 404,
+            "/api/zustand/liste%2F": 404
+          },
+          "ohneGuard": {
+            "/api/zustand/liste": 200,
+            "/api/zustand/liste?x=1": 200,
+            "/api/zustand/liste/": 404,
+            "/api/zustand//liste": 404,
+            "/api/Zustand/liste": 404,
+            "/api/zustand/../zustand/liste": 404,
+            "/api/zustand/liste%2F": 404
+          }
+        }
+      },
+      {
+        "name": "T2.3 Umschalten wirkt bei naechster Anfrage (kein Cache)",
+        "bestanden": true,
+        "detail": {
+          "nachAus": 404,
+          "nachEin": 200
+        }
+      }
+    ]
   }
 }
