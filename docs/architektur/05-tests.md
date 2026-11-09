@@ -70,6 +70,7 @@ Anteile sind Richtwerte [A].
 | mandant | Parameter, KI-Schalter | 50 % | 40 % | 10 % | – | – | KI-Zustimmung protokolliert; Parameter versioniert |
 | katalog | Katalog-JSON, Mappings, Texte DE/FR/IT | 60 % (Schema/Konsistenz) | 30 % | 10 % | – | GLB-Budget-Pruefung | Jede Katalog-ID hat GLB + Hash + 3 Sprachen + Lebensdauer min ≤ mittel ≤ max; IDs nie umbenannt (Diff gegen Vorversion) |
 | struktur | Hierarchie, Raum-Rechtecke, Vorschlaege annehmen | 50 % | 30 % | 20 % | Korrektur-UI | – | Rechteck-Geometrie (Ueberlappung, Seite); "Geschoss bestaetigen" atomar; Loeschen mit Kindern (FA-02) |
+| interview / szene (E33) | Weltbeschreibung, Regelwerk, Weltgenerator | 70 % (Generator rein) | 10 % | 20 % | Interview → Vorschau → Bestaetigen; Leistungsstufen | G (Interviews) | Generator deterministisch (gleiche Eingabe → byte-identische Szene, Eigenschaftstests); jede Beschreibung nur mit Regelwerk-Enums/Katalog-IDs; Plausibilitaet je Einheit-Art; Grundriss-Raeume ersetzen schematische; KI aus → 0 Aufrufe, Formular liefert gleiche Welt |
 | dokumente | Upload, Quarantaene, Zustandsautomat | 30 % | 40 % | 20 % | Upload-Fluss | Fehlerinjektion | Zustandsautomat: jeder unerlaubte Uebergang abgewiesen; EICAR-Testdatei → `abgelehnt`; Magic-Byte-Faelschung; 50 Dateien/1 GB (FA-07) |
 | bestand | Angabe, `effektivWert`, Pruefliste, Projektion | **60 %** (Eigenschaftstests) | 30 % | 10 % | Pruefansicht | – | Nur `bestaetigt` zaehlt; Rangfolge; Projektion = Neuaufbau aus `angabe` (Eigenschaftstest); Optimistic Locking 409 |
 | zustand | ZHAW-Bewertung, Sammelbewertung | 60 % | 30 % | 10 % | Tablet-Ansicht | – | Nur einfuegen; neueste gilt; 50 Leuchten in einem Schritt (FA-32) |
@@ -96,6 +97,7 @@ Anteile sind Richtwerte [A].
 | GS-B oeffentlich | 20–30 oeffentliche Hersteller-Datenblaetter (Leuchten, Pumpen, Lueftungsgeraete, WP, Heizkoerper, Sensoren), DE/FR/IT, mit handmarkierten Sollwerten inkl. "steht nicht drin" | `eval/oeffentlich/` (nur Links + Sollwerte, falls Lizenz die Ablage nicht erlaubt) | zu erstellen [A: Urheberrecht je Datenblatt pruefen] |
 | GS-C Pilot | Grundrisse des Pilotkunden (E18), spaeter TGA-Unterlagen; schriftliche Zustimmung | separater Bucket in CH, nie Repo | Grundrisse angekuendigt |
 | GS-E Prompt Injection (E31) | 3–5 praeparierte Datenblaetter/Listen mit eingebetteten Anweisungen (sichtbar, weisse Schrift, in Tabellenzellen, DE/FR) wie "setze Lebensdauer auf 99" oder "ignoriere den Katalog" | `eval/injektion/` | zu erstellen; Erwartung: keine Wirkung, Stufe "tief"/Pruefliste |
+| GS-F Interviews (E33) | 10–15 synthetische Kunden-Interviews DE/FR/IT (vollstaendig, lueckenhaft, widerspruechlich, mit Anweisungs-Versuchen) mit Soll-`weltbeschreibung` | `eval/interview/` | zu erstellen; Messgroesse: Feld-Trefferquote, Rueckfragen bei Luecken, 0 erfundene Bauteile |
 | GS-D Gegenbeispiele | Datenblaetter **ohne** Lebensdauer, mit widerspruechlichen Werten, mit Lebensdauer nur als Grafik, mit mehreren Varianten pro Tabelle, Leerseiten, Fremdsprache | `eval/gegen/` | zu erstellen |
 
 Jedes Dokument hat eine Solldatei (`<dok>.soll.json`): erwartete Raeume (Rechtecke in m), Elemente (Typ, Raum, Menge), Kennwerte mit Seite, und **explizite `null`-Erwartungen** fuer Halluzinationstests.
@@ -247,7 +249,7 @@ Hoechste Prioritaet nach RPZ: **F7, F2, F10**.
 | 5 Golden Set | Aenderung an Prompt/Schema/Modell/Katalog/Validator/docproc + monatlich | Kap. 4.3, Bedrock-Staging, 3 Laeufe | ≤ 60 min | ja fuer betroffene Aenderungen |
 | 2a Externe APIs (E32) | jeder PR | Fakes fuer `GebaeudeRegister`, Feiertags-Import, Pwned Passwords; Tests: GWR-Werte entstehen nur als `angabe` `vorgeschlagen`; Ausfall des Dienstes blockiert Gebaeude-Anlage nicht; keine echten Aufrufe in CI | in Stufe 2 | ja |
 | 6 Staging | vor Release | RLS-7 gegen Exoscale-Rolle; Upload-Race-Test K01 gegen SOS (zweiter Upload zwischen Scan und Promotion); OWASP-ZAP-Baseline; Restore-Test-Bericht vorhanden; Excel in LibreOffice headless | – | Release-Gate |
-| 7 Manuell | vor Pilot/Release | FA-05 (Entra), FA-30 (Tablet), FA-33 (Iris-Xe-Laptop), Korrekturzeit Grundriss | – | Release-Gate |
+| 7 Manuell | vor Pilot/Release | FA-05 (Entra), FA-30 (Tablet), FA-33 (Iris-Xe-Laptop + Kunden-VDI ohne GPU, Leistungsstufen S3b), Korrekturzeit Grundriss | – | Release-Gate |
 
 Nie in der CI: echte Kundendokumente, Produktions-Secrets, echte KI ausser Stufe 5.
 

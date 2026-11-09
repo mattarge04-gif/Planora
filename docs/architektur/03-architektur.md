@@ -7,7 +7,8 @@ Kennzeichnung: **[F]** Fakt mit Quelle · **[A]** Annahme (durch Spike oder PO z
 Quellenkuerzel: `Qn-Dom` = Quelle n in 01-domaene, `Qn-Tech` = Quelle n in 02-tech-recherche, `FA-nn` = Anforderung in 01 Kap. 7.
 **E31 (2026-11-09): Pflicht-Bausteine** laut `06-bausteine-open-source.md` und ADR 0022–0024 sind eingearbeitet (Kap. 2.2, 5, 6, 10, 15).
 **E32 (2026-11-09): oeffentliche APIs** geo.admin.ch/GWR, Nager.Date, Pwned Passwords (ADR 0025) sind eingearbeitet (Kap. 2.1, 3.3, 4.2, 9.7, 15).
-Entscheide im Detail: `adr/0001`–`adr/0025` (Index: `adr/0000-adr-vorlage-und-index.md`). BMAD-Arbeitsprotokoll und Spine: `bmad/planning-artifacts/architecture/architecture-Planora-2026-11-08/`.
+**E33 (2026-11-09): geschlossene 3D-Welt** mit Regelwerk, Interview-Agent und deterministischem Weltgenerator (ADR 0026), einfacher Look mit Leistungsstufen (ADR 0008 angepasst, Spike S3b) sind eingearbeitet (Kap. 3, 7, 15).
+Entscheide im Detail: `adr/0001`–`adr/0026` (Index: `adr/0000-adr-vorlage-und-index.md`). BMAD-Arbeitsprotokoll und Spine: `bmad/planning-artifacts/architecture/architecture-Planora-2026-11-08/`.
 
 ---
 
@@ -168,6 +169,11 @@ flowchart BT
   austausch --> bestand
   austausch --> struktur
   austausch --> erneuerung
+  interview --> struktur
+  interview --> bestand
+  interview --> katalog
+  interview --> mandant
+  interview --> szene
 ```
 
 Pfeil = "darf aufrufen". Alles darf `plattform` nutzen. Rueckwaerts-Aufrufe und Zyklen sind verboten; Rueckmeldungen laufen ueber Jobs/Ereignisse (pg-boss), z.B. `bestand` → Ereignis `angabe.entschieden` → Handler in `szene` invalidiert Cache.
@@ -188,7 +194,8 @@ Pfeil = "darf aufrufen". Alles darf `plattform` nutzen. Rueckwaerts-Aufrufe und 
 | **preise** | Preisdatenbank pro Typ (E15): Herstellerpreise global, Mandantenpreise, Preishistorie mit `gueltig_ab`, Port `PreisQuelle` (V1: manuell, Excel/CSV-Import; spaeter Feeds) | `preis(elementtypId|katalogId, stichtag)`, `importieren(datei, zuordnung)`, `quelleSynchronisieren(quelleId)` | katalog, mandant | `preisquelle`, `hersteller_artikel`, `preis_eintrag`, `mandant_preis` |
 | **austausch** | Export/Import mit Drittsystemen, V1 Stratus (E22), Port `AustauschFormat` | `exportieren(format, gebaeudeIds)`, `importVorschau(format, datei)`, `importieren()` | bestand, struktur, erneuerung | `austausch_auftrag` |
 | **extraktion** | KI-Pipeline: Klassifikation, Auslesen, Grundriss-Analyse, Validierung, Kostenbremse, Prompt-/Modellversionen, Port `KiProvider` | `dokumentVerarbeiten(dokId)`, `grundrissAnalysieren(dokId, seite)`, `budgetStatus()` | dokumente, bestand, struktur, katalog, mandant | `extraktion_lauf`, `ki_aufruf`, `ki_budget`, `ki_cache` |
-| **szene** | Lese-Modell fuer 3D: kompakte Szene je Gebaeude, Auto-Layout, Cluster-Vorberechnung | `szene(gebaeudeId)` → Binaer/JSON mit `datenstand` | struktur, bestand, erneuerung | keine eigenen Fachdaten (nur Cache) |
+| **szene** | Lese-Modell fuer 3D: kompakte Szene je Gebaeude, **Weltgenerator** (reine Funktion nach Welt-Regelwerk, ADR 0026), Auto-Layout, Cluster-Vorberechnung | `szene(gebaeudeId)` → Binaer/JSON mit `datenstand`; `weltErzeugen(beschreibung, regelwerkVersion)` (rein) | struktur, bestand, erneuerung | keine eigenen Fachdaten (nur Cache) |
+| **interview** (E33) | Gefuehrte Erfassung durch den Kunden: Gebaeude → Geschosse → Einheiten → Bauteile; Interview-Agent (Claude, geschlossenes Tool-Schema `weltbeschreibung`) oder Formular-Assistent/Excel-Vorlage ohne KI; Vorschau der 3D-Welt vor Bestaetigung (ADR 0026) | `interviewStarten(gebaeudeId?)`, `antworten(interviewId, text)`, `beschreibung(interviewId)`, `vorschau(interviewId)`, `uebernehmen(interviewId, version)` | struktur, bestand, katalog, mandant, szene | `interview`, `interview_nachricht` |
 | **export** | Excel-Export (Liste, Plan), Mandanten-Gesamtexport, Loeschlauf | `excel(planstandId)`, `mandantExport()`, `mandantLoeschen()` | erneuerung, bestand, dokumente | `export_auftrag` |
 
 Hinweis: Die Grundriss-Analyse lebt in `extraktion` (KI-Teil) und `struktur` (Vorschlaege annehmen, Raeume besitzen). Die Korrektur-UI schreibt ueber `struktur`.
@@ -234,7 +241,8 @@ Gemeinsame Spalten jeder Mandantentabelle: `id uuid` (UUIDv7, PK), `mandant_id u
 | `liegenschaft`, `gebaeude` | `gebaeude.uebergabedatum date`, `gebaeude.egid` (`UNIQUE (mandant_id, egid)`), `liegenschaft.kanton` | Uebergabedatum = Default-Einbaudatum (FA-16); EGID aus GWR (ADR 0025) |
 | `feiertag` (global) | `datum`, `kanton` (NULL = CH), `name` | jaehrlicher Import aus Nager.Date; genutzt von `hinweise`, `zustand` (ADR 0025) |
 | `geschoss` | `gebaeude_id`, `bezeichnung`, `reihenfolge int`, `hoehe_m numeric`, `grundriss_dokument_id`, `grundriss_seite`, `massstab_m_pro_einheit`, `status` (entwurf/bestaetigt) | |
-| `raum` | `geschoss_id`, `nummer`, `bezeichnung`, `x_m, y_m, breite_m, tiefe_m numeric(9,3)`, `quelle_art`, `raum_vorschlag_id` | Rechteck im Geschoss-Koordinatensystem (E3) |
+| `raum` | `geschoss_id`, `nummer`, `bezeichnung`, `x_m, y_m, breite_m, tiefe_m numeric(9,3)`, `quelle_art`, `raum_vorschlag_id`, `art` (Einheit-Art aus Welt-Regelwerk), `geometrie_quelle` (schematisch/grundriss/manuell) | Rechteck im Geschoss-Koordinatensystem (E3); Einheiten aus dem Interview sind Raeume mit `geometrie_quelle=schematisch` (ADR 0026) |
+| `interview`, `interview_nachricht` | `gebaeude_id`, `status` (offen/zur_bestaetigung/uebernommen/verworfen), `weltbeschreibung jsonb`, `regelwerk_version`, `katalog_version`, `modus` (agent/formular/excel); Nachrichten mit Rolle und Text | Herkunft fuer `quelle_art=interview` (ADR 0026) |
 | `raum_vorschlag` | `geschoss_id`, `extraktion_lauf_id`, normierte Koordinaten, Stempeltext, `konfidenz`, `status` | wird bei "Geschoss bestaetigen" zu `raum` |
 | `katalog_version`, `katalog_eintrag` | `katalog_id text` (stabil, fuehrend, z.B. `leuchte.downlight`), `version`, `gruppe` (Planora-Gruppe fuer Plan und Filter), `glb_datei`, `glb_sha256`, `icon`, `ld_min/mittel/max_jahre` (Planora-Standard, E11), `nutzungsgrenze`, `ampel_gelb_jahre`, `betriebsstunden_pro_jahr`, `kosten_bezugsgroesse`, `referenzquelle` | global, read-only fuer App (ADR 0011). **Keine CRB-Werte** (E11) |
 | `katalog_text` | `(katalog_id, version, sprache)` PK, `name`, `beschreibung` | DE/FR/IT (E20); eigene Uebersetzungen |
@@ -450,13 +458,35 @@ flowchart LR
 
 ## 7. 3D-Pipeline
 
+### 7.0 Geschlossene Welt (E33, ADR 0026)
+
+```mermaid
+flowchart LR
+  kunde["Kunde beschreibt<br/>Gebaeude, Geschosse,<br/>Einheiten, Bauteile"] --> iv{"KI aktiv?"}
+  iv -- ja --> agent["Interview-Agent (Claude)<br/>Tool-Schema weltbeschreibung<br/>nur Regelwerk-Enums + Katalog-IDs"]
+  iv -- nein --> form["Formular-Assistent / Excel-Vorlage<br/>gleiches Schema"]
+  gwr["GWR (ADR 0025)<br/>Geschosse, Baujahr"] --> agent
+  gwr --> form
+  agent --> val["Validator<br/>Schema, Regelwerk, Plausibilitaet"]
+  form --> val
+  val --> gen["Weltgenerator (rein)<br/>Form, Platten, Einheiten,<br/>Bauteil-Positionen"]
+  regel[("Welt-Regelwerk vN<br/>+ Katalog vN")] --> gen
+  gen --> vor["3D-Vorschau + Zusammenfassung"]
+  vor --> ok["Kunde bestaetigt → struktur + bestand<br/>quelle_art=interview"]
+  gr["Grundriss (ADR 0014)"] -. "echte Rechtecke ersetzen schematische" .-> gen
+```
+
+- Die KI liefert nur die **Beschreibung**, nie Geometrie. Geometrie entsteht ausschliesslich im deterministischen Weltgenerator: gleiche Beschreibung + gleiche Regelwerk-Version → gleiche Welt.
+- Das Welt-Regelwerk (`katalog/welt-regelwerk.vN.json`) legt Gebaeudeformen, Geschoss-Codes, Einheit-Arten, erlaubte Bauteile je Einheit-Art, Layout- und Darstellungsregeln fest. Kunden koennen nur innerhalb dieser Regeln beschreiben, nicht frei modellieren.
+- Schematische Einheiten und Positionen sind in UI und Export als "schematisch" gekennzeichnet.
+
 ### 7.1 Katalog → GLB-Bibliothek → Szene
 
 1. **Modellierung** in Blender: Ursprung am Boden, Meter, keine Texturen, Ton-Look; je Katalog-ID ein Modell (30–50 [A, E8]).
 2. **Optimierung:** `gltf-transform optimize --compress meshopt` (+ `dedup`, `weld`, `simplify`) [F, Q53a-Tech]; LOD1 per `simplify` auf ca. 10 % [A].
 3. **Pruefung in CI** (Budgets unten), Hash in `katalog_eintrag.glb_sha256`; Auslieferung als unveraenderliche, gehashte statische Dateien (lange Cache-Dauer).
 4. **Szene-Endpunkt** (`szene`-Modul): pro Gebaeude kompakte Struktur: Geschosse (Hoehe, Reihenfolge), Raum-Rechtecke, Elemente (id, katalog_id, raum, Position oder Auto-Layout-Index, Ampel, Menge), Cluster-Vorberechnung; `datenstand`-Hash fuer HTTP-Caching.
-5. **Client:** pro Geschoss eine zusammengefuehrte Raum-Geometrie; Elemente als `BatchedMesh` (ein Material, Farbe pro Instanz); Pins als instanzierte Sprites; Explosionsansicht = Y-Offset pro Geschossgruppe; orthografische isometrische Kamera; AO per Postprocessing nur bei ausreichender Leistung.
+5. **Client (ADR 0008, E33):** Look nach Regelwerk: Glas-Geschossplatten (eine transparente Geometrie), Grenzlinien (eine `LineSegments`), Geschoss-Beschriftungen, optional graue Umgebung; Uebersicht mit Pins (instanzierte Sprites, Symbol je Gewerk, Ampelfarbe); im Detail (Geschoss/Einheit gewaehlt) Bauteil-Modelle als `InstancedMesh` pro Katalogtyp; Explosionsansicht = Y-Offset pro Geschoss; orthografische isometrische Kamera; **kein** Postprocessing, keine Echtzeit-Schatten; Zeichnen nur bei Aenderung (`frameloop="demand"`).
 
 ### 7.2 Auto-Layout, Clustering, LOD
 
@@ -480,7 +510,7 @@ flowchart LR
 | Klick → Detailpanel | ≤ 100 ms (Picking ≤ 16 ms) |
 | GPU-Speicher | ≤ 512 MB |
 
-**Degradation:** Faellt die gemessene Bildrate 3 s unter 30 fps, schaltet der Client stufenweise AO, Schatten, LOD-Schwellen und Pin-Stufe herunter. Ohne WebGL2 oder bei Absturz: 2D-Grundriss- und Tabellenansicht (alle Funktionen dort verfuegbar).
+**Leistungsstufen (ADR 0008, Spike S3b):** *normal* (echte GPU: Glaettung an, dpr ≤ 1,5, Glas, Umgebung, Bauteil-Modelle im Detail) · *schwach* (Software-Renderer erkannt oder < 30 fps in den ersten 2 s: Glaettung aus, dpr 0,75, kein Glas, keine Umgebung, nur Pins) · *2D* (< 15 fps in "schwach", kein WebGL2 oder Benutzerwahl: 2D-Ansicht + Tabellen, alle Funktionen). Gemessen ohne GPU in Full HD [F, S3b]: ≈ 19 fps mit allen Effekten, ≈ 55 fps in Stufe "schwach".
 
 ---
 
@@ -723,6 +753,7 @@ Alle unter `docs/architektur/adr/`, Status "vorgeschlagen":
 | 0023 | `0023-suche-postgres-hybrid.md` | Volltext + pgvector, RRF (E26, E31) — **akzeptiert** |
 | 0024 | `0024-pflicht-bausteine-und-lizenzen.md` | Pflicht-Bausteine und Lizenzregeln (E28, E31) — **akzeptiert** |
 | 0025 | `0025-oeffentliche-apis-gwr-feiertage-pwned.md` | geo.admin.ch/GWR, Nager.Date, Pwned Passwords (E32) — **akzeptiert** |
+| 0026 | `0026-geschlossene-3d-welt-interview.md` | Welt-Regelwerk, Interview-Agent, Weltgenerator (E33) — **akzeptiert** |
 
 ---
 
@@ -793,7 +824,8 @@ Verbindlich nach ADR 0024; Begruendung und Abgleich in `06-bausteine-open-source
 | `web` Upload | Uppy (`@uppy/aws-s3`, Multipart) – AD-20 |
 | `web` Viewer | PDF.js, React PDF Highlighter (gleiche `pdfjs-dist`) – ADR 0022 |
 | `web` Grundriss | react-konva, zundo, flatbush – ADR 0014 |
-| `web` 3D | three, React Three Fiber, drei – ADR 0008 |
+| `web` 3D | three, React Three Fiber, drei; InstancedMesh, `frameloop="demand"`, Leistungsstufen – ADR 0008 |
+| `interview` / `szene` (E33) | Claude ueber Bedrock mit Tool-Schema `weltbeschreibung`, zod-Validator, Weltgenerator als reine Funktion, react-hook-form fuer den Formular-Assistenten, exceljs fuer die Excel-Vorlage – ADR 0026 |
 | `api` | Fastify, pino (mit Redaction), zod, @fastify/rate-limit |
 | `dokumente` / `worker` | file-type, ClamAV, exceljs, sharp – ADR 0016 |
 | `docproc` | Docling Serve, OCRmyPDF, Gotenberg – ADR 0009 |

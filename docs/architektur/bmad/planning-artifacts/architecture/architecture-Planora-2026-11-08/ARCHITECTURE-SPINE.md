@@ -8,7 +8,7 @@ scope: 'Planora V1 Gesamtsystem: Struktur, Dokumente, KI-Auslesen, Katalog, Prei
 status: final
 created: '2026-11-08'
 updated: '2026-11-09'
-binds: ['E1-E22', 'E31', 'E32', 'FA-01..FA-38']
+binds: ['E1-E22', 'E31', 'E32', 'E33', 'FA-01..FA-38']
 sources: ['docs/architektur/00-kontext.md', 'docs/architektur/01-domaene.md', 'docs/architektur/02-tech-recherche.md']
 companions: ['docs/architektur/03-architektur.md', 'docs/architektur/adr/', 'docs/architektur/06-bausteine-open-source.md']
 ---
@@ -52,6 +52,11 @@ flowchart BT
   austausch --> bestand
   austausch --> struktur
   austausch --> erneuerung
+  interview --> struktur
+  interview --> bestand
+  interview --> katalog
+  interview --> mandant
+  interview --> szene
 ```
 
 ## Invariants & Rules
@@ -165,6 +170,16 @@ flowchart BT
 - **Binds:** struktur, hinweise, zustand, identitaet (Keycloak)
 - **Prevents:** Abhaengigkeit von fremden Diensten im Kernablauf, ungepruefte Fremddaten, Datenabfluss.
 - **Rule:** Nur geo.admin.ch/GWR, Nager.Date, Pwned Passwords; je Dienst ein Port mit Adapter, Cache in PG und manuellem Rueckfall; GWR-Werte nur als `angabe` (`quelle_art=import`, Quelle `gwr`), Bestaetigung Pflicht; nie Dokument- oder Personendaten an externe APIs; CI nur mit Fakes.
+
+### AD-23 — Geschlossene 3D-Welt (E33, ADR 0026)
+- **Binds:** interview, szene, struktur, bestand, katalog, web
+- **Prevents:** freie, uneinheitliche Welten; KI-erzeugte, nicht reproduzierbare Geometrie.
+- **Rule:** Was es in der Welt gibt und wie es aussieht, steht nur im versionierten Welt-Regelwerk; Interview (Agent oder Formular) liefert nur eine `weltbeschreibung` gegen Regelwerk-Enums und Katalog-IDs; Geometrie erzeugt ausschliesslich der reine Weltgenerator; Uebernahme nur nach Bestaetigung (`quelle_art=interview`); echte Grundriss-Raeume haben Vorrang vor schematischen.
+
+### AD-24 — 3D-Leistungsstufen (E33, ADR 0008)
+- **Binds:** web
+- **Prevents:** unbrauchbares 3D auf Geraeten ohne GPU.
+- **Rule:** Zeichnen nur bei Aenderung; Stufen normal/schwach/2D automatisch nach Renderer und gemessener Bildrate, manuell umschaltbar; kein Postprocessing, keine Echtzeit-Schatten; jede Funktion auch in 2D/Tabelle.
 
 ## Consistency Conventions
 
