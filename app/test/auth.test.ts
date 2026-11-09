@@ -175,4 +175,18 @@ describe("Login", () => {
       expect((await db.pool.query("select count(*)::int n from session where user_id=$1", [benutzerId])).rows[0].n).toBe(0);
     }
   });
+
+  it("PP7-8: Setup normalisiert die E-Mail; Login mit beliebiger Gross-/Kleinschreibung", async () => {
+    const p = randomBytes(12).toString("base64url"); const ip = "198.18.5.1";
+    const { benutzerId } = await loeseSetupTokenEin(db.pool, await erzeugeSetupToken(db.pool), "  Mixed@Planora.Invalid ", "Mixed", p);
+    expect((await db.pool.query(`select email from "user" where id=$1`, [benutzerId])).rows[0].email).toBe("mixed@planora.invalid");
+    expect((await post("/api/auth/sign-in/email", { email: "Mixed@Planora.Invalid", password: p }, {}, ip)).statusCode).toBe(200);
+    expect((await post("/api/auth/sign-in/email", { email: "mixed@planora.invalid", password: p }, {}, ip)).statusCode).toBe(200);
+  });
+  it("PP7-8: Setup mit ungueltiger E-Mail scheitert, Token bleibt einloesbar", async () => {
+    const t = await erzeugeSetupToken(db.pool);
+    await expect(loeseSetupTokenEin(db.pool, t, "kein-at-zeichen", "X", pw)).rejects.toThrow(/E-Mail/);
+    await expect(loeseSetupTokenEin(db.pool, t, "a b@planora.invalid", "X", pw)).rejects.toThrow(/E-Mail/);
+    await loeseSetupTokenEin(db.pool, t, "gueltig@planora.invalid", "X", pw);
+  });
 });

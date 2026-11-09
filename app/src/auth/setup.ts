@@ -1,6 +1,6 @@
 import type pg from "pg";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { hashPasswort } from "./auth.js";
+import { hashPasswort, normalisiereEmail } from "./auth.js";
 import { auditEreignis } from "../audit/audit.js";
 const sha = (t: string) => createHash("sha256").update(t).digest("hex");
 export async function erzeugeSetupToken(pool: pg.Pool) {
@@ -8,7 +8,11 @@ export async function erzeugeSetupToken(pool: pg.Pool) {
   await pool.query("insert into setup_token(hash, gueltig_bis) values ($1, now() + interval '15 minutes')", [sha(t)]);
   return t;
 }
-export async function loeseSetupTokenEin(pool: pg.Pool, token: string, email: string, name: string, passwort: string) {
+/** Einfache Formpruefung; Better Auth sucht E-Mails kleingeschrieben, daher gleiche Normalisierung bei der Anlage (PP7-8). */
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export async function loeseSetupTokenEin(pool: pg.Pool, token: string, rohEmail: string, name: string, passwort: string) {
+  const email = normalisiereEmail(rohEmail);
+  if (!EMAIL.test(email)) throw new Error("Ungueltige E-Mail-Adresse");
   const c = await pool.connect();
   try {
     await c.query("begin");
