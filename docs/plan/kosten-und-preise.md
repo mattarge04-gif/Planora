@@ -6,7 +6,7 @@ Kennzeichnung: [F] Fakt mit Quelle, [A] Annahme/Schaetzung. Alle Betraege CHF, o
 
 Jeder Kunde bekommt einen eigenen Server mit eigener App (Docker-Compose-Paket), gehostet von uns in der Schweiz oder On-Premise beim Kunden. Eine Codebasis; ein vom Kunden bezahltes Feature wird ein Modul im Produkt, pro Instanz einschaltbar. Einzige externe API: Claude API. Alle Zahlen in diesem Abschnitt sind **[A]**, nicht nachgeschlagen; vor einer Offerte pruefen.
 
-### Investition bis Stufe 2 (Uebergabe Siemens, ca. W11) bzw. Stufe 4 (ca. W19)
+### Investition bis Stufe 2 (Uebergabe Siemens, ca. W12 [A]) bzw. Stufe 4 (ca. W19)
 
 | Posten | CHF [A] |
 |---|---|

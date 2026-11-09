@@ -44,7 +44,7 @@ section{display:grid;gap:16px}
 .legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
 /* Gantt */
 .gscroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
-.gantt{--weeks:28;--label:230px;min-width:980px;display:grid;grid-template-columns:var(--label) 1fr;font-size:13px}
+.gantt{--weeks:19;--label:230px;min-width:980px;display:grid;grid-template-columns:var(--label) 1fr;font-size:13px}
 .ghead,.grow{display:contents}
 .gl{padding:7px 12px;border-bottom:1px solid var(--grid);min-width:0;display:flex;align-items:center;gap:8px}
 .gl .id{font-family:var(--f-mono);font-size:11px;color:var(--muted);width:30px;flex:none}
@@ -96,12 +96,12 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
 <header>
   <div class="eyebrow">Planora · Umsetzungsplan V2 · Stand 09.11.2026</div>
   <h1>Bis zur fertigen App bei Siemens, in Modulen</h1>
-  <p><b>Modell B2B, eine Instanz pro Kunde (E34–E37):</b> Jeder Kunde bekommt einen eigenen Server mit eigener App, als Docker-Compose-Paket, gehostet von uns in der Schweiz oder On-Premise beim Kunden. Eine Codebasis; jedes Kundenfeature wird ein Modul mit Schalter. Externe Abhängigkeit nur die Claude API, alles andere Open Source und selbst gehostet. Die „Demo“ ist die vollständig funktionierende App beim ersten Kunden. Lieferung in Stufen: jede Stufe ist eine lauffähige Version. Annahme: Matt Vollzeit ≈ 5 PT/Woche <span class="tag">[A]</span>, bei Halbzeit verdoppeln sich alle Wochen. Woche 1 = Start nach Freigabe M0.</p>
+  <p><b>Modell B2B, eine Instanz pro Kunde (E34–E37):</b> Jeder Kunde bekommt einen eigenen Server mit eigener App, als Docker-Compose-Paket, gehostet von uns in der Schweiz oder On-Premise beim Kunden. Eine Codebasis; jedes Kundenfeature wird ein Modul mit Schalter. Externe Abhängigkeit nur die Claude API, alles andere Open Source und selbst gehostet. Die „Demo“ ist die vollständig funktionierende App beim ersten Kunden. Lieferung in Stufen: jede Stufe ist eine lauffähige Version. Annahme: Matt Vollzeit ≈ 5 PT/Woche, Module laufen nacheinander (Agentenarbeit ist in den PT eingerechnet) <span class="tag">[A]</span>. Bei Halbzeit verdoppeln sich alle Wochen. Woche 1 = Beginn von M0. <b>Alle Termine, PT und Preise auf dieser Seite sind Schätzungen [A].</b></p>
   <div class="facts">
-    <div class="fact"><b class="mono">W9–10</b><span>Stufe 1: 3D + Dokumente, Erfassung per Formular</span></div>
-    <div class="fact"><b class="mono">W11</b><span>Stufe 2 (Ziel Übergabe Siemens): + Lebensdauer &amp; Ampel [A]</span></div>
-    <div class="fact"><b class="mono">W19</b><span>Stufe 4: alles inkl. Suche und KI</span></div>
-    <div class="fact"><b class="mono">≈ 93 PT</b><span>Matt mit Claude Code und Agenten, ±30 % [A]</span></div>
+    <div class="fact"><b class="mono">W10</b><span>[A] Stufe 1: 3D + Dokumente, Erfassung per Formular</span></div>
+    <div class="fact"><b class="mono">W12</b><span>[A] Stufe 2 (Ziel Übergabe Siemens): + Lebensdauer &amp; Ampel [A]</span></div>
+    <div class="fact"><b class="mono">W19</b><span>[A] Stufe 4: alles inkl. Suche und KI</span></div>
+    <div class="fact"><b class="mono">≈ 93 PT</b><span>[A] M0–M11 + Installation I1, ±30 %; Kapazität 19 × 5 = 95 PT</span></div>
   </div>
 </header>
 
@@ -122,10 +122,10 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
   <h2>Meilensteine</h2>
   <div class="miles">
     <div class="mile"><span class="w">M0 · Woche 1</span><h3>Architektur auf B2B umgestellt</h3><p>Welle 4: Single-Tenant, Docker Compose, lokaler Login, Module mit Schaltern, Claude API. Codex-Review, Spec. Danach wird gebaut.</p></div>
-    <div class="mile"><span class="w">Stufe 1 · Woche 9–10</span><h3>3D + Dokumente</h3><p>Gebäude per Formular/Excel erfassen, Weltgenerator baut die 3D-Welt, Klick auf Element öffnet die Dokumente im Browser. Sicherer Upload, lokaler Login, Backups. Läuft auf einem Kundenserver.</p></div>
-    <div class="mile"><span class="w">Stufe 2 · Woche 11</span><h3>+ Lebensdauer &amp; Ampel</h3><p>Standardtabelle, Überschreiben pro Typ und Element, Zustand nach ZHAW, Ampel im 3D. <b>Vorgeschlagenes Ziel für die Übergabe an Siemens</b> [A]: ohne KI, ohne externe Abhängigkeit.</p></div>
-    <div class="mile"><span class="w">Stufe 3 · Woche 13</span><h3>+ Intelligente Suche</h3><p>Dateiname, Volltext und Inhalt. Embeddings lokal auf dem Server (Open Source) [A], Treffer springen in den Viewer. Als Update an Siemens.</p></div>
-    <div class="mile"><span class="w">Stufe 4 · Woche 19</span><h3>+ KI-Erfassung</h3><p>Interview-Agent und Auslesen der Datenblätter über die Claude API, Mensch bestätigt. Pro Instanz abschaltbar. Härtung und Wiederherstellung geübt.</p></div>
+    <div class="mile"><span class="w">Stufe 1 · Woche 10 [A]</span><h3>3D + Dokumente</h3><p>Gebäude per Formular/Excel erfassen, Weltgenerator baut die 3D-Welt, Klick auf Element öffnet die Dokumente im Browser. Sicherer Upload, lokaler Login, Backups. Läuft auf einer Abnahme-Instanz beim Kunden. <b>Echte Produktivdaten erst nach IT-Freigabe Siemens</b> (ev. Pentest vorher).</p></div>
+    <div class="mile"><span class="w">Stufe 2 · Woche 12 [A]</span><h3>+ Lebensdauer &amp; Ampel</h3><p>Standardtabelle, Überschreiben pro Typ und Element, Zustand nach ZHAW, Ampel im 3D. <b>Vorgeschlagenes Ziel für die Übergabe an Siemens</b> [A]: ohne KI, ohne externe Abhängigkeit.</p></div>
+    <div class="mile"><span class="w">Stufe 3 · Woche 13 [A]</span><h3>+ Intelligente Suche</h3><p>Dateiname, Volltext und Inhalt. Embeddings lokal auf dem Server (Open Source) [A], Treffer springen in den Viewer. Als Update an Siemens. [?] Anfrageverständnis, Reranking und Antwort mit Quellen (E27) brauchen die Claude API: Vorschlag, auf Stufe 4 verschieben (PO-Entscheid offen).</p></div>
+    <div class="mile"><span class="w">Stufe 4 · Woche 19 [A]</span><h3>+ KI-Erfassung</h3><p>Interview-Agent und Auslesen der Datenblätter über die Claude API, Mensch bestätigt. Pro Instanz abschaltbar. Härtung und Wiederherstellung geübt.</p></div>
   </div>
 </section>
 
@@ -156,8 +156,8 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
       <li><b>W1–W2:</b> Bei Siemens die IT-Freigabe anstossen (Security-Fragebogen, Hosting bei uns oder On-Premise, ev. Pentest-Pflicht). Das dauert erfahrungsgemäss Wochen bis Monate [A] und liegt nicht in Matts Hand.</li>
       <li><b>W1–W4:</b> Bauteil-Katalog fachlich prüfen: welche 30–50 Typen braucht es zuerst?</li>
       <li><b>W2–W10:</b> Lebensdauer-Standardtabelle pro Bauteiltyp. Wird für Stufe 2 gebraucht.</li>
-      <li><b>Bis W12:</b> echte TGA-Unterlagen von Siemens. Ohne sie ist die KI-Erfassung (Stufe 4) nicht prüfbar.</li>
-      <li><b>Bis W14:</b> mit Jurist klären, ob Siemens die Claude API (Anthropic, Datenfluss ausserhalb CH) akzeptiert; sonst bleibt KI bei Siemens ausgeschaltet.</li>
+      <li><b>Bis W13:</b> echte TGA-Unterlagen von Siemens. Ohne sie ist die KI-Erfassung (Stufe 4) nicht prüfbar.</li>
+      <li><b>Bis W13:</b> mit Jurist klären, ob Siemens die Claude API (Anthropic, Datenfluss ausserhalb CH) akzeptiert; sonst bleibt KI bei Siemens ausgeschaltet.</li>
       <li><b>Laufend:</b> Vertrag pro Kunde inkl. „sein“ Feature (wird Modul im Produkt), Vertretung und Support für Matt regeln.</li>
     </ul>
   </div>
@@ -173,7 +173,7 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
   </div>
 </section>
 
-<div class="note"><b>Gestrichen bis nach der Demo</b> (kommt bei Bedarf als Kundenmodul): Mandantentrennung mit RLS, Keycloak + Microsoft-SSO, Exoscale-Managed-Dienste, AWS Bedrock, öffentliche APIs aus E32 (geo.admin/GWR, Nager.Date, Pwned Passwords), Raumerkennung aus Grundriss (ersetzt durch Interview/Formular), FR/IT, Tolgee, GlitchTip, Uptime Kuma, cosign, Renovate, OWASP ZAP. Kosten und Investitionsplan bleiben draussen (E24). Vorher: V1 „schnell und schlank“ mit Pilot W28 und ≈ 130 PT.</div>
+<div class="note"><b>Dauerhaft ersetzt:</b> AWS Bedrock (→ Claude API direkt), Exoscale-Managed-Dienste (→ Docker Compose auf eigener VM oder On-Premise). <b>Gestrichen bis nach der Demo</b> (kommt bei Bedarf als Kundenmodul): Mandantentrennung mit RLS, Keycloak + Microsoft-SSO, öffentliche APIs aus E32 (geo.admin/GWR, Nager.Date, Pwned Passwords), Raumerkennung aus Grundriss (ersetzt durch Interview/Formular), FR/IT, Tolgee, GlitchTip, Uptime Kuma, cosign, Renovate, OWASP ZAP. Kosten und Investitionsplan bleiben draussen (E24). Vorher: V1 „schnell und schlank“ mit Pilot W28 und ≈ 130 PT.</div>
 
 <footer>
   <span>Kosten: docs/plan/kosten-und-preise.md. Quellen: docs/architektur/00-kontext.md (E1–E37), 07-analyse-b2b.md, 03-architektur.md, 04-review.md, 05-tests.md.</span>
@@ -189,26 +189,26 @@ const P = [
  {id:"M0",n:"Architektur auf B2B",d:"Welle 4: Single-Tenant, Docker Compose, lokaler Login, Feature-Schalter, Claude API statt Bedrock. Codex-Review, Spec, Aufgabenliste",s:1,w:1,pt:4,r:"tief",h:[{t:"chef",s:1,w:2,label:"IT-Freigabe Siemens anstossen"}]},
  {ph:"Stufe 1 · 3D + Dokumente"},
  {id:"M1",n:"Server-Paket & Login",d:"Docker Compose (App, Postgres, Speicher, docproc, ClamAV), Installations- und Update-Skript mit Migrationen, Backup/Restore pro Instanz, lokaler Login mit Rollen, Feature-Schalter",s:2,w:2,pt:7,r:"mittel",h:[{t:"ext",s:3,w:1,pt:1,label:"DevOps-Check"}]},
- {id:"M2",n:"3D-Welt",d:"Kern-Datenmodell, Welt-Regelwerk v1, deterministischer Weltgenerator, Glas-Geschosse, Pins, Bauteil-Modelle im Detail, Seitenpanel, Leistungsstufen normal/schwach/2D",s:3,w:3,pt:16,r:"hoch",h:[{t:"chef",s:1,w:4,label:"Katalog prüfen"}]},
- {id:"M3",n:"Bauteil-Bibliothek 3D",d:"30–50 Bauteile im Ton-Look mit Blender-MCP, CC0 wo passend, GLB komprimiert. Paralleler Agent",s:3,w:3,pt:3,r:"tief",h:[]},
- {id:"M4",n:"Dokument-Viewer",d:"PDF.js mit Seitensprung und Markierung, Bilder, Excel als Tabelle, Word→PDF über Gotenberg",s:6,w:1,pt:6,r:"mittel",h:[]},
- {id:"M5",n:"Sicherer Upload",d:"Uppy, Quarantäne, Virenscan auf denselben Bytes (K01), Typprüfung, Zuordnung zu Elementen",s:7,w:1,pt:5,r:"hoch",h:[{t:"ext",s:8,w:1,pt:1,label:"Review Upload/Login"}]},
- {id:"M6",n:"Erfassung per Formular/Excel",d:"Gebäude, Geschosse, Einheiten, Bauteile ohne KI erfassen, Excel-Import, 3D-Vorschau, Bestätigen",s:8,w:1,pt:4,r:"mittel",h:[]},
- {id:"I1",n:"Installation Stufe 1",d:"Paket auf Kundenserver (bei uns oder On-Premise) installieren, Restore-Probe, Kurzschulung",s:9,w:1,pt:3,r:"mittel",h:[]},
- {ph:"Stufe 2 · Lebensdauer (Ziel Übergabe Siemens)"},
- {id:"M7",n:"Lebensdauer & Ampel",d:"Standardtabelle, Überschreiben pro Typ und Element, Zustand nach ZHAW, Ampel im 3D und als Liste",s:10,w:2,pt:8,r:"mittel",h:[{t:"chef",s:2,w:9,label:"Lebensdauer-Tabelle"}]},
+ {id:"M2",n:"3D-Welt",d:"Kern-Datenmodell, Welt-Regelwerk v1, deterministischer Weltgenerator, Glas-Geschosse, Pins, Bauteil-Modelle im Detail, Seitenpanel, Leistungsstufen normal/schwach/2D",s:3,w:4,pt:16,r:"hoch",h:[{t:"chef",s:1,w:4,label:"Katalog prüfen"}]},
+ {id:"M3",n:"Bauteil-Bibliothek 3D",d:"30–50 Bauteile im Ton-Look mit Blender-MCP, CC0 wo passend, GLB komprimiert. Paralleler Agent",s:5,w:2,pt:3,r:"tief",h:[]},
+ {id:"M4",n:"Dokument-Viewer",d:"PDF.js mit Seitensprung und Markierung, Bilder, Excel als Tabelle, Word→PDF über Gotenberg",s:7,w:2,pt:6,r:"mittel",h:[]},
+ {id:"M5",n:"Sicherer Upload",d:"Uppy, Quarantäne, Virenscan auf denselben Bytes (K01), Typprüfung, Zuordnung zu Elementen",s:8,w:2,pt:5,r:"hoch",h:[{t:"ext",s:9,w:1,pt:1,label:"Review Upload/Login"}]},
+ {id:"M6",n:"Erfassung per Formular/Excel",d:"Gebäude, Geschosse, Einheiten, Bauteile ohne KI erfassen, Excel-Import, 3D-Vorschau, Bestätigen",s:9,w:1,pt:4,r:"mittel",h:[]},
+ {id:"I1",n:"Installation Stufe 1",d:"Paket als Abnahme-Instanz installieren (bei uns oder On-Premise), Restore-Probe, Kurzschulung. Produktivdaten erst nach IT-Freigabe Siemens",s:10,w:1,pt:3,r:"mittel",h:[{t:"ext",s:10,w:2,label:"Pentest falls verlangt (5–8 PT), vor Produktivdaten"}]},
+ {ph:"Stufe 2 · Lebensdauer (Ziel Übergabe Siemens, W12 [A])"},
+ {id:"M7",n:"Lebensdauer & Ampel",d:"Standardtabelle, Überschreiben pro Typ und Element, Zustand nach ZHAW, Ampel im 3D und als Liste",s:11,w:2,pt:8,r:"mittel",h:[{t:"chef",s:2,w:9,label:"Lebensdauer-Tabelle"}]},
  {ph:"Stufe 3 · Suche"},
  {id:"M8",n:"Intelligente Suche",d:"Dateiname, Volltext (Postgres), Inhalt mit pgvector, Embeddings lokal (bge-m3 o.ä. [A]), Treffer springen in den Viewer",s:12,w:2,pt:9,r:"mittel",h:[]},
  {ph:"Stufe 4 · KI-Erfassung (Claude API, pro Instanz abschaltbar)"},
- {id:"M9",n:"Interview-Agent",d:"Kunde beschreibt Gebäude im Gespräch, geschlossenes Schema, Weltgenerator baut, Golden Set Interviews",s:14,w:2,pt:8,r:"mittel",h:[{t:"chef",s:12,w:3,label:"Jurist Claude API"}]},
- {id:"M10",n:"KI liest Datenblätter",d:"Docling + OCR, Claude API, Prüfer für Zitate und Katalog-IDs, Bestätigungs-Ansicht, Kostenbremse, Golden Set mit echten Siemens-Unterlagen",s:16,w:3,pt:14,r:"hoch",h:[{t:"chef",s:8,w:5,label:"TGA-Unterlagen"}]},
- {id:"M11",n:"Härtung & Update",d:"Tests, Lasttest 20'000 Elemente, Wiederherstellung üben, Update-Probe auf Instanz, ev. Pentest falls Siemens verlangt",s:19,w:1,pt:6,r:"mittel",h:[{t:"ext",s:19,w:1,pt:6,label:"Pentest (falls verlangt)"}]},
+ {id:"M9",n:"Interview-Agent",d:"Kunde beschreibt Gebäude im Gespräch, geschlossenes Schema, Weltgenerator baut, Golden Set Interviews",s:14,w:2,pt:8,r:"mittel",h:[{t:"chef",s:11,w:3,label:"Jurist Claude API"}]},
+ {id:"M10",n:"KI liest Datenblätter",d:"Docling + OCR, Claude API, Prüfer für Zitate und Katalog-IDs, Bestätigungs-Ansicht, Kostenbremse, Golden Set mit echten Siemens-Unterlagen",s:15,w:4,pt:14,r:"hoch",h:[{t:"chef",s:8,w:5,label:"TGA-Unterlagen"}]},
+ {id:"M11",n:"Härtung & Update",d:"Tests, Lasttest 20'000 Elemente, Wiederherstellung üben, Update-Probe auf Instanz, Nachtest falls Pentest Befunde hatte",s:19,w:1,pt:6,r:"mittel",h:[]},
 ];
 const EXT = [
- {n:"Jurist Datenschutz",prio:"must",when:"W12–W14",pt:"1–2 h · CHF 1–2k",why:"Vertragsvorlagen pro Kunde (Hosting oder On-Premise) und ob die Claude API für Siemens akzeptiert ist."},
- {n:"Review Login und Upload",prio:"should",when:"W8",pt:"1–2 PT · CHF 1–3k",why:"Ein Mensch prüft die zwei Stellen, an denen ein Fehler den Kunden trifft. Mandanten-Review entfällt (eine Instanz pro Kunde)."},
- {n:"DevOps-Check",prio:"should",when:"W3",pt:"≈ 1 PT · CHF 1k",why:"Install-, Update- und Backup-Ablauf pro Instanz von einem Profi prüfen lassen."},
- {n:"Security-Pentest (Firma)",prio:"can",when:"vor Produktivdaten",pt:"5–8 PT · CHF 5–8k",why:"Nur falls Siemens ihn verlangt. Bei On-Premise prüft oft die Kunden-IT selbst [A]."},
+ {n:"Jurist Datenschutz",prio:"must",when:"W11–W13",pt:"1–2 h · CHF 1–2k [A]",why:"Vertragsvorlagen pro Kunde (Hosting oder On-Premise) und ob die Claude API für Siemens akzeptiert ist."},
+ {n:"Review Login und Upload",prio:"should",when:"W9",pt:"1–2 PT · CHF 1–3k [A]",why:"Ein Mensch prüft die zwei Stellen, an denen ein Fehler den Kunden trifft. Mandanten-Review entfällt (eine Instanz pro Kunde)."},
+ {n:"DevOps-Check",prio:"should",when:"W3",pt:"≈ 1 PT · CHF 1k [A]",why:"Install-, Update- und Backup-Ablauf pro Instanz von einem Profi prüfen lassen."},
+ {n:"Security-Pentest (Firma)",prio:"can",when:"W10–W11, vor Produktivdaten",pt:"5–8 PT · CHF 5–8k [A]",why:"Nur falls Siemens ihn verlangt. Bei On-Premise prüft oft die Kunden-IT selbst [A]."},
 ];
 const RISK = {tief:"no",mittel:"ext",hoch:"warn"};
 const pct = w => (w/W*100)+"%";
@@ -216,7 +216,7 @@ const g = document.getElementById("gantt");
 let html = '<div class="gl" style="border-bottom:1px solid var(--line)"><span class="eyebrow">Teilprojekt</span></div><div class="gaxis">';
 for(let w=1; w<=W; w+=4){ html += `<span style="left:${pct(w-0.5)}">W${w}</span>`; }
 html += '</div>';
-const MS = [[1,"M0"],[9,"Stufe 1"],[11,"Stufe 2"],[13,"Stufe 3"],[19,"Stufe 4"]];
+const MS = [[1,"M0"],[10,"Stufe 1"],[12,"Stufe 2"],[13,"Stufe 3"],[19,"Stufe 4"]];
 let firstRow = true;
 for(const p of P){
   if(p.ph){ html += `<div class="gphase">${p.ph}</div>`; continue; }
@@ -239,7 +239,7 @@ for(const p of P){
 }
 tb.innerHTML = rows;
 document.getElementById("sumMatt").textContent = sumM+" PT";
-document.getElementById("sumExt").textContent = "≈ "+sumE+" PT extern";
+document.getElementById("sumExt").textContent = "≈ "+sumE+"–3 PT extern + Jurist; Pentest optional 5–8 PT [A]";
 // Externe
 const PR = {must:"Pflicht",should:"empfohlen",can:"optional"};
 document.getElementById("extgrid").innerHTML = EXT.map(e=>`<div class="card"><div class="row"><h3>${e.n}</h3><span class="prio ${e.prio}">${PR[e.prio]}</span></div><div class="row mono" style="font-size:12.5px;color:var(--muted)"><span>${e.when}</span><span>${e.pt}</span></div><p class="why">${e.why}</p></div>`).join("");
