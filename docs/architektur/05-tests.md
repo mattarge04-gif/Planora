@@ -245,6 +245,7 @@ Hoechste Prioritaet nach RPZ: **F7, F2, F10**.
 | 3 E2E | jeder PR auf `main` | Playwright: Kernablaeufe (Upload mit Uppy inkl. Abbruch/Wiederaufnahme → Vorschau im Viewer mit Markierung → Pruefung → Bestaetigen → Liste → Suche → 3D-Smoke; Grundriss-Korrektur mit Undo), DE/FR/IT-Rauchtest, Barrierefreiheit (@axe-core/playwright) | ≤ 15 min | ja |
 | 4 Nightly | taeglich | Eigenschaftstests 10'000 Snapshots; Hash-Vergleich auf 2 Runner-Typen (Linux + Windows); Pool-Leak 10'000 Requests; Planstand-Nachrechnung; Last API p95, Suche und Upload-Spitzen mit k6; Image-Scan (Trivy) + SBOM/Lizenzpruefung (Syft); 3D-Messseite auf GPU-Runner [A] | ≤ 60 min | nein, Alarm |
 | 5 Golden Set | Aenderung an Prompt/Schema/Modell/Katalog/Validator/docproc + monatlich | Kap. 4.3, Bedrock-Staging, 3 Laeufe | ≤ 60 min | ja fuer betroffene Aenderungen |
+| 2a Externe APIs (E32) | jeder PR | Fakes fuer `GebaeudeRegister`, Feiertags-Import, Pwned Passwords; Tests: GWR-Werte entstehen nur als `angabe` `vorgeschlagen`; Ausfall des Dienstes blockiert Gebaeude-Anlage nicht; keine echten Aufrufe in CI | in Stufe 2 | ja |
 | 6 Staging | vor Release | RLS-7 gegen Exoscale-Rolle; Upload-Race-Test K01 gegen SOS (zweiter Upload zwischen Scan und Promotion); OWASP-ZAP-Baseline; Restore-Test-Bericht vorhanden; Excel in LibreOffice headless | – | Release-Gate |
 | 7 Manuell | vor Pilot/Release | FA-05 (Entra), FA-30 (Tablet), FA-33 (Iris-Xe-Laptop), Korrekturzeit Grundriss | – | Release-Gate |
 

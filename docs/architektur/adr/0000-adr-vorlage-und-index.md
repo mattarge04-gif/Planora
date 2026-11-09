@@ -1,7 +1,7 @@
 # ADR-Index Planora (Stand 2026-11-09)
 
 Kennzeichnung: [F] Fakt mit Quelle aus `01-domaene.md` (Qn-Domaene) bzw. `02-tech-recherche.md` (Qn-Tech) · [A] Annahme · [?] offen.
-Status-Werte: vorgeschlagen · akzeptiert · ersetzt durch NNNN. ADRs 0001–0021: **vorgeschlagen** (Freigabe durch PO/Koordinator); 0009, 0014, 0016 durch E31 angepasst. ADRs 0022–0024: **akzeptiert** (E31).
+Status-Werte: vorgeschlagen · akzeptiert · ersetzt durch NNNN. ADRs 0001–0021: **vorgeschlagen** (Freigabe durch PO/Koordinator); 0009, 0014, 0016 durch E31 angepasst. ADRs 0022–0024: **akzeptiert** (E31); 0025: **akzeptiert** (E32).
 
 | Nr | Titel | Bezug | Abweichung vom PO? |
 |---|---|---|---|
@@ -29,6 +29,7 @@ Status-Werte: vorgeschlagen · akzeptiert · ersetzt durch NNNN. ADRs 0001–002
 | 0022 | Dokument-Viewer: Vorschau-PDF, PDF.js, Markierung per Docling-Box (**akzeptiert**) | E23, E31 | nein |
 | 0023 | Suche: PostgreSQL-Volltext + pgvector, RRF (**akzeptiert**) | E26, E27, E31 | nein |
 | 0024 | Pflicht-Bausteine (Open Source) und Lizenzregeln (**akzeptiert**) | E28, E31 | nein |
+| 0025 | Oeffentliche APIs: geo.admin.ch/GWR, Nager.Date, Pwned Passwords (**akzeptiert**) | E32 | nein |
 
 ## Vorlage
 

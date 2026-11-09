@@ -6,7 +6,8 @@ Die PO-Antworten E11–E22 (Stand 2026-11-08) sind eingearbeitet; wo 01-domaene 
 Kennzeichnung: **[F]** Fakt mit Quelle · **[A]** Annahme (durch Spike oder PO zu bestaetigen) · **[?]** offen.
 Quellenkuerzel: `Qn-Dom` = Quelle n in 01-domaene, `Qn-Tech` = Quelle n in 02-tech-recherche, `FA-nn` = Anforderung in 01 Kap. 7.
 **E31 (2026-11-09): Pflicht-Bausteine** laut `06-bausteine-open-source.md` und ADR 0022–0024 sind eingearbeitet (Kap. 2.2, 5, 6, 10, 15).
-Entscheide im Detail: `adr/0001`–`adr/0024` (Index: `adr/0000-adr-vorlage-und-index.md`). BMAD-Arbeitsprotokoll und Spine: `bmad/planning-artifacts/architecture/architecture-Planora-2026-11-08/`.
+**E32 (2026-11-09): oeffentliche APIs** geo.admin.ch/GWR, Nager.Date, Pwned Passwords (ADR 0025) sind eingearbeitet (Kap. 2.1, 3.3, 4.2, 9.7, 15).
+Entscheide im Detail: `adr/0001`–`adr/0025` (Index: `adr/0000-adr-vorlage-und-index.md`). BMAD-Arbeitsprotokoll und Spine: `bmad/planning-artifacts/architecture/architecture-Planora-2026-11-08/`.
 
 ---
 
@@ -52,11 +53,17 @@ flowchart LR
   planora[["Planora<br/>SaaS in CH (Exoscale)"]]
   bedrock["AWS Bedrock<br/>eu-central-2, EU-Profil<br/>(Claude Sonnet/Haiku 5.5)"]
   mail["E-Mail-Versand CH [A]"]
+  geo["geo.admin.ch (Bund)<br/>Adresse + GWR"]
+  nager["Nager.Date<br/>Feiertage (jaehrlich)"]
+  hibp["Pwned Passwords<br/>(nur Hash-Praefix)"]
   fm -- "Browser/Tablet, HTTPS" --> planora
   ops -- "Deploy, Monitoring" --> planora
   planora -- "OIDC/SAML-Brokering" --> idp
   planora -- "Seitenbilder + Text, nur wenn KI fuer Mandant aktiv" --> bedrock
   planora -- "Benachrichtigungen" --> mail
+  planora -- "Adresstext / EGID" --> geo
+  planora -- "jaehrlicher Import" --> nager
+  planora -- "5 Zeichen SHA-1 (Keycloak)" --> hibp
 ```
 
 ### 2.2 Container
@@ -173,7 +180,7 @@ Pfeil = "darf aufrufen". Alles darf `plattform` nutzen. Rueckwaerts-Aufrufe und 
 | **identitaet** | Login (OIDC-BFF), Sessions, Benutzer, Mitgliedschaften, Rollen, Liegenschafts-Scope, Autorisierung | `aktuellerKontext(req)`, `pruefe(recht, liegenschaftId)`, `mandantWechseln()`, `mitgliedschaftenVerwalten()` | mandant | `benutzer`, `mitgliedschaft`, `mitgliedschaft_liegenschaft`, `sitzung` |
 | **mandant** | Mandantenstammdaten und Parameter: KI-Schalter + Zustimmung, ZHAW-Parameter, Teuerung, Ampel-Default, Sprache, Budget, Betriebsstunden-Defaults | `parameter(mandantId)`, `kiErlaubt(mandantId)`, `parameterAendern()` | plattform | `mandant`, `mandant_parameter`, `ki_zustimmung` |
 | **katalog** | Globaler Bauteil-Katalog (Katalog-ID fuehrend), Texte DE/FR/IT, Klassifikations-Mappings (ETIM, eBKP-H, weitere), Planora-Standard-Lebensdauern, Lebensdauer-Tabelle des Mandanten pro Typ (E11), Ampel-Schwellen pro Bauteiltyp (E17) | `eintrag(katalogId, sprache)`, `alle(version)`, `mapping(katalogId, system)`, `lebensdauerTabelle(mandantId)`, `ampelSchwelle(mandantId, katalogId)` | plattform | `katalog_version`, `katalog_eintrag`, `katalog_text`, `klassifikation_mapping`, `mandant_lebensdauer`, `mandant_ampel` |
-| **struktur** | Liegenschaft → Gebaeude → Geschoss → Raum; Raum-Vorschlaege aus Grundriss annehmen | `baum(gebaeudeId)`, `raumVorschlaegeErfassen()`, `geschossBestaetigen()`, CRUD | identitaet | `liegenschaft`, `gebaeude`, `geschoss`, `raum`, `raum_vorschlag` |
+| **struktur** | Liegenschaft → Gebaeude → Geschoss → Raum; Raum-Vorschlaege aus Grundriss annehmen; Adresse/GWR-Vorschlaege ueber Port `GebaeudeRegister` (ADR 0025) | `baum(gebaeudeId)`, `raumVorschlaegeErfassen()`, `geschossBestaetigen()`, `adresseSuchen()`, `gwrVorschlaege(egid)`, CRUD | identitaet | `liegenschaft`, `gebaeude`, `geschoss`, `raum`, `raum_vorschlag`, `register_cache` (global) |
 | **dokumente** | Upload, Quarantaene/Scan, Ablage, Metadaten inkl. KBOB-Fachbereich und Dokumenttypcode (E21), Verknuepfungen, Vorschau-URLs | `uploadBeginnen()`, `status()`, `seitenText(dokId, seite)`, `verknuepfen()`, `vorschauUrl()` | identitaet | `dokument`, `dokument_seite`, `dokument_verknuepfung` |
 | **bestand** | Elementtypen, Elemente, Angaben (Herkunft), Pruefliste, Projektion `element_effektiv` | `vorschlaegeErfassen(lauf, angaben[])`, `entscheiden(angabeIds, aktion, version)`, `effektiv(elementIds)`, `pruefliste()`, CRUD | struktur, katalog, dokumente | `elementtyp`, `element`, `angabe`, `element_effektiv` |
 | **zustand** | Zustandsbewertungen vor Ort nach ZHAW-Methode (E14), Sammelbewertung, Historie, Vorschlag naechste Inspektion | `bewerten(elementIds, zustandswert, notiz, foto?)`, `aktuelleBewertung(elementIds)` | bestand | `zustandsbewertung` |
@@ -224,7 +231,8 @@ Gemeinsame Spalten jeder Mandantentabelle: `id uuid` (UUIDv7, PK), `mandant_id u
 | `benutzer` | `id`, `keycloak_sub UNIQUE`, `email`, `name`, `sprache` (de/fr/it) | global (keine mandant_id), RLS: nur eigener Datensatz + Mitglieder des aktiven Mandanten via Funktion |
 | `mitgliedschaft` | `(mandant_id, benutzer_id) UNIQUE`, `rolle` | Rollen Kap. 9.2 |
 | `mitgliedschaft_liegenschaft` | `(mandant_id, mitgliedschaft_id, liegenschaft_id)` | leer = alle Liegenschaften |
-| `liegenschaft`, `gebaeude` | `gebaeude.uebergabedatum date` | Uebergabedatum = Default-Einbaudatum (FA-16) |
+| `liegenschaft`, `gebaeude` | `gebaeude.uebergabedatum date`, `gebaeude.egid` (`UNIQUE (mandant_id, egid)`), `liegenschaft.kanton` | Uebergabedatum = Default-Einbaudatum (FA-16); EGID aus GWR (ADR 0025) |
+| `feiertag` (global) | `datum`, `kanton` (NULL = CH), `name` | jaehrlicher Import aus Nager.Date; genutzt von `hinweise`, `zustand` (ADR 0025) |
 | `geschoss` | `gebaeude_id`, `bezeichnung`, `reihenfolge int`, `hoehe_m numeric`, `grundriss_dokument_id`, `grundriss_seite`, `massstab_m_pro_einheit`, `status` (entwurf/bestaetigt) | |
 | `raum` | `geschoss_id`, `nummer`, `bezeichnung`, `x_m, y_m, breite_m, tiefe_m numeric(9,3)`, `quelle_art`, `raum_vorschlag_id` | Rechteck im Geschoss-Koordinatensystem (E3) |
 | `raum_vorschlag` | `geschoss_id`, `extraktion_lauf_id`, normierte Koordinaten, Stempeltext, `konfidenz`, `status` | wird bei "Geschoss bestaetigen" zu `raum` |
@@ -579,6 +587,7 @@ ADR 0015: Trigger, append-only, Hash-Kette, taegliche Kettenpruefung; Fachereign
 - Bekanntgabe ins Ausland (Art. 16 [F, Q24-Dom]): nur KI-Pfad in EU/EWR (Anhang 1 DSV [A, juristisch bestaetigen]); im Vertrag und in der KI-Zustimmung des Mandanten benannt.
 - Verzeichnis der Bearbeitungstaetigkeiten, Datenschutzerklaerung, Auskunfts-/Loeschprozess.
 - Personendaten in V1: Benutzerkonten, Audit-Akteure, Namen/Unterschriften in Dokumenten [A, 01 Kap. 5.1].
+- Oeffentliche APIs (E32, ADR 0025): geo.admin.ch erhaelt nur Adresstext/EGID, Nager.Date nur Jahr/Land, Pwned Passwords nur einen 5-Zeichen-Hash-Praefix → keine Personendaten, keine Auftragsbearbeiter [A, Jurist bestaetigt].
 
 ### 9.8 Datenfluss zur KI
 Nur wenn `mandant.ki_aktiv` + Zustimmung + globaler Schalter + Budget. Inhalt: Seitenbilder/Text ausgewaehlter Seiten, Katalogliste, Prompt. Nie: Benutzerdaten, Audit, andere Mandanten. Bedrock speichert Prompts nicht persistent, Logs in Quellregion [F, Q24-Tech]. Rohantworten speichert Planora im eigenen Objektspeicher (`abgeleitet/`), geloescht mit dem Dokument.
@@ -713,6 +722,7 @@ Alle unter `docs/architektur/adr/`, Status "vorgeschlagen":
 | 0022 | `0022-dokument-viewer.md` | Vorschau-PDF, PDF.js, Markierung per Docling-Box (E23, E31) — **akzeptiert** |
 | 0023 | `0023-suche-postgres-hybrid.md` | Volltext + pgvector, RRF (E26, E31) — **akzeptiert** |
 | 0024 | `0024-pflicht-bausteine-und-lizenzen.md` | Pflicht-Bausteine und Lizenzregeln (E28, E31) — **akzeptiert** |
+| 0025 | `0025-oeffentliche-apis-gwr-feiertage-pwned.md` | geo.admin.ch/GWR, Nager.Date, Pwned Passwords (E32) — **akzeptiert** |
 
 ---
 
@@ -794,6 +804,7 @@ Verbindlich nach ADR 0024; Begruendung und Abgleich in `06-bausteine-open-source
 | Lieferkette | Renovate, Trivy, Syft, cosign, Gitleaks, Semgrep CE, license-checker, OWASP ZAP |
 | Tests | Playwright, @axe-core/playwright, k6 |
 | Uebersetzung | Tolgee (selbst gehostet), Sprachdateien im Repo bleiben Build-Quelle |
+| Oeffentliche APIs (E32) | geo.admin.ch/GWR (`struktur`), Nager.Date + `date-holidays` als Rueckfall (`hinweise`, `zustand`), Pwned Passwords (Keycloak) – ADR 0025 |
 
 Eigenbau bleibt nur fuer den fachlichen Kern: Rechenkern, Herkunftsmodell, Audit-Hash-Kette, KI-Kostenbremse, Mandantentrennung.
 

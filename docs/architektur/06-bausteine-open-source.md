@@ -263,11 +263,11 @@ Pruefpunkte im Scaffold (aendern **nicht** den Entscheid, nur die Konfiguration)
 
 ## 9. Oeffentliche APIs (Abgleich mit public-apis)
 
-Quelle: [public-apis/public-apis](https://github.com/public-apis/public-apis), alle Kategorien durchgesehen (2026-11-09). **Status: Empfehlung, noch nicht verbindlich** – externe Dienste beruehren den Datenfluss (revDSG, Kap. 9.7) und brauchen deshalb einen eigenen PO-Entscheid. Live-Aufrufe konnten aus der Arbeitsumgebung nicht getestet werden [A].
+Quelle: [public-apis/public-apis](https://github.com/public-apis/public-apis), alle Kategorien durchgesehen (2026-11-09). **Status: 9.1 verbindlich (PO-Entscheid E32, ADR 0025)**; 9.2 spaeter, 9.3 ausgeschlossen. Live-Aufrufe konnten aus der Arbeitsumgebung nicht getestet werden [A].
 
 **Grundregel:** Nur APIs ohne Kundendaten im Aufruf (Adresse, Feiertage, Referenzdaten) oder mit Sitz/Betrieb in CH. Nie Dokumentinhalte an fremde APIs. Jede externe API haengt hinter einem Port mit Cache in PG und funktioniert bei Ausfall mit manueller Eingabe weiter (Qualitaetsziel 4).
 
-### 9.1 Empfohlen
+### 9.1 Pflicht (E32)
 
 | API | Kosten / Auth | Wofuer in Planora | Stelle | Bemerkung |
 |---|---|---|---|---|
@@ -296,7 +296,7 @@ Quelle: [public-apis/public-apis](https://github.com/public-apis/public-apis), a
 | Wetter (Open-Meteo, MeteoSwiss usw.) | kein Bezug zu V1 |
 | Test-Data-APIs | lokal mit Bibliotheken (z.B. Faker) erzeugen; keine Netzabhaengigkeit in CI |
 
-### 9.4 Folgen fuer die Architektur, falls der PO 9.1 freigibt
+### 9.4 Folgen fuer die Architektur (eingearbeitet, ADR 0025)
 
 - Neuer Port **`GebaeudeRegister`** in `struktur` (Adapter `geo-admin`), Ergebnis-Cache in PG; Spalte `gebaeude.egid` (eindeutig je Mandant).
 - `quelle_art=import` mit Quelle `gwr` im Herkunftsmodell; Bestaetigung wie bei KI-Vorschlaegen.

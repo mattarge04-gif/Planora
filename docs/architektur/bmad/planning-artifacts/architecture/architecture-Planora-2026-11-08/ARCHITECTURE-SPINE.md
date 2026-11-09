@@ -8,7 +8,7 @@ scope: 'Planora V1 Gesamtsystem: Struktur, Dokumente, KI-Auslesen, Katalog, Prei
 status: final
 created: '2026-11-08'
 updated: '2026-11-09'
-binds: ['E1-E22', 'E31', 'FA-01..FA-38']
+binds: ['E1-E22', 'E31', 'E32', 'FA-01..FA-38']
 sources: ['docs/architektur/00-kontext.md', 'docs/architektur/01-domaene.md', 'docs/architektur/02-tech-recherche.md']
 companions: ['docs/architektur/03-architektur.md', 'docs/architektur/adr/', 'docs/architektur/06-bausteine-open-source.md']
 ---
@@ -160,6 +160,11 @@ flowchart BT
 - **Binds:** all
 - **Prevents:** Eigenbau fuer geloeste Probleme, Lizenzrisiken in der Auslieferung.
 - **Rule:** Bausteine aus ADR 0024 sind Pflicht; Eigenbau derselben Funktion nur mit PO-Entscheid. Ausgelieferter Code nur MIT/BSD/ISC/Apache-2.0/MPL-2.0; SBOM + Lizenzpruefung in CI brechen den Build.
+
+### AD-22 — Oeffentliche APIs (E32, ADR 0025)
+- **Binds:** struktur, hinweise, zustand, identitaet (Keycloak)
+- **Prevents:** Abhaengigkeit von fremden Diensten im Kernablauf, ungepruefte Fremddaten, Datenabfluss.
+- **Rule:** Nur geo.admin.ch/GWR, Nager.Date, Pwned Passwords; je Dienst ein Port mit Adapter, Cache in PG und manuellem Rueckfall; GWR-Werte nur als `angabe` (`quelle_art=import`, Quelle `gwr`), Bestaetigung Pflicht; nie Dokument- oder Personendaten an externe APIs; CI nur mit Fakes.
 
 ## Consistency Conventions
 
