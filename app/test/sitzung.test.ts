@@ -126,4 +126,18 @@ describe("Sitzungsregeln", () => {
     expect(await sitzungen()).toBe(0);
     expect((await ich(a)).statusCode).toBe(401);
   });
+
+  it("PP7-2: jede Sitzung endet spaetestens 12 h nach Anlage, auch mit rememberMe:false und frischer Aktivitaet", async () => {
+    for (const rememberMe of [true, false]) {
+      const r = await post("/api/auth/sign-in/email", { email, password: pw, rememberMe }, {}, `198.51.100.${++ipNr}`);
+      expect(r.statusCode).toBe(200); const c = cookie(r);
+      const k = (await ich(c)).json();
+      const s = (await db.pool.query("select extract(epoch from expires_at - created_at)::int d from session where id=$1", [k.sessionId])).rows[0];
+      expect(s.d).toBe(43200);
+      // Sitzung 13 h alt, Aktivitaet frisch: muss trotzdem abgelaufen sein
+      await db.pool.query("update session set created_at = created_at - interval '13 hours' where id=$1", [k.sessionId]);
+      await db.pool.query("update sitzung_aktivitaet set zuletzt_aktiv = now() where session_id=$1", [k.sessionId]);
+      expect((await ich(c)).statusCode).toBe(401);
+    }
+  });
 });
