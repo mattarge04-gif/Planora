@@ -230,4 +230,21 @@ describe("Sitzungsregeln", () => {
     expect((await app.inject({ url: "/api/auth/get-session" })).statusCode).toBe(401);
     expect((await post("/api/auth/sign-out", {}, {}, "192.0.2.33")).statusCode).toBe(401);
   });
+
+  it("PP7-11: Sitzungsentzug waehrend der Pruefung → 401 statt 500 (Barriere)", async () => {
+    const c = await login();
+    const sid = (await ich(c)).json().sessionId; // Aktivitaetszeile existiert
+    const t = await db.pool.connect();
+    try {
+      await t.query("begin");
+      await t.query("delete from session where id=$1", [sid]); // Entzug laeuft, noch nicht committet
+      const anfrage = ich(c);
+      expect(await blockiertBis(anfrage)).toBe(true);
+      await t.query("commit");
+      expect((await anfrage).statusCode).toBe(401);
+    } finally {
+      await t.query("rollback").catch(() => {});
+      t.release();
+    }
+  });
 });

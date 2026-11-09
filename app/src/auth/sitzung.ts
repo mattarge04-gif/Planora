@@ -29,21 +29,30 @@ export function registriereSitzungsregeln(app: FastifyInstance, auth: Auth, pool
     }
     const s = await auth.api.getSession({ headers: alsHeaders(req) });
     if (!s) return reply.code(401).send({ fehler: "nicht angemeldet" });
+    // Pruefung und Aktivitaets-Upsert in einer Transaktion; FOR SHARE auf Sitzung und Konto serialisiert gegen Entzug
+    // und Sperre: ein parallel committeter Entzug fuehrt zu 401 statt FK-Fehler/500 (PP7-11).
     // Leerlauf: letzte Aktivitaet, sonst Anmeldezeitpunkt (Sitzung ohne Folgeanfrage darf nicht unbegrenzt frisch bleiben)
-    const r = await pool.query(
-      `select k.status, k.audit_id, coalesce(a.zuletzt_aktiv, s.created_at) > now() - interval '${LEERLAUF}' as frisch
-         from konto_status k
-         join session s on s.id = $2 and s.user_id = k.benutzer_id
-         left join sitzung_aktivitaet a on a.session_id = s.id
-        where k.benutzer_id = $1`, [s.user.id, s.session.id]);
-    const z = r.rows[0];
-    if (!z || z.status !== "aktiv" || !z.frisch) {
-      if (z && !z.frisch) await pool.query("delete from session where id=$1", [s.session.id]);
-      return reply.code(401).send({ fehler: "nicht angemeldet" });
-    }
-    await pool.query(
-      `insert into sitzung_aktivitaet(session_id, zuletzt_aktiv) values ($1, now())
-       on conflict (session_id) do update set zuletzt_aktiv = now()`, [s.session.id]);
+    const c = await pool.connect();
+    let z: { status: string; audit_id: string; frisch: boolean } | undefined;
+    try {
+      await c.query("begin");
+      z = (await c.query(
+        `select k.status, k.audit_id, coalesce(a.zuletzt_aktiv, s.created_at) > now() - interval '${LEERLAUF}' as frisch
+           from konto_status k
+           join session s on s.id = $2 and s.user_id = k.benutzer_id
+           left join sitzung_aktivitaet a on a.session_id = s.id
+          where k.benutzer_id = $1
+          for share of s, k`, [s.user.id, s.session.id])).rows[0];
+      if (z && z.status === "aktiv" && z.frisch) {
+        await c.query(
+          `insert into sitzung_aktivitaet(session_id, zuletzt_aktiv) values ($1, now())
+           on conflict (session_id) do update set zuletzt_aktiv = now()`, [s.session.id]);
+      } else if (z && !z.frisch) {
+        await c.query("delete from session where id=$1", [s.session.id]);
+      }
+      await c.query("commit");
+    } catch (e) { await c.query("rollback").catch(() => {}); throw e; } finally { c.release(); }
+    if (!z || z.status !== "aktiv" || !z.frisch) return reply.code(401).send({ fehler: "nicht angemeldet" });
     req.kontext = { benutzerId: s.user.id, auditId: z.audit_id, sessionId: s.session.id };
   });
 }
