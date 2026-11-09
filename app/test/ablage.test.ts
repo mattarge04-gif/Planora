@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import pg from "pg";
-import { dateiAblage, type Ablage } from "../src/ablage/ablage.js";
+import { dateiAblage, speichereUndReferenziere, type Ablage } from "../src/ablage/ablage.js";
 import { GC_LOCK, sammleMuell } from "../src/ablage/gc.js";
 import { neuerPool } from "../src/db/pool.js";
 import { frischeDb } from "./hilfe.js";
@@ -238,6 +238,47 @@ describe("GC und Loeschjournal", () => {
       await expect(c.query("update journal_zaehler set seq=0")).rejects.toThrow(/permission denied/);
       await expect(c.query("update loesch_journal set zustand='quittiert'")).rejects.toThrow(/permission denied/);
     } finally { await c.query("rollback"); c.release(); await appPool.end(); }
+  });
+  it("PP8-3: haelt den geteilten GC-Lock bei Deduplikation bis zum Referenz-Commit (Barriere mit parallelem GC)", async () => {
+    const { ablage } = await ablageNeu();
+    const alt = await ablage.schreibeNeu(Readable.from(["alter Inhalt"]));
+    await db.pool.query("insert into datei(schluessel, sha256, groesse) values ($1,$2,$3)", [alt.schluessel, alt.sha256, alt.groesse]);
+    const seq = (await db.pool.query("select journal_eintrag('datei.loeschen',$1) seq", [alt.schluessel])).rows[0].seq;
+    await db.pool.query("update loesch_journal set zustand='quittiert', zeit=now()-interval '31 days' where seq=$1", [seq]);
+    let geschrieben!: () => void; const barriere = new Promise<void>((r) => { geschrieben = r; });
+    let weiter!: () => void; const freigabe = new Promise<void>((r) => { weiter = r; });
+    const angehalten: Ablage = { ...ablage, async schreibeNeu(daten) { const d = await ablage.schreibeNeu(daten); geschrieben(); await freigabe; return d; } };
+    const appPool = neuerPool(db.cfg, "planora_app");
+    try {
+      const speichern = speichereUndReferenziere(appPool, angehalten, Readable.from(["alter Inhalt"]), "dokument:9");
+      await barriere; // Hash existiert bereits (Dedup), Metadaten/Referenz noch nicht committet
+      expect(await sammleMuell(db.pool, ablage)).toEqual([]);
+      expect(await ablage.existiert(alt.schluessel)).toBe(true);
+      weiter();
+      expect((await speichern).schluessel).toBe(alt.schluessel);
+      expect((await db.pool.query("select objekt from datei_referenz where schluessel=$1", [alt.schluessel])).rows).toEqual([{ objekt: "dokument:9" }]);
+      expect(await sammleMuell(db.pool, ablage)).toEqual([]);
+      expect(await ablage.existiert(alt.schluessel)).toBe(true);
+      // Neue Datei: legt Metadaten und Referenz unter der Laufzeitrolle an
+      const neu = await speichereUndReferenziere(appPool, ablage, Readable.from(["neuer Inhalt"]), "dokument:10");
+      expect((await db.pool.query("select groesse::int from datei where schluessel=$1", [neu.schluessel])).rows[0].groesse).toBe(12);
+    } finally { weiter(); await appPool.end(); }
+    expect((await db.pool.query("select count(*)::int n from pg_locks where locktype='advisory' and objid=$1", [GC_LOCK])).rows[0].n).toBe(0);
+  });
+  it("PP8-3: wartet auf einen laufenden GC und publiziert danach neu", async () => {
+    const { ablage } = await ablageNeu();
+    const c = await db.pool.connect();
+    const appPool = neuerPool(db.cfg, "planora_app");
+    try {
+      await c.query("select pg_advisory_lock($1)", [GC_LOCK]);
+      let fertig = false;
+      const speichern = speichereUndReferenziere(appPool, ablage, Readable.from(["spaeter"]), "dokument:11").then((d) => { fertig = true; return d; });
+      await new Promise((r) => setTimeout(r, 300));
+      expect(fertig).toBe(false);
+      await c.query("select pg_advisory_unlock($1)", [GC_LOCK]);
+      const d = await speichern;
+      expect(await ablage.existiert(d.schluessel)).toBe(true);
+    } finally { await c.query("select pg_advisory_unlock_all()"); c.release(); await appPool.end(); }
   });
   it("serialisiert Backup-Start und neue Referenzen gegen den exklusiven GC-Lock", async () => {
     const { ablage } = await ablageNeu();

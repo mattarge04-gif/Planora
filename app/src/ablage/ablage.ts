@@ -19,7 +19,8 @@ const istFehler = (fehler: unknown, code: string) => (fehler as NodeJS.ErrnoExce
 export function dateiAblage(wurzel: string, opts: {
   maxBelegung?: number;
   belegung?: () => Promise<number>;
-  /** Im DB-Betrieb mitgeben: haelt den geteilten GC-Lock auch bei Deduplikation. */
+  /** Haelt den geteilten GC-Lock nur waehrend des Schreibens. Fuer Metadaten und Referenz
+   *  speichereUndReferenziere verwenden: nur diese haelt den Lock bis zum Commit. */
   pool?: pg.Pool;
 } = {}): Ablage {
   const basis = resolve(wurzel);
@@ -135,4 +136,27 @@ export function dateiAblage(wurzel: string, opts: {
       await fs.rm(ziel, { force: true });
     },
   };
+}
+
+/**
+ * Einziger Schreibpfad fuer neue Referenzen auf Dateiinhalte: haelt den geteilten GC-Lock
+ * vom Existenzpruefen/Publizieren (auch bei Deduplikation) bis zum Commit von datei und
+ * datei_referenz. Ein paralleler GC sieht so entweder die Referenz oder laeuft vorher fertig.
+ * [A] Scheitert der Commit, bleibt eine publizierte Datei ohne datei-Zeile liegen (kein
+ * Datenverlust, nur Belegung); Aufraeumen verwaister Dateien ist nicht Teil von M1a.
+ */
+export async function speichereUndReferenziere(pool: pg.Pool, ablage: Ablage, daten: Readable, objekt: string) {
+  const c = await pool.connect();
+  try {
+    await c.query("begin");
+    await c.query("select pg_advisory_xact_lock_shared($1)", [GC_LOCK]);
+    const d = await ablage.schreibeNeu(daten);
+    await c.query("insert into datei(schluessel, sha256, groesse) values ($1,$2,$3) on conflict (schluessel) do nothing", [d.schluessel, d.sha256, d.groesse]);
+    await c.query("insert into datei_referenz(schluessel, objekt) values ($1,$2) on conflict do nothing", [d.schluessel, objekt]);
+    await c.query("commit");
+    return d;
+  } catch (e) {
+    await c.query("rollback").catch(() => {});
+    throw e;
+  } finally { c.release(); }
 }
