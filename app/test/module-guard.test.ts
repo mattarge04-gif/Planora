@@ -1,0 +1,136 @@
+import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
+import Fastify from "fastify";
+import { frischeDb } from "./hilfe.js";
+import { registriereModulGuard, schalteEin, schalteAus, modulAktiv } from "../src/module/schalter.js";
+import { randomUUID } from "node:crypto";
+import { neuerPool } from "../src/db/pool.js";
+
+let db: Awaited<ReturnType<typeof frischeDb>>;
+let appPool: ReturnType<typeof neuerPool>; // Schalten laeuft unter der Laufzeitrolle, nicht als Superuser
+const apps: ReturnType<typeof Fastify>[] = [];
+beforeAll(async () => { db = await frischeDb(); appPool = neuerPool(db.cfg, "planora_app"); });
+afterAll(async () => { await appPool.end(); await db.ende(); });
+afterEach(async () => { await Promise.all(apps.splice(0).map((app) => app.close())); });
+
+function server(stufe: 1|2|3) {
+  const app = Fastify();
+  apps.push(app);
+  registriereModulGuard(app, db.pool, stufe);
+  app.get("/api/hinweise/liste", async () => ({ ok: true }));
+  app.get("/api/szene/x", async () => ({ ok: true }));
+  app.get("/api/suche/x", async () => ({ ok: true }));
+  app.get("/api/export/x", async () => ({ ok: true }));
+  app.get("/api/hinweise", async () => ({ ok: true }));
+  return app;
+}
+
+describe("Modul-Guard", () => {
+  it("Option aus → 404 auch bei direktem Aufruf; Kern immer erreichbar", async () => {
+    const app = server(2);
+    expect((await app.inject("/api/hinweise/liste")).statusCode).toBe(404);
+    expect((await app.inject("/api/szene/x")).statusCode).toBe(200);
+  });
+  it("Einschalten mit Abhaengigkeit, Abschalten mit Kaskade in einer Transaktion, auditiert", async () => {
+    const a = randomUUID();
+    await expect(schalteEin(appPool, "hinweise", 2, a)).rejects.toThrow(/braucht lebensdauer/);
+    await schalteEin(appPool, "lebensdauer", 2, a); await schalteEin(appPool, "hinweise", 2, a);
+    const app = server(2);
+    expect((await app.inject("/api/hinweise/liste")).statusCode).toBe(200);
+    const aus = await schalteAus(appPool, "lebensdauer", a);
+    expect(aus.sort()).toEqual(["hinweise", "lebensdauer"]);
+    expect((await app.inject("/api/hinweise/liste")).statusCode).toBe(404);
+    const n = (await db.pool.query("select count(*)::int n from audit_eintrag where art like 'modul.%'")).rows[0].n;
+    expect(n).toBe(4); // 2x ein, 2x aus
+  });
+  it("PP8-2: planora_app schaltet nur ueber die Funktionen, nicht direkt per DML", async () => {
+    const c = await appPool.connect();
+    try {
+      expect((await c.query("select current_user u")).rows[0].u).toBe("planora_app");
+      await expect(c.query("update modul_schalter set aktiv=true")).rejects.toThrow(/permission denied/);
+      await expect(c.query("insert into modul_schalter(modul_id, aktiv) values ('zustand', true)")).rejects.toThrow(/permission denied/);
+    } finally { c.release(); }
+    const fremd = await db.pool.connect();
+    try {
+      await fremd.query("set role planora_backup");
+      await expect(fremd.query("select modul_ein('zustand', null, 'x')")).rejects.toThrow(/permission denied/);
+      await expect(fremd.query("select modul_aus('zustand', null)")).rejects.toThrow(/permission denied/);
+    } finally { await fremd.query("reset role"); fremd.release(); }
+  });
+  it("nicht geliefertes Modul → 404 und nicht einschaltbar", async () => {
+    expect((await server(2).inject("/api/suche/x")).statusCode).toBe(404);
+    expect((await server(1).inject("/api/export/x")).statusCode).toBe(404);
+    await expect(schalteEin(appPool, "suche", 2, randomUUID())).rejects.toThrow(/nicht geliefert/);
+  });
+  it("Kernmodule sind auch ueber den Abschaltpfad nicht schaltbar", async () => {
+    await expect(schalteAus(appPool, "szene", randomUUID())).rejects.toThrow(/kern nicht schaltbar/);
+  });
+  it("rollt die ganze Kaskade samt Audit bei einem Audit-Fehler zurueck", async () => {
+    const a = randomUUID();
+    await schalteEin(appPool, "lebensdauer", 2, a);
+    await schalteEin(appPool, "hinweise", 2, a);
+    const vorher = (await db.pool.query("select count(*)::int n from audit_eintrag")).rows[0].n;
+    await db.pool.query(`create function audit_ablehnen() returns trigger language plpgsql as $$
+      begin if new.art='modul.aus' and new.daten->>'id'='hinweise' then raise exception 'Audit unmoeglich'; end if; return new; end $$;
+      create trigger audit_ablehnen before insert on audit_eintrag for each row execute function audit_ablehnen()`);
+    try {
+      await expect(schalteAus(appPool, "lebensdauer", a)).rejects.toThrow(/Audit unmoeglich/);
+      expect((await db.pool.query("select modul_id from modul_schalter where aktiv order by modul_id")).rows.map((r) => r.modul_id)).toEqual(["hinweise", "lebensdauer"]);
+      expect((await db.pool.query("select count(*)::int n from audit_eintrag")).rows[0].n).toBe(vorher);
+    } finally {
+      await db.pool.query("drop trigger audit_ablehnen on audit_eintrag; drop function audit_ablehnen()");
+      await schalteAus(appPool, "lebensdauer", a);
+    }
+  });
+  it("DB-Fehler im Guard → 503", async () => {
+    const app = Fastify();
+    apps.push(app);
+    const kaputt = { connect: async () => { throw new Error("db weg"); } } as any;
+    registriereModulGuard(app, kaputt, 2);
+    app.get("/api/hinweise/liste", async () => ({ ok: true }));
+    expect((await app.inject("/api/hinweise/liste")).statusCode).toBe(503);
+  });
+  it("PP8-1: kodierte Segmente umgehen den Guard nicht (inaktiv → 404, DB-Ausfall → 503)", async () => {
+    await db.pool.query("update modul_schalter set aktiv=false");
+    const app = server(2);
+    for (const url of ["/api/%68inweise/liste", "/api/hinweise/%6Ciste", "/%61pi/hinweise/liste", "/api/%68inweise"]) {
+      expect((await app.inject(url)).statusCode, url).toBe(404);
+    }
+    const kaputtApp = Fastify();
+    apps.push(kaputtApp);
+    registriereModulGuard(kaputtApp, { connect: async () => { throw new Error("db weg"); } } as any, 2);
+    kaputtApp.get("/api/hinweise/liste", async () => ({ ok: true }));
+    kaputtApp.get("/api/hinweise/:id/detail", async () => ({ ok: true }));
+    for (const url of ["/api/%68inweise/liste", "/api/%68inweise/7/detail"]) {
+      expect((await kaputtApp.inject(url)).statusCode, url).toBe(503);
+    }
+  });
+  it("PP8-5: nicht zugeordnete /api-Route scheitert beim Start, explizit freie Route bleibt erlaubt", async () => {
+    const app = Fastify();
+    apps.push(app);
+    registriereModulGuard(app, { connect: async () => { throw new Error("db weg"); } } as any, 2);
+    await expect((async () => { app.get("/api/unbekannt", async () => ({ ok: true })); await app.ready(); })()).rejects.toThrow(/keinem Modul zugeordnet/);
+    const frei = Fastify();
+    apps.push(frei);
+    registriereModulGuard(frei, { connect: async () => { throw new Error("db weg"); } } as any, 2);
+    frei.get("/api/ich", async () => ({ ok: true }));
+    frei.get("/gesund", async () => ({ ok: true }));
+    await frei.ready();
+    expect((await frei.inject("/api/ich")).statusCode).toBe(200);
+    expect((await frei.inject("/gesund")).statusCode).toBe(200);
+  });
+  it("prueft auch einen SQL-Fehler und Modulwurzeln geschlossen", async () => {
+    const app = server(2);
+    await db.pool.query("alter table modul_schalter rename to modul_schalter_weg");
+    try { expect((await app.inject("/api/hinweise?seite=1")).statusCode).toBe(503); }
+    finally { await db.pool.query("alter table modul_schalter_weg rename to modul_schalter"); }
+  });
+  it("kein Cache: Aenderung direkt in der DB wirkt bei naechster Anfrage", async () => {
+    const app = server(2);
+    await db.pool.query("insert into modul_schalter(modul_id, aktiv) values ('lebensdauer', true) on conflict (modul_id) do update set aktiv=true");
+    await db.pool.query("insert into modul_schalter(modul_id, aktiv) values ('hinweise', true) on conflict (modul_id) do update set aktiv=true");
+    expect((await app.inject("/api/hinweise/liste")).statusCode).toBe(200);
+    await db.pool.query("update modul_schalter set aktiv=false where modul_id='hinweise'");
+    expect((await app.inject("/api/hinweise/liste")).statusCode).toBe(404);
+    const c = await db.pool.connect(); try { expect(await modulAktiv(c, "hinweise", 2)).toBe(false); } finally { c.release(); }
+  });
+});
