@@ -264,7 +264,7 @@ describe("GC und Loeschjournal", () => {
     await db.pool.query("update loesch_journal set zustand='quittiert', zeit=now()-interval '31 days' where seq=$1", [seq]);
     let geschrieben!: () => void; const barriere = new Promise<void>((r) => { geschrieben = r; });
     let weiter!: () => void; const freigabe = new Promise<void>((r) => { weiter = r; });
-    const angehalten: Ablage = { ...ablage, async schreibeNeu(daten) { const d = await ablage.schreibeNeu(daten); geschrieben(); await freigabe; return d; } };
+    const angehalten: Ablage = { ...ablage, async schreibeNeu(daten, kontext) { const d = await ablage.schreibeNeu(daten, kontext); geschrieben(); await freigabe; return d; } };
     const appPool = neuerPool(db.cfg, "planora_app");
     try {
       const speichern = speichereUndReferenziere(appPool, angehalten, Readable.from(["alter Inhalt"]), "dokument:9");
@@ -281,6 +281,17 @@ describe("GC und Loeschjournal", () => {
       expect((await db.pool.query("select groesse::int from datei where schluessel=$1", [neu.schluessel])).rows[0].groesse).toBe(12);
     } finally { weiter(); await appPool.end(); }
     expect((await db.pool.query("select count(*)::int n from pg_locks where locktype='advisory' and objid=$1", [GC_LOCK])).rows[0].n).toBe(0);
+  });
+  it("PP8b-1: kein Deadlock, wenn Adapter und Helfer denselben Pool mit max:1 nutzen", async () => {
+    const { wurzel } = await ablageNeu();
+    const engPool = new pg.Pool({ ...db.cfg, max: 1, connectionTimeoutMillis: 400 });
+    try {
+      const ablage = dateiAblage(wurzel, { pool: engPool, belegung: async () => 0.1 });
+      const erst = await speichereUndReferenziere(engPool, ablage, Readable.from(["eng"]), "dokument:20");
+      const dedup = await speichereUndReferenziere(engPool, ablage, Readable.from(["eng"]), "dokument:21");
+      expect(dedup.schluessel).toBe(erst.schluessel);
+      expect((await db.pool.query("select count(*)::int n from datei_referenz where schluessel=$1", [erst.schluessel])).rows[0].n).toBe(2);
+    } finally { await engPool.end(); }
   });
   it("PP8-3: wartet auf einen laufenden GC und publiziert danach neu", async () => {
     const { ablage } = await ablageNeu();

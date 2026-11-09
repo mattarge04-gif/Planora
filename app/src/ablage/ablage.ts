@@ -7,11 +7,15 @@ import type pg from "pg";
 import { GC_LOCK } from "./gc.js";
 
 export type Ablage = {
-  schreibeNeu(daten: Readable): Promise<{ schluessel: string; sha256: string; groesse: number }>;
+  /** kontext.client: Aufrufer haelt den geteilten GC-Lock bereits auf diesem Client;
+   *  der Adapter holt dann keine eigene Verbindung und nimmt keinen eigenen Lock. */
+  schreibeNeu(daten: Readable, kontext?: SchreibKontext): Promise<{ schluessel: string; sha256: string; groesse: number }>;
   lese(schluessel: string, range?: { start: number; ende: number }): Readable;
   existiert(schluessel: string): Promise<boolean>;
   entferne(schluessel: string): Promise<void>;
 };
+
+export type SchreibKontext = { client: pg.ClientBase };
 
 const MUSTER = /^sha256\/([0-9a-f]{2})\/([0-9a-f]{2})\/([0-9a-f]{64})$/;
 const istFehler = (fehler: unknown, code: string) => (fehler as NodeJS.ErrnoException).code === code;
@@ -123,8 +127,8 @@ export function dateiAblage(wurzel: string, opts: {
   }
 
   return {
-    async schreibeNeu(daten) {
-      if (!opts.pool) return schreiben(daten);
+    async schreibeNeu(daten, kontext) {
+      if (kontext || !opts.pool) return schreiben(daten);
       const c = await opts.pool.connect();
       let gesperrt = false;
       try {
@@ -167,7 +171,7 @@ export async function speichereUndReferenziere(pool: pg.Pool, ablage: Ablage, da
   try {
     await c.query("begin");
     await c.query("select pg_advisory_xact_lock_shared($1)", [GC_LOCK]);
-    const d = await ablage.schreibeNeu(daten);
+    const d = await ablage.schreibeNeu(daten, { client: c }); // gleicher Client: kein zweiter Pool-Zugriff (PP8b-1)
     await c.query("insert into datei(schluessel, sha256, groesse) values ($1,$2,$3) on conflict (schluessel) do nothing", [d.schluessel, d.sha256, d.groesse]);
     await c.query("insert into datei_referenz(schluessel, objekt) values ($1,$2) on conflict do nothing", [d.schluessel, objekt]);
     await c.query("commit");
