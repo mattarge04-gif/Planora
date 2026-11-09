@@ -78,6 +78,8 @@ Ablauf aus Kundensicht:
 | E36 | **KI nur ueber die Claude API** (direkt Anthropic), ersetzt Bedrock (ADR 0003). App funktioniert ohne KI (Formular/Excel). KI pro Instanz abschaltbar. Embeddings fuer die Suche lokal mit Open-Source-Modell [A]. Oeffentliche APIs aus E32 bis nach der Demo zurueckgestellt. |
 | E37 | **Eine Codebasis, Kundenfeatures als Module** mit Schalter pro Instanz. Ziel "Demo" = vollstaendig funktionierende App beim ersten Kunden (Siemens), geliefert in Stufen 1–4; Ziel Uebergabe Stufe 2 (ca. W12) [A], Vollzeit Matt [A]. Bedrock und Exoscale-Managed sind dauerhaft ersetzt, nicht nur verschoben. [?] PO: E27-Teil "Anfrageverstaendnis/Reranking/Antwort mit Quellen" (braucht Claude) von Stufe 3 auf Stufe 4 verschieben? Vorschlag: ja. Plan: `docs/plan/umsetzungsplan.html` (V2), Kosten/Preise: `docs/plan/kosten-und-preise.md` Abschnitt 00. Gestrichen bis nach der Demo: siehe Umsetzungsplan, Kasten "Gestrichen". Aenderungsliste fuer die Architektur: `07-analyse-b2b.md`. |
 
+Kurzbezeichnungen N1–N6 (in `07-analyse-b2b.md` und `05-tests.md` Kap. 12 verwendet, entsprechen E34–E37): **N1** B2B Single-Tenant (E34) · **N2** Compose-Paket, CH-VM oder On-Premise (E35) · **N3** nur Claude API extern, App ohne KI nutzbar (E36) · **N4** eine Codebasis, Module mit Schalter (E37) · **N5** Demo = fertige App beim ersten Kunden in Stufen 1–4 (E37) · **N6** Streichliste bis nach der Demo (Umsetzungsplan V2, Kasten "Gestrichen").
+
 ## Naechste Schritte (Stand 2026-11-09)
 
 Welle 4 laeuft auf Branch `welle-4-b2b`: Analyse (07-analyse-b2b.md), Umsetzung in 03-architektur/ADRs/Spine, Codex-Pruefung. Die Liste unten (2026-11-08) gilt nur noch, soweit sie nicht durch E34–E37 ueberholt ist (Mandanten, Bedrock, FR/IT, Exoscale entfallen fuer V1).
