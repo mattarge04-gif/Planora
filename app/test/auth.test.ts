@@ -52,6 +52,18 @@ describe("Login", () => {
     expect((await app.inject({ url: "/api/ich", headers: { cookie: b } })).statusCode).toBe(401);
     await post("/api/auth/change-password", { currentPassword: neu, newPassword: pw, revokeOtherSessions: true }, { cookie: cookie(await post("/api/auth/sign-in/email", { email, password: neu })) });
   });
+  it("PP7-1: Passwortwechsel ohne oder mit revokeOtherSessions=false wird abgelehnt, nichts aendert sich", async () => {
+    const a = cookie(await post("/api/auth/sign-in/email", { email, password: pw }));
+    const b = cookie(await post("/api/auth/sign-in/email", { email, password: pw }));
+    const neu = randomBytes(12).toString("base64url");
+    for (const body of [{ currentPassword: pw, newPassword: neu }, { currentPassword: pw, newPassword: neu, revokeOtherSessions: false }]) {
+      const r = await post("/api/auth/change-password", body, { cookie: a }, "192.0.2.11");
+      expect(r.statusCode).toBe(400);
+      expect(r.json().code).toBe("REVOKE_OTHER_SESSIONS_REQUIRED");
+    }
+    expect((await app.inject({ url: "/api/ich", headers: { cookie: b } })).statusCode).toBe(200);
+    expect((await post("/api/auth/sign-in/email", { email, password: neu })).statusCode).toBe(401);
+  });
   it("Sitzung laeuft absolut nach 12 h ab (expiresIn ohne Verlaengerung)", async () => {
     const c = cookie(await post("/api/auth/sign-in/email", { email, password: pw }));
     const s = (await db.pool.query("select expires_at, created_at from session order by created_at desc limit 1")).rows[0];

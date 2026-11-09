@@ -43,6 +43,10 @@ export function baueAuth(pool: pg.Pool, o: AuthOptionen) {
     // Passwort wird trotzdem gehasht (gleiches Zeitverhalten wie der Pfad "Benutzer unbekannt" in Better Auth).
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        // PP7-1: Passwortwechsel nur mit Entzug aller anderen Sitzungen (Spec §5)
+        if (ctx.path === "/change-password" && ctx.body?.revokeOtherSessions !== true) {
+          throw APIError.from("BAD_REQUEST", { code: "REVOKE_OTHER_SESSIONS_REQUIRED", message: "Passwortwechsel nur mit revokeOtherSessions: true" });
+        }
         if (ctx.path !== "/sign-in/email") return;
         const mail = typeof ctx.body?.email === "string" ? ctx.body.email.toLowerCase() : "";
         const r = await pool.query(`select ks.status from konto_status ks join "user" u on u.id = ks.benutzer_id where u.email = $1`, [mail]);
