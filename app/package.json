@@ -1,0 +1,25 @@
+{
+  "name": "planora-app",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "vitest run",
+    "migriere": "tsx src/db/migrator.ts"
+  },
+  "type": "module",
+  "dependencies": {
+    "@node-rs/argon2": "2.2.2",
+    "better-auth": "1.7.18",
+    "drizzle-orm": "0.45.4",
+    "fastify": "5.12.8",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "@types/pg": "8.23.1",
+    "embedded-postgres": "18.6.0-beta.19",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  },
+  "private": true
+}
