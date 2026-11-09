@@ -71,9 +71,10 @@ describe("Login", () => {
     await db.pool.query("update session set expires_at = now() - interval '1 second'");
     expect((await app.inject({ url: "/api/ich", headers: { cookie: c } })).statusCode).toBe(401);
   });
-  it("Rate-Limit wirkt auch unter NODE_ENV=test: 10 Login-Versuche / 15 min je IP, dann 429 (Speicher DB)", async () => {
+  it("Rate-Limit wirkt auch unter NODE_ENV=test: 10 Login-Fehlversuche / 15 min je IP, dann 429 (Speicher DB)", async () => {
     const ip = "203.0.113.7";
-    for (let i = 0; i < 10; i++) expect((await post("/api/auth/sign-in/email", { email, password: "falsch" + i }, {}, ip)).statusCode).toBe(401);
+    // verschiedene Konten, damit die IP-Sperre geprueft wird und nicht die Kontosperre (PP7-5)
+    for (let i = 0; i < 10; i++) expect((await post("/api/auth/sign-in/email", { email: `ip${i}@planora.invalid`, password: "falsch" }, {}, ip)).statusCode).toBe(401);
     const r = await post("/api/auth/sign-in/email", { email, password: pw }, {}, ip);
     expect(r.statusCode).toBe(429);
     expect(Number(r.headers["x-retry-after"])).toBeGreaterThan(14 * 60);
@@ -93,5 +94,33 @@ describe("Login", () => {
     const ip = "203.0.113.9";
     for (let i = 0; i < 3; i++) expect((await post("/api/auth/request-password-reset", { email: "niemand@planora.invalid" }, {}, ip)).statusCode).not.toBe(429);
     expect((await post("/api/auth/request-password-reset", { email: "niemand@planora.invalid" }, {}, ip)).statusCode).toBe(429);
+  });
+
+  it("PP7-5: Konto-Fehlversuchssperre 10 / 15 min, unabhaengig von der IP; danach 15 min gesperrt", async () => {
+    const m = "sperre@planora.invalid"; const p = randomBytes(12).toString("base64url");
+    await loeseSetupTokenEin(db.pool, await erzeugeSetupToken(db.pool), m, "Sperre", p);
+    for (let i = 0; i < 10; i++) expect((await post("/api/auth/sign-in/email", { email: m, password: "falsch" + i }, {}, `198.18.0.${i + 1}`)).statusCode).toBe(401);
+    const r = await post("/api/auth/sign-in/email", { email: m, password: p }, {}, "198.18.0.200");
+    expect(r.statusCode).toBe(429);
+    expect(Number(r.headers["x-retry-after"])).toBeGreaterThan(14 * 60);
+    expect(cookie(r)).not.toMatch(/session_token=[^;]+/);
+    // anderes Konto von derselben IP nicht betroffen
+    expect((await post("/api/auth/sign-in/email", { email, password: pw }, {}, "198.18.0.200")).statusCode).toBe(200);
+    // Sperre laeuft ab
+    await db.pool.query("update anmelde_fehlversuch set gesperrt_bis = now() - interval '1 second', fenster_start = now() - interval '16 minutes' where schluessel = $1", ["konto:" + m]);
+    expect((await post("/api/auth/sign-in/email", { email: m, password: p }, {}, "198.18.0.201")).statusCode).toBe(200);
+  });
+  it("PP7-5: unbekannte E-Mail wird gleich behandelt (keine Konto-Aufzaehlung)", async () => {
+    const m = "unbekannt@planora.invalid";
+    for (let i = 0; i < 10; i++) expect((await post("/api/auth/sign-in/email", { email: m, password: "falsch" }, {}, `198.18.1.${i + 1}`)).statusCode).toBe(401);
+    expect((await post("/api/auth/sign-in/email", { email: m.toUpperCase(), password: "falsch" }, {}, "198.18.1.200")).statusCode).toBe(429);
+  });
+  it("PP7-5: Zaehlung ist atomar: 20 parallele Fehlversuche → hoechstens 10 erreichen die Passwortpruefung", async () => {
+    const m = "parallel@planora.invalid"; const p = randomBytes(12).toString("base64url");
+    await loeseSetupTokenEin(db.pool, await erzeugeSetupToken(db.pool), m, "Parallel", p);
+    const r = await Promise.all(Array.from({ length: 20 }, (_, i) => post("/api/auth/sign-in/email", { email: m, password: "falsch" + i }, {}, `198.18.2.${i + 1}`)));
+    const codes = r.map((x) => x.statusCode).sort();
+    expect(codes.filter((c) => c === 401).length).toBe(10);
+    expect(codes.filter((c) => c === 429).length).toBe(10);
   });
 });

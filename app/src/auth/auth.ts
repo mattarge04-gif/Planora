@@ -1,5 +1,5 @@
 import { betterAuth, APIError, BASE_ERROR_CODES } from "better-auth";
-import { createAuthMiddleware } from "better-auth/api";
+import { createAuthMiddleware, isAPIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { pgTable, text, boolean, timestamp, integer, bigint } from "drizzle-orm/pg-core";
@@ -17,12 +17,22 @@ const verification = pgTable("verification", { id: text("id").primaryKey(), iden
 const rateLimit = pgTable("rate_limit", { id: text("id").primaryKey(), key: text("key").notNull().unique(), count: integer("count").notNull(), lastRequest: bigint("last_request", { mode: "number" }).notNull() });
 export const authSchema = { user, session, account, verification, rateLimit };
 
-/** Spec §5: Login 10 Versuche / 15 min, Reset 3 / h. Better Auth zaehlt je IP und Pfad (alle Versuche, nicht nur Fehlversuche). */
-export const RATE_LIMIT = { anmelden: { window: 900, max: 10 }, reset: { window: 3600, max: 3 } } as const;
+/**
+ * Better-Auth-Rate-Limit (zaehlt alle Anfragen je Client-IP und Pfad): Reset 3 / h (Spec §5); Anmeldung nur als
+ * Flutschutz 100 / 15 min [A]. Die Fehlversuchssperre 10 / 15 min je Konto und IP aus Spec §5 setzt die eigene Tabelle
+ * anmelde_fehlversuch um (Erfolge zaehlen dort nicht, Buero hinter einer NAT-IP wird nicht durch Erfolge gesperrt).
+ */
+export const RATE_LIMIT = { anmelden: { window: 900, max: 100 }, reset: { window: 3600, max: 3 } } as const;
 
 /** Interner Header mit der vertrauenswuerdigen Client-IP; registriereAuth ueberschreibt jeden vom Client gelieferten Wert. */
 export const CLIENT_IP_HEADER = "x-planora-client-ip";
 
+export const normalisiereEmail = (e: unknown) => (typeof e === "string" ? e.trim().toLowerCase() : "");
+/** Zaehlschluessel der Fehlversuchssperre: Konto (normalisierte E-Mail, auch unbekannte) und Client-IP aus registriereAuth. */
+const anmeldeSchluessel = (ctx: { body?: any; headers?: Headers; request?: Request }) => {
+  const ip = ctx.headers?.get(CLIENT_IP_HEADER) ?? ctx.request?.headers.get(CLIENT_IP_HEADER) ?? "unbekannt";
+  return [`konto:${normalisiereEmail(ctx.body?.email)}`, `ip:${ip}`];
+};
 /** Fehler des Triggers session_regeln (Konto nicht aktiv bei Sitzungsanlage) irgendwo in der cause-Kette? */
 const istKontoNichtAktiv = (e: unknown): boolean => {
   for (let x: any = e, i = 0; x && i < 5; x = x.cause, i++) if (typeof x.message === "string" && x.message.includes("konto_nicht_aktiv")) return true;
@@ -55,8 +65,6 @@ export function baueAuth(pool: pg.Pool, o: AuthOptionen) {
       customRules: { "/sign-in/*": RATE_LIMIT.anmelden, "/request-password-reset": RATE_LIMIT.reset },
     },
     logger: { disabled: true },
-    // Login-Sperre fuer Status != aktiv (gesperrt, zu_bestaetigen; Spec §5, §15.2): gleiche Antwort wie falsches Passwort,
-    // Passwort wird trotzdem gehasht (gleiches Zeitverhalten wie der Pfad "Benutzer unbekannt" in Better Auth).
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         // PP7-1: Passwortwechsel nur mit Entzug aller anderen Sitzungen (Spec §5)
@@ -64,12 +72,23 @@ export function baueAuth(pool: pg.Pool, o: AuthOptionen) {
           throw APIError.from("BAD_REQUEST", { code: "REVOKE_OTHER_SESSIONS_REQUIRED", message: "Passwortwechsel nur mit revokeOtherSessions: true" });
         }
         if (ctx.path !== "/sign-in/email") return;
-        const mail = typeof ctx.body?.email === "string" ? ctx.body.email.toLowerCase() : "";
-        const r = await pool.query(`select ks.status from konto_status ks join "user" u on u.id = ks.benutzer_id where u.email = $1`, [mail]);
+        // PP7-5: Fehlversuchssperre je Konto und IP, atomar reserviert vor der Passwortpruefung
+        const schluessel = anmeldeSchluessel(ctx);
+        const warte = (await pool.query("select anmeldung_reservieren($1) w", [schluessel])).rows[0].w as number;
+        if (warte > 0) throw new APIError("TOO_MANY_REQUESTS", { code: "ZU_VIELE_FEHLVERSUCHE", message: "Zu viele Fehlversuche. Bitte spaeter erneut versuchen." }, { "X-Retry-After": String(warte) });
+        // Login-Sperre fuer Status != aktiv (gesperrt, zu_bestaetigen; Spec §5, §15.2): gleiche Antwort wie falsches Passwort,
+        // Passwort wird trotzdem gehasht (gleiches Zeitverhalten wie der Pfad "Benutzer unbekannt" in Better Auth).
+        const r = await pool.query(`select ks.status from konto_status ks join "user" u on u.id = ks.benutzer_id where u.email = $1`, [normalisiereEmail(ctx.body?.email)]);
         if (r.rowCount === 1 && r.rows[0].status !== "aktiv") {
           await hashPasswort(String(ctx.body?.password ?? ""));
+          await pool.query("select anmeldung_abschliessen($1, false)", [schluessel]);
           throw APIError.from("UNAUTHORIZED", BASE_ERROR_CODES.INVALID_EMAIL_OR_PASSWORD);
         }
+      }),
+      after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/sign-in/email") return;
+        const erfolg = !isAPIError(ctx.context.returned) && !!ctx.context.newSession;
+        await pool.query("select anmeldung_abschliessen($1, $2)", [anmeldeSchluessel(ctx), erfolg]);
       }),
     },
     emailAndPassword: {
