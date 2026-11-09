@@ -79,15 +79,16 @@ type Modul = {
 
 **Schalten:** nur Rolle `betreiber`, auditiert. Einschalten verlangt aktive `braucht`-Module. **Abschalten mit Kaskade:** Der Betreiber sieht die abhaengigen aktiven Module und bestaetigt; alle werden in **einer** Transaktion abgeschaltet (z.B. `ki` → auch `interview_agent`, `extraktion`). Abschalten von `ki` folgt zusaetzlich §4.1.
 
-**Guard:** `modulAktiv(id)` = indizierter Read auf `modul_schalter` pro Anfrage/Jobstart, **kein Prozess-Cache**; DB-Fehler → geschlossen (503). Nicht gelieferte Module → 404. HTTP: vor Rechtepruefung → 404. Job-Start und jede Fortsetzung: Modul aktiv **und** aktuelle Rechte des Ausloesers, sonst `pausiert_modul` bzw. `abgelehnt_recht` (sichtbar, kein Retry-Loop). Latenz wird in Spike S13 (T2) gemessen.
+**Guard:** `modulAktiv(id)` = indizierter Read auf `modul_schalter` pro Anfrage/Jobstart, **kein Prozess-Cache**; DB-Fehler → geschlossen (503). Nicht gelieferte Module → 404. HTTP: vor Rechtepruefung → 404. Job-Start und jede Fortsetzung: Modul aktiv **und** aktuelle Rechte des Ausloesers, sonst `pausiert_modul` bzw. `abgelehnt_recht` (sichtbar, kein Retry-Loop). Gemessener Zuschlag p95 ≤ 1.1 ms bei 2000 Anfragen/20 parallel (lokal) [F, Spike S13 T2]; auf Zielhardware wiederholen.
 
 ### 4.1 Dispatch-Sperre externe Aufrufe (Befund 5, PP3-2)
 
 Korrektheit beruht auf einer **Zeilensperre**, nicht auf NOTIFY:
 1. Jeder externe Aufruf laeuft in `ExternDispatch.senden(ziel, auftrag)` innerhalb **einer** DB-Transaktion: `SELECT aktiv FROM modul_schalter WHERE modul_id='ki' FOR SHARE` (+ Wartungsflag, Budget-Reservierung). Ist das Modul aus → Abbruch ohne Request.
-2. Der Netzwerkaufruf wird **innerhalb dieser Transaktion** gestartet und abgewartet (Timeout ≤ 120 s [A]); das Ergebnis wird in derselben Transaktion als Entwurf gespeichert und erst dann committet. Die Share-Sperre bleibt ueber den ganzen Aufruf bestehen.
+2. Unmittelbar **vor dem fetch** und **vor dem Ergebnis-Commit** prueft der Aufruf zusaetzlich `abschaltung_angefordert` (Spike S13: ohne diese Pruefung entstehen bei totem Listener Requests/Ergebnisse zwischen (a) und (c)). Der Netzwerkaufruf wird **innerhalb dieser Transaktion** gestartet und abgewartet (Timeout ≤ 120 s [A]); das Ergebnis wird in derselben Transaktion als Entwurf gespeichert und erst dann committet. Die Share-Sperre bleibt ueber den ganzen Aufruf bestehen.
 3. **Abschalten** = (a) Eintrag `abschaltung_angefordert(modul, zeit)` committen (eigene Transaktion), (b) laufende Aufrufe brechen ab: Signal per NOTIFY **und** Polling dieses Eintrags alle 1 s durch jeden laufenden Aufruf (NOTIFY nur fuer Tempo, nicht fuer Korrektheit), (c) `UPDATE modul_schalter SET aktiv=false` – wartet, bis alle Share-Sperren frei sind, und committet.
 4. Garantie: Nach dem Commit von (c) haelt keine Transaktion mehr eine Share-Sperre, und jede neue sieht `aktiv=false` → **0 Requests nach Abschalt-Commit**, und kein Ergebnis wird danach uebernommen. Abgebrochene Aufrufe werden als `abgebrochen_modul_aus` protokolliert (eigene kurze Transaktion).
+Gemessen [F, Spike S13 T3, 6 Varianten × 50 Laeufe]: 0 Requests und 0 Ergebnisse nach Abschalt-Commit; Dauer bis Commit p50 2 ms mit Listener, bis 0.83 s ohne. Das fruehere NOTIFY-Design (V1) verletzte die Garantie (bis 10 Verstoesse bei 20 parallelen Aufrufen).
 5. Parallelitaet begrenzt: max. 5 gleichzeitige externe Aufrufe pro Instanz [A] (je eine DB-Verbindung). Listener-Ausfall verlangsamt nur das Abschalten (Polling), verletzt die Garantie nicht.
 6. Wartende Jobs → `pausiert_modul`; Entwuerfe bleiben unbestaetigt; Reaktivierung setzt fort mit erneuter Modul- und Rechtepruefung.
 
@@ -95,7 +96,9 @@ Korrektheit beruht auf einer **Zeilensperre**, nicht auf NOTIFY:
 
 **Auth-Konfigurationsvertrag** (Better Auth 1.7.x, exakter Pin im Scaffold; jede Zeile im Spike S13/T1 bzw. Scaffold-Test nachzuweisen) [A, Quellen 09 §1]:
 - `emailAndPassword: { enabled: true, disableSignUp: true, password: { hash, verify } /* Argon2id via @node-rs/argon2, OWASP-Minimum 19 MiB/2/1 */, revokeSessionsOnPasswordReset: true, sendResetPassword: <Hook> }`
-- Drizzle-Adapter mit `transaction: true`; DB-Sessions, **kein Cookie-Cache**.
+- Drizzle-Adapter mit `transaction: true`; DB-Sessions, **kein Cookie-Cache**. Widerruf per DB wirkt bei der naechsten Anfrage (401) [F, Spike S13 T1].
+- `changePassword` immer mit `revokeOtherSessions: true` (sonst kein Widerruf) [F, Spike S13 T1].
+- **Achtung Tests:** Better Auth schaltet die Origin-Pruefung unter `NODE_ENV=test` standardmaessig ab; Testkonfiguration setzt `disableOriginCheck: false` explizit [F, Spike S13 T1].
 - Session: **absolut 12 h** ueber `expiresIn` ohne Verlaengerung (`updateAge` ≥ `expiresIn`, im Spike zu bestaetigen); **Leerlauf 30 min** ueber eigene Spalte `zuletzt_aktiv` im Planora-Hook, Pruefung bei jeder Anfrage.
 - Rate-Limit: Speicher DB; Login 10 Fehlversuche / 15 min pro Konto und IP → Sperre 15 min [A]; Reset-Anfragen 3 / h.
 - Origin-Allowlist + Header `X-Planora-Request` fuer alle schreibenden Routen; `disableCSRFCheck`/`disableOriginCheck` aus.
