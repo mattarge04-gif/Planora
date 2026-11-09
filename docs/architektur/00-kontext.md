@@ -76,6 +76,7 @@ Grund fuer Pause: Abo-Nutzungsvolumen knapp. Wiederaufnahme hier:
    - 3D: InstancedMesh als Standard, 2D-Fallback bei Software-Renderer (E-T2, E-T3).
    - Kritische/hohe Befunde aus 04-review.md schliessen, soweit V1 betroffen (K01 Upload zwingend; K02 entfaellt mit E24).
    - Test-Empfehlungen E-T1, E-T5, E-T6, E-T8, E-T9, E-T10 aus 05-tests.md Kap. 1.3 einarbeiten.
+   - Bausteine-Abgleich `06-bausteine-open-source.md` einarbeiten (Uppy-Multipart schliesst K01, Gotenberg/Docling Serve fuer Viewer und docproc, pgvector fuer Suche, React-Konva fuer Grundriss).
    - Architekturkarte (E30) gegenpruefen: API-Pfade, Suche, Hinweise; Reihenfolge an Demo-Schnitt (E28) anpassen.
 2. **Codex-Review** nur der Korrekturen.
 3. **Bereitschafts-Check**, dann Spec (`docs/superpowers/specs/`) und Umsetzungsplan mit Ressourcen (writing-plans).
