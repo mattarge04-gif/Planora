@@ -94,14 +94,14 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">Planora · Umsetzungsplan V1 · Stand 08.11.2026</div>
-  <h1>Vom Architekturentwurf zum Pilot bei Manor und Siemens</h1>
-  <p><b>Variante: schnell und schlank.</b> Demo zuerst als durchgehender Schnitt mit den Lindenhof-Testdaten, Module parallel mit Agenten, fertige Bausteine statt Eigenbau, externe Hilfe nur wo unersetzbar. Grundlage: Architektur und Entscheide E1–E28 in <span class="mono">docs/architektur/</span>. Kern von V1: klickbares 3D-Modell, Dokumente direkt im Browser, KI-Erfassung und intelligente Suche. Kosten und Investitionsplan folgen später als Zusatzmodul. Alle Dauern sind Schätzungen <span class="tag">[A]</span>, Woche 1 = Start nach Freigabe der Architektur.</p>
+  <div class="eyebrow">Planora · Umsetzungsplan V2 · Stand 09.11.2026</div>
+  <h1>Bis zur fertigen App bei Siemens, in Modulen</h1>
+  <p><b>Modell B2B, eine Instanz pro Kunde (E34–E37):</b> Jeder Kunde bekommt einen eigenen Server mit eigener App, als Docker-Compose-Paket, gehostet von uns in der Schweiz oder On-Premise beim Kunden. Eine Codebasis; jedes Kundenfeature wird ein Modul mit Schalter. Externe Abhängigkeit nur die Claude API, alles andere Open Source und selbst gehostet. Die „Demo“ ist die vollständig funktionierende App beim ersten Kunden. Lieferung in Stufen: jede Stufe ist eine lauffähige Version. Annahme: Matt Vollzeit ≈ 5 PT/Woche <span class="tag">[A]</span>, bei Halbzeit verdoppeln sich alle Wochen. Woche 1 = Start nach Freigabe M0.</p>
   <div class="facts">
-    <div class="fact"><b class="mono">≈ 28 Wochen</b><span>bis Pilotstart, rund 6–7 Monate</span></div>
-    <div class="fact"><b class="mono">W7</b><span>erste klickbare Demo für den Verkauf</span></div>
-    <div class="fact"><b class="mono">≈ 130 PT</b><span>Matt mit Claude Code und parallelen Agenten</span></div>
-    <div class="fact"><b class="mono">≈ 13 PT</b><span>externe Hilfe, ca. CHF 10–25k [A]</span></div>
+    <div class="fact"><b class="mono">W9–10</b><span>Stufe 1: 3D + Dokumente, Erfassung per Formular</span></div>
+    <div class="fact"><b class="mono">W11</b><span>Stufe 2 (Ziel Übergabe Siemens): + Lebensdauer &amp; Ampel [A]</span></div>
+    <div class="fact"><b class="mono">W19</b><span>Stufe 4: alles inkl. Suche und KI</span></div>
+    <div class="fact"><b class="mono">≈ 93 PT</b><span>Matt mit Claude Code und Agenten, ±30 % [A]</span></div>
   </div>
 </header>
 
@@ -121,12 +121,11 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
 <section>
   <h2>Meilensteine</h2>
   <div class="miles">
-    <div class="mile"><span class="w">M0 · Woche 2</span><h3>Architektur freigegeben</h3><p>Überarbeitung Welle 4, Codex-Review, Spec und Detailplan stehen. Danach wird gebaut.</p></div>
-    <div class="mile"><span class="w">M1 · Woche 7</span><h3>Demo „3D + Dokumente“</h3><p>Lindenhof als klickbares 3D-Modell, Klick auf Element öffnet das Datenblatt im Browser. Ein Mandant, kein SSO, keine KI. Damit kann der Chef verkaufen.</p></div>
-    <div class="mile"><span class="w">M2 · Woche 12</span><h3>Fundament läuft</h3><p>Exoscale mit Backups, Login mit SSO, Mandanten getrennt, sicherer Upload.</p></div>
-    <div class="mile"><span class="w">M3 · Woche 18</span><h3>KI erfasst das Gebäude</h3><p>Grundriss und Unterlagen hochladen, KI schlägt Räume und Elemente vor, Mensch bestätigt. Geprüft mit echten Pilotunterlagen.</p></div>
-    <div class="mile"><span class="w">M4 · Woche 25</span><h3>Pilotbereit</h3><p>Lebensdauer mit Ampel, Suche, DE/FR/IT, 2D-Ansicht, Pentest bestanden, Wiederherstellung geübt.</p></div>
-    <div class="mile"><span class="w">M5 · Woche 28</span><h3>Pilot läuft</h3><p>Erstes echtes Gebäude bei Manor oder Siemens erfasst und im Betrieb.</p></div>
+    <div class="mile"><span class="w">M0 · Woche 1</span><h3>Architektur auf B2B umgestellt</h3><p>Welle 4: Single-Tenant, Docker Compose, lokaler Login, Module mit Schaltern, Claude API. Codex-Review, Spec. Danach wird gebaut.</p></div>
+    <div class="mile"><span class="w">Stufe 1 · Woche 9–10</span><h3>3D + Dokumente</h3><p>Gebäude per Formular/Excel erfassen, Weltgenerator baut die 3D-Welt, Klick auf Element öffnet die Dokumente im Browser. Sicherer Upload, lokaler Login, Backups. Läuft auf einem Kundenserver.</p></div>
+    <div class="mile"><span class="w">Stufe 2 · Woche 11</span><h3>+ Lebensdauer &amp; Ampel</h3><p>Standardtabelle, Überschreiben pro Typ und Element, Zustand nach ZHAW, Ampel im 3D. <b>Vorgeschlagenes Ziel für die Übergabe an Siemens</b> [A]: ohne KI, ohne externe Abhängigkeit.</p></div>
+    <div class="mile"><span class="w">Stufe 3 · Woche 13</span><h3>+ Intelligente Suche</h3><p>Dateiname, Volltext und Inhalt. Embeddings lokal auf dem Server (Open Source) [A], Treffer springen in den Viewer. Als Update an Siemens.</p></div>
+    <div class="mile"><span class="w">Stufe 4 · Woche 19</span><h3>+ KI-Erfassung</h3><p>Interview-Agent und Auslesen der Datenblätter über die Claude API, Mensch bestätigt. Pro Instanz abschaltbar. Härtung und Wiederherstellung geübt.</p></div>
   </div>
 </section>
 
@@ -138,7 +137,7 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
   <div class="tscroll"><table>
     <thead><tr><th>#</th><th>Teilprojekt</th><th>Inhalt</th><th>Wochen</th><th>PT Matt</th><th>Hilfe von aussen</th><th>Risiko</th></tr></thead>
     <tbody id="tbody"></tbody>
-    <tfoot><tr><td></td><td>Total</td><td></td><td class="num">28 Wo</td><td class="num" id="sumMatt"></td><td class="num" id="sumExt"></td><td></td></tr></tfoot>
+    <tfoot><tr><td></td><td>Total</td><td></td><td class="num">19 Wo</td><td class="num" id="sumMatt"></td><td class="num" id="sumExt"></td><td></td></tr></tfoot>
   </table></div>
 </section>
 
@@ -154,98 +153,62 @@ footer{color:var(--muted);font-size:12.5px;display:grid;gap:4px}
   <div style="display:grid;gap:12px;align-content:start">
     <h2>Aufgaben für den Chef</h2>
     <ul class="clean">
-      <li><b>Bis W8:</b> echte TGA-Unterlagen vom Pilotkunden (Anlagelisten, Datenblätter, Revisionspläne). Ohne sie bleibt die KI-Genauigkeit unbewiesen.</li>
-      <li><b>Bis W8:</b> mit Jurist klären, ob KI-Verarbeitung in der EU für Manor und Siemens akzeptiert ist. Auftragsverarbeitungsvertrag vorbereiten.</li>
-      <li><b>W1–W6:</b> Bauteil-Katalog fachlich prüfen: welche 30–50 Typen braucht es zuerst?</li>
-      <li><b>W3–W18:</b> Lebensdauer-Standardtabelle pro Bauteiltyp aufbauen. Das ist Fachwissen und ein Kernstück des Produkts.</li>
-      <li><b>Ab W7:</b> Demo bei Pilotkunden zeigen, Rückmeldungen sammeln.</li>
-      <li><b>Vor W26:</b> Vertretung und Support-Regelung für Matt festlegen.</li>
+      <li><b>W1–W2:</b> Bei Siemens die IT-Freigabe anstossen (Security-Fragebogen, Hosting bei uns oder On-Premise, ev. Pentest-Pflicht). Das dauert erfahrungsgemäss Wochen bis Monate [A] und liegt nicht in Matts Hand.</li>
+      <li><b>W1–W4:</b> Bauteil-Katalog fachlich prüfen: welche 30–50 Typen braucht es zuerst?</li>
+      <li><b>W2–W10:</b> Lebensdauer-Standardtabelle pro Bauteiltyp. Wird für Stufe 2 gebraucht.</li>
+      <li><b>Bis W12:</b> echte TGA-Unterlagen von Siemens. Ohne sie ist die KI-Erfassung (Stufe 4) nicht prüfbar.</li>
+      <li><b>Bis W14:</b> mit Jurist klären, ob Siemens die Claude API (Anthropic, Datenfluss ausserhalb CH) akzeptiert; sonst bleibt KI bei Siemens ausgeschaltet.</li>
+      <li><b>Laufend:</b> Vertrag pro Kunde inkl. „sein“ Feature (wird Modul im Produkt), Vertretung und Support für Matt regeln.</li>
     </ul>
   </div>
   <div style="display:grid;gap:12px;align-content:start">
     <h2>Was den Plan verschieben kann</h2>
     <ul class="clean">
-      <li><b>Echte Unterlagen sind schwieriger als Lindenhof.</b> Puffer: KI-Teilprojekte haben je eine Woche Reserve, Korrektur-Editor ist Pflicht.</li>
-      <li><b>3D auf schwachen Firmen-Laptops.</b> 2D-Ansicht ist eingeplant, Messung auf echtem Kundengerät früh machen.</li>
-      <li><b>Juristische Klärung KI in der EU.</b> Fällt sie negativ aus, braucht es eine KI-freie Variante oder ein Modell in der Schweiz.</li>
-      <li><b>Matt fällt aus.</b> Ein Entwickler ist der grösste Engpass. Laufender Code-Review durch Externe macht den Code für eine Vertretung lesbar.</li>
-      <li><b>Scope wächst.</b> Kosten, Investitionsplan, Wartung und Tickets bleiben bewusst draussen bis nach dem Pilot.</li>
+      <li><b>IT-Freigabe bei Siemens.</b> Die App kann fertig sein, bevor sie auf deren Server darf. Früh anstossen, On-Premise-Anforderungen früh kennen.</li>
+      <li><b>Viele Instanzen = viele Updates.</b> Jede Instanz muss Updates und Datenbank-Migrationen sicher bekommen. Update-Ablauf und Backup pro Instanz sind Teil von M1, nicht später.</li>
+      <li><b>3D auf schwachen Firmen-Laptops.</b> Leistungsstufen normal/schwach/2D aus Spike S3b, Messung auf echtem Siemens-Gerät früh machen.</li>
+      <li><b>Kundenfeature sprengt den Plan.</b> Jedes Feature wird separat geschätzt und bezahlt, kommt als Modul nach Stufe 2 und verschiebt den Rest sichtbar.</li>
+      <li><b>Matt fällt aus.</b> Ein Entwickler ist der grösste Engpass. Codex prüft laufend, Doku und Spec machen den Code für eine Vertretung lesbar.</li>
     </ul>
   </div>
 </section>
 
-<div class="note">Vorherige Variante (alles nacheinander, viel externe Hilfe): 42 Wochen, CHF 70–145k extern. Diese Variante tauscht Geld gegen Matts Zeit und Agenten. Nicht beschleunigbar bleiben echte Pilotunterlagen, KI-Prüfung damit, Pentest, juristische Klärung und der Pilot selbst <span class="tag">[A]</span>. REA hilft erst nach dem Pilot bei Importen aus Bestandssystemen.</div>
+<div class="note"><b>Gestrichen bis nach der Demo</b> (kommt bei Bedarf als Kundenmodul): Mandantentrennung mit RLS, Keycloak + Microsoft-SSO, Exoscale-Managed-Dienste, AWS Bedrock, öffentliche APIs aus E32 (geo.admin/GWR, Nager.Date, Pwned Passwords), Raumerkennung aus Grundriss (ersetzt durch Interview/Formular), FR/IT, Tolgee, GlitchTip, Uptime Kuma, cosign, Renovate, OWASP ZAP. Kosten und Investitionsplan bleiben draussen (E24). Vorher: V1 „schnell und schlank“ mit Pilot W28 und ≈ 130 PT.</div>
 
 <footer>
-  <span>Kosten: docs/plan/kosten-und-preise.md. Quellen: docs/architektur/00-kontext.md (E1–E28), 03-architektur.md, 04-review.md, 05-tests.md, Spikes S1–S12.</span>
+  <span>Kosten: docs/plan/kosten-und-preise.md. Quellen: docs/architektur/00-kontext.md (E1–E37), 07-analyse-b2b.md, 03-architektur.md, 04-review.md, 05-tests.md.</span>
   <span>[A] = Annahme oder Schätzung, vor Verbindlichkeit prüfen. Preise und Tagessätze nicht nachgeschlagen.</span>
 </footer>
 </div>
 
 <script>
-const W = 28;
-// [id, name, inhalt, start, dauer, ptMatt, phase, risk, help:[{who,type,start,dur,pt,label}]]
+const W = 19;
+// Module M0-M11 (Schaetzung [A], Vollzeit ~5 PT/Woche)
 const P = [
- {ph:"Phase 0 · Planung abschliessen"},
- {id:"P0",n:"Architektur abschliessen",d:"Welle 4: Überarbeitung auf E23–E28, Codex-Review der Korrekturen, Spec, Detailplan mit Aufgaben",s:1,w:2,pt:8,r:"tief",h:[{t:"chef",s:1,w:8,label:"Pilotunterlagen + Jurist"}]},
- {ph:"Phase 1 · Demo-Schnitt"},
- {id:"D1",n:"Demo: 3D + Dokument-Viewer",d:"Kern-Datenmodell, Welt-Regelwerk v1 und Weltgenerator, Lindenhof als Welt, Look mit Glas-Geschossen und Pins, Bauteil-Modelle im Detail, Klick öffnet Panel, PDF.js-Viewer mit Seitensprung. Ein Mandant, kein SSO, keine KI",s:3,w:5,pt:22,r:"mittel",h:[{t:"chef",s:1,w:6,label:"Katalog prüfen"}]},
- {id:"D2",n:"Bauteil-Bibliothek 3D",d:"30–50 Bauteile im Ton-Look mit Blender-MCP, CC0-Modelle wo passend, GLB komprimiert. Läuft als paralleler Agent",s:3,w:4,pt:3,r:"tief",h:[]},
- {ph:"Phase 2 · Fundament"},
- {id:"D3",n:"Interview-Agent",d:"Kunde beschreibt Gebäude, Geschosse, Einheiten und Bauteile im Gespräch (Claude, geschlossenes Schema) oder per Formular/Excel; 3D-Vorschau, Bestätigen, Golden Set Interviews",s:8,w:3,pt:12,r:"mittel",h:[{t:"chef",s:8,w:2,label:"Regelwerk v1 prüfen"}]},
- {id:"F1",n:"Server & Betrieb",d:"Exoscale, Datenbank, Speicher, Container, automatisches Deployment, Backups, Überwachung",s:8,w:1,pt:5,r:"mittel",h:[{t:"ext",s:8,w:1,pt:2,label:"DevOps-Check"}]},
- {id:"F2",n:"Login, Mandanten, Rechte",d:"Keycloak mit Microsoft-SSO, RLS mit Grenztests, Rollen, Audit-Log",s:9,w:3,pt:14,r:"hoch",h:[{t:"ext",s:10,w:2,pt:2,label:"Review Sicherheit"}]},
- {id:"F3",n:"Sicherer Upload",d:"Quarantäne, Virenscan auf denselben Bytes (K01), Umwandlung Word→PDF und TIFF, Vorschau",s:12,w:1,pt:6,r:"hoch",h:[{t:"ext",s:12,w:1,pt:1,label:"Review Upload"}]},
- {ph:"Phase 3 · KI-Erfassung"},
- {id:"K1",n:"Grundriss → Räume",d:"Vektor-PDF auslesen, Claude Vision für Scans, Korrektur-Editor, manueller Fallback",s:13,w:2,pt:10,r:"hoch",h:[]},
- {id:"K2",n:"KI-Auslesen der Unterlagen",d:"Docling und OCR, Claude über Bedrock, Prüfer für Zitate und Katalog-IDs, Bestätigungs-Ansicht, Kostenbremse, Golden Set mit echten Pilotunterlagen",s:15,w:4,pt:18,r:"hoch",h:[]},
- {ph:"Phase 4 · Nutzen für das FM"},
- {id:"N1",n:"Lebensdauer & Ampel",d:"Standardtabelle, Überschreiben pro Typ und Element, Zustand nach ZHAW, Ampel im 3D, E-Mail-Hinweise",s:19,w:2,pt:9,r:"mittel",h:[{t:"chef",s:3,w:16,label:"Lebensdauer-Tabelle"}]},
- {id:"N2",n:"Intelligente Suche",d:"Dateiname, Volltext und Inhalt (pgvector), KI versteht die Frage, Treffer springen in den Viewer",s:21,w:2,pt:10,r:"mittel",h:[{t:"ext",s:19,w:4,pt:1,label:"Gegenlesen FR/IT"}]},
- {id:"N3",n:"Feinschliff & 2D-Ansicht",d:"DE/FR/IT komplett, 2D-Ansicht für Laptops ohne Grafikkarte, Design-Skills für den letzten Schliff",s:23,w:1,pt:5,r:"tief",h:[]},
- {ph:"Phase 5 · Härtung und Pilot"},
- {id:"H1",n:"Tests & Pentest",d:"Mandanten-Grenztests, Lasttest 20'000 Elemente, Wiederherstellung üben, OWASP ZAP, externer Pentest",s:24,w:2,pt:8,r:"mittel",h:[{t:"ext",s:24,w:2,pt:6,label:"Pentest"}]},
- {id:"H2",n:"Pilot Manor / Siemens",d:"Gebäude erfassen, Schulung, Rückmeldungen umsetzen, Support",s:26,w:3,pt:12,r:"mittel",h:[{t:"chef",s:26,w:3,label:"Kundenbetreuung"}]},
-];
-const P_ALT = [
- {ph:"Phase 1 · Fundament"},
- {id:"P1",n:"Server & Betrieb",d:"Exoscale-Konto, Datenbank, Speicher, Container, Umgebungen Test/Produktion, automatisches Deployment, Backups, Überwachung",s:3,w:2,pt:10,r:"mittel",h:[{t:"ext",s:3,w:2,pt:6,label:"DevOps"}]},
- {id:"P2",n:"Backend-Grundgerüst",d:"Login mit Keycloak und Microsoft-SSO, Mandanten mit RLS, Rollen und Rechte, Audit-Log, API-Struktur der Module",s:5,w:4,pt:20,r:"hoch",h:[{t:"ext",s:5,w:4,pt:4,label:"Code-Review"}]},
- {id:"P3",n:"Datenmodell & Bauteil-Katalog",d:"Gebäude, Geschoss, Raum, Element, Elementtyp, Katalog-IDs mit ETIM-Mapping, Mehrsprachigkeit in der Datenbank",s:9,w:2,pt:10,r:"mittel",h:[{t:"chef",s:9,w:4,label:"Katalog prüfen"}]},
- {id:"P12",n:"Frontend-Rahmen & Design",d:"Designsystem, Navigation, Gebäudebaum, Seitenpanel, Formulare, DE/FR/IT-Grundlage",s:11,w:3,pt:15,r:"mittel",h:[{t:"ext",s:3,w:6,pt:10,label:"UX/UI-Design"}]},
- {ph:"Phase 2 · Kern: 3D und Dokumente"},
- {id:"P4",n:"Dokumentablage & Upload",d:"Sicherer Upload mit Quarantäne und Virenscan (Befund K01), Umwandlung Word→PDF und TIFF, Zuordnung zu Elementen",s:14,w:2,pt:10,r:"hoch",h:[]},
- {id:"P5",n:"Dokument-Viewer im Browser",d:"PDF.js mit Zoom und Suche, Bilder, Excel als Tabelle, Sprung zur Quellseite mit Markierung, kurzlebige Links",s:16,w:3,pt:13,r:"mittel",h:[]},
- {id:"P9",n:"Bauteil-Bibliothek 3D",d:"30–50 Bauteile im Ton-Look in Blender modellieren, als komprimierte GLB-Dateien exportieren",s:6,w:7,pt:3,r:"tief",h:[{t:"ext",s:6,w:7,pt:12,label:"3D-Artist"}]},
- {id:"P8",n:"3D-Welt & Interview",d:"Welt-Regelwerk, Weltgenerator, Look mit Glas-Geschossen, Pins und Bauteil-Modellen im Detail, Leistungsstufen + 2D-Ansicht, Interview-Agent mit Formular-Fallback",s:19,w:6,pt:30,r:"hoch",h:[{t:"ext",s:19,w:4,pt:4,label:"Three.js-Review"}]},
- {ph:"Phase 3 · KI-Erfassung"},
- {id:"P7",n:"Grundriss → Räume",d:"Vektor-PDF auslesen, Claude Vision für Scans, Korrektur-Editor zum Verschieben der Rechtecke, manueller Fallback",s:24,w:3,pt:15,r:"hoch",h:[]},
- {id:"P6",n:"KI-Auslesen der Unterlagen",d:"Dokumentdienst (Docling, OCR), Claude über Bedrock, Prüfer für Zitate und Katalog-IDs, Bestätigungs-Ansicht, Kostenbremse, Golden Set",s:27,w:5,pt:25,r:"hoch",h:[{t:"ext",s:27,w:2,pt:5,label:"Doc-AI-Berater"}]},
- {ph:"Phase 4 · Nutzen für das FM"},
- {id:"P11",n:"Lebensdauer & Ampel",d:"Standardtabelle, Überschreiben pro Typ und Element, Zustand nach ZHAW, Ampel im 3D, E-Mail-Hinweise",s:32,w:2,pt:10,r:"mittel",h:[{t:"chef",s:9,w:16,label:"Lebensdauer-Tabelle"}]},
- {id:"P10",n:"Intelligente Suche",d:"Suche nach Dateinamen, Volltext und Inhalt (z.B. „Funktionsbeschrieb“), Hybridsuche mit pgvector, KI versteht die Frage, Treffer springen in den Viewer",s:34,w:3,pt:15,r:"mittel",h:[{t:"ext",s:30,w:6,pt:3,label:"Übersetzung FR/IT"}]},
- {ph:"Phase 5 · Härtung und Pilot"},
- {id:"P13",n:"Tests, Sicherheit, Datenschutz",d:"Mandanten-Grenztests, Lasttest 20'000 Elemente, Wiederherstellung üben, Pentest, Datenschutz-Unterlagen",s:37,w:2,pt:10,r:"mittel",h:[{t:"ext",s:37,w:2,pt:7,label:"Pentest"}]},
- {id:"P15",n:"Pilot Manor / Siemens",d:"Gebäude erfassen, Schulung, Rückmeldungen umsetzen, Support",s:39,w:4,pt:16,r:"mittel",h:[{t:"chef",s:39,w:4,label:"Kundenbetreuung"}]},
+ {ph:"Phase 0 · Architektur"},
+ {id:"M0",n:"Architektur auf B2B",d:"Welle 4: Single-Tenant, Docker Compose, lokaler Login, Feature-Schalter, Claude API statt Bedrock. Codex-Review, Spec, Aufgabenliste",s:1,w:1,pt:4,r:"tief",h:[{t:"chef",s:1,w:2,label:"IT-Freigabe Siemens anstossen"}]},
+ {ph:"Stufe 1 · 3D + Dokumente"},
+ {id:"M1",n:"Server-Paket & Login",d:"Docker Compose (App, Postgres, Speicher, docproc, ClamAV), Installations- und Update-Skript mit Migrationen, Backup/Restore pro Instanz, lokaler Login mit Rollen, Feature-Schalter",s:2,w:2,pt:7,r:"mittel",h:[{t:"ext",s:3,w:1,pt:1,label:"DevOps-Check"}]},
+ {id:"M2",n:"3D-Welt",d:"Kern-Datenmodell, Welt-Regelwerk v1, deterministischer Weltgenerator, Glas-Geschosse, Pins, Bauteil-Modelle im Detail, Seitenpanel, Leistungsstufen normal/schwach/2D",s:3,w:3,pt:16,r:"hoch",h:[{t:"chef",s:1,w:4,label:"Katalog prüfen"}]},
+ {id:"M3",n:"Bauteil-Bibliothek 3D",d:"30–50 Bauteile im Ton-Look mit Blender-MCP, CC0 wo passend, GLB komprimiert. Paralleler Agent",s:3,w:3,pt:3,r:"tief",h:[]},
+ {id:"M4",n:"Dokument-Viewer",d:"PDF.js mit Seitensprung und Markierung, Bilder, Excel als Tabelle, Word→PDF über Gotenberg",s:6,w:1,pt:6,r:"mittel",h:[]},
+ {id:"M5",n:"Sicherer Upload",d:"Uppy, Quarantäne, Virenscan auf denselben Bytes (K01), Typprüfung, Zuordnung zu Elementen",s:7,w:1,pt:5,r:"hoch",h:[{t:"ext",s:8,w:1,pt:1,label:"Review Upload/Login"}]},
+ {id:"M6",n:"Erfassung per Formular/Excel",d:"Gebäude, Geschosse, Einheiten, Bauteile ohne KI erfassen, Excel-Import, 3D-Vorschau, Bestätigen",s:8,w:1,pt:4,r:"mittel",h:[]},
+ {id:"I1",n:"Installation Stufe 1",d:"Paket auf Kundenserver (bei uns oder On-Premise) installieren, Restore-Probe, Kurzschulung",s:9,w:1,pt:3,r:"mittel",h:[]},
+ {ph:"Stufe 2 · Lebensdauer (Ziel Übergabe Siemens)"},
+ {id:"M7",n:"Lebensdauer & Ampel",d:"Standardtabelle, Überschreiben pro Typ und Element, Zustand nach ZHAW, Ampel im 3D und als Liste",s:10,w:2,pt:8,r:"mittel",h:[{t:"chef",s:2,w:9,label:"Lebensdauer-Tabelle"}]},
+ {ph:"Stufe 3 · Suche"},
+ {id:"M8",n:"Intelligente Suche",d:"Dateiname, Volltext (Postgres), Inhalt mit pgvector, Embeddings lokal (bge-m3 o.ä. [A]), Treffer springen in den Viewer",s:12,w:2,pt:9,r:"mittel",h:[]},
+ {ph:"Stufe 4 · KI-Erfassung (Claude API, pro Instanz abschaltbar)"},
+ {id:"M9",n:"Interview-Agent",d:"Kunde beschreibt Gebäude im Gespräch, geschlossenes Schema, Weltgenerator baut, Golden Set Interviews",s:14,w:2,pt:8,r:"mittel",h:[{t:"chef",s:12,w:3,label:"Jurist Claude API"}]},
+ {id:"M10",n:"KI liest Datenblätter",d:"Docling + OCR, Claude API, Prüfer für Zitate und Katalog-IDs, Bestätigungs-Ansicht, Kostenbremse, Golden Set mit echten Siemens-Unterlagen",s:16,w:3,pt:14,r:"hoch",h:[{t:"chef",s:8,w:5,label:"TGA-Unterlagen"}]},
+ {id:"M11",n:"Härtung & Update",d:"Tests, Lasttest 20'000 Elemente, Wiederherstellung üben, Update-Probe auf Instanz, ev. Pentest falls Siemens verlangt",s:19,w:1,pt:6,r:"mittel",h:[{t:"ext",s:19,w:1,pt:6,label:"Pentest (falls verlangt)"}]},
 ];
 const EXT = [
- {n:"Security-Pentest (Firma)",prio:"must",when:"W24–W25",pt:"5–8 PT · CHF 5–8k",why:"Enterprise-Kunden verlangen einen unabhängigen Nachweis. Vorher OWASP ZAP und security-review-Skill, damit der Auftrag klein bleibt."},
- {n:"Jurist Datenschutz",prio:"must",when:"W1–W8",pt:"1–2 h · CHF 1–2k",why:"Auftragsverarbeitungsvertrag und KI in der EU, mit Vorlagen statt Tagen."},
- {n:"Review Login, Mandanten, Upload",prio:"must",when:"W10–W12",pt:"3–4 PT · CHF 3–5k",why:"Ein Mensch prüft die drei Stellen, an denen ein Fehler einen Kunden kostet. Den Rest prüfen Codex und Claude."},
- {n:"DevOps-Check",prio:"should",when:"W8",pt:"1–2 PT · CHF 1–2k",why:"Backups und Wiederherstellung von einem Profi prüfen lassen."},
- {n:"Gegenlesen FR/IT",prio:"can",when:"W19–W22",pt:"≈ 1 PT · CHF 0.5–1k",why:"Claude übersetzt, eine Muttersprachperson liest gegen."},
- {n:"Reserve 3D / Design",prio:"can",when:"bei Bedarf",pt:"0–3 PT · CHF 0–3.5k",why:"Nur falls der 3D-Viewer oder das Design festsitzt."},
-];
-const EXT_ALT = [
- {n:"UX/UI-Designer",prio:"must",when:"W3–W8",pt:"8–12 PT",why:"Das 3D-Modell und das Seitenpanel sind das Verkaufsargument. Ein Profi legt Look, Abläufe und Komponenten fest, bevor gebaut wird."},
- {n:"Security-Pentest (Firma)",prio:"must",when:"W37–W38",pt:"5–8 PT",why:"Enterprise-Kunden verlangen einen unabhängigen Nachweis. Intern nicht ersetzbar."},
- {n:"Jurist Datenschutz",prio:"must",when:"W1–W10",pt:"2–4 PT",why:"KI-Verarbeitung in der EU, Auftragsverarbeitungsvertrag, revDSG. Klärt der Chef mit dem Juristen."},
- {n:"Code-Reviewer (laufend)",prio:"must",when:"ab W5, alle 2 Wochen",pt:"≈ 20 PT",why:"Ein zweites Paar Augen auf Sicherheit und Mandantentrennung. Macht den Code für eine Vertretung verständlich."},
- {n:"Three.js-Spezialist",prio:"should",when:"W19–W22",pt:"10–15 PT",why:"Performance, Instancing, Kamera und Pins sind Spezialwissen. Spart Matt rund 3 Wochen."},
- {n:"3D-Artist (Blender)",prio:"should",when:"W6–W12",pt:"10–15 PT",why:"Einheitlicher Ton-Look der 30–50 Bauteile. Alternative: Matt modelliert selbst mit Blender-MCP, dann +3 Wochen."},
- {n:"DevOps / Cloud",prio:"should",when:"W3–W4, W37",pt:"5–8 PT",why:"Sauberer Server-Aufbau, Backups und Wiederherstellungsübung. Danach betreibt Matt selbst."},
- {n:"Doc-AI-Berater",prio:"can",when:"W27–W28",pt:"3–5 PT",why:"Nur falls echte Unterlagen die KI-Genauigkeit drücken. Optimiert OCR und Prompts."},
- {n:"Übersetzung FR/IT",prio:"can",when:"W30–W36",pt:"≈ 3 PT",why:"Oberfläche und Katalognamen auf Französisch und Italienisch."},
+ {n:"Jurist Datenschutz",prio:"must",when:"W12–W14",pt:"1–2 h · CHF 1–2k",why:"Vertragsvorlagen pro Kunde (Hosting oder On-Premise) und ob die Claude API für Siemens akzeptiert ist."},
+ {n:"Review Login und Upload",prio:"should",when:"W8",pt:"1–2 PT · CHF 1–3k",why:"Ein Mensch prüft die zwei Stellen, an denen ein Fehler den Kunden trifft. Mandanten-Review entfällt (eine Instanz pro Kunde)."},
+ {n:"DevOps-Check",prio:"should",when:"W3",pt:"≈ 1 PT · CHF 1k",why:"Install-, Update- und Backup-Ablauf pro Instanz von einem Profi prüfen lassen."},
+ {n:"Security-Pentest (Firma)",prio:"can",when:"vor Produktivdaten",pt:"5–8 PT · CHF 5–8k",why:"Nur falls Siemens ihn verlangt. Bei On-Premise prüft oft die Kunden-IT selbst [A]."},
 ];
 const RISK = {tief:"no",mittel:"ext",hoch:"warn"};
 const pct = w => (w/W*100)+"%";
@@ -253,7 +216,7 @@ const g = document.getElementById("gantt");
 let html = '<div class="gl" style="border-bottom:1px solid var(--line)"><span class="eyebrow">Teilprojekt</span></div><div class="gaxis">';
 for(let w=1; w<=W; w+=4){ html += `<span style="left:${pct(w-0.5)}">W${w}</span>`; }
 html += '</div>';
-const MS = [[2,"M0"],[7,"M1 Demo"],[12,"M2"],[18,"M3 KI"],[25,"M4"],[28,"M5 Pilot"]];
+const MS = [[1,"M0"],[9,"Stufe 1"],[11,"Stufe 2"],[13,"Stufe 3"],[19,"Stufe 4"]];
 let firstRow = true;
 for(const p of P){
   if(p.ph){ html += `<div class="gphase">${p.ph}</div>`; continue; }
@@ -276,7 +239,7 @@ for(const p of P){
 }
 tb.innerHTML = rows;
 document.getElementById("sumMatt").textContent = sumM+" PT";
-document.getElementById("sumExt").textContent = "≈ "+(sumE+1)+" PT extern";
+document.getElementById("sumExt").textContent = "≈ "+sumE+" PT extern";
 // Externe
 const PR = {must:"Pflicht",should:"empfohlen",can:"optional"};
 document.getElementById("extgrid").innerHTML = EXT.map(e=>`<div class="card"><div class="row"><h3>${e.n}</h3><span class="prio ${e.prio}">${PR[e.prio]}</span></div><div class="row mono" style="font-size:12.5px;color:var(--muted)"><span>${e.when}</span><span>${e.pt}</span></div><p class="why">${e.why}</p></div>`).join("");

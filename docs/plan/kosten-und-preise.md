@@ -1,8 +1,38 @@
-# Planora: Kosten, Investition, Preise (Stand 2026-11-08)
+# Planora: Kosten, Investition, Preise (Stand 2026-11-09)
 
 Kennzeichnung: [F] Fakt mit Quelle, [A] Annahme/Schaetzung. Alle Betraege CHF, ohne MWST.
 
-## 0. Gueltige Variante: schnell und schlank (PO-Entscheid E28, 2026-11-08)
+## 00. Gueltig ab 2026-11-09: B2B, eine Instanz pro Kunde (E34–E37)
+
+Jeder Kunde bekommt einen eigenen Server mit eigener App (Docker-Compose-Paket), gehostet von uns in der Schweiz oder On-Premise beim Kunden. Eine Codebasis; ein vom Kunden bezahltes Feature wird ein Modul im Produkt, pro Instanz einschaltbar. Einzige externe API: Claude API. Alle Zahlen in diesem Abschnitt sind **[A]**, nicht nachgeschlagen; vor einer Offerte pruefen.
+
+### Investition bis Stufe 2 (Uebergabe Siemens, ca. W11) bzw. Stufe 4 (ca. W19)
+
+| Posten | CHF [A] |
+|---|---|
+| Jurist (Vertragsvorlagen Hosting/On-Premise, Claude API) | 1'000–2'000 |
+| Review Login + Upload (1–2 PT) | 1'000–3'000 |
+| DevOps-Check Install/Update/Backup (≈ 1 PT) | ≈ 1'000 |
+| Pentest, nur falls vom Kunden verlangt | 0–8'000 |
+| Sachkosten bis W19 (Test-VPS, Tools, KI-Tests, Versicherung) | 3'000–8'000 |
+| **Total** | **≈ 6'000–22'000** |
+
+Entfaellt gegenueber E28: Review Mandantentrennung, Gegenlesen FR/IT, Managed-Hosting Exoscale.
+
+### Preismodell pro Kunde (Vorschlag) [A]
+
+| Posten | Wann | Richtwert CHF [A] | Bemerkung |
+|---|---|---|---|
+| Einrichtung | einmalig | 5'000–15'000 | Installation, Erfassung der ersten Gebaeude, Schulung |
+| Kundenfeature | pro Feature | nach Aufwand (PT × Satz) | wird Modul im Produkt; Planora behaelt die Rechte, spaetere Kunden koennen es lizenzieren [?] |
+| Lizenz + Wartung | pro Jahr | 12'000–30'000 | Updates, Sicherheits-Patches, Support; Staffel nach Gebaeuden/Elementen |
+| Hosting durch uns | pro Monat | 150–400 | eigene VM in CH, Backups, Ueberwachung; entfaellt bei On-Premise |
+| KI-Nutzung | nach Verbrauch | Weiterverrechnung + Aufschlag | nur wenn KI-Modul eingeschaltet |
+
+- Laufende Kosten pro gehosteter Instanz: VM + Backup-Speicher ≈ CHF 40–120/Mt [A], plus Matts Zeit fuer Updates.
+- Wichtig fuer Vertraege: Rechte an Kundenfeatures, On-Premise-Pflichten (wer macht Backups, wer patcht), Update-Fenster.
+
+## 0. Fruehere Variante: schnell und schlank (PO-Entscheid E28, 2026-11-08) — ersetzt durch Abschnitt 00
 
 Matts Arbeitszeit zaehlt nicht als Kosten (arbeitet fuer sich selbst). Externe Hilfe nur wo nicht ersetzbar.
 

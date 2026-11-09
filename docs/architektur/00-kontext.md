@@ -69,7 +69,20 @@ Ablauf aus Kundensicht:
 | E32 | **Oeffentliche APIs verbindlich** (2026-11-09): geo.admin.ch (Adresssuche + Gebaeude- und Wohnungsregister GWR: EGID, Baujahr, Geschosse als bestaetigungspflichtige Vorschlaege), Nager.Date (Feiertage CH inkl. Kantone, jaehrlicher Import), Have I Been Pwned Pwned Passwords (lokale Keycloak-Konten). Nie Dokument- oder Personendaten an externe APIs. ADR 0025, Spine AD-22, `06-bausteine-open-source.md` Kap. 9. |
 | E33 | **Geschlossene 3D-Welt** (2026-11-09): Gebaeude- und Bauteilmodell bleiben, aber **sinngemaess** (schematisch, kein BIM). Ein versioniertes **Welt-Regelwerk** legt fest, wie die 3D-Welt aussieht, wie sie funktioniert und welche Elemente es gibt. Der Kunde beschreibt im **Interview** (Agent mit Claude oder Formular/Excel ohne KI) Gebaeude, Geschosse, Einheiten je Geschoss und technische Bauteile je Einheit; ein **deterministischer Weltgenerator** erzeugt daraus die Welt, der Kunde bestaetigt. Look wie Referenzbilder (Glas-Geschosse, Pins in der Uebersicht, Bauteil-Modelle im Detail), Leistungsstufen normal/schwach/2D (Spike S3b). ADR 0026, ADR 0008 angepasst, Spine AD-23/AD-24. |
 
-## Naechste Schritte (Stand Ende Sitzung 2026-11-08, noch NICHT gestartet)
+## Modellwechsel B2B (PO-Entscheid 2026-11-09)
+
+| # | Entscheid |
+|---|---|
+| E34 | **B2B, eine Instanz pro Kunde (Single-Tenant).** Jeder Kunde bekommt eigenen Server und eigene App. Ersetzt die Mandantenfaehigkeit aus E5/E7 fuer V1; RLS, Keycloak und Microsoft-SSO werden zurueckgestellt (spaeter Kundenmodul). V1: einfacher lokaler Login mit Rollen. |
+| E35 | **Betrieb als ein Docker-Compose-Paket**, Standard von uns gehostet (eigene VM in der Schweiz pro Kunde), auf Wunsch On-Premise beim Kunden mit demselben Paket. Self-Hosting und Open Source bevorzugt; ersetzt Exoscale-Managed-Dienste (ADR 0002). |
+| E36 | **KI nur ueber die Claude API** (direkt Anthropic), ersetzt Bedrock (ADR 0003). App funktioniert ohne KI (Formular/Excel). KI pro Instanz abschaltbar. Embeddings fuer die Suche lokal mit Open-Source-Modell [A]. Oeffentliche APIs aus E32 bis nach der Demo zurueckgestellt. |
+| E37 | **Eine Codebasis, Kundenfeatures als Module** mit Schalter pro Instanz. Ziel "Demo" = vollstaendig funktionierende App beim ersten Kunden (Siemens), geliefert in Stufen 1–4; Ziel Uebergabe Stufe 2 [A], Vollzeit Matt [A]. Plan: `docs/plan/umsetzungsplan.html` (V2), Kosten/Preise: `docs/plan/kosten-und-preise.md` Abschnitt 00. Gestrichen bis nach der Demo: siehe Umsetzungsplan, Kasten "Gestrichen". Aenderungsliste fuer die Architektur: `07-analyse-b2b.md`. |
+
+## Naechste Schritte (Stand 2026-11-09)
+
+Welle 4 laeuft auf Branch `welle-4-b2b`: Analyse (07-analyse-b2b.md), Umsetzung in 03-architektur/ADRs/Spine, Codex-Pruefung. Die Liste unten (2026-11-08) gilt nur noch, soweit sie nicht durch E34–E37 ueberholt ist (Mandanten, Bedrock, FR/IT, Exoscale entfallen fuer V1).
+
+## Naechste Schritte (Stand Ende Sitzung 2026-11-08)
 
 Grund fuer Pause: Abo-Nutzungsvolumen knapp. Wiederaufnahme hier:
 1. **Ueberarbeitungsauftrag an Architekt (Welle 4):** 03-architektur.md + ADRs an E23–E27 anpassen:
