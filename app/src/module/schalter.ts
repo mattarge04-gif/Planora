@@ -36,8 +36,12 @@ export async function schalteAus(pool: pg.Pool, id: ModulId, auditId: string) {
   } catch (e) { await c.query("rollback"); throw e; } finally { c.release(); }
 }
 export function registriereModulGuard(app: FastifyInstance, pool: pg.Pool, stufe: Stufe) {
+  // Fastify hat beim onRequest bereits geroutet: Zuordnung ueber das registrierte Routenmuster,
+  // nie ueber die rohe URL (sonst umgehen kodierte Segmente wie /api/%68inweise den Guard).
   app.addHook("onRequest", async (req, reply) => {
-    const m = modulFuerRoute(req.url); if (!m) return;
+    const route = req.routeOptions.url;
+    if (route === undefined) return; // keine Route gefunden: Router antwortet selbst mit 404
+    const m = modulFuerRoute(route); if (!m) return;
     if (m.lieferstufe > stufe) return reply.code(404).send({ fehler: "nicht gefunden" });
     if (m.art === "kern") return;
     let aktiv: boolean;

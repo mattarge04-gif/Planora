@@ -73,6 +73,21 @@ describe("Modul-Guard", () => {
     app.get("/api/hinweise/liste", async () => ({ ok: true }));
     expect((await app.inject("/api/hinweise/liste")).statusCode).toBe(503);
   });
+  it("PP8-1: kodierte Segmente umgehen den Guard nicht (inaktiv → 404, DB-Ausfall → 503)", async () => {
+    await db.pool.query("update modul_schalter set aktiv=false");
+    const app = server(2);
+    for (const url of ["/api/%68inweise/liste", "/api/hinweise/%6Ciste", "/%61pi/hinweise/liste", "/api/%68inweise"]) {
+      expect((await app.inject(url)).statusCode, url).toBe(404);
+    }
+    const kaputtApp = Fastify();
+    apps.push(kaputtApp);
+    registriereModulGuard(kaputtApp, { connect: async () => { throw new Error("db weg"); } } as any, 2);
+    kaputtApp.get("/api/hinweise/liste", async () => ({ ok: true }));
+    kaputtApp.get("/api/hinweise/:id/detail", async () => ({ ok: true }));
+    for (const url of ["/api/%68inweise/liste", "/api/%68inweise/7/detail"]) {
+      expect((await kaputtApp.inject(url)).statusCode, url).toBe(503);
+    }
+  });
   it("prueft auch einen SQL-Fehler und Modulwurzeln geschlossen", async () => {
     const app = server(2);
     await db.pool.query("alter table modul_schalter rename to modul_schalter_weg");
