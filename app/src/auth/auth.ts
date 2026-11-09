@@ -20,14 +20,18 @@ export const authSchema = { user, session, account, verification, rateLimit };
 /** Spec §5: Login 10 Versuche / 15 min, Reset 3 / h. Better Auth zaehlt je IP und Pfad (alle Versuche, nicht nur Fehlversuche). */
 export const RATE_LIMIT = { anmelden: { window: 900, max: 10 }, reset: { window: 3600, max: 3 } } as const;
 
-export type AuthOptionen = { baseURL: string; secret: string; sendeReset?: (email: string, url: string) => Promise<void> };
+/** Interner Header mit der vertrauenswuerdigen Client-IP; registriereAuth ueberschreibt jeden vom Client gelieferten Wert. */
+export const CLIENT_IP_HEADER = "x-planora-client-ip";
+
+export type AuthOptionen ={ baseURL: string; secret: string; sendeReset?: (email: string, url: string) => Promise<void> };
 export function baueAuth(pool: pg.Pool, o: AuthOptionen) {
   const db = drizzle(pool, { schema: authSchema });
   return betterAuth({
     baseURL: o.baseURL, secret: o.secret, trustedOrigins: [o.baseURL],
     database: drizzleAdapter(db, { provider: "pg", schema: authSchema, transaction: true }),
     session: { expiresIn: 43200, updateAge: 43200, cookieCache: { enabled: false } },
-    advanced: { disableOriginCheck: false, disableCSRFCheck: false },
+    // Client-IP nur aus dem von registriereAuth gesetzten Header (Quelle: req.ip), nie aus X-Forwarded-For des Clients (PP7-5)
+    advanced: { disableOriginCheck: false, disableCSRFCheck: false, ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] } },
     // Better Auth 1.7.18 (context/create-context.mjs): rateLimit.enabled-Default = isProduction -> explizit true, wirkt so auch unter NODE_ENV=test.
     // Eingebaute Sonderregel "/sign-in*" = 3 / 10 s ueberschreibt window/max -> eigene customRules (gehen den Sonderregeln vor).
     rateLimit: {

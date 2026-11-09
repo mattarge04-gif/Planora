@@ -9,10 +9,10 @@ import { registriereSitzungsregeln, setzeKontoStatus, entzieheSitzungen } from "
 const ORIGIN = "http://localhost:3999";
 let db: Awaited<ReturnType<typeof frischeDb>>; let app: FastifyInstance; let benutzerId: string;
 const pw = randomBytes(12).toString("base64url"); const email = "admin@planora.invalid";
-let ipNr = 0; // eigene IP je Login, damit das Login-Rate-Limit (10 / 15 min je IP) die Faelle nicht koppelt
-const post = (url: string, body: object, h: Record<string, string> = {}) => app.inject({ method: "POST", url, headers: { "content-type": "application/json", origin: ORIGIN, ...h }, payload: JSON.stringify(body) });
+let ipNr = 0; // eigene Socket-Adresse je Login, damit das Login-Rate-Limit (10 / 15 min je IP) die Faelle nicht koppelt
+const post = (url: string, body: object, h: Record<string, string> = {}, remoteAddress = "127.0.0.1") => app.inject({ method: "POST", url, remoteAddress, headers: { "content-type": "application/json", origin: ORIGIN, ...h }, payload: JSON.stringify(body) });
 const cookie = (r: any) => ([] as string[]).concat(r.headers["set-cookie"] ?? []).map((c) => c.split(";")[0]).join("; ");
-const anmelden = (passwort = pw) => post("/api/auth/sign-in/email", { email, password: passwort }, { "x-forwarded-for": `198.51.100.${++ipNr}` });
+const anmelden = (passwort = pw) => post("/api/auth/sign-in/email", { email, password: passwort }, {}, `198.51.100.${++ipNr}`);
 const login = async () => { const r = await anmelden(); expect(r.statusCode).toBe(200); return cookie(r); };
 const ich = (c: string) => app.inject({ url: "/api/ich", headers: { cookie: c } });
 const sitzungen = async () => (await db.pool.query("select count(*)::int n from session where user_id=$1", [benutzerId])).rows[0].n as number;

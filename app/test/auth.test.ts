@@ -8,7 +8,7 @@ import { erzeugeSetupToken, loeseSetupTokenEin } from "../src/auth/setup.js";
 const ORIGIN = "http://localhost:3999";
 let db: Awaited<ReturnType<typeof frischeDb>>; let app: FastifyInstance;
 const pw = randomBytes(12).toString("base64url"); const email = "admin@planora.invalid";
-const post = (url: string, body: object, h: Record<string, string> = {}) => app.inject({ method: "POST", url, headers: { "content-type": "application/json", origin: ORIGIN, ...h }, payload: JSON.stringify(body) });
+const post = (url: string, body: object, h: Record<string, string> = {}, remoteAddress = "127.0.0.1") => app.inject({ method: "POST", url, remoteAddress, headers: { "content-type": "application/json", origin: ORIGIN, ...h }, payload: JSON.stringify(body) });
 const cookie = (r: any) => ([] as string[]).concat(r.headers["set-cookie"] ?? []).map((c) => c.split(";")[0]).join("; ");
 
 beforeAll(async () => {
@@ -60,18 +60,26 @@ describe("Login", () => {
     expect((await app.inject({ url: "/api/ich", headers: { cookie: c } })).statusCode).toBe(401);
   });
   it("Rate-Limit wirkt auch unter NODE_ENV=test: 10 Login-Versuche / 15 min je IP, dann 429 (Speicher DB)", async () => {
-    const ip = { "x-forwarded-for": "203.0.113.7" };
-    for (let i = 0; i < 10; i++) expect((await post("/api/auth/sign-in/email", { email, password: "falsch" + i }, ip)).statusCode).toBe(401);
-    const r = await post("/api/auth/sign-in/email", { email, password: pw }, ip);
+    const ip = "203.0.113.7";
+    for (let i = 0; i < 10; i++) expect((await post("/api/auth/sign-in/email", { email, password: "falsch" + i }, {}, ip)).statusCode).toBe(401);
+    const r = await post("/api/auth/sign-in/email", { email, password: pw }, {}, ip);
     expect(r.statusCode).toBe(429);
     expect(Number(r.headers["x-retry-after"])).toBeGreaterThan(14 * 60);
     expect((await db.pool.query("select count(*)::int n from rate_limit")).rows[0].n).toBeGreaterThan(0);
     // andere IP ist nicht betroffen
-    expect((await post("/api/auth/sign-in/email", { email, password: pw }, { "x-forwarded-for": "203.0.113.8" })).statusCode).toBe(200);
+    expect((await post("/api/auth/sign-in/email", { email, password: pw }, {}, "203.0.113.8")).statusCode).toBe(200);
+  });
+  it("PP7-5: Client-IP kommt aus dem Socket; wechselnder X-Forwarded-For umgeht das IP-Limit nicht", async () => {
+    const r: number[] = [];
+    for (let i = 0; i < 12; i++) r.push((await post("/api/auth/sign-in/email", { email: `spoof${i}@planora.invalid`, password: "falsch" }, { "x-forwarded-for": `203.0.113.${100 + i}`, "x-real-ip": `203.0.113.${100 + i}`, "x-planora-client-ip": `203.0.113.${100 + i}` }, "192.0.2.50")).statusCode);
+    expect(r.slice(0, 10).every((s) => s === 401)).toBe(true);
+    expect(r.slice(10)).toEqual([429, 429]);
+    // andere Socket-Adresse ist nicht betroffen
+    expect((await post("/api/auth/sign-in/email", { email, password: pw }, {}, "192.0.2.51")).statusCode).toBe(200);
   });
   it("Reset-Anfragen: 3 / h je IP, dann 429", async () => {
-    const ip = { "x-forwarded-for": "203.0.113.9" };
-    for (let i = 0; i < 3; i++) expect((await post("/api/auth/request-password-reset", { email: "niemand@planora.invalid" }, ip)).statusCode).not.toBe(429);
-    expect((await post("/api/auth/request-password-reset", { email: "niemand@planora.invalid" }, ip)).statusCode).toBe(429);
+    const ip = "203.0.113.9";
+    for (let i = 0; i < 3; i++) expect((await post("/api/auth/request-password-reset", { email: "niemand@planora.invalid" }, {}, ip)).statusCode).not.toBe(429);
+    expect((await post("/api/auth/request-password-reset", { email: "niemand@planora.invalid" }, {}, ip)).statusCode).toBe(429);
   });
 });
