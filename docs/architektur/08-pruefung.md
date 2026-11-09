@@ -260,3 +260,26 @@ Urteil: STOP
 [F] Testqualitaet: keine abgeschwaechten vorhandenen Erwartungen oder deaktivierten Schutzmechanismen im Diff. Neue Tests pruefen echte Effekte, aber Schalter laufen privilegiert; Locktests pruefen Blockierung/Timeout statt des gesamten Schreib-/Referenz-Interleavings. Kodierungsumgehung, erneute Loeschfrist und Verzeichnistausch fehlen.
 [F] Testlauf am unveraenderten ed603de in temporaerem Worktree: `npm.cmd ci` erfolgreich (0 Vulnerabilities), `npx.cmd vitest run` **5 Dateien / 38 Tests PASS**, `npx.cmd tsc --noEmit` **PASS**; zusaetzliche Inline-Reproduktionen bestaetigen PP8-1 bis PP8-6. Keine Test-/Code-Dateien geaendert.
 [F] Worktree wegen bereits ausgechecktem Branch mit `--detach m1a-spur-b` erstellt und anschliessend entfernt; Hauptbranch blieb `m1a-app-kern`. Nur diesen Anhang angefuegt, kein Commit. Ergebnis: **4 (A), 2 (B)**; Merge erst nach Behebung der (A)-Befunde.
+
+## Pruefpunkt 8b (Nachpruefung Spur B)
+Urteil: OK mit Auflagen
+
+[F] Geprueft: alle sechs Commits aus `git log ed603de..m1a-spur-b` und vollstaendiger `git diff ed603de m1a-spur-b`; Stand `6e8cb90`. (A) blockiert Merge, (B) Nacharbeit; Zeilen gelten fuer diesen Stand.
+
+| Befund | Status / Nachweis |
+|---|---|
+| PP8-1 | Geschlossen: registriertes Routenmuster statt Roh-URL; unabhaengige Gegenprobe fuer Klartext, kodierte Segmente und Parameter ergibt bei inaktivem Modul 404, bei DB-Ausfall 503. |
+| PP8-2 | Geschlossen: Ein/Aus/Kaskade samt vier Audit-Ereignissen unter `planora_app` erfolgreich; direktes DML bleibt verweigert. Funktionen mit festem search_path und entzogenem PUBLIC-EXECUTE. |
+| PP8-3 | Geschlossen fuer `speichereUndReferenziere`: unabhaengige Dedup-Barriere vor Referenz-Commit laesst GC nichts entfernen; nach Commit bleiben Referenz und Datei erhalten. Dieser Helfer ist bei Integration zwingend zu verwenden. |
+| PP8-4 | Geschlossen: Wiederverwendung entwertet alte Absicht; neue quittierte Vormerkung mit Alter 0 Tage bleibt erhalten, erst mit 31 Tagen wird entfernt. Unabhaengige Gegenprobe bestanden. |
+| PP8-5 | Geschlossen: unbekannte API-Route scheitert bei Registrierung; explizite Freirouten bleiben erlaubt. Gegenprobe und Regressionstest bestanden; Guard muss vor allen Routen registriert werden. |
+| PP8-6 | Statische verlinkte Vorfahren geschlossen, Gegenprobe bestanden. Austauschrennen bleibt per Spec §6 betrieblich ausgeschlossen; Nachweis von Mountpunkt und exklusiven Schreibrechten vor Betriebsfreigabe offen (B). |
+
+Neuer Befund:
+| Nr | Datei:Zeile | Befund | Klasse | Nacharbeit |
+|---|---|---|---|---|
+| PP8b-1 | `app/src/ablage/ablage.ts:166,170,128` | Der neue Helfer haelt einen Pool-Client und fordert ueber `ablage.schreibeNeu` einen zweiten an, wenn der Adapter denselben `opts.pool` nutzt. Gegenprobe mit `max:1, connectionTimeoutMillis:400`: Timeout, 0 Referenzen; identischer Aufruf ohne Adapter-Pool erfolgreich. Ohne Verbindungs-Timeout wartet diese Kombination unbegrenzt. | B | Einen Client/Lock-Kontext durchreichen oder die doppelte Pool-Verwendung konstruktiv ausschliessen; Regression fuer diese Kombination ergaenzen. |
+
+[F] Testlauf: temporaerer Detached-Worktree auf `6e8cb90`; `npm.cmd ci` erfolgreich (0 Vulnerabilities), `npx.cmd vitest run`: **5 Dateien / 46 Tests PASS**, `npx.cmd tsc --noEmit`: **PASS**.
+[F] Zusaetzliche Inline-Gegenproben gegen separates PostgreSQL bestanden fuer PP8-1 bis PP8-6 im oben bezeichneten Umfang; PP8b-1 reproduziert. Keine vorhandenen Tests abgeschwaecht; keine neuen (A)-Befunde.
+[F] Worktree anschliessend entfernt, Hauptbranch blieb `m1a-app-kern`; nur diesen Anhang ergaenzt, keine Code-/Testdateien geaendert, kein Commit. Ergebnis: **0 neue (A), 1 neuer (B)**; Betriebsauflage PP8-6 bleibt.
