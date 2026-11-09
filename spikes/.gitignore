@@ -3,3 +3,4 @@ _werkzeuge/venv/
 **/node_modules/
 s03-3d/dist/
 s04-rls/.pgdata/
+s03b-einfach/dist/
