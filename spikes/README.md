@@ -10,6 +10,7 @@ Stand 2026-11-08 · Test-Architekt · Kein Produktivcode. Teststrategie und Gesa
 | `s03-3d/` | S3 3D-Performance | nicht entschieden (kein Iris-Xe-Laptop) | `cd s03-3d && npm ci && node messen.mjs` (vorher esbuild, siehe README) |
 | `s04-rls/` | S4 RLS / Pool-Leak / Audit | lokal bestanden, Exoscale offen | `cd s04-rls && npm ci && node rls_test.mjs` |
 | `s12-preisquellen/` | S12 Preisquellen (Recherche) | nicht bestanden | – |
+| `s13-m1-kern/` | S13 M1-Kern: Better Auth, Modul-Guard, Dispatch-Race | T1+T2 bestanden, T3 Spec V2 bestanden (V1 nicht), T4 offen | `cd s13-m1-kern && npm ci && node t1_auth.mjs` (t2_guard, t3_dispatch siehe README) |
 
 Testdaten (nur lesen): `beispiele/lindenhof/`.
 Python-Werkzeuge: `python -m venv _werkzeuge/venv && _werkzeuge/venv/Scripts/python -m pip install pymupdf` (PyMuPDF, lokal).
