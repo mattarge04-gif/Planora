@@ -10,10 +10,11 @@ import { dateiAblage, type Ablage } from "./ablage/ablage.js";
 
 declare module "fastify" { interface FastifyInstance { ablage: Ablage } }
 
-export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; secret: string; ablageWurzel: string };
+// vertrauteProxies: nur Adressen des eigenen Reverse Proxy (Caddy im Compose-Netz); leer = Client-IP nur aus dem Socket (PP7-5)
+export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; secret: string; ablageWurzel: string; vertrauteProxies?: string[] };
 
 export async function baueServer(o: ServerOptionen) {
-  const app = Fastify({ logger: false });
+  const app = Fastify({ logger: false, trustProxy: o.vertrauteProxies?.length ? o.vertrauteProxies : false });
   const auth = baueAuth(o.pool, { baseURL: o.baseURL, secret: o.secret });
   app.decorate("ablage", dateiAblage(o.ablageWurzel, { pool: o.pool }));
   registriereModulGuard(app, o.pool, o.stufe);       // onRequest: nicht gelieferte/inaktive Module → 404, DB-Fehler → 503
