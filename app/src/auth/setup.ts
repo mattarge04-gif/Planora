@@ -18,6 +18,7 @@ export async function loeseSetupTokenEin(pool: pg.Pool, token: string, email: st
     await c.query(`insert into "user"(id, name, email, email_verified, created_at, updated_at) values ($1,$2,$3,true,$4,$4)`, [id, name, email, jetzt]);
     await c.query(`insert into account(id, account_id, provider_id, user_id, password, created_at, updated_at) values ($1,$2,'credential',$2,$3,$4,$4)`, [randomUUID(), id, await hashPasswort(passwort), jetzt]);
     await c.query("insert into konto_status(benutzer_id, status, audit_id) values ($1,'aktiv',$2)", [id, audit]);
+    await c.query("insert into rolle_zuordnung(benutzer_id, rolle) values ($1,'admin')", [id]);
     await c.query("insert into audit_person(audit_id, benutzer_id) values ($1,$2)", [audit, id]);
     await auditEreignis(c, audit, "konto.erstadmin");
     await c.query("commit"); return { benutzerId: id };
