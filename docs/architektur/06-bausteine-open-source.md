@@ -261,6 +261,51 @@ Pruefpunkte im Scaffold (aendern **nicht** den Entscheid, nur die Konfiguration)
 
 ---
 
+## 9. Oeffentliche APIs (Abgleich mit public-apis)
+
+Quelle: [public-apis/public-apis](https://github.com/public-apis/public-apis), alle Kategorien durchgesehen (2026-11-09). **Status: Empfehlung, noch nicht verbindlich** – externe Dienste beruehren den Datenfluss (revDSG, Kap. 9.7) und brauchen deshalb einen eigenen PO-Entscheid. Live-Aufrufe konnten aus der Arbeitsumgebung nicht getestet werden [A].
+
+**Grundregel:** Nur APIs ohne Kundendaten im Aufruf (Adresse, Feiertage, Referenzdaten) oder mit Sitz/Betrieb in CH. Nie Dokumentinhalte an fremde APIs. Jede externe API haengt hinter einem Port mit Cache in PG und funktioniert bei Ausfall mit manueller Eingabe weiter (Qualitaetsziel 4).
+
+### 9.1 Empfohlen
+
+| API | Kosten / Auth | Wofuer in Planora | Stelle | Bemerkung |
+|---|---|---|---|---|
+| **Open Government Switzerland** (opendata.swiss) → insbesondere **geo.admin.ch** (Bund, swisstopo/BFS) | kostenlos, ohne Schluessel [A: Nutzungsbedingungen pruefen] | (1) **Adresssuche mit Autovervollstaendigung** beim Anlegen von Liegenschaft/Gebaeude (SearchServer); (2) **Gebaeude- und Wohnungsregister (GWR)**: EGID, Baujahr, Anzahl Geschosse, Gebaeudekategorie, Heizung/Energietraeger als **Vorschlag** fuer die Gebaeude-Stammdaten | Modul `struktur` (Gebaeude anlegen), Demo W7 | Groesster Nutzen aus der Liste: weniger Tipparbeit, EGID als stabiler Schluessel fuer den Austausch mit Stratus/Bestandssystemen (E22, E29). Werte aus dem GWR werden als `angabe` mit `quelle_art=import`, Quelle "GWR" gespeichert (AD-4) und muessen bestaetigt werden (AD-5). Nur Adresse/EGID geht raus, Bund = CH. |
+| **Nager.Date** | kostenlos, ohne Schluessel, Open Source (MIT [A]) | Schweizer Feiertage **inkl. Kantone** fuer Faelligkeiten im Modul `hinweise` (keine Mails an Feiertagen, Fristen in Arbeitstagen) und Vorschlag "naechste Inspektion" (`zustand`) | `hinweise`, `zustand` | Statt Live-Aufruf: jaehrlicher Import in eine Tabelle oder Docker-Image selbst betreiben; alternativ npm-Paket `date-holidays` ohne Netz. |
+| **Have I Been Pwned – Pwned Passwords** (Range-API) | kostenlos fuer die Passwort-Range-API [A] | Lokale Keycloak-Konten (ohne Entra ID): Passwort gegen bekannte Leaks pruefen; es werden nur die ersten 5 Zeichen des SHA-1-Hashes gesendet (k-Anonymitaet) | `identitaet` / Keycloak | Per Keycloak-Erweiterung oder eigener Passwort-Policy [?: passende Erweiterung im Scaffold waehlen]. Gut fuer Enterprise-Frageboegen. |
+
+### 9.2 Spaeter (nicht V1)
+
+| API | Wofuer | Warum spaeter |
+|---|---|---|
+| Frankfurter / EZB-Wechselkurse | Herstellerpreise in EUR → CHF | Preise/Investitionsplan sind aus V1 raus (E24) |
+| Zefix / Firmenregister (OpenSwissData, GlobalEntity) | Mandanten-Stammdaten (UID, Firmenname) beim Onboarding | Wenige Mandanten in V1, manuell schneller |
+| CO2-/Energie-APIs (Carbon Interface, Cloverly, Strompreise SpotWave) | ESG-Kennzahlen, Energiekosten der Anlagen | Neues Produktthema, nicht in E1–E31 |
+| Catastro GPS / ParcelGPS (Parzellen Europa) | Parzelle zur Liegenschaft | In CH liefert geo.admin.ch (amtliche Vermessung) dasselbe |
+| LibreTranslate (selbst gehostet, AGPL) | Rohuebersetzung von Katalog-Texten FR/IT | Tolgee + Claude reichen; nur falls viele Texte ohne KI uebersetzt werden muessen |
+
+### 9.3 Bewusst nicht
+
+| API-Gruppe | Grund |
+|---|---|
+| VirusTotal, Scanii, andere Cloud-Virenscanner (Anti-Malware) | Kundendokumente verlassen Planora; ADR 0016 hat das verworfen |
+| Machine Learning / Text Analysis / OCR-APIs (Cloud) | Dokumentinhalte an Dritte ausserhalb CH/EU; KI-Pfad laeuft nur ueber Bedrock EU (ADR 0003) |
+| Nominatim / OpenStreetMap-Geocoding | fuer CH ungenauer als geo.admin.ch; Nutzungsgrenzen der oeffentlichen Instanz |
+| E-Mail-Validierungs-APIs | Benutzer kommen ueber Entra ID/Keycloak; kein Bedarf |
+| Wetter (Open-Meteo, MeteoSwiss usw.) | kein Bezug zu V1 |
+| Test-Data-APIs | lokal mit Bibliotheken (z.B. Faker) erzeugen; keine Netzabhaengigkeit in CI |
+
+### 9.4 Folgen fuer die Architektur, falls der PO 9.1 freigibt
+
+- Neuer Port **`GebaeudeRegister`** in `struktur` (Adapter `geo-admin`), Ergebnis-Cache in PG; Spalte `gebaeude.egid` (eindeutig je Mandant).
+- `quelle_art=import` mit Quelle `gwr` im Herkunftsmodell; Bestaetigung wie bei KI-Vorschlaegen.
+- Tabelle `feiertag` (global, jaehrlicher Import aus Nager.Date) fuer `hinweise`/`zustand`.
+- Netz-Freigabe: `api3.geo.admin.ch` (nur `api`-Prozess); Pwned-Passwords nur aus Keycloak.
+- Subprozessorliste (Kap. 9.7): Bund/swisstopo ist kein Auftragsbearbeiter (nur Adresse/EGID, keine Personendaten) [A, Jurist bestaetigt].
+
+---
+
 ## Quellen (abgerufen 2026-11-09)
 
 - sindresorhus/awesome – https://github.com/sindresorhus/awesome
@@ -274,5 +319,8 @@ Pruefpunkte im Scaffold (aendern **nicht** den Entscheid, nur die Konfiguration)
 - awesome-devsecops – https://github.com/TaptuIT/awesome-devsecops
 - awesome-docker – https://github.com/veggiemonk/awesome-docker
 - awesome-playwright – https://github.com/mxschmitt/awesome-playwright
+- public-apis – https://github.com/public-apis/public-apis (Kapitel 9)
+- opendata.swiss API-Handbuch – https://handbook.opendata.swiss/de/content/nutzen/api-nutzen.html
+- Nager.Date – https://date.nager.at · Have I Been Pwned API v3 – https://haveibeenpwned.com/API/v3
 - Recherche-Screenshots (Bibliotheken- und Referenzliste), vom PO am 2026-11-09 geliefert
 - Interne Basis: `03-architektur.md`, `04-review.md` (K01, P1), ADR 0006–0016, `00-kontext.md` E23–E30
