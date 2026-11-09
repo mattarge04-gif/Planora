@@ -1,4 +1,5 @@
-create table datei(schluessel text primary key, sha256 text not null, groesse bigint not null, erstellt_am timestamptz not null default now());
+-- referenz_seq: Journal-Stand bei der letzten Referenzierung; nur juengere Loeschabsichten gelten.
+create table datei(schluessel text primary key, sha256 text not null, groesse bigint not null, erstellt_am timestamptz not null default now(), referenz_seq bigint not null default 0);
 create table datei_referenz(schluessel text references datei(schluessel), objekt text not null, primary key (schluessel, objekt));
 create table journal_zaehler(id int primary key default 1 check (id=1), seq bigint not null);
 insert into journal_zaehler values (1, 0);
@@ -23,3 +24,14 @@ create trigger backup_gc_schutz before insert or update on backup_lauf
   for each row when (new.zustand = 'laufend') execute function ablage_gc_schuetzen();
 create trigger referenz_gc_schutz before insert or update on datei_referenz
   for each row execute function ablage_gc_schuetzen();
+
+-- Neue Referenz entwertet aeltere Loeschabsichten: den aktuellen Journal-Stand merken.
+-- FOR SHARE wartet auf laufende journal_eintrag-Transaktionen, damit deren Seq mit erfasst wird.
+create function datei_referenz_merken() returns trigger language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  update datei set referenz_seq = (select seq from journal_zaehler where id = 1 for share) where schluessel = new.schluessel;
+  return new;
+end $$;
+revoke all on function datei_referenz_merken() from public;
+create trigger referenz_merken after insert or update of schluessel on datei_referenz
+  for each row execute function datei_referenz_merken();

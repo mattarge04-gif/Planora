@@ -161,6 +161,27 @@ describe("GC und Loeschjournal", () => {
     expect(await sammleMuell(db.pool, ablage)).toEqual([]);
     expect(await ablage.existiert(schluessel)).toBe(true);
   });
+  it("PP8-4: nur die juengste Loeschabsicht zaehlt (alte Quittung + neue Vormerkung)", async () => {
+    const { ablage } = await ablageNeu();
+    const schluessel = await vormerken(ablage, "quittiert", 31);
+    const seq = (await db.pool.query("select journal_eintrag('datei.loeschen',$1) seq", [schluessel])).rows[0].seq;
+    await db.pool.query("update loesch_journal set zustand='quittiert' where seq=$1", [seq]);
+    expect(await sammleMuell(db.pool, ablage)).toEqual([]);
+    expect(await ablage.existiert(schluessel)).toBe(true);
+    await db.pool.query("update loesch_journal set zeit=now()-interval '31 days' where seq=$1", [seq]);
+    expect(await sammleMuell(db.pool, ablage)).toEqual([schluessel]);
+  });
+  it("PP8-4: neue Referenz entwertet eine aeltere Loeschabsicht", async () => {
+    const { ablage } = await ablageNeu();
+    const schluessel = await vormerken(ablage, "quittiert", 31);
+    await db.pool.query("insert into datei_referenz values ($1,'dokument:2')", [schluessel]);
+    await db.pool.query("delete from datei_referenz where schluessel=$1", [schluessel]);
+    expect(await sammleMuell(db.pool, ablage)).toEqual([]);
+    expect(await ablage.existiert(schluessel)).toBe(true);
+    const seq = (await db.pool.query("select journal_eintrag('datei.loeschen',$1) seq", [schluessel])).rows[0].seq;
+    await db.pool.query("update loesch_journal set zustand='quittiert', zeit=now()-interval '31 days' where seq=$1", [seq]);
+    expect(await sammleMuell(db.pool, ablage)).toEqual([schluessel]);
+  });
   it("pausiert bei laufendem Backup und laeuft nach dessen Abschluss weiter", async () => {
     const { ablage } = await ablageNeu();
     const schluessel = await vormerken(ablage);
