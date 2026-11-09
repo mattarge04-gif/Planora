@@ -5,7 +5,8 @@ Basis (verbindlich): `00-kontext.md` (E1–E10 und PO-Antworten E11–E22), `01-
 Die PO-Antworten E11–E22 (Stand 2026-11-08) sind eingearbeitet; wo 01-domaene ein anderes Default vorschlug, gilt E11–E22.
 Kennzeichnung: **[F]** Fakt mit Quelle · **[A]** Annahme (durch Spike oder PO zu bestaetigen) · **[?]** offen.
 Quellenkuerzel: `Qn-Dom` = Quelle n in 01-domaene, `Qn-Tech` = Quelle n in 02-tech-recherche, `FA-nn` = Anforderung in 01 Kap. 7.
-Entscheide im Detail: `adr/0001`–`adr/0017` (Index: `adr/0000-adr-vorlage-und-index.md`). BMAD-Arbeitsprotokoll und Spine: `bmad/planning-artifacts/architecture/architecture-Planora-2026-11-08/`.
+**E31 (2026-11-09): Pflicht-Bausteine** laut `06-bausteine-open-source.md` und ADR 0022–0024 sind eingearbeitet (Kap. 2.2, 5, 6, 10, 15).
+Entscheide im Detail: `adr/0001`–`adr/0024` (Index: `adr/0000-adr-vorlage-und-index.md`). BMAD-Arbeitsprotokoll und Spine: `bmad/planning-artifacts/architecture/architecture-Planora-2026-11-08/`.
 
 ---
 
@@ -70,12 +71,12 @@ flowchart TB
     api["Prozess api<br/>Fastify BFF, Node"]
     wrk["Prozess worker<br/>pg-boss-Handler, Node"]
     mig["Prozess migrator<br/>(laeuft vor Deploy)"]
-    doc["docproc<br/>Python: OCRmyPDF, Docling<br/>kein DB-Zugriff, kein Internet"]
+    doc["docproc<br/>Docling Serve, OCRmyPDF, Gotenberg<br/>kein DB-Zugriff, kein Internet"]
     av["ClamAV"]
     kc["Keycloak 26.8"]
     pg[("Managed PostgreSQL<br/>Business, HA, PITR<br/>Fachdaten + pgboss + Audit")]
     sos[("SOS Objektspeicher<br/>quarantaene/ dok/ abgeleitet/ planstand/ export/")]
-    mon["Monitoring<br/>OTel Collector, Prometheus,<br/>Loki, Grafana [A]"]
+    mon["Monitoring<br/>OTel Collector, Prometheus,<br/>Loki, Grafana [A], GlitchTip, Healthchecks"]
   end
   subgraph gva["Exoscale ch-gva-2 (Genf)"]
     off[("SOS Offsite<br/>pg_dump verschluesselt,<br/>Dokument-Replikat")]
@@ -305,16 +306,22 @@ sequenceDiagram
   participant D as docproc
   participant K as Bedrock (EU)
   participant P as Postgres
-  B->>A: Upload beginnen (Dateiname, Groesse)
-  A->>P: dokument(status=hochladen) + Job scan [eine Tx]
-  A-->>B: signierte PUT-URL (quarantaene/)
-  B->>S: Datei hochladen
-  W->>S: Datei lesen
-  W->>V: Scan + Magic Bytes + SHA-256
-  W->>P: status=geprueft, Kopie nach dok/ + Job aufbereiten
-  W->>D: OCR (falls Scan) + Docling
+  B->>A: Upload beginnen (Uppy: Dateiname, Groesse)
+  A->>S: CreateMultipartUpload (quarantaene/)
+  A->>P: dokument(status=hochladen)
+  B->>A: je Teil: Signatur nur fuer UploadPart
+  B->>S: Teile hochladen (parallel, wiederaufnehmbar)
+  B->>A: abschliessen (Teile + ETags)
+  A->>S: CompleteMultipartUpload + HEAD (nur Server)
+  A->>P: status=hochgeladen, objekt_etag + Job scan [eine Tx]
+  W->>S: Datei lesen (If-Match objekt_etag), einmal streamen
+  W->>V: Scan + Magic Bytes (file-type) + SHA-256 ueber dieselben Bytes
+  W->>S: dieselben Bytes nach dok/
+  W->>P: status=geprueft + Jobs vorschau_erzeugen, aufbereiten
+  W->>D: Office → Gotenberg, Scan → OCRmyPDF: Vorschau-PDF nach abgeleitet/
+  W->>D: Docling Serve (Text, Tabellen, Bounding Boxes)
   D->>S: Seitentext/Tabellen JSON
-  W->>P: dokument_seite, status=aufbereitet
+  W->>P: dokument_seite, such_abschnitt (+ Embeddings), status=aufbereitet
   alt KI fuer Mandant aktiv und Budget reserviert
     W->>K: Haiku: Dokumentart + relevante Seiten
     W->>K: Sonnet: Extraktion je Seitenblock (Tool-Schema mit Katalog-Enum)
@@ -336,7 +343,8 @@ sequenceDiagram
 | Stufe | Werkzeug | Ausgabe | KI? |
 |---|---|---|---|
 | Scan | ClamAV, Magic Bytes, SHA-256 | sauber/abgelehnt | nein |
-| Aufbereitung | Excel: Parser im Worker; PDF-Vektor: pdfjs-dist + Docling; Scan: OCRmyPDF → Docling | `dokument_seite` (Text, Bloecke mit Koordinaten, Tabellen) | nein |
+| Vorschau | Gotenberg (Office), OCRmyPDF (Scan), sharp (Miniaturen) – ADR 0022 | Vorschau-PDF in `abgeleitet/` | nein |
+| Aufbereitung | Excel: exceljs im Worker; PDF-Vektor: pdfjs-dist + Docling Serve; Scan: OCRmyPDF → Docling Serve | `dokument_seite` (Text, Bloecke mit Koordinaten, Tabellen), `such_abschnitt` (ADR 0023) | nein |
 | Klassifikation | Haiku 5.5, nur Text der ersten Seiten + Seitentitel [A] | Dokumentart, KBOB-Fachbereich und Dokumenttypcode (E21), Sprache (de/fr/it/en), Gebaeude/Geschoss-Hinweis, relevante Seitenbereiche | ja (sonst Benutzer waehlt) |
 | Spaltenzuordnung Excel | Haiku 5.5: Kopfzeile + 20 Beispielzeilen [A] → Zuordnungsvorschlag | Zuordnung, vom Benutzer bestaetigt; danach deterministischer Import | ja (sonst manuell, FA-38) |
 | Extraktion | Sonnet 5.5, Seitenbloecke zu 20 Seiten [A], Bild + Text | strukturierte Vorschlaege mit Seite + Zitat | ja |
@@ -387,6 +395,8 @@ Stufen [A, kalibriert am Golden Set so, dass Praezision der Stufe "hoch" ≥ 98 
 
 Bei Scans ohne verlaesslichen OCR-Text ist "hoch" ausgeschlossen. Nichts wird je automatisch bestaetigt.
 
+**Prompt Injection (E31, AD-6):** Dokumentinhalte sind nicht vertrauenswuerdig. Der Prompt grenzt Dokumenttext und -bilder als Daten ab und weist an, darin enthaltene Anweisungen zu ignorieren; das Modell hat keine Tools mit Nebenwirkung (nur das Extraktions-Schema). Das Golden Set enthaelt praeparierte Dokumente mit eingebetteten Anweisungen; erwartet wird keine Wirkung ausser Stufe "tief"/Pruefliste. Gilt auch fuer Reranking/Antworten der Suche (ADR 0023).
+
 ### 5.7 Kostenbremse, Abschaltung, Datenfluss
 
 - Kostenbremse: ADR 0017 (Schaetzung, Reservierung, Monats-/Tages-/Dokumentgrenzen, Cache, Schutzschalter).
@@ -424,7 +434,7 @@ flowchart LR
 - **Koordinaten:** KI liefert normierte Seitenkoordinaten; nach Massstab werden Raeume in Metern im Geschoss-System gespeichert (Ursprung links unten der Seite [A]). Geschosse eines Gebaeudes werden ueber einen gemeinsamen Referenzpunkt ausgerichtet (Benutzer setzt ihn einmal pro Geschoss, Default: Seitenursprung [A]).
 - **Pruefregeln [A]:** Ueberlappung zweier Rechtecke > 10 % → beide "mittel"; Flaechenabweichung zum Stempel > 15 % → "mittel"; Raum ohne Stempel → "tief"; Einrasten an parallele Linie innerhalb 1 % der Seitenbreite.
 - **Nicht-Rechtecke** (L-Raeume, Korridore): Benutzer zerlegt in mehrere Rechtecke mit gleicher Raumnummer (Raum hat 1..n Rechtecke [A]) oder nimmt das umschliessende Rechteck. E3 bleibt gewahrt.
-- **Korrektur-UI:** Unterlage (Grundrissbild), Rechtecke ziehen/verschieben/skalieren mit Einrasten, Tastatur fuer Feinschritte, Mehrfachauswahl, Liste der Raeume neben dem Plan, Farbcode nach Konfidenz, "Rueckgaengig". Kennzahl: Korrekturzeit pro Geschoss (Spike S1).
+- **Korrektur-UI** (Bausteine E31: PDF.js-Unterlage, react-konva, Zustand + zundo, flatbush; ADR 0014): Unterlage (Grundrissbild), Rechtecke ziehen/verschieben/skalieren mit Einrasten, Tastatur fuer Feinschritte, Mehrfachauswahl, Liste der Raeume neben dem Plan, Farbcode nach Konfidenz, "Rueckgaengig". Kennzahl: Korrekturzeit pro Geschoss (Spike S1).
 - **Fallback manuell:** gleiche UI ohne Vorschlaege; ausserdem Raumliste per Excel (Nummer, Name, Flaeche) → Rechtecke werden als Raster vorplatziert und vom Benutzer verschoben [A].
 - Elemente ohne bekannten Raum haengen am Geschoss (`raum_id NULL`, `geschoss_id` gesetzt) und erscheinen in 3D in einer Geschoss-Sammelzone.
 
@@ -603,7 +613,7 @@ Modul `austausch`, Port `AustauschFormat` (je Format ein Adapter: `export(gebaeu
 | prod | Exoscale ch-dk-2 | Kundendaten | Bedrock eu-central-2, EU-Profil |
 
 ### 10.2 Deployment
-- CI baut ein Image pro Commit (Tag = Git-SHA), Abhaengigkeiten exakt gepinnt, SBOM und Schwachstellen-Scan [A: Werkzeuge im Scaffold].
+- CI baut ein Image pro Commit (Tag = Git-SHA), Abhaengigkeiten exakt gepinnt (Renovate), SBOM mit **Syft**, Schwachstellen-Scan mit **Trivy**, Lizenzpruefung (license-checker/SBOM), Secret-Scan mit **Gitleaks**, statische Regeln mit **Semgrep CE**, Images signiert mit **cosign** (E31, ADR 0024). Vor dem externen Pentest laeuft ein **OWASP-ZAP**-Baseline-Scan gegen staging.
 - Ablauf: `migrator` (expand) → neue `api`-Container starten, Readiness `/health/ready` (DB, S3, Keycloak) → Umschalten im Reverse Proxy → alte Container 30 s drainen → `worker` neu (laufende Jobs enden oder werden idempotent wiederholt) → spaeter Release: `migrator` (contract).
 - Rueckrollen: vorheriges Image; moeglich, weil Schema N-1-kompatibel ist.
 - Start: Docker Compose auf 2 VMs (ADR 0002); SKS ab ca. 5 Mandanten oder SLA-Zusage [A].
@@ -634,7 +644,7 @@ Expand/contract: (1) neue Spalte/Tabelle nullable oder mit Default hinzufuegen, 
 | Ausfall Bedrock | 0 | KI-Funktionen warten; Rest unberuehrt |
 
 ### 10.6 Monitoring
-OpenTelemetry (Traces, Metriken) und strukturierte Logs (JSON, mit `korrelations_id`, `mandant_id`, **ohne** Dokumentinhalte/Prompts) → Collector → Prometheus/Loki/Grafana auf VM 2 [A]; externer Uptime-Check [A]. Alarme: Fehlerrate > 1 % 5 min, API p95 > 1 s, Job-Alter > 30 min, fehlgeschlagene Jobs, KI-Tageskosten > 80 % Grenze, Schutzschalter offen, Bruch Audit-Kette, Backup aelter als 26 h, Restore-Test fehlgeschlagen, Zertifikat < 14 Tage, Disk > 80 %, Bedrock-Profil mit Region ausserhalb EU/EWR/CH. Log-Aufbewahrung 90 Tage [A].
+OpenTelemetry (Traces, Metriken) und strukturierte Logs (JSON, mit `korrelations_id`, `mandant_id`, **ohne** Dokumentinhalte/Prompts) → Collector → Prometheus/Loki/Grafana auf VM 2 [A]; Fehlertracking mit **GlitchTip** (Sentry-SDKs, selbst gehostet in CH); externer Uptime-Check mit **Uptime Kuma** auf eigener kleiner VM ausserhalb ch-dk-2; **Healthchecks** als Dead-Man's-Switch fuer Backup-Dump, Replikation und Restore-Test (E31). Alarme: Fehlerrate > 1 % 5 min, API p95 > 1 s, Job-Alter > 30 min, fehlgeschlagene Jobs, KI-Tageskosten > 80 % Grenze, Schutzschalter offen, Bruch Audit-Kette, Backup aelter als 26 h, Restore-Test fehlgeschlagen, Zertifikat < 14 Tage, Disk > 80 %, Bedrock-Profil mit Region ausserhalb EU/EWR/CH. Log-Aufbewahrung 90 Tage [A].
 
 ### 10.7 On-Premise-Variante
 Gleiche Images; Lieferung als Compose-Bundle (spaeter Helm). Voraussetzungen beim Kunden: PostgreSQL ≥ 16 [A], S3-kompatibler Speicher, OIDC-IdP (eigenes Keycloak mitgeliefert oder Kunden-IdP direkt), Container-Laufzeit. KI: aus (Default) oder Kunden-eigenes Bedrock-Konto via Konfiguration. Keine Telemetrie an Planora ohne Zustimmung. Updates als signierte Images mit Migrationen; Support-Matrix N und N-1.
@@ -700,6 +710,9 @@ Alle unter `docs/architektur/adr/`, Status "vorgeschlagen":
 | 0019 | `0019-mehrsprachigkeit.md` | DE/FR/IT in UI und Stammdaten (E20) |
 | 0020 | `0020-austausch-stratus.md` | Austausch-Port, Stratus-Adapter (E22) |
 | 0021 | `0021-zustandsmodell-zhaw.md` | ZHAW-Zustandsmodell und Lebensdauer-Tabelle (E11, E14) |
+| 0022 | `0022-dokument-viewer.md` | Vorschau-PDF, PDF.js, Markierung per Docling-Box (E23, E31) — **akzeptiert** |
+| 0023 | `0023-suche-postgres-hybrid.md` | Volltext + pgvector, RRF (E26, E31) — **akzeptiert** |
+| 0024 | `0024-pflicht-bausteine-und-lizenzen.md` | Pflicht-Bausteine und Lizenzregeln (E28, E31) — **akzeptiert** |
 
 ---
 
@@ -757,6 +770,32 @@ Alle unter `docs/architektur/adr/`, Status "vorgeschlagen":
 - Native Mobile-App und Offline-Modus fuer die Begehung (Tablet-Browser genuegt, FA-30) [A].
 - Oeffentliche API fuer Dritte; Austauschformate ausser Stratus und Excel/CSV.
 - ISO-27001-Zertifizierung von Planora selbst (Ziel: dokumentierte Kontrollen + zertifizierter Hoster, 01 Kap. 5.2).
+
+---
+
+## 15. Pflicht-Bausteine je Modul (E31)
+
+Verbindlich nach ADR 0024; Begruendung und Abgleich in `06-bausteine-open-source.md`.
+
+| Modul / Teil | Pflicht-Bausteine |
+|---|---|
+| `web` (allgemein) | React 19, Vite, TanStack Query, TanStack Table + Virtual, Zustand, react-hook-form + zod, shadcn/ui (Radix), i18next/react-i18next, kbar |
+| `web` Upload | Uppy (`@uppy/aws-s3`, Multipart) – AD-20 |
+| `web` Viewer | PDF.js, React PDF Highlighter (gleiche `pdfjs-dist`) – ADR 0022 |
+| `web` Grundriss | react-konva, zundo, flatbush – ADR 0014 |
+| `web` 3D | three, React Three Fiber, drei – ADR 0008 |
+| `api` | Fastify, pino (mit Redaction), zod, @fastify/rate-limit |
+| `dokumente` / `worker` | file-type, ClamAV, exceljs, sharp – ADR 0016 |
+| `docproc` | Docling Serve, OCRmyPDF, Gotenberg – ADR 0009 |
+| `suche` | PostgreSQL-Volltext (de/fr/it/en), pgvector, Embedding-Server (Anbieter E27) – ADR 0023 |
+| `hinweise` | Nodemailer + MJML; lokal/CI Mailpit |
+| Datenbank-CI | pgTAP (RLS-Suite), Squawk (Migrationen) |
+| Betrieb | GlitchTip, Healthchecks, Uptime Kuma |
+| Lieferkette | Renovate, Trivy, Syft, cosign, Gitleaks, Semgrep CE, license-checker, OWASP ZAP |
+| Tests | Playwright, @axe-core/playwright, k6 |
+| Uebersetzung | Tolgee (selbst gehostet), Sprachdateien im Repo bleiben Build-Quelle |
+
+Eigenbau bleibt nur fuer den fachlichen Kern: Rechenkern, Herkunftsmodell, Audit-Hash-Kette, KI-Kostenbremse, Mandantentrennung.
 
 ---
 

@@ -65,6 +65,7 @@ Ablauf aus Kundensicht:
 | E28 | **Variante schnell und schlank:** Demo zuerst als durchgehender Schnitt mit Lindenhof-Daten (Woche 7), Module parallel mit Agenten, fertige Bausteine statt Eigenbau; Pilot ca. Woche 28. Externe Hilfe nur Pentest, Jurist, menschlicher Review Login/Mandanten/Upload, DevOps-Check, FR/IT-Gegenlesen (≈ CHF 10–22k). Matts Zeit zaehlt nicht als Kosten. Details: `docs/plan/umsetzungsplan.html`, `docs/plan/kosten-und-preise.md`. |
 | E29 | **REA** nur fuer Importe aus Bestandssystemen (nach Pilot), nicht fuer den Aufbau von V1. |
 | E30 | Architekturkarte (System, Module, Ablaeufe, Datenmodell, API-Vorschlag): `docs/plan/architektur-uebersicht.html`. Neu und ungeprueft: Modul `suche` + Tabelle `such_abschnitt`, Embedding-Dienst, Modul `hinweise`, API-Pfade → in Welle 4 pruefen. |
+| E31 | **Pflicht-Bausteine (Open Source) statt Eigenbau** (2026-11-09): Alle Bausteine aus `06-bausteine-open-source.md` Kap. 2 und 5 werden eingebaut – u.a. Uppy, PDF.js, React PDF Highlighter, Gotenberg, React Konva, React Three Fiber, Docling Serve, pgvector, TanStack, Zustand, react-hook-form + zod, i18next, pino, file-type, exceljs, Nodemailer + MJML, pgTAP, Squawk, GlitchTip, Healthchecks, Uptime Kuma, Trivy, Syft, cosign, Gitleaks, Semgrep, Renovate, OWASP ZAP, axe, k6, Tolgee. Upload neu per serverseitig abgeschlossenem Multipart (schliesst K01); Prompt-Injection-Schutz verbindlich. Eingearbeitet in 03-architektur, Spine (AD-20, AD-21), ADR 0009/0014/0016, neue ADR 0022–0024, 05-tests. |
 
 ## Naechste Schritte (Stand Ende Sitzung 2026-11-08, noch NICHT gestartet)
 
@@ -76,7 +77,7 @@ Grund fuer Pause: Abo-Nutzungsvolumen knapp. Wiederaufnahme hier:
    - 3D: InstancedMesh als Standard, 2D-Fallback bei Software-Renderer (E-T2, E-T3).
    - Kritische/hohe Befunde aus 04-review.md schliessen, soweit V1 betroffen (K01 Upload zwingend; K02 entfaellt mit E24).
    - Test-Empfehlungen E-T1, E-T5, E-T6, E-T8, E-T9, E-T10 aus 05-tests.md Kap. 1.3 einarbeiten.
-   - Bausteine-Abgleich `06-bausteine-open-source.md` einarbeiten (Uppy-Multipart schliesst K01, Gotenberg/Docling Serve fuer Viewer und docproc, pgvector fuer Suche, React-Konva fuer Grundriss).
+   - E31 ist eingearbeitet (Bausteine verbindlich, `06-bausteine-open-source.md`, ADR 0022–0024); Welle 4 prueft nur noch die Konsistenz mit den uebrigen Punkten.
    - Architekturkarte (E30) gegenpruefen: API-Pfade, Suche, Hinweise; Reihenfolge an Demo-Schnitt (E28) anpassen.
 2. **Codex-Review** nur der Korrekturen.
 3. **Bereitschafts-Check**, dann Spec (`docs/superpowers/specs/`) und Umsetzungsplan mit Ressourcen (writing-plans).

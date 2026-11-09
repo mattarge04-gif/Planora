@@ -1,6 +1,6 @@
 # 0014 – Grundriss-Erkennung hybrid mit Pflicht-Korrektur und manuellem Fallback
 
-Status: vorgeschlagen · 2026-11-08 · Bezug: E3, FA-12
+Status: vorgeschlagen, ergaenzt durch E31 · 2026-11-08 / 2026-11-09 · Bezug: E3, FA-12
 
 ## Kontext
 Kein belastbarer Benchmark fuer "Claude erkennt Raum-Rechtecke"; allgemeine VLMs sind semantisch stark, geometrisch ungenau [F, Q34–Q36-Tech]. Erwartung: Raumliste 80–95 %, Rechteck-Geometrie 60–80 % innerhalb ±5 % bei Vektor-PDF [A, 02 Kap. 4]. Hoechstes fachliches Risiko in V1.
@@ -12,6 +12,7 @@ Kein belastbarer Benchmark fuer "Claude erkennt Raum-Rechtecke"; allgemeine VLMs
   3. **Geometrie-Pruefung** deterministisch: Rechteck innerhalb der Seite, Ueberlappung < 10 % [A], Stempel liegt im Rechteck, Flaeche vs. Stempelflaeche (Abweichung > 15 % [A] → Konfidenz runter), Einrasten an naechste parallele Linie innerhalb 1 % der Seitenbreite [A].
   4. **Massstab**: Median aus (Stempelflaeche / Rechteckflaeche) ueber alle Raeume mit Stempel; sonst Benutzer setzt Massstab mit zwei Klicks und einer bekannten Masszahl. Speicherung in **Metern im Geschoss-Koordinatensystem**.
   5. **Korrektur-UI** (Pflicht): Rechtecke verschieben, skalieren, loeschen, neu ziehen, Bezeichnung aendern; Grundriss als Unterlage. Erst "Geschoss bestaetigen" uebernimmt Raeume in den Bestand.
+     **Bausteine (E31, Pflicht):** Unterlage = Seite per PDF.js gerendert; Editor mit **react-konva** (`Rect` + `Transformer`), Editor-Zustand in **Zustand**, Rueckgaengig/Wiederholen mit **zundo**, Einrasten und Ueberlappung ueber einen **flatbush**-Index der Linien und Rechtecke. Muster: As-Built-Editor, Floor Maker (MIT). Die Geometrie-Pruefung ist eine reine Funktion in `domain/` und laeuft identisch im Browser und im Worker.
 - **Manueller Modus** (Rechtecke auf der Unterlage zeichnen, ohne KI) ist immer verfuegbar und Standard, wenn KI aus ist oder die KI scheitert.
 - Scans/Fotos: nur Schritte 2–5; Konfidenz grundsaetzlich "mittel" oder tiefer.
 - Kennzahl fuer Qualitaet: **Korrekturzeit pro Geschoss** und Recall/IoU (Spike S1).
@@ -23,4 +24,4 @@ Kein belastbarer Benchmark fuer "Claude erkennt Raum-Rechtecke"; allgemeine VLMs
 
 ## Konsequenzen
 - + Software funktioniert auch bei 0 % KI-Treffern (manueller Weg).
-- − Korrektur-UI ist eine der aufwendigsten UI-Komponenten in V1.
+- − Korrektur-UI ist eine der aufwendigsten UI-Komponenten in V1; durch react-konva/zundo/flatbush entfaellt der Eigenbau von Interaktion, Undo und Raumindex.

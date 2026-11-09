@@ -7,10 +7,10 @@ paradigm: 'Modularer Monolith mit hexagonalen Modulen (Ports & Adapters), Pipes-
 scope: 'Planora V1 Gesamtsystem: Struktur, Dokumente, KI-Auslesen, Katalog, Preise, Erneuerungsrechnung, Zustand, 3D, Austausch, Betrieb'
 status: final
 created: '2026-11-08'
-updated: '2026-11-08'
-binds: ['E1-E22', 'FA-01..FA-38']
+updated: '2026-11-09'
+binds: ['E1-E22', 'E31', 'FA-01..FA-38']
 sources: ['docs/architektur/00-kontext.md', 'docs/architektur/01-domaene.md', 'docs/architektur/02-tech-recherche.md']
-companions: ['docs/architektur/03-architektur.md', 'docs/architektur/adr/']
+companions: ['docs/architektur/03-architektur.md', 'docs/architektur/adr/', 'docs/architektur/06-bausteine-open-source.md']
 ---
 
 # Architecture Spine — Planora V1
@@ -84,7 +84,7 @@ flowchart BT
 ### AD-6 — KI-Ausgabe geschlossen und geprueft
 - **Binds:** extraktion
 - **Prevents:** freie Typen, erfundene Werte.
-- **Rule:** Tool-Schema mit Enum der Katalog-IDs + `null`; jeder Wert mit Seite+Zitat; Validator (Schema, Katalog, Grounding, Plausibilitaet) vor Speicherung; nie automatische Bestaetigung.
+- **Rule:** Tool-Schema mit Enum der Katalog-IDs + `null`; jeder Wert mit Seite+Zitat; Validator (Schema, Katalog, Grounding, Plausibilitaet) vor Speicherung; nie automatische Bestaetigung. Dokumentinhalte sind nicht vertrauenswuerdig (Prompt Injection, OWASP LLM Top 10): im Prompt als Daten abgegrenzt, Anweisungen darin werden ignoriert, keine Tools mit Nebenwirkung; Golden Set enthaelt Injection-Dokumente (E31).
 
 ### AD-7 — Deterministischer Rechenkern
 - **Binds:** erneuerung, zustand (Modell), preise (Auswahl)
@@ -149,7 +149,17 @@ flowchart BT
 ### AD-19 — Migrationen
 - **Binds:** migrator, alle Schemaaenderungen
 - **Prevents:** Downtime, nicht ruecksetzbare Deploys.
-- **Rule:** expand/contract, N-1-kompatibel; Sicherheits-SQL handgeschrieben; CI prueft Policies.
+- **Rule:** expand/contract, N-1-kompatibel; Sicherheits-SQL handgeschrieben; CI prueft Policies (pgTAP) und Migrationen (Squawk).
+
+### AD-20 — Upload (E31, ADR 0016)
+- **Binds:** dokumente, web, worker
+- **Prevents:** Austausch der Datei zwischen Scan und Freigabe (Review K01).
+- **Rule:** Uppy mit S3-Multipart; Browser erhaelt nur URLs fuer einzelne Teile; nur der Server schliesst ab und legt danach in derselben Tx den Scan-Job an; Scan liest mit `If-Match` und gibt **dieselben** gestreamten Bytes nach `dok/` frei.
+
+### AD-21 — Pflicht-Bausteine und Lizenzen (E31, ADR 0024)
+- **Binds:** all
+- **Prevents:** Eigenbau fuer geloeste Probleme, Lizenzrisiken in der Auslieferung.
+- **Rule:** Bausteine aus ADR 0024 sind Pflicht; Eigenbau derselben Funktion nur mit PO-Entscheid. Ausgelieferter Code nur MIT/BSD/ISC/Apache-2.0/MPL-2.0; SBOM + Lizenzpruefung in CI brechen den Build.
 
 ## Consistency Conventions
 
@@ -182,6 +192,18 @@ flowchart BT
 | OCRmyPDF | 17.13.0 |
 | PostgreSQL | [A] ≥ 16 (Exoscale-Version offen) |
 | Claude via Bedrock | Sonnet 5.5, Haiku 5.5 |
+| Uppy (+ @uppy/aws-s3) | [A] im Scaffold pinnen (E31) |
+| react-pdf-highlighter | [A] im Scaffold pinnen, gleiche pdfjs-dist wie Viewer |
+| Gotenberg | [A] im Scaffold pinnen |
+| Docling Serve | [A] im Scaffold pinnen (statt eigenem docproc-Dienst) |
+| pgvector | [A] Version auf Exoscale pruefen (≥ 0.8 fuer iterative Scans) |
+| konva / react-konva, zustand, zundo, flatbush | [A] im Scaffold pinnen |
+| TanStack Table/Virtual/Query, react-hook-form, zod, shadcn/ui, kbar | [A] im Scaffold pinnen |
+| i18next / react-i18next, Tolgee | [A] im Scaffold pinnen |
+| pino, file-type, sharp, exceljs, Nodemailer, MJML, @fastify/rate-limit | [A] im Scaffold pinnen |
+| pgTAP, Squawk, Playwright, @axe-core/playwright, k6 | [A] nur CI |
+| GlitchTip, Healthchecks, Uptime Kuma, Mailpit | [A] im Scaffold pinnen |
+| Trivy, Syft, cosign, Gitleaks, Semgrep CE, Renovate, OWASP ZAP, license-checker | [A] nur CI |
 
 Versionen aus 02-tech-recherche (abgerufen 2026-11-08).
 
@@ -194,5 +216,5 @@ Siehe 03-architektur Kap. 2 (C4) und Kap. 3.1 (Verzeichnisbaum), Kap. 4.1 (ERD).
 - Kubernetes (SKS): ab ca. 5 Mandanten oder SLA-Zusage.
 - Preis-Feed-Adapter: nach Spike S12.
 - Stratus-Formatadapter: nach Spike S13 (bis dahin Excel/CSV).
-- Wahl Dezimal-, i18n-, Excel- und Lint-Bibliotheken: im Scaffold, mit Lizenzpruefung; Rechen- und Sprachregeln oben binden die Wahl.
+- Wahl der Dezimal-Bibliothek: im Scaffold, mit Lizenzpruefung; Rechenregeln oben binden die Wahl. (i18n = i18next, Excel = exceljs, Lint = ESLint + Semgrep + Squawk sind durch E31 entschieden.)
 - Lokales KI-Modell, Datenbank pro Mandant, BYOK: V2.
