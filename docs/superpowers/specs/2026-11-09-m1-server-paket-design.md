@@ -125,7 +125,7 @@ Scope: jede Fachaktion prueft die Liegenschaft des Zielobjekts gegen `rolle_lieg
 
 ## 6. Speicher-Port
 
-- Port `Ablage`: `schreibeNeu(stream) → {schluessel, sha256, groesse}`, `lese(schluessel, range?)`, `existiert(schluessel)`, `entferne(schluessel)` (nur GC). Adapter M1: **Dateisystem**, inhaltsadressiert (`sha256/aa/bb/...`), nach dem Schreiben **unveraenderlich** (0440). Pfad-/Symlink-Schutz, Disk-Fuellstand ≥ 90 % → Schreibstopp.
+- Port `Ablage`: `schreibeNeu(stream) → {schluessel, sha256, groesse}`, `lese(schluessel, range?)`, `existiert(schluessel)`, `entferne(schluessel)` (nur GC). Adapter M1: **Dateisystem**, inhaltsadressiert (`sha256/aa/bb/...`), nach dem Schreiben **unveraenderlich** (0440). Pfad-/Symlink-Schutz, Disk-Fuellstand ≥ 90 % → Schreibstopp. **Volume-Vorgabe (PP8-6):** Ablagewurzel = Mountpunkt des Volumes `dokumente`, Wurzel und Vorfahren ohne Symlinks/Junctions (der Adapter prueft `realpath` bei jeder Operation), Volume nur fuer den App-Benutzer beschreibbar, keine Bind-Mounts in fremd beschreibbare Verzeichnisse. [A] Ein Verzeichnistausch zwischen Pruefung und Zugriff ist nur durch diese Rechtevorgabe ausgeschlossen, nicht im Code (keine verankerten Verzeichnishandles in Node).
 - **Loeschen** = DB-Vormerkung + Journal (§7.3). **GC** entfernt Dateien nur, wenn (a) keine Referenz mehr, (b) Vormerkung aelter als Aufbewahrungsfrist (30 Tage [A]), (c) Journal-Eintrag quittiert und (d) **kein Backup im Zustand `laufend`** (§7.1).
 - Upload-Protokoll (Uppy/tus, K01) ist M5.
 
