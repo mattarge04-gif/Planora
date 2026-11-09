@@ -10,8 +10,10 @@ create table setup_token(hash text primary key, gueltig_bis timestamptz not null
 grant select, insert, update, delete on "user", session, account, verification, rate_limit, konto_status to planora_app;
 
 -- Fehlversuchssperre je Konto und je Client-IP: 10 Fehlversuche / 15 min -> 15 min gesperrt (Spec §5, PP7-5).
--- Reservierung vor der Passwortpruefung (atomar, Zeilensperren in fester Reihenfolge); Erfolg gibt die Reservierung zurueck.
-create table anmelde_fehlversuch(schluessel text primary key, anzahl integer not null default 0, fenster_start timestamptz not null default now(), gesperrt_bis timestamptz);
+-- Reservierung vor der Passwortpruefung (atomar, Zeilensperren in fester Reihenfolge). Getrennte Zaehler (PP7b-1):
+-- offen = laufende Versuche (begrenzt Parallelitaet: anzahl + offen <= 10), anzahl = bestaetigte Fehlversuche im Fenster;
+-- nur bestaetigte Fehlversuche setzen die Sperre.
+create table anmelde_fehlversuch(schluessel text primary key, anzahl integer not null default 0, offen integer not null default 0, fenster_start timestamptz not null default now(), gesperrt_bis timestamptz);
 grant select, insert, update, delete on anmelde_fehlversuch to planora_app;
 
 -- Rueckgabe 0 = Versuch erlaubt (reserviert), sonst Wartezeit in Sekunden
@@ -26,18 +28,18 @@ begin
      and ((gesperrt_bis is not null and gesperrt_bis <= now()) or (gesperrt_bis is null and fenster_start <= now() - interval '15 minutes'));
   select max(ceil(extract(epoch from case when gesperrt_bis is not null then gesperrt_bis else fenster_start + interval '15 minutes' end - now())))::int
     into v_warte from anmelde_fehlversuch
-   where schluessel = any(v_schluessel) and (gesperrt_bis > now() or anzahl >= 10);
+   where schluessel = any(v_schluessel) and (gesperrt_bis > now() or anzahl + offen >= 10);
   if v_warte is not null then return greatest(v_warte, 1); end if;
-  update anmelde_fehlversuch set anzahl = anzahl + 1 where schluessel = any(v_schluessel);
+  update anmelde_fehlversuch set offen = offen + 1 where schluessel = any(v_schluessel);
   return 0;
 end $$;
 
 create function anmeldung_abschliessen(p_schluessel text[], p_erfolg boolean) returns void language plpgsql as $$
 begin
   perform 1 from anmelde_fehlversuch where schluessel = any(p_schluessel) order by schluessel for update;
-  if p_erfolg then
-    update anmelde_fehlversuch set anzahl = greatest(anzahl - 1, 0) where schluessel = any(p_schluessel);
-  else
+  update anmelde_fehlversuch set offen = greatest(offen - 1, 0), anzahl = anzahl + case when p_erfolg then 0 else 1 end
+   where schluessel = any(p_schluessel);
+  if not p_erfolg then
     update anmelde_fehlversuch set gesperrt_bis = now() + interval '15 minutes'
      where schluessel = any(p_schluessel) and anzahl >= 10 and gesperrt_bis is null;
   end if;

@@ -216,4 +216,25 @@ describe("Login", () => {
     expect((await post("/api/auth/sign-in/email", { email: m, password: "x" }, {}, "198.18.6.2")).statusCode).toBe(429);
     expect(await anzahl()).toBe(vorher + 1);
   });
+
+  it("PP7b-1: offene Reservierungen zaehlen nicht als Fehler: 9 Erfolge offen + 1 Fehler → keine Sperre", async () => {
+    const k = ["konto:gemischt@planora.invalid", "ip:198.18.7.1"];
+    const res = async () => (await db.pool.query("select anmeldung_reservieren($1) w", [k])).rows[0].w as number;
+    for (let i = 0; i < 10; i++) expect(await res()).toBe(0); // 10 parallele Versuche offen
+    expect(await res()).toBeGreaterThan(0); // 11. parallel: begrenzt durch offene Reservierungen
+    await db.pool.query("select anmeldung_abschliessen($1, false)", [k]); // 1 Fehler bestaetigt, 9 noch offen
+    for (let i = 0; i < 9; i++) await db.pool.query("select anmeldung_abschliessen($1, true)", [k]);
+    const z = (await db.pool.query("select gesperrt_bis from anmelde_fehlversuch where schluessel = any($1)", [k])).rows;
+    expect(z.every((r) => r.gesperrt_bis === null)).toBe(true);
+    expect(await res()).toBe(0);
+    await db.pool.query("select anmeldung_abschliessen($1, true)", [k]);
+  });
+  it("PP7b-1: 10 bestaetigte Fehler sperren weiterhin 15 min", async () => {
+    const k = ["konto:zehn@planora.invalid", "ip:198.18.7.2"];
+    for (let i = 0; i < 10; i++) {
+      expect((await db.pool.query("select anmeldung_reservieren($1) w", [k])).rows[0].w).toBe(0);
+      await db.pool.query("select anmeldung_abschliessen($1, false)", [k]);
+    }
+    expect((await db.pool.query("select anmeldung_reservieren($1) w", [k])).rows[0].w).toBeGreaterThan(14 * 60);
+  });
 });
