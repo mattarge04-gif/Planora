@@ -1,6 +1,6 @@
 # M1 – Server-Paket, lokaler Login, Feature-Schalter (Spec, Entwurf)
 
-Stand: 2026-11-09 · Branch `welle-4-b2b` · Status: **Entwurf V3 (nach Pruefpunkt 4; §14 geht §4–§8 vor), PO-Freigabe ausstehend**
+Stand: 2026-11-09 · Branch `welle-4-b2b` · Status: **Entwurf V4 (nach Pruefpunkt 5; §15 geht §14 vor, §14 geht §4–§8 vor), PO-Freigabe ausstehend; PO-Go PP5 2026-11-09**
 Kennzeichnung: [F] Fakt mit Quelle · [A] Annahme/Vorschlag · [?] PO-Entscheid offen.
 Grundlage: E34–E37 (`docs/architektur/00-kontext.md`), ADR 0027–0031, `07-analyse-b2b.md`, `08-pruefung.md` (Pruefpunkt 2, Befunde 4–10, PO-Entscheide 1–12), `09-recherche-m1.md` (alle Versions-/Lizenzangaben dort mit Quelle, Abruf 2026-11-09).
 
@@ -264,3 +264,19 @@ Spike S13: T2 Guard-Zuschlag p95 max. **1.11 ms**. T3 V2: 0 Requests / 0 Ergebni
 
 ### 14.7 Schaetzung
 Durch §14 steigt Aufgabe 4 (Dispatch) auf 2.5 PT und Aufgabe 6 (Backup/Restore) auf 3.5 PT → **M1 ≈ 16 PT** [A].
+
+## 15. Korrekturen V4 (nach Pruefpunkt 5, PO-Go 2026-11-09) – normativ
+
+### 15.1 Dispatch externer Aufrufe nicht in M1 (PP5-1)
+- **Entscheid:** Der Dispatch-Rahmen (§4.1, §14.1) wird **nicht in M1 gebaut**, sondern mit M9 (Stufe 4). M1 enthaelt kein Modul mit `extern`-Ziel; `ki`, `interview_agent`, `extraktion` sind in Releases vor Stufe 4 nicht geliefert. M1-Aufgabe 4 reduziert sich auf Modulmanifest, Guard, Profile, Kaskade.
+- **Vorgabe fuer M9** (architektonisch festgelegt, Detail in der M9-Spec): Alle externen Aufrufe laufen ausschliesslich in einem eigenen Container `ki-worker` mit eigenem Docker-Netz, das als einziges ausgehenden Verkehr zum Provider hat (`api`/`worker` ohne diesen Ausgang). Abschalten von `ki` = (1) Schalter in der DB, (2) **Stopp des Containers `ki-worker`** durch den Betriebsdienst (`docker compose stop -t 5 ki-worker`, danach Kill) und Bestaetigung, dass der Container nicht mehr laeuft, (3) erst dann gilt das Modul als aus. Der Stillstand ist damit durch das Prozessende belegt, nicht durch Timer im Node-Prozess. Ergebnisse werden nur von `ki-worker` geschrieben; ein gestoppter Container schreibt nichts mehr. Die Zeilensperre aus §14.1 bleibt als zusaetzliche Schranke fuer den Normalbetrieb.
+- §11 A5 wandert nach M9. A5 in M1 entfaellt; Spike S13 T3 bleibt Teilnachweis fuer M9.
+
+### 15.2 Nach Restore alle Konten gesperrt (PP5-2)
+- Nach **jedem** Restore sind **alle** Konten, auch Admins, `zu_bestaetigen` (kein Login).
+- Erstfreigabe ausschliesslich ueber die Host-Konsole: `planora freigabe` durch die Betreiberrolle (Planora) mit Zugriff auf den Host; der Befehl zeigt die restaurierte Benutzer-/Rollen-/Scope-Liste und die Journal-Lage (letzte quittierte `seq`, Zeit von `stand`), verlangt die Bestaetigung je Admin-Konto und erzeugt fuer jeden bestaetigten Admin ein Einmal-Token (wie Setup, §5). Alles auditiert.
+- Erst bestaetigte Admins bestaetigen danach die uebrigen Konten in der App. Passwort-Reset (auch per SMTP) hebt `zu_bestaetigen` **nicht** auf.
+- [?] PO 4/5: Wer bei On-Premise die Host-Freigabe macht (Planora per Fernzugriff oder Kunden-IT nach Runbook).
+
+### 15.3 Schaetzung (PP5-3)
+Aufgabe 4 ohne Dispatch: 1.5 PT (statt 2.5); Aufgabe 6 inkl. §15.2: 3.5 PT. **M1 ≈ 15 PT**, Mehrbedarf gegenueber Plan V2 (7 PT) **+8 PT**. Der Dispatch-Aufwand (≈ 1 PT + Container) wandert nach M9.
