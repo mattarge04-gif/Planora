@@ -29,20 +29,21 @@ export function registriereSitzungsregeln(app: FastifyInstance, auth: Auth, pool
     }
     const s = await auth.api.getSession({ headers: alsHeaders(req) });
     if (!s) return reply.code(401).send({ fehler: "nicht angemeldet" });
-    // Pruefung und Aktivitaets-Upsert in einer Transaktion; FOR SHARE auf Sitzung und Konto serialisiert gegen Entzug
+    // Pruefung und Aktivitaets-Upsert in einer Transaktion; FOR SHARE auf Konto und Sitzung serialisiert gegen Entzug
     // und Sperre: ein parallel committeter Entzug fuehrt zu 401 statt FK-Fehler/500 (PP7-11).
+    // Lock-Reihenfolge wie setzeKontoStatus und Trigger session_regeln: immer zuerst konto_status, dann session (PP7b-2).
     // Leerlauf: letzte Aktivitaet, sonst Anmeldezeitpunkt (Sitzung ohne Folgeanfrage darf nicht unbegrenzt frisch bleiben)
     const c = await pool.connect();
     let z: { status: string; audit_id: string; frisch: boolean } | undefined;
     try {
       await c.query("begin");
-      z = (await c.query(
-        `select k.status, k.audit_id, coalesce(a.zuletzt_aktiv, s.created_at) > now() - interval '${LEERLAUF}' as frisch
-           from konto_status k
-           join session s on s.id = $2 and s.user_id = k.benutzer_id
-           left join sitzung_aktivitaet a on a.session_id = s.id
-          where k.benutzer_id = $1
-          for share of s, k`, [s.user.id, s.session.id])).rows[0];
+      const k = (await c.query("select status, audit_id from konto_status where benutzer_id = $1 for share", [s.user.id])).rows[0];
+      const sz = k && (await c.query(
+        `select coalesce(a.zuletzt_aktiv, s.created_at) > now() - interval '${LEERLAUF}' as frisch
+           from session s left join sitzung_aktivitaet a on a.session_id = s.id
+          where s.id = $1 and s.user_id = $2
+          for share of s`, [s.session.id, s.user.id])).rows[0];
+      z = k && sz ? { status: k.status, audit_id: k.audit_id, frisch: sz.frisch } : undefined;
       if (z && z.status === "aktiv" && z.frisch) {
         await c.query(
           `insert into sitzung_aktivitaet(session_id, zuletzt_aktiv) values ($1, now())
@@ -51,7 +52,12 @@ export function registriereSitzungsregeln(app: FastifyInstance, auth: Auth, pool
         await c.query("delete from session where id=$1", [s.session.id]);
       }
       await c.query("commit");
-    } catch (e) { await c.query("rollback").catch(() => {}); throw e; } finally { c.release(); }
+    } catch (e) {
+      await c.query("rollback").catch(() => {});
+      // Deadlock trotz einheitlicher Reihenfolge (z. B. fremder Schreibpfad): kontrolliert als nicht angemeldet behandeln
+      if ((e as { code?: string }).code === "40P01") return reply.code(401).send({ fehler: "nicht angemeldet" });
+      throw e;
+    } finally { c.release(); }
     if (!z || z.status !== "aktiv" || !z.frisch) return reply.code(401).send({ fehler: "nicht angemeldet" });
     req.kontext = { benutzerId: s.user.id, auditId: z.audit_id, sessionId: s.session.id };
   });

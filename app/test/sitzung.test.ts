@@ -247,4 +247,26 @@ describe("Sitzungsregeln", () => {
       t.release();
     }
   });
+
+  it("PP7b-2: Kontosperre waehrend wartender Sitzungspruefung: kein Deadlock, Sperre committet, Anfrage 401", async () => {
+    const c = await login();
+    expect((await ich(c)).statusCode).toBe(200);
+    const t = await db.pool.connect();
+    try {
+      await t.query("begin");
+      await t.query("select 1 from konto_status where benutzer_id=$1 for update", [benutzerId]); // wie setzeKontoStatus
+      const anfrage = ich(c);
+      expect(await blockiertBis(anfrage)).toBe(true); // Pruefung wartet auf den Konto-Lock
+      await t.query("update konto_status set status='gesperrt' where benutzer_id=$1", [benutzerId]);
+      await t.query("delete from session where user_id=$1", [benutzerId]); // Entzug darf nicht in einen Deadlock laufen
+      await t.query("commit");
+      const r = await anfrage;
+      expect(r.statusCode).toBe(401);
+      expect(await sitzungen()).toBe(0);
+    } finally {
+      await t.query("rollback").catch(() => {});
+      t.release();
+      await db.pool.query("update konto_status set status='aktiv' where benutzer_id=$1", [benutzerId]);
+    }
+  });
 });
