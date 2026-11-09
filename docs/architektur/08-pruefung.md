@@ -149,3 +149,45 @@ Urteil: STOP
 [F] Messmethodik T1/T2 fuer einen lokalen Machbarkeitsspike plausibel: echte Bibliothek/DB, Warm-up, 2000 Requests/20 parallel, Median dreier Runden; keine Zielhardware-Zusage. Alle T2-Mediane/Differenzen und T3-Summen/Statussummen/p50/p95 aus den gespeicherten Einzellaeufen nachgerechnet, keine Abweichung; T1-Werte passen zum README. T1 prueft weder den vollstaendigen A3-Vertrag noch Reset/Timeouts/TOTP; T4 blieb aus. Kein abgeschlossener A1–A8-Produktnachweis daraus ableitbar.
 [A] Antwort auf Frage 4: Noch keine tragfaehige writing-plans-Grundlage, auch bei weitergeltenden PO-Annahmen [A], weil insbesondere Dispatch bei DB-Verlust, Journal-Endstand, GC und Update-Rueckweg noch sicherheitsrelevante Architekturentscheide verlangen; nach deren Konkretisierung sind die uebrigen Punkte planbare Implementierungs-/Abnahmeauflagen.
 [F] PP3-Status: 5 geschlossen, 7 teilweise, 0 offen; neue Befunde: hoch 6, mittel 3, tief 1. Ausschliesslich diesen Abschnitt angehaengt, kein Commit.
+
+## Pruefpunkt 5 (M1-Spec V3, 4ec0580)
+Urteil: STOP
+
+[F] Geprueft: Spec 4ec0580 und Diff 04eea04..4ec0580, PP4-1–10 sowie S13-README/Messwertdarstellung. §14 hat Vorrang vor §4–§8; keine erneute Spike-Ausfuehrung oder Produktabnahme.
+[A] Massstab: Fehlender/falscher Sicherheitsentscheid = (A); festgelegter Entscheid mit offenem Implementierungs-/Testnachweis = (B). PO-Annahmen §2 gelten weiter als [A] und begruenden kein STOP.
+
+| PP4 | Status | Grund |
+|---|---|---|
+| PP4-1 | offen-(A) | Lokaler Sendestart ist sauber abgegrenzt; Lease-Alter beweist aber keinen Senderstillstand nach DB-Verlust (§14.1; PP5-1, hoch). |
+| PP4-2 | geschlossen | Getrennte Pools, dauerhafte Budgetreservierung/unklarer Verbrauch, Sperrreihenfolge, Retry-Grenze und atomare Reaktivierung sind entschieden (§14.1); deren Umsetzung ist abnehmbar. |
+| PP4-3 | (B)-Auflage | T3 ausdruecklich Teilnachweis fuer d5e18e9; finale deterministische A5-Faelle stehen in §14.1, Nachweis folgt in M1. |
+| PP4-4 | offen-(A) | Zaehler, Verschluesselung, Replay und unbekannter Endstand sind entschieden; Wiederbestaetigung nimmt Admin-Konten aus und laesst verlorene Admin-Entzuege wiederkehren (§14.2; PP5-2, hoch). |
+| PP4-5 | (B)-Auflage | Gemeinsamer GC-Lock, Heartbeat plus Container-Ende und Behandlung restaurierter Laeufe stehen (§14.3); Sperrlebensdauer bis Referenz-Commit im Plan konkretisieren. |
+| PP4-6 | geschlossen | Exporter bis Dump-Ende, Invalidierung bei Abbruch und Exitcodes aller Schritte sind verbindlich (§14.3). |
+| PP4-7 | geschlossen | Getrennte Betriebsrolle mit begrenzten Funktionen, passwortfreier Rollenexport und Secret-Neuanlage beheben den Rechtewiderspruch (§14.3). |
+| PP4-8 | (B)-Auflage | Dauerhafte Zustandsdatei, Wiederaufnahme, gesperrte Worker, Freigabeschritt und erneuter Stopp vor Rueckweg sind entschieden (§14.4); Crash-/Wiederholungsdetails gehoeren in A7. |
+| PP4-9 | geschlossen | Instanz-ID in Manifest/Inventar/Journalpfad; Abgleich vor Import und VM-Ersatz mit gleicher Identitaet verbindlich (§14.5). |
+| PP4-10 | geschlossen | 1.11 ms, vier V2-Varianten, getrennte V1-Kontrolle, korrekte p50-Werte und fehlender Poll-Abbruchnachweis ausdruecklich ausgewiesen (§14.6). |
+
+Neue bzw. durch §14 fortgeschriebene Fehler (keine bloss fehlenden Produktnachweise):
+
+| Nr. | Klasse / Schwere | Stelle | Befund und erforderliche Korrektur |
+|---|---|---|---|
+| PP5-1 | (A) hoch | §14.1, Lease/Abschalten | Gegenbeispiel: Sender nach letzter DB-Pruefung vor fetch pausiert; Backend stirbt, Share-Sperre faellt; nach 5 s darf (c) committen; Sender laeuft vor Fehler-/Timer-Callback weiter und startet fetch. 2-s-Selbstabbruch ist keine harte Laufzeitgarantie, 5-s-Lease-Alter kein Stillstandsnachweis. Entscheiden: betroffene Sender unabhaengig stoppen und Prozessende vor (c) bestaetigen, oder eine tragfaehige Versandabschirmung festlegen; bloss laengere Fristen beheben das nicht. |
+| PP5-2 | (A) hoch | §14.2 i.V.m. §5 | Backup seq=10 enthaelt Admin X; Entzug/Sperre seq=11 geht bei Zielausfall + VM-Verlust verloren. X ist nach Restore weiterhin Admin und darf nach SMTP-Passwort-Reset wieder handeln und andere Konten bestaetigen. Passwortwechsel bestaetigt keine aktuelle Berechtigung. Auch restaurierte Admins bis zur ausdruecklichen Neubestaetigung sperren; vertrauenswuerdigen Erstfreigabeweg ausserhalb restaurierter Rechte festlegen, etwa verifizierte Host-Recovery. |
+| PP5-3 | (B) tief | §12 / §14.7 | M1 steigt von 7 auf 16 PT, also +9 statt der weiterhin genannten +8 PT. Schaetzung/Planauswirkung bei Neuplanung konsistent nachziehen; kein Architekturhindernis. |
+
+[F] Node garantiert keine exakten Timer-Zeitpunkte oder Callback-Reihenfolgen ([Node-Timer](https://nodejs.org/api/timers.html#settimeoutcallback-delay-args)); DB-Zeilensperren enden mit der Transaktion ([PostgreSQL-Sperren](https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-ROWS)). Das Gegenbeispiel PP5-1 ist eine Protokollanalyse, kein gemessener Produktfehler.
+
+Auflagen fuer writing-plans (nur (B), 7):
+
+- A5 gemaess §14.1 mit Barrieren, DB-/Listener-Ausfall, Pool-Saettigung und belastbar beobachteter Commit-Reihenfolge planen; S13 bleibt Teilnachweis.
+- Budget-Ledger auch nach Crash zwischen Reservierung, Sendestart und Abschluss abgleichen; Schalterbefehle/Steuerpool unter Parallelitaet und Timeout abnehmen.
+- GC-Sperre vom Existenzpruefen/Schreiben bis zum Commit jeder neuen Referenz halten; Backup-Registrierung bis Commit schuetzen, Race und lebenden langen Lauf testen.
+- A6 mit Exporter-/Dump-Abbruch, Container-Ende/Reconcile, restaurierten Laufzeilen, echten Minimalrollen und gehaerteten SECURITY-DEFINER-Funktionen durchfuehren.
+- A7 um Absturz zwischen Seiteneffekt und Zustandsquittung, idempotente Wiederholung und Schritt 7 erweitern; Test-Session ohne Freigabe fachlicher Mutationen pruefen.
+- A2/A6: falsche Zielinstanz vor Import ablehnen, VM-Ersatz mit gleicher Identitaet sowie fehlende Schluessel/Journalobjekte negativ testen.
+- M1 = 16 PT / Mehrbedarf = 9 PT und die betroffenen Wochen-/Gesamtsummen bei der ausstehenden Neuplanung konsistent fuehren.
+
+[A] Frage 3: Unter weitergeltenden PO-Annahmen §2 [A] noch keine tragfaehige writing-plans-Grundlage, weil PP5-1/2 zwei Sicherheitsentscheide korrigieren muessen; die sieben (B)-Auflagen blockieren nicht.
+[F] PP4-Status: 5 geschlossen, 3 (B)-Auflage, 2 offen-(A); Befunde: 2 (A) hoch und 1 (B) tief, dazu 7 gebuendelte (B)-Auflagen. Ausschliesslich diesen Anhang ergaenzt, kein Commit.
