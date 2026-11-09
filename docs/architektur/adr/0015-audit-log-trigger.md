@@ -3,6 +3,8 @@
 > **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
 > [A] Trigger, minimale Rechte und Hash-Kette bleiben, Kette instanzbezogen statt mandantenbezogen; keine Mandantenwechsel-Ereignisse.
 > [A] Neu erfasst: Login, Rollen- und Modulschalter-Aenderung, Import, Instanz-Update. Grenzen gegen Host-/DB-Owner werden benannt (ADR 0031).
+> [A] **Pseudonyme Audit-ID ab Erstschreiben** (Welle 4b, Befund 10 in `08-pruefung.md`, 07 Kap. 2): Akteur in `audit_eintrag` ist nie Name/E-Mail, sondern eine stabile `audit_pseudonym`-UUID, die bei Kontoanlage vergeben wird. Die Zuordnung Pseudonym → Person liegt getrennt in `audit_akteur` und ist loeschbar; bei Kontopseudonymisierung wird nur diese Zuordnung geloescht. Gehashte Ereignisse werden nie nachtraeglich umgeschrieben, die Hash-Kette bleibt gueltig. Alt/Neu-Werte von Benutzertabellen werden mit Pseudonym statt Klartext protokolliert. Datenmodell: 03 Kap. 4.5 (M1).
+> Freigabestatus: vorgeschlagen · Aenderungsstatus: angepasst · Lieferstufe: 1 · Ersetzt: – · Ersetzt durch: –
 > Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
 
 Status: vorgeschlagen · 2026-11-08 · Bezug: FA-06, NFR Nachvollziehbarkeit, ISO-27001-Naehe

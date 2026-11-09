@@ -1,7 +1,8 @@
-# 0008 – 3D: Three.js/R3F mit BatchedMesh, Sprite-Pins und deterministischem Auto-Layout
+# 0008 – 3D: Three.js/R3F mit InstancedMesh, Sprite-Pins, deterministischem Auto-Layout und Leistungsstufen
 
 > **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
-> [F] E33 gilt weiter: InstancedMesh, Leistungsstufen normal/schwach/2D (Titel nennt noch BatchedMesh, historisch).
+> Freigabestatus: vorgeschlagen (inhaltlich durch E33 angepasst, keine eigene PO-Freigabe) · Aenderungsstatus: angepasst · Lieferstufe: 1 · Ersetzt: – · Ersetzt durch: –
+> [F] E33 gilt weiter: `InstancedMesh` pro Katalogtyp, Leistungsstufen normal/schwach/2D. Titel in Welle 4b auf InstancedMesh korrigiert (Befund 15 in `08-pruefung.md`); der urspruengliche Titel lautete «… mit BatchedMesh, Sprite-Pins und deterministischem Auto-Layout», der Dateiname bleibt wegen Verlinkung unveraendert. Filter ueber Instanz-Sichtbarkeit im `InstancedMesh` (03 Kap. 7.2), nicht `setVisibleAt`.
 > [A] Einstieg ueber Formular/Excel und Weltgenerator; Grundriss-Editor ist keine Voraussetzung mehr (ADR 0014 zurueckgestellt). Konva nur fuer den funktionalen 2D-Fallback separat beurteilen.
 > Der folgende Text ist die bisherige Fassung und bleibt als Historie erhalten.
 
