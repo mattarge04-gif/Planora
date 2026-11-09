@@ -9,7 +9,7 @@ Quellenkuerzel: `Qn-Dom` = Quelle n in 01-domaene, `Qn-Tech` = Quelle n in 02-te
 **E32 (2026-11-09): oeffentliche APIs** geo.admin.ch/GWR, Nager.Date, Pwned Passwords (ADR 0025) sind eingearbeitet (Kap. 2.1, 3.3, 4.2, 9.7, 15).
 **E33 (2026-11-09): geschlossene 3D-Welt** mit Regelwerk, Interview-Agent und deterministischem Weltgenerator (ADR 0026), einfacher Look mit Leistungsstufen (ADR 0008 angepasst, Spike S3b) sind eingearbeitet (Kap. 3, 7, 15).
 Entscheide im Detail: `adr/0001`–`adr/0031` (Index: `adr/0000-adr-vorlage-und-index.md`). BMAD-Arbeitsprotokoll und Spine: `bmad/planning-artifacts/architecture/architecture-Planora-2026-11-08/`.
-**Welle 4 / B2B (E34–E37, 2026-11-09):** Gueltigkeit siehe **Kap. 0**; umgestellt sind Kap. 0, 2, 3, 9, 10, 12, die uebrigen Kapitel folgen in Welle 4b.
+**Welle 4 / B2B (E34–E37, 2026-11-09):** Gueltigkeit siehe **Kap. 0**; umgestellt sind Kap. 0–10 und 12 (Welle 4 und 4b); Kap. 11, 13–15 und Anhang A folgen in Welle 4b.
 
 ---
 
@@ -28,26 +28,26 @@ Entscheide im Detail: `adr/0001`–`adr/0031` (Index: `adr/0000-adr-vorlage-und-
 **Lieferstufen** [A, Plan V2 `docs/plan/umsetzungsplan.html`]: Stufe 1 = 3D + Dokumente, Erfassung per Formular/Excel · Stufe 2 = + Lebensdauer und Ampel (Ziel Uebergabe Siemens) · Stufe 3 = + lokale Suche · Stufe 4 = + Claude-Interview und KI-Auslesen.
 **Zurueckgestellt bis nach der Demo:** Grundriss-Erkennung (ADR 0014), Preise/Investitionsplan (ADR 0018, E24), FR/IT (ADR 0019), oeffentliche APIs (ADR 0025).
 
-**Stand dieses Dokuments:** Kapitel 0, 2, 3, 9, 10 und 12 sind auf Welle 4 umgestellt. Die uebrigen Kapitel tragen, wo sie Mandanten/RLS/Bedrock/Keycloak/Exoscale voraussetzen, den Hinweis «[A] in Welle 4b anzupassen, siehe 07 Kap. 3»; dort gilt im Zweifel dieses Kapitel 0. Die bisherige Fassung der umgestellten Kapitel liegt im Git-Verlauf (Stand vor Branch `welle-4-b2b`, Commit `e64fdb9`).
+**Stand dieses Dokuments:** Kapitel 0, 2, 3, 9, 10 und 12 sind auf Welle 4 umgestellt, Kapitel 1 und 4–8 in Welle 4b. Die uebrigen Kapitel tragen, wo sie Mandanten/RLS/Bedrock/Keycloak/Exoscale voraussetzen, den Hinweis «[A] in Welle 4b anzupassen, siehe 07 Kap. 3»; dort gilt im Zweifel dieses Kapitel 0. Die bisherige Fassung der umgestellten Kapitel liegt im Git-Verlauf (Stand vor Branch `welle-4-b2b`, Commit `e64fdb9`).
 
 ---
 
 ## 1. Zusammenfassung und Qualitaetsziele
 
-> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, RLS, Bedrock, Exoscale voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
+> Welle 4b (E34–E37, 2026-11-09): umgestellt gemaess 07 Kap. 3. Die Fassung vor Welle 4 (Mandanten, RLS, Bedrock, Exoscale, Preise) liegt im Git-Verlauf (Commit `e64fdb9`).
 
 ### 1.1 Zusammenfassung (10 Punkte)
 
-1. **Modularer Monolith in TypeScript, ein Image, drei Prozessrollen** (`api`, `worker`, `migrator`). 13 Fachmodule mit fester Datenhoheit, Import-Grenzen per Lint erzwungen (ADR 0001).
-2. **"Bedingungslos funktionieren" heisst hier:** keine stillen Fehler, kein Datenverlust, kein Mandantenleck, jede Zahl erklaerbar. Es heisst **nicht** 99.99 % Verfuegbarkeit; Ziel V1 ist 99.5 % pro Monat [A]. Jede KI-Funktion hat einen manuellen Weg, der ohne KI zum gleichen Ergebnis fuehrt.
-3. **Mandantentrennung dreifach:** PostgreSQL-RLS mit `FORCE` und fail-closed-Kontext, zusammengesetzte Fremdschluessel `(mandant_id, id)`, Rechtepruefung in der App. Pflicht-Tests in der CI (ADR 0010).
-4. **Herkunft ist das Datenmodell:** Jeder Kennwert ist eine `angabe` mit Dokument, Seite, Zitat, Konfidenz, Status. In die Rechnung fliessen **nur bestaetigte** Angaben (ADR 0012).
-5. **KI liefert Vorschlaege, nie Wahrheit:** Claude Sonnet/Haiku 5.5 ueber **AWS Bedrock eu-central-2 mit EU-Profil** (Abweichung vom PO-Entscheid "Datenstandort CH" fuer den KI-Pfad, ADR 0003). Ausgabe nur gegen Katalog-IDs, Pruefung von Schema, Plausibilitaet und Zitat im Seitentext. KI pro Mandant **opt-in**; vor jedem Aufruf Kostenschaetzung und Budgetreservierung, Antwort-Cache, globaler Not-Aus (ADR 0017).
-6. **Erneuerungsrechnung als reine Funktion:** Stichtag explizit, Geld in Rappen, Rechenweg pro Zeile, eingefrorene Planstaende mit Hash; gleiche Eingabe = gleiches Ergebnis. Zustand nach **ZHAW-Methode** (E14), Lebensdauer pro Typ **und pro Element** ueberschreibbar (E11), Ampel-Schwelle pro Bauteiltyp (E17), Preise aus eigener **Preisdatenbank** (E15) (ADR 0013, 0018, 0021).
-7. **Grundriss hybrid:** Vektor-Stempel + Claude Vision + deterministische Geometriepruefung + Pflicht-Korrektur-UI; manuelles Zeichnen immer verfuegbar (ADR 0014).
-8. **3D darstellerisch:** BatchedMesh, Sprite-Pins mit hierarchischem Clustering, Element-Positionen per deterministischem Auto-Layout im Raum; Budget 10'000 Elemente bei 60 fps auf Laptop mit integrierter GPU [A] (ADR 0008).
-9. **Offen fuer Austausch und Sprachen:** Klassifikation (ETIM, eBKP-H) nur als austauschbare Mappings an der fuehrenden Planora-Katalog-ID (E12/E13); DE/FR/IT ab V1 (E20); Export/Import Richtung Stratus ueber einen Adapter (E22) (ADR 0011, 0019, 0020).
-10. **Betrieb Schweiz:** Exoscale Zuerich (Managed PG Business mit PITR/HA, SOS), Offsite Genf, Docker Compose zum Start, On-Prem mit denselben Images; RPO 5 min / RTO 4 h [A], monatlicher automatischer Restore-Test (ADR 0002).
+1. **Modularer Monolith in TypeScript, ein Image, drei Prozessrollen** (`api`, `worker`, `migrator`). Fachmodule mit fester Datenhoheit, Import-Grenzen per Lint erzwungen (ADR 0001); jedes Modul hat eine Lieferstufe und, wo vorgesehen, einen Schalter pro Instanz (ADR 0029). Eine Codebasis, keine kundenspezifischen Branches (E37).
+2. **Eine Instanz pro Kunde (E34):** dasselbe Compose-Paket auf eigener CH-VM oder On-Premise, mit eigener Datenbank, Dokumentablage, Secrets, Netz und Backup-Ziel (ADR 0027, 0031). In der App gibt es keine Mandantenwahl und keinen Mandantenkontext.
+3. **"Bedingungslos funktionieren" heisst hier:** keine stillen Fehler, kein Datenverlust, keine falsche Ampel ohne Kennzeichnung, keine Daten einer anderen Instanz, jeder Wert erklaerbar. Es heisst **nicht** Hochverfuegbarkeit: Eine Einzel-VM ist kein HA-System; RPO/RTO werden neu vereinbart (Kap. 10.5, [?] PO, `08-pruefung.md` PO-Entscheid Nr. 4).
+4. **Erfassung ohne KI zuerst:** Formular-Assistent und Excel-Vorlage mit validierter Zeilenvorschau → deterministischer Weltgenerator → 3D-Vorschau → Bestaetigung (ADR 0026). KI ist nie Voraussetzung fuer eine Funktion.
+5. **Herkunft ist das Datenmodell:** Jeder Kennwert ist eine `angabe` mit typisierter Herkunft je Eingabekanal (Formular, Excel-Zeile/Zelle, Dokument/Seite/Zitat, ab Stufe 4 Interview-Antwort oder KI-Lauf) und Status. In Lebensdauer und Ampel fliessen **nur bestaetigte** Angaben (ADR 0012).
+6. **Dokumente KI-frei:** Upload per serverseitig abgeschlossenem Multipart, Quarantaene + ClamAV + Magic Bytes ueber dieselben Bytes, lokale Vorschau (Gotenberg, OCRmyPDF), Viewer im Browser ohne Download mit Seiten-Sprung und Markierung (ADR 0016, 0022). K01 bleibt Gate vor Kundendaten.
+7. **Lebensdauer und Ampel als reiner Rechenkern:** Stichtag explizit, Quellenrangfolge, technisches Ersatzjahr, Vollstaendigkeit, Ampel; gleiche Eingabe = gleiches Ergebnis (ADR 0013). **Keine** Preise, Teuerung oder Investitionsplanung (E24). Umfang der ZHAW-Zustandsbewertung in der Demo offen ([?] PO, `08-pruefung.md` PO-Entscheid Nr. 8).
+8. **3D sinngemaess (E33):** geschlossene Welt aus Regelwerk und Katalog, `InstancedMesh` pro Katalogtyp, Sprite-Pins mit Clustering, Leistungsstufen normal/schwach/2D, 2D mit allen Funktionen (ADR 0008, 0026).
+9. **Lokaler Login mit Rollen und Liegenschafts-Scope** (ADR 0028), SSO spaeter als Modul ohne zweite Rollenquelle. Sprache DE/de-CH; FR/IT zurueckgestellt (ADR 0019).
+10. **Stufen 3 und 4:** Suche lokal ab Stufe 3 (PostgreSQL-Volltext + pgvector + lokaler Embedding-Server, ADR 0023); Claude API direkt nur ab Stufe 4, pro Instanz standardmaessig aus, mit Zustimmung, eigenem Schluessel und Budget (ADR 0030, 0017). Stufen 1–3 erzeugen keinen externen Inhaltsabfluss. Ob E27-Teile (Anfrageverstaendnis/Reranking/Antwort mit Quellen) schon Stufe 3 gehoeren: [?] PO, `08-pruefung.md` PO-Entscheid Nr. 11.
 
 ### 1.2 Qualitaetsziele (priorisiert)
 
@@ -55,12 +55,12 @@ Bei Zielkonflikten gewinnt das hoeher stehende Ziel.
 
 | Rang | Qualitaetsziel | Konkretes Szenario / Messgroesse | Hauptmechanismen |
 |---|---|---|---|
-| 1 | **Korrektheit der Daten** | Kein unbestaetigter KI-Wert in Rechnung oder Export (Test: 0 Treffer). Summen Investitionsplan = Summe der Zeilen auf den Rappen (FA-26). Rechnung reproduzierbar: gleicher Planstand → byte-identisches Ergebnis. | ADR 0012, 0013; Validator; Optimistic Locking |
-| 2 | **Mandantentrennung** | 0 Fremdzeilen in RLS-, Pool-Leak- und API-Tests (FA-01); fehlender Kontext → Fehler, nie leere oder fremde Daten. | ADR 0010; CI-Katalogpruefung |
-| 3 | **Nachvollziehbarkeit** | Fuer jede Aenderung wer/wann/alt/neu abrufbar (FA-06); fuer jeden effektiven Wert Quelle + Rangstufe (FA-21); fuer jedes KI-Ergebnis Prompt-, Modell-, Katalog- und Pipeline-Version. | ADR 0015, 0012; `extraktion_lauf` |
-| 4 | **Verfuegbarkeit und Wiederherstellbarkeit** | 99.5 %/Monat [A]; RPO DB ≤ 5 min, Dokumente ≤ 24 h; RTO ≤ 4 h [A]; KI-Ausfall blockiert keine Nicht-KI-Funktion. | Kap. 10; Schutzschalter; manuelle Wege |
-| 5 | **Performance** | API p95 ≤ 300 ms fuer Lesezugriffe [A]; Erneuerungsliste 10'000 Elemente ≤ 2 s [A]; 3D 60 fps median / p95-Frame ≤ 33 ms bei 10'000 Elementen [A]. | Projektion `element_effektiv`; Kap. 7 |
-| 6 | **Portabilitaet** | Gleiche Images laufen auf Exoscale, AWS und On-Prem; nur libpq, S3-API, OIDC, OCI (E7). | ADR 0001, 0002 |
+| 1 | **Korrektheit der Daten** | Kein unbestaetigter Wert in Lebensdauer, Ampel oder Export (Test: 0 Treffer). Lebensdauer-/Ampel-Orakel 100 % gruen, Faelle fachlich freigegeben. Gleiche Eingabe + Stichtag + Regelversion → byte-identisches Ergebnis. Unbekannt/unvollstaendig erscheint grau, nie als gruen. | ADR 0012, 0013; Validator; Optimistic Locking |
+| 2 | **Instanz-Isolation und Rollenrechte** | Zwei installierte Instanzen teilen kein Volume, Netz, Secret oder Backup-Ziel (Installationstest). Rechte-Matrix Rolle × Recht × Liegenschaft gruen an API, Viewer-URLs, Derivaten, Downloads, Jobs und ab Stufe 3 Suchtreffern; Rechteentzug wirkt sofort. | ADR 0028, 0029, 0031 |
+| 3 | **Wiederherstellbarkeit und betreibbare Installation** | Installation aus sauberer VM nach Runbook; Update N-1 → N mit befuellten Daten ohne Verlust; Restore auf frischer VM ohne Entwicklerzugang mit Hash-/Referenzpruefung. RPO/RTO: Vorschlag 24 h / 1 Arbeitstag bei CH-VM [A], [?] PO (`08-pruefung.md` PO-Entscheid Nr. 4). KI-Ausfall blockiert keine Nicht-KI-Funktion. | ADR 0027; Kap. 10 |
+| 4 | **Nachvollziehbarkeit** | Fuer jede Aenderung wer/wann/alt/neu abrufbar (FA-06); fuer jeden effektiven Wert Quelle + Rangstufe (FA-21); Login, Rollen-/Modul-Schalter-Aenderung, Import und Instanz-Update im Audit; ab Stufe 4 Prompt-, Modell-, Katalog- und Pipeline-Version je KI-Ergebnis. | ADR 0015, 0012 |
+| 5 | **Performance** | API p95 ≤ 300 ms fuer Lesezugriffe [A]; Lebensdauer-/Ampelliste 10'000 Elemente ≤ 2 s [A]; 3D-Budget Kap. 7.3 auf Kunden-Laptop bzw. Kunden-VDI [A]. | Projektion `element_effektiv`; Kap. 7 |
+| 6 | **Portabilitaet** | Dasselbe Compose-Paket laeuft auf CH-VM und On-Premise ohne Sonderbuild (E35); nur Standard-Schnittstellen (libpq, OCI, Dateisystem bzw. S3-API je Speicherwahl, [?] PO, `08-pruefung.md` PO-Entscheid Nr. 3). | ADR 0001, 0027 |
 
 ---
 
@@ -215,120 +215,135 @@ Pfeil = "darf aufrufen". Alles darf `plattform` nutzen. Rueckwaerts-Aufrufe und 
 | *preise* | zurueckgestellt (E24, ADR 0018) | spaeteres Kundenmodul | – | – | – |
 | *austausch* | [?] PO, Stratus-Scope (ADR 0020) | spaeteres Modul; Excel-Import gehoert zu `interview` | – | – | – |
 
-[A] Tabellen- und Spaltennamen fuer `identitaet`, `instanz` und `hinweise` sind Vorschlaege; das Datenmodell (Kap. 4) wird in Welle 4b nachgezogen.
+[A] Tabellen- und Spaltennamen fuer `identitaet`, `instanz` und `hinweise` sind Vorschlaege; das Datenmodell steht in Kap. 4 (Welle 4b).
 
 ---
 
 ## 4. Datenmodell
 
-> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, RLS voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
+> Welle 4b (E34–E37, 2026-11-09): umgestellt gemaess 07 Kap. 3 auf **eine Kundeninstanz**: keine `mandant_id`, keine RLS, normale Fremdschluessel, lokale Benutzer/Rollen/Scopes, Instanzparameter, Modulkonfiguration, Erfassungsentwurf. Preis-, GWR-/Feiertags- und Grundriss-Vorschlagtabellen sind nicht im Demo-Schema. Fassung vor Welle 4 im Git-Verlauf (`e64fdb9`). Tabellen- und Spaltennamen bleiben Vorschlaege [A] bis zur M1-Spec.
 
-### 4.1 Kernentitaeten
+### 4.1 Kernentitaeten (eine Instanz)
 
 ```mermaid
 erDiagram
-  MANDANT ||--o{ LIEGENSCHAFT : hat
   LIEGENSCHAFT ||--o{ GEBAEUDE : hat
   GEBAEUDE ||--o{ GESCHOSS : hat
-  GESCHOSS ||--o{ RAUM : hat
+  GESCHOSS ||--o{ RAUM : "hat (Einheit)"
   RAUM ||--o{ ELEMENT : enthaelt
   ELEMENTTYP ||--o{ ELEMENT : typisiert
   KATALOG_EINTRAG ||--o{ ELEMENTTYP : klassifiziert
-  ELEMENT ||--o{ ANGABE : "Kennwerte (ziel)"
-  ELEMENTTYP ||--o{ ANGABE : "Kennwerte (ziel)"
-  DOKUMENT ||--o{ ANGABE : belegt
-  EXTRAKTION_LAUF ||--o{ ANGABE : erzeugt
+  ELEMENT ||--o{ ANGABE : "Kennwerte"
+  ELEMENTTYP ||--o{ ANGABE : "Kennwerte"
+  ANGABE }o--o| DOKUMENT : "Herkunft Dokument"
+  ANGABE }o--o| ERFASSUNG : "Herkunft Formular/Excel/Interview"
+  ANGABE }o--o| EXTRAKTION_LAUF : "Herkunft KI (Stufe 4)"
   DOKUMENT ||--o{ DOKUMENT_VERKNUEPFUNG : ""
-  ELEMENT ||--o{ ZUSTANDSBEWERTUNG : hat
-  ELEMENT ||--o{ ERSATZ_PLANUNG : verschiebt
-  MANDANT ||--o{ MITGLIEDSCHAFT : ""
-  BENUTZER ||--o{ MITGLIEDSCHAFT : ""
-  MANDANT ||--o{ PLANSTAND : friert_ein
+  ELEMENT ||--o{ ZUSTANDSBEWERTUNG : "hat [?] Scope"
+  BENUTZER ||--o{ ROLLE_ZUORDNUNG : ""
+  ROLLE_ZUORDNUNG ||--o{ ROLLE_LIEGENSCHAFT : "Scope"
+  LIEGENSCHAFT ||--o{ ROLLE_LIEGENSCHAFT : ""
+  BENUTZER ||--o{ SITZUNG : ""
 ```
+
+Es gibt keine Entitaet "Mandant": Die Instanz selbst ist die Kundengrenze (ADR 0031). Instanzweite Einstellungen liegen in `instanz_einstellung` (eine Zeile, versioniert).
 
 ### 4.2 Tabellen (Auszug, verbindliche Spalten)
 
-Gemeinsame Spalten jeder Mandantentabelle: `id uuid` (UUIDv7, PK), `mandant_id uuid NOT NULL`, `version int NOT NULL` (Optimistic Locking), `erstellt_am/von`, `geaendert_am/von`, `UNIQUE (mandant_id, id)`.
+Gemeinsame Spalten jeder Fachtabelle: `id uuid` (UUIDv7, PK), `version int NOT NULL` (Optimistic Locking), `erstellt_am/von`, `geaendert_am/von`. Fremdschluessel sind normale FKs auf `id`; keine zusammengesetzten Mandanten-Schluessel.
 
-| Tabelle | Schluessel / wichtige Spalten | Bemerkung |
-|---|---|---|
-| `mandant` | `id`, `name`, `status` (aktiv/gekuendigt/geloescht), `ki_aktiv bool DEFAULT false` | RLS: Zeile sichtbar nur fuer eigenen Mandanten |
-| `mandant_parameter` | `zustandsmodell` (Default `zhaw_v1`, E14), `zhaw_knick` (Default 0,75 [A]), `nutzungsgrenze_default` (Default 0,25 [A, Bereich 0,1–0,4 laut Q12-Dom]), `teuerung_satz numeric(6,4)` (fester Satz, anpassbar, E16; Default 0,0100 [A]), `ampel_gelb_jahre_default` (Default 3 [A, FA-23]; pro Bauteiltyp ueberschreibbar, E17), `sprache_default` (de/fr/it, E20) | eine Zeile pro Mandant, versioniert |
-| `benutzer` | `id`, `keycloak_sub UNIQUE`, `email`, `name`, `sprache` (de/fr/it) | global (keine mandant_id), RLS: nur eigener Datensatz + Mitglieder des aktiven Mandanten via Funktion |
-| `mitgliedschaft` | `(mandant_id, benutzer_id) UNIQUE`, `rolle` | Rollen Kap. 9.2 |
-| `mitgliedschaft_liegenschaft` | `(mandant_id, mitgliedschaft_id, liegenschaft_id)` | leer = alle Liegenschaften |
-| `liegenschaft`, `gebaeude` | `gebaeude.uebergabedatum date`, `gebaeude.egid` (`UNIQUE (mandant_id, egid)`), `liegenschaft.kanton` | Uebergabedatum = Default-Einbaudatum (FA-16); EGID aus GWR (ADR 0025) |
-| `feiertag` (global) | `datum`, `kanton` (NULL = CH), `name` | jaehrlicher Import aus Nager.Date; genutzt von `hinweise`, `zustand` (ADR 0025) |
-| `geschoss` | `gebaeude_id`, `bezeichnung`, `reihenfolge int`, `hoehe_m numeric`, `grundriss_dokument_id`, `grundriss_seite`, `massstab_m_pro_einheit`, `status` (entwurf/bestaetigt) | |
-| `raum` | `geschoss_id`, `nummer`, `bezeichnung`, `x_m, y_m, breite_m, tiefe_m numeric(9,3)`, `quelle_art`, `raum_vorschlag_id`, `art` (Einheit-Art aus Welt-Regelwerk), `geometrie_quelle` (schematisch/grundriss/manuell) | Rechteck im Geschoss-Koordinatensystem (E3); Einheiten aus dem Interview sind Raeume mit `geometrie_quelle=schematisch` (ADR 0026) |
-| `interview`, `interview_nachricht` | `gebaeude_id`, `status` (offen/zur_bestaetigung/uebernommen/verworfen), `weltbeschreibung jsonb`, `regelwerk_version`, `katalog_version`, `modus` (agent/formular/excel); Nachrichten mit Rolle und Text | Herkunft fuer `quelle_art=interview` (ADR 0026) |
-| `raum_vorschlag` | `geschoss_id`, `extraktion_lauf_id`, normierte Koordinaten, Stempeltext, `konfidenz`, `status` | wird bei "Geschoss bestaetigen" zu `raum` |
-| `katalog_version`, `katalog_eintrag` | `katalog_id text` (stabil, fuehrend, z.B. `leuchte.downlight`), `version`, `gruppe` (Planora-Gruppe fuer Plan und Filter), `glb_datei`, `glb_sha256`, `icon`, `ld_min/mittel/max_jahre` (Planora-Standard, E11), `nutzungsgrenze`, `ampel_gelb_jahre`, `betriebsstunden_pro_jahr`, `kosten_bezugsgroesse`, `referenzquelle` | global, read-only fuer App (ADR 0011). **Keine CRB-Werte** (E11) |
-| `katalog_text` | `(katalog_id, version, sprache)` PK, `name`, `beschreibung` | DE/FR/IT (E20); eigene Uebersetzungen |
-| `klassifikation_mapping` | `(katalog_id, system, code)`, `system_version`, `bezeichnung` | `system` ∈ {`etim`, `ebkp_h`, weitere}; optional, austauschbar (E12/E13); ETIM mit Attribution ODC-BY [F, Q9-Dom] |
-| `mandant_lebensdauer` | `elementtyp_id` UNIQUE, `ld_min/mittel/max_jahre`, `nutzungsgrenze`, `quelle` (`planora_standard@vN` / `manuell`), `begruendung` | **Lebensdauer-Tabelle des Mandanten** (E11): bei Anlage eines Elementtyps automatisch aus dem Planora-Standard kopiert, danach frei editierbar |
-| `mandant_ampel` | `katalog_id` UNIQUE, `ampel_gelb_jahre` | Schwelle pro Bauteiltyp (E17) |
-| `preisquelle`, `hersteller_artikel`, `preis_eintrag` | Quelle (manuell/import/feed, Format, Lizenz), Artikel (`hersteller_norm`, `artikelnr`, `gtin` opt., `katalog_id`), Preis (`preis_rappen`, `bezugsgroesse`, `preisjahr`, `gueltig_ab`, `preisquelle_id`) | **global**, Preisdatenbank pro Typ (E15), nur einfuegend (Historie) |
-| `mandant_preis` | `elementtyp_id` oder `katalog_id`, `preis_rappen`, `bezugsgroesse`, `preisjahr`, `gueltig_ab`, `quelle` | Mandantenpreise und Import (FA-24) |
-| `elementtyp` | `katalog_id NOT NULL`, `hersteller`, `typbezeichnung`, `UNIQUE (mandant_id, katalog_id, hersteller_norm, typ_norm)` | Typ-Ebene: Lebensdauer, Datenblatt, Preis |
-| `element` | `elementtyp_id`, `raum_id` (oder `geschoss_id` falls Raum unbekannt), `anlagekennzeichen`, `menge int ≥ 1`, `position jsonb NULL` (manuell), `status` (vorgeschlagen/aktiv/verworfen/ausgebaut) | Element-Ebene: Einbaudatum, Standort, Zustand. `menge` erlaubt Sammelelemente gleicher Typ/Raum/Einbaudatum [A] |
-| `angabe` | siehe 4.4 | Herkunft je Wert |
-| `element_effektiv` | `element_id PK`, effektive Werte + `quelle_rang` je Merkmal (ohne aufgeloeste Lebensdauer; die loest nur `erneuerung` auf, Kap. 8.1), `datenstand` | Projektion, neu aufbaubar |
-| `zustandsbewertung` | `element_id`, `datum`, `zustandswert numeric(2,1)` (1,0 … 0,0 in 0,1-Schritten, ZHAW, E14), `notiz`, `foto_dokument_id`, `bewerter_id` | nur Einfuegen; neueste gilt (FA-31) |
-| `ersatz_planung` | `element_id`, `zyklus int`, `geplantes_jahr`, `begruendung` | ueberschreibt nie das berechnete Jahr (FA-28) |
-| `planstand` | `stichtag`, `horizont`, `regelwerk_version`, `eingabe_hash`, `eingabe_objekt` (S3), `summen jsonb`, `eingefroren_von/am` | unveraenderlich |
-| `dokument` | `sha256`, `UNIQUE (mandant_id, sha256)`, `dateiname`, `mime`, `groesse`, `seiten`, `dokumentart`, `kbob_fachbereich`/`kbob_dtc` (Werteliste nach KBOB-Richtlinie [F, Q3-Dom], E21; KI schlaegt vor), `status` (Zustandsautomat Kap. 5.2), `gebaeude_id` | Objekt: `dok/m/<mandant>/<sha256>` |
-| `dokument_verknuepfung` | `dokument_id`, `ziel_typ` (elementtyp/element/gebaeude/geschoss), `ziel_id` | n:m (FA-10) |
-| `extraktion_lauf` | `dokument_id`, `stufe`, `seiten_von/bis`, `pipeline_version`, `prompt_id@version`, `modell_id`, `katalog_version`, `docproc_version`, `eingabe_hash`, `status`, `versuche`, `fehler` | eine Zeile pro Stufe und Seitenblock |
-| `ki_aufruf` | `extraktion_lauf_id`, `provider`, `profil`, `modell_id`, `tokens_in/out`, `kosten_rappen`, `dauer_ms`, `ergebnis` (ok/fehler/cache) | **ohne Inhalt**; Beleg fuer FA-37 |
-| `ki_budget` | `monat`, `limit_rappen`, `verbraucht_rappen`, `reserviert_rappen` | ADR 0017 |
-| `audit_eintrag` | siehe ADR 0015 | append-only, Hash-Kette |
+| Tabelle | Lieferstufe | Schluessel / wichtige Spalten | Bemerkung |
+|---|---|---|---|
+| `instanz_einstellung` | 1 | `anzeige_name`, `ampel_gelb_jahre_default` (Default 3 [A, FA-23]), `betriebsstunden_default`, `sprache` (fest `de-CH`), Zustandsparameter `zustandsmodell`/`zhaw_knick`/`nutzungsgrenze_default` nur falls Zustand im Scope ([?] PO, `08-pruefung.md` PO-Entscheid Nr. 8) | eine Zeile, versioniert, Aenderung im Audit |
+| `modul_schalter` | 1 | `modul_id`, `aktiv bool DEFAULT false`, `manifest_version`, `geaendert_von/am` | ADR 0029; Kernmodule ohne Zeile sind immer an |
+| `benutzer` | 1 | `id`, `anmeldename UNIQUE`, `email`, `name`, `status` (aktiv/gesperrt/pseudonymisiert), `audit_pseudonym uuid UNIQUE` | lokaler Login (ADR 0028); `audit_pseudonym` ab Erstanlage, siehe 4.5 |
+| `anmeldedaten` | 1 | `benutzer_id`, `passwort_hash`, `hash_verfahren`, `fehlversuche`, `gesperrt_bis`, `einrichtungs_token_hash`, `reset_token_hash`, `token_ablauf` | nur Hashes, nie Klartext; Verfahren laut Auth-Bibliothek [A, ADR 0028] |
+| `sitzung` | 1 | `benutzer_id`, `erstellt_am`, `letzte_aktivitaet`, `ablauf_absolut`, `entzogen_am` | serverseitig; Entzug sofort bei Logout/Sperre/Rollenentzug/Passwortwechsel |
+| `rolle_zuordnung` | 1 | `(benutzer_id, rolle) UNIQUE` | Rollen Kap. 9.2 |
+| `rolle_liegenschaft` | 1 | `(rolle_zuordnung_id, liegenschaft_id)` | leer = alle Liegenschaften [A]; interne Grenzen [?] PO (`08-pruefung.md` PO-Entscheid Nr. 2) |
+| `liegenschaft`, `gebaeude` | 1 | `gebaeude.uebergabedatum date`, `gebaeude.egid` (optional, manuell, `UNIQUE` falls gesetzt) | Stammdaten manuell; GWR-Vorbelegung zurueckgestellt (ADR 0025) |
+| `geschoss` | 1 | `gebaeude_id`, `code` (Regelwerk), `bezeichnung`, `reihenfolge int`, `hoehe_m numeric`, `status` (entwurf/bestaetigt) | Grundriss-Spalten (`grundriss_dokument_id`, `massstab_*`) entfallen fuer die Demo (ADR 0014 zurueckgestellt) |
+| `raum` | 1 | `geschoss_id`, `nummer`, `bezeichnung`, `art` (Einheit-Art aus Welt-Regelwerk), `x_m, y_m, breite_m, tiefe_m numeric(9,3)`, `geometrie_quelle` (schematisch/manuell), `stabile_erfassungs_id` | Rechteck im Geschoss-Koordinatensystem (E3); Einheiten aus der Erfassung sind `schematisch` (ADR 0026) |
+| `erfassung` | 1 | `gebaeude_id`, `kanal` (formular/excel, ab Stufe 4 agent), `status` (offen/zur_bestaetigung/uebernommen/verworfen), `weltbeschreibung jsonb`, `regelwerk_version`, `katalog_version`, `quelle_dokument_id` (Excel-Datei), `bestaetigt_von/am` | Erfassungsentwurf; bisher `interview` genannt. Uebernahme atomar (ADR 0026) |
+| `erfassung_zeile` | 1 | `erfassung_id`, `blatt`, `zeile`, `zelle_bereich`, `rohwerte jsonb`, `ergebnis` (ok/fehler/warnung), `meldung`, `ziel_typ`, `ziel_id` | validierte Zeilenvorschau Excel; Grundlage der Herkunft Excel-Zeile/Zelle |
+| `interview_nachricht` | 4 | `erfassung_id`, `rolle`, `text`, `zeitpunkt` | nur Kanal `agent` (Modul KI) |
+| `katalog_version`, `katalog_eintrag` | 1 | `katalog_id text` (stabil, fuehrend, z.B. `leuchte.downlight`), `version`, `gruppe`, `glb_datei`, `glb_sha256`, `icon`, `ld_min/mittel/max_jahre` (Planora-Standard, E11), `nutzungsgrenze`, `ampel_gelb_jahre`, `betriebsstunden_pro_jahr`, `referenzquelle` | mit dem Release ausgeliefert, je Instanz read-only fuer die App (ADR 0011). **Keine CRB-Werte** (E11). `kosten_bezugsgroesse` entfaellt (E24) |
+| `katalog_text` | 1 | `(katalog_id, version, sprache)` PK, `name`, `beschreibung` | Demo nur `de`; Struktur bleibt sprachneutral (ADR 0019) |
+| `klassifikation_mapping` | 1 | `(katalog_id, system, code)`, `system_version`, `bezeichnung` | optional, austauschbar (E12/E13); ETIM mit Attribution ODC-BY [F, Q9-Dom] |
+| `lebensdauer_tabelle` | 2 | `elementtyp_id UNIQUE`, `ld_min/mittel/max_jahre`, `nutzungsgrenze`, `quelle` (`planora_standard@vN` / `manuell`), `begruendung` | Lebensdauer-Tabelle der Instanz (E11): bei Anlage des Typs aus dem Katalog kopiert, danach editierbar; bisher `mandant_lebensdauer` |
+| `ampel_schwelle` | 2 | `katalog_id UNIQUE`, `ampel_gelb_jahre` | Schwelle pro Bauteiltyp (E17); bisher `mandant_ampel` |
+| `elementtyp` | 1 | `katalog_id NOT NULL`, `hersteller`, `typbezeichnung`, `UNIQUE (katalog_id, hersteller_norm, typ_norm)` | Typ-Ebene: Lebensdauer, Datenblatt (kein Preis, E24) |
+| `element` | 1 | `elementtyp_id`, `raum_id` (oder `geschoss_id` falls Raum unbekannt), `anlagekennzeichen`, `menge int ≥ 1`, `position jsonb NULL`, `status` (vorgeschlagen/aktiv/verworfen/ausgebaut), `stabile_erfassungs_id` | Element-Ebene: Einbaudatum, Standort, Zustand |
+| `angabe` | 1 | siehe 4.4 | Herkunft je Wert |
+| `element_effektiv` | 1 | `element_id PK`, effektive Werte + `quelle_rang` je Merkmal, `datenstand` | Projektion, neu aufbaubar; Lebensdauer loest nur `erneuerung` auf (Kap. 8.1) |
+| `zustandsbewertung` | 2 [?] | `element_id`, `datum`, `zustandswert numeric(2,1)`, `notiz`, `foto_dokument_id`, `bewerter_id` | nur Einfuegen; nur falls Zustand im Demo-Scope ([?] PO, `08-pruefung.md` PO-Entscheid Nr. 8) |
+| `planstand` | 2 [A] | `stichtag`, `regelwerk_version`, `katalog_version`, `eingabe_hash`, `ergebnis jsonb`, `eingefroren_von/am` | eingefrorener Lebensdauer-/Ampelstand **ohne Geldbetraege** (E24); ob die Demo Planstaende braucht, ist [A] |
+| `dokument` | 1 | `sha256`, `UNIQUE (sha256)`, `dateiname`, `mime`, `groesse`, `seiten`, `dokumentart`, `kbob_fachbereich`/`kbob_dtc` (E21, manuell; KI-Vorschlag erst Stufe 4), `status` (Kap. 5.2), `gebaeude_id`, `vorschau_version` | Ablagepfad `dok/<sha256>` in der lokalen Ablage der Instanz (ADR 0016, 0027) |
+| `dokument_seite` | 1 | `dokument_id`, `seite`, `text`, `bloecke jsonb` (Koordinaten im Vorschau-PDF), `vorschau_version` | Grundlage fuer Seiten-Sprung und Markierung (ADR 0022) |
+| `dokument_verknuepfung` | 1 | `dokument_id`, je eine nullable FK-Spalte `elementtyp_id` / `element_id` / `gebaeude_id` / `geschoss_id`, `CHECK (genau eine gesetzt)` | n:m (FA-10); typisierte Referenzen statt `ziel_typ/ziel_id` (07 Kap. 3) |
+| `such_abschnitt` | 3 | `dokument_id`, `seite`, `text`, `tsv`, `embedding vector(n)`, `modell_id` | ADR 0023; Dimension und Modell [A], Modulschalter `suche` |
+| `extraktion_lauf`, `ki_aufruf`, `ki_budget`, `ki_cache` | 4 | wie ADR 0017/0030; `ki_aufruf` ohne Inhalt, `provider` fest `anthropic` | nur Modul KI; keine `profil`-Spalte mehr (Bedrock entfaellt) |
+| `hinweis` | 2 [A] | `benutzer_id`, `element_id`, `art`, `erzeugt_am`, `gelesen_am` | Modul `hinweise`; Datenhoheit aus E30 noch zu pruefen |
+| `export_auftrag` | 2 | `art`, `status`, `datei_pfad`, `erstellt_von`, `bereit_bis` | Download nur ueber autorisierte Route (Kap. 9.10) |
+| `audit_eintrag`, `audit_akteur` | 1 | siehe 4.5 und ADR 0015 | append-only, Hash-Kette je Instanz |
 
-Spaltenregeln: Geld `bigint` in Rappen mit Waehrung CHF implizit; Datum `date`, Zeitpunkte `timestamptz` (UTC gespeichert, Anzeige Europe/Zurich); Masse in Metern `numeric(9,3)`; Texte normalisiert fuer Vergleich in eigenen `_norm`-Spalten.
+Nicht im Demo-Schema (zurueckgestellt): `preisquelle`, `hersteller_artikel`, `preis_eintrag`, `mandant_preis`, `ersatz_planung` (Budgetverschiebung, E24/ADR 0018), `feiertag` (ADR 0025), `raum_vorschlag` (ADR 0014). Bei Wiederaufnahme kommen sie als eigenes Modul nach ADR 0029 mit eigener Migration dazu.
 
-### 4.3 RLS-Policies
+Spaltenregeln: Datum `date`, Zeitpunkte `timestamptz` (UTC gespeichert, Anzeige Europe/Zurich); Masse in Metern `numeric(9,3)`; Texte normalisiert fuer Vergleich in eigenen `_norm`-Spalten. Geldspalten gibt es in der Demo nicht (E24).
 
-Fuer jede Tabelle mit `mandant_id` (Muster, handgeschrieben, ADR 0005/0010):
+### 4.3 Datenzugriff und DB-Rechte (statt RLS)
 
-```sql
-ALTER TABLE element ENABLE ROW LEVEL SECURITY;
-ALTER TABLE element FORCE ROW LEVEL SECURITY;
-CREATE POLICY mandant_isolation ON element
-  USING (mandant_id = app.mandant())
-  WITH CHECK (mandant_id = app.mandant());
--- app.mandant(): liest current_setting('app.mandant_id', true); leer/NULL -> RAISE EXCEPTION
-```
+Die Kundengrenze ist die Instanz (eigene DB, ADR 0031); innerhalb der Instanz gibt es **keine** RLS-Policies und keinen `app.mandant()`-Kontext. Absicherung stattdessen:
 
-Fremdschluessel immer mandantenrein, z.B. `FOREIGN KEY (mandant_id, raum_id) REFERENCES raum (mandant_id, id)`.
-Globale Tabellen (`katalog_*`): `GRANT SELECT` an `planora_app`, kein Schreibrecht. `benutzer`: eigene Policy (eigener Datensatz oder Mitglied im aktiven Mandanten). `audit_eintrag`: RLS + nur `SELECT`.
+- **Rollen in PostgreSQL:** `planora_migrator` (Owner, DDL, nur im `migrator`), `planora_app` (DML auf Fachtabellen, kein DDL, kein Owner, kein `BYPASSRLS`-Bedarf), `audit_eintrag` fuer `planora_app` nur `SELECT`, Schreiben nur ueber Trigger/`SECURITY DEFINER`-Funktion mit festem `search_path` (ADR 0015).
+- **Katalogtabellen:** `planora_app` nur `SELECT`; neue Katalogversionen kommen ausschliesslich per Migration/Release.
+- **Fachliche Autorisierung in der App:** Session → Modul aktiv → Rolle → Liegenschaft des Zielobjekts, an jeder HTTP-Route und in jedem Job (Kap. 9.2, ADR 0028/0029). Abfragen auf liegenschaftsgebundene Daten laufen ueber Repository-Funktionen, die den Scope als Pflichtparameter verlangen [A].
+- **Constraints statt Policies:** FKs, `CHECK`- und `UNIQUE`-Constraints sichern Datenkonsistenz; Tests dazu in `05-tests.md` Kap. 12.
 
-### 4.4 Herkunft (Provenance) je ausgelesenem Wert
+### 4.4 Herkunft (Provenance) je Wert
 
-`angabe` (ADR 0012): `ziel_typ`, `ziel_id`, `merkmal` (geschlossene Liste: `hersteller`, `typbezeichnung`, `lebensdauer_jahre`, `lebensdauer_stunden`, `betriebsstunden_pro_jahr`, `leistung_kw`, `einbaudatum`, `menge`, `raum_zuordnung`, `katalog_zuordnung`, `anlagekennzeichen`, `garantie_bis`, …), `wert jsonb` (Schema je Merkmal), `einheit`, `quelle_art` (manuell/ki/import/abgeleitet), `dokument_id`, `seite`, `zitat`, `bbox`, `konfidenz`, `konfidenz_stufe` (hoch/mittel/tief), `status` (vorgeschlagen/bestaetigt/verworfen/ersetzt), `extraktion_lauf_id`, `entschieden_von/am`.
+`angabe` (ADR 0012): Zielreferenz typisiert (`element_id` **oder** `elementtyp_id`, `CHECK` genau eine), `merkmal` (geschlossene Liste: `hersteller`, `typbezeichnung`, `lebensdauer_jahre`, `lebensdauer_stunden`, `betriebsstunden_pro_jahr`, `leistung_kw`, `einbaudatum`, `menge`, `raum_zuordnung`, `katalog_zuordnung`, `anlagekennzeichen`, `garantie_bis`, …), `wert jsonb` (Schema je Merkmal), `einheit`, `status` (vorgeschlagen/bestaetigt/verworfen/ersetzt), `entschieden_von/am`, `konfidenz_stufe` (nur KI) und **genau eine Herkunft je Eingabekanal**:
 
-Aufloesung des effektiven Werts (rein, deterministisch): nur `bestaetigt` → Rang nach Quelle: (1) manuell, (2) Herstellerdatenblatt (Dokumentart Datenblatt), (3) Protokoll/Liste, (4) abgeleitet (z.B. Einbaudatum = Uebergabedatum, FA-16) → bei Gleichstand juengste Entscheidung → bei Gleichstand kleinste `id`. Fuer die Lebensdauer gilt die vollstaendige Rangfolge aus Kap. 8.1 (inkl. Lebensdauer-Tabelle des Mandanten, E11). Lebensdauer-Tabelle, Preise und Ampel-Schwellen sind **Mandanten-Parameter** (Tabellen mit Audit bzw. `gueltig_ab`), keine Angaben.
+| `quelle_art` | Lieferstufe | Pflicht-Herkunftsfelder | Bemerkung |
+|---|---|---|---|
+| `formular` | 1 | `erfassung_id`, Feldpfad | manuelle Eingabe im Formular-Assistenten |
+| `excel` | 1 | `erfassung_id`, `erfassung_zeile_id` (Blatt, Zeile, Zelle), `quelle_dokument_id` | bestaetigt erst nach validierter Zeilenvorschau, nicht allein nach Spaltenzuordnung (07 Kap. 2, ADR 0012) |
+| `manuell` | 1 | `entschieden_von` | direkte Korrektur in der Detailansicht |
+| `dokument` | 1 | `dokument_id`, `seite`, `zitat`, `markierung` | Benutzer markiert Beleg im Viewer |
+| `abgeleitet` | 1 | Regel-ID (z.B. Einbaudatum = Uebergabedatum, FA-16) | |
+| `interview` | 4 | `erfassung_id`, `interview_nachricht_id` | Claude-Agent, gleicher Schreibpfad wie Formular |
+| `ki` | 4 | `extraktion_lauf_id`, `dokument_id`, `seite`, `zitat`, `markierung` | Vorschlag, nie automatisch bestaetigt |
+
+**Markierungsfeld vereinheitlicht:** Alle Belegstellen nutzen ein Feld `markierung` = `{ seite, rechtecke: [[x0,y0,x1,y1]…], koordinatensystem: "vorschau_pdf_pt", vorschau_version }`. Die bisherigen Namen `bbox` (Angabe) und `zitat_box` (Viewer) entfallen; der Viewer (ADR 0022) zeichnet direkt aus `markierung`. Aendert sich die Vorschau-Version, gilt die Markierung als "zu pruefen" statt still verschoben [A].
+
+**Ein Resolver** (rein, deterministisch) bestimmt den effektiven Wert: nur `bestaetigt` → Rang nach Quelle: (1) `manuell`/`formular`/`excel`/`interview` (vom Menschen bestaetigt), (2) `dokument`/`ki` mit Dokumentart Herstellerdatenblatt, (3) `dokument`/`ki` mit Protokoll/Liste, (4) `abgeleitet` → bei Gleichstand juengste Entscheidung → bei Gleichstand kleinste `id`. Fuer die Lebensdauer gilt die vollstaendige Rangfolge aus Kap. 8.1. Eine Aenderung am Elementtyp invalidiert `element_effektiv` **aller** Elemente dieses Typs (Fan-out, H11/H12). Lebensdauer-Tabelle und Ampel-Schwellen sind **Instanzparameter** (mit Audit), keine Angaben.
+
+**Statuswechsel:** `vorgeschlagen → bestaetigt | verworfen`; `bestaetigt → ersetzt` nur durch eine neue bestaetigte Angabe desselben Merkmals; jede Entscheidung mit `erwartete_version`.
 
 ### 4.5 Versionierung und Audit
 
 - Optimistic Locking: Jede schreibende API verlangt `erwartete_version`; Abweichung → HTTP 409 mit aktuellem Stand (AD-11).
-- Fachhistorie: `angabe` und `zustandsbewertung` sind nur-einfuegend (Geschichte im Modell). Andere Tabellen: Historie ueber `audit_eintrag` (alt/neu als JSON).
-- Katalog: versioniert per `katalog_version`; jede `angabe` und jeder `extraktion_lauf` kennt die Katalogversion.
-- Rechenregeln: `regelwerk_version` in jedem Ergebnis und Planstand.
+- Fachhistorie: `angabe` und `zustandsbewertung` sind nur-einfuegend. Andere Tabellen: Historie ueber `audit_eintrag` (alt/neu als JSON).
+- **Audit-Akteur pseudonym ab Erstschreiben (ADR 0015, Befund 10 in `08-pruefung.md`):** `audit_eintrag.akteur` enthaelt nie Name/E-Mail, sondern `benutzer.audit_pseudonym` (stabile UUID, bei Kontoanlage vergeben). Die Zuordnung Pseudonym → Person liegt getrennt in `audit_akteur` (`audit_pseudonym`, `benutzer_id`, `anzeigename`) und ist loeschbar. Bei Kontopseudonymisierung (Kap. 9.9) wird nur `audit_akteur` geloescht/geleert; gehashte Audit-Ereignisse werden nie umgeschrieben, die Hash-Kette bleibt gueltig. Freitext-Felder im Audit (alt/neu) duerfen keine Benutzer-Personendaten enthalten; Benutzertabellen werden mit Pseudonym statt Klartext protokolliert [A].
+- Katalog und Welt-Regelwerk: versioniert per `katalog_version` bzw. `regelwerk_version`; jede `erfassung`, jede `angabe` aus Erfassung und jeder `extraktion_lauf` kennt die verwendeten Versionen.
+- Rechenregeln: `regelwerk_version` des Rechenkerns in jedem Ergebnis und Planstand.
+- **Updates erhalten lokale Daten:** Ein Katalog- oder Regelwerk-Update ueberschreibt keine lokalen Overrides (`lebensdauer_tabelle.quelle = manuell`, `ampel_schwelle`) und erzeugt keine bestehenden Zuordnungen still neu; Abweichungen zu neuen Planora-Standards erscheinen als Vorschlag fuer den Instanz-Admin (ADR 0011, 0026).
 
 ### 4.6 Elementtyp vs. Element, Katalog-IDs, eBKP-H/ETIM
 
-- **Katalogeintrag** (global): "was fuer ein Bauteil" → 3D-Modell, Icon, Planora-Gruppe, Standard-Lebensdauer, Ampel-Default; ETIM/eBKP-H nur ueber `klassifikation_mapping`.
-- **Elementtyp** (Mandant): "welches Produkt" (Hersteller + Typ) → Zeile in der Lebensdauer-Tabelle (`mandant_lebensdauer`), Datenblatt-Dokument, Preis.
-- **Element** (Mandant): "welches Exemplar wo" → Raum, Anlagekennzeichen, Menge, Einbaudatum, Zustand, Ersatzplanung, **eigene Lebensdauer** als manuelle Angabe (E11: Monoblock 1 und 2 koennen verschiedene Lebensdauern haben; ein Sammelelement mit abweichender Lebensdauer wird dafuer geteilt).
-- Ist der Hersteller/Typ unbekannt, wird ein generischer Elementtyp pro Katalog-ID und Mandant verwendet (`hersteller = NULL`).
-- **Klassifikation austauschbar (E12/E13):** Die Planora-Katalog-ID ist der einzige fuehrende Schluessel. ETIM und eBKP-H sind optionale Zeilen in `klassifikation_mapping`; ein weiteres System (oder ein eigenes) kommt als neuer `system`-Wert dazu, ohne Schemaaenderung. Der Investitionsplan gruppiert standardmaessig nach Planora-Gruppe; die Gruppierung nach eBKP-H ist eine Option, wenn das Mapping vorhanden ist. eBKP-H nur als Code ohne CRB-Texte (rechtliches Restrisiko E13 [?]); ETIM-Klassennamen englisch, Anzeige ueber eigene `katalog_text` [A].
-- **Mehrsprachigkeit (E20):** UI-Texte in Sprachdateien de/fr/it; Stammdaten-Texte (Katalog, Wertelisten wie Dokumentart, KBOB-Codes, Rechenweg-Bausteine) in Texttabellen je Sprache; Kundendaten (Raumnamen, Notizen) werden nicht uebersetzt. Excel-Export in der Sprache des Benutzers. Fehlende Uebersetzung → Rueckfall auf Deutsch, in CI als Warnung gezaehlt.
+- **Katalogeintrag** (mit dem Release ausgeliefert): "was fuer ein Bauteil" → 3D-Modell, Icon, Planora-Gruppe, Standard-Lebensdauer, Ampel-Default; ETIM/eBKP-H nur ueber `klassifikation_mapping`.
+- **Elementtyp** (Instanz): "welches Produkt" (Hersteller + Typ) → Zeile in der Lebensdauer-Tabelle, Datenblatt-Dokument. Kein Preis (E24).
+- **Element** (Instanz): "welches Exemplar wo" → Raum/Einheit, Anlagekennzeichen, Menge, Einbaudatum, Zustand, **eigene Lebensdauer** als manuelle Angabe (E11; ein Sammelelement mit abweichender Lebensdauer wird geteilt).
+- Ist Hersteller/Typ unbekannt, wird ein generischer Elementtyp pro Katalog-ID verwendet (`hersteller = NULL`).
+- **Stabile IDs ueber Wiederimport:** Formular- und Excel-Erfassung vergeben `stabile_erfassungs_id` (z.B. Geschoss-Code + Einheit-Nummer + Zeilenschluessel [A]); ein erneuter Import gleicht ueber diese ID ab (Merge statt Duplikat), damit Dokumentverknuepfungen und Angaben erhalten bleiben.
+- **Klassifikation austauschbar (E12/E13):** Die Planora-Katalog-ID ist der einzige fuehrende Schluessel; ETIM und eBKP-H sind optionale Mappings. eBKP-H nur als Code ohne CRB-Texte (rechtliches Restrisiko E13 [?]).
+- **Sprache:** Demo DE/de-CH (ADR 0019 zurueckgestellt). UI-Texte in Sprachdateien, Stammdaten-Texte in `katalog_text` mit Sprachschluessel, sprachneutrale IDs; Kundendaten werden nicht uebersetzt. de-CH-Zahlen (`1'000,5`) und Datumsformate in Anzeige, Excel-Import und -Export.
 
 ---
 
-## 5. KI-Pipeline Ende-zu-Ende
+## 5. Dokument- und KI-Pipeline Ende-zu-Ende
 
-> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten, Bedrock voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
+> Welle 4b (E34–E37, 2026-11-09): umgestellt gemaess 07 Kap. 3. Upload/Scan/Vorschau sind der **KI-freie Grundablauf** (Stufe 1); Suche/Embeddings Stufe 3; Klassifikation/Extraktion ueber die Claude API direkt erst Stufe 4 (ADR 0030). Bedrock, Profil-ARNs, Grundriss und FR/IT-Gates entfallen. Fassung vor Welle 4 im Git-Verlauf (`e64fdb9`).
 
 ### 5.1 Ablauf
 
@@ -337,92 +352,105 @@ sequenceDiagram
   autonumber
   participant B as Browser
   participant A as api
-  participant S as Objektspeicher
+  participant S as Lokale Ablage
   participant W as worker
   participant V as ClamAV
   participant D as docproc
-  participant K as Bedrock (EU)
+  participant E as Embedding-Server
+  participant K as Claude API
   participant P as Postgres
+  Note over B,P: Stufe 1 – Upload, Scan, Vorschau (ohne KI)
   B->>A: Upload beginnen (Uppy: Dateiname, Groesse)
-  A->>S: CreateMultipartUpload (quarantaene/)
-  A->>P: dokument(status=hochladen)
-  B->>A: je Teil: Signatur nur fuer UploadPart
-  B->>S: Teile hochladen (parallel, wiederaufnehmbar)
-  B->>A: abschliessen (Teile + ETags)
-  A->>S: CompleteMultipartUpload + HEAD (nur Server)
-  A->>P: status=hochgeladen, objekt_etag + Job scan [eine Tx]
-  W->>S: Datei lesen (If-Match objekt_etag), einmal streamen
+  A->>P: dokument(status=hochladen), Upload-ID
+  B->>A: Teile hochladen (nur ueber api, Recht + Groessenlimit je Teil)
+  A->>S: Teile nach quarantaene/<upload_id>/
+  B->>A: abschliessen
+  A->>S: Teile serverseitig zusammenfuegen (einmalig, Abschluss-Lock)
+  A->>P: status=hochgeladen + Job scan [eine Tx]
+  W->>S: Datei aus quarantaene/ einmal streamen
   W->>V: Scan + Magic Bytes (file-type) + SHA-256 ueber dieselben Bytes
-  W->>S: dieselben Bytes nach dok/
-  W->>P: status=geprueft + Jobs vorschau_erzeugen, aufbereiten
-  W->>D: Office → Gotenberg, Scan → OCRmyPDF: Vorschau-PDF nach abgeleitet/
-  W->>D: Docling Serve (Text, Tabellen, Bounding Boxes)
-  D->>S: Seitentext/Tabellen JSON
-  W->>P: dokument_seite, such_abschnitt (+ Embeddings), status=aufbereitet
-  alt KI fuer Mandant aktiv und Budget reserviert
-    W->>K: Haiku: Dokumentart + relevante Seiten
-    W->>K: Sonnet: Extraktion je Seitenblock (Tool-Schema mit Katalog-Enum)
-    W->>P: ki_aufruf, Rohantwort (S3), Validierung
-    W->>P: angabe/element status=vorgeschlagen, Pruefliste
+  W->>S: dieselben Bytes nach dok/<sha256>
+  W->>P: status=geprueft + Job vorschau_erzeugen
+  W->>D: Office → Gotenberg, Scan → OCRmyPDF, PDF-Text/Bloecke
+  D->>S: Vorschau-PDF + Seitentext nach abgeleitet/
+  W->>P: dokument_seite, status=aufbereitet
+  B->>A: Viewer: Vorschau-URL (Recht je Abruf geprueft)
+  Note over B,P: Stufe 3 – Suche (Modul suche an)
+  W->>E: Abschnitte einbetten (lokal, kein Internet)
+  W->>P: such_abschnitt (tsv + embedding)
+  Note over B,P: Stufe 4 – KI (Modul KI an + Zustimmung + Schluessel + Budget)
+  alt Modul KI an, Budget reserviert
+    W->>K: Klassifikation (Dokumentart, relevante Seiten)
+    W->>K: Extraktion je Seitenblock (Tool-Schema mit Katalog-Enum)
+    W->>P: ki_aufruf, Validierung, angabe status=vorgeschlagen
   else KI aus
-    W->>P: status=manuell_erfassen (Excel-Zuordnung / manuell)
+    W->>P: status=aufbereitet bleibt; Erfassung manuell/Formular/Excel
   end
   B->>A: Pruefansicht: bestaetigen/korrigieren/verwerfen (mit Version)
   A->>P: angabe status=bestaetigt, element_effektiv neu [eine Tx]
 ```
 
+Der Upload-Weg ueber die `api` (statt signierter Direkt-URLs) ist der Vorschlag fuer die lokale Ablage [A]; bei Wahl eines S3-kompatiblen Servers gilt der Multipart-Ablauf aus ADR 0016 mit serverseitigem Abschluss. Speicherwahl: [?] PO, `08-pruefung.md` PO-Entscheid Nr. 3. In beiden Faellen gilt K01: Scan, Hash und Freigabe ueber **dieselben** Bytes, kein Vorschau-Abruf aus `quarantaene/`, Doppelabschluss und Absturz waehrend des Abschlusses ohne Wirkung (Race-/Crash-Test auf dem gelieferten Speicher, `05-tests.md` Kap. 12).
+
+Transaktionen bleiben kurz: Kein Aufruf an ClamAV, docproc, Embedding-Server oder Claude API innerhalb einer offenen DB-Transaktion; Ergebnisse werden danach in eigener Transaktion mit Zustandspruefung geschrieben.
+
 ### 5.2 Zustandsautomat Dokument
 
-`hochladen → geprueft | abgelehnt → aufbereitet | fehlgeschlagen → klassifiziert → extrahiert → zur_pruefung → abgeschlossen`; Nebenzustaende `pausiert_budget`, `pausiert_ki_aus`, `nicht_auswertbar` (DWG/IFC/DOC, FA-08). Jeder Job prueft den Ausgangszustand; ist der Folgezustand schon erreicht, endet er ohne Wirkung (Idempotenz).
+Grundablauf (Stufe 1): `hochladen → hochgeladen → geprueft | abgelehnt → aufbereitet | fehlgeschlagen`. Ab Stufe 4 zusaetzlich `aufbereitet → klassifiziert → extrahiert → zur_pruefung → abgeschlossen`. Nebenzustaende `pausiert_budget`, `pausiert_ki_aus`, `nicht_auswertbar` (DWG/IFC/DOC ohne Vorschau, FA-08; Original bleibt herunterladbar). Indexierung (Stufe 3) ist ein **eigener** Status `such_index` (offen/fertig/fehler) am Dokument und blockiert weder Viewer noch Erfassung. Jeder Job prueft den Ausgangszustand; ist der Folgezustand schon erreicht, endet er ohne Wirkung (Idempotenz).
 
-### 5.3 Stufen
+### 5.3 Stufen der Verarbeitung
 
-| Stufe | Werkzeug | Ausgabe | KI? |
-|---|---|---|---|
-| Scan | ClamAV, Magic Bytes, SHA-256 | sauber/abgelehnt | nein |
-| Vorschau | Gotenberg (Office), OCRmyPDF (Scan), sharp (Miniaturen) – ADR 0022 | Vorschau-PDF in `abgeleitet/` | nein |
-| Aufbereitung | Excel: exceljs im Worker; PDF-Vektor: pdfjs-dist + Docling Serve; Scan: OCRmyPDF → Docling Serve | `dokument_seite` (Text, Bloecke mit Koordinaten, Tabellen), `such_abschnitt` (ADR 0023) | nein |
-| Klassifikation | Haiku 5.5, nur Text der ersten Seiten + Seitentitel [A] | Dokumentart, KBOB-Fachbereich und Dokumenttypcode (E21), Sprache (de/fr/it/en), Gebaeude/Geschoss-Hinweis, relevante Seitenbereiche | ja (sonst Benutzer waehlt) |
-| Spaltenzuordnung Excel | Haiku 5.5: Kopfzeile + 20 Beispielzeilen [A] → Zuordnungsvorschlag | Zuordnung, vom Benutzer bestaetigt; danach deterministischer Import | ja (sonst manuell, FA-38) |
-| Extraktion | Sonnet 5.5, Seitenbloecke zu 20 Seiten [A], Bild + Text | strukturierte Vorschlaege mit Seite + Zitat | ja |
-| Grundriss | Kap. 6 | Raum-Vorschlaege | ja (sonst manuell) |
-| Validierung | deterministisch (5.6) | Konfidenzstufe, Pruefliste | nein |
-| Pruefung | Mensch | bestaetigt/verworfen | nein |
+| Verarbeitung | Lieferstufe | Werkzeug | Ausgabe | KI? |
+|---|---|---|---|---|
+| Scan | 1 | ClamAV, Magic Bytes, SHA-256 | sauber/abgelehnt | nein |
+| Vorschau | 1 | Gotenberg (Office), OCRmyPDF (Scan), sharp (Miniaturen) – ADR 0022 | Vorschau-PDF in `abgeleitet/` | nein |
+| Aufbereitung | 1 | Excel: exceljs im Worker; PDF: pdfjs-dist; Scan: OCRmyPDF | `dokument_seite` (Text, Bloecke mit Koordinaten) | nein |
+| Excel-Erfassung | 1 | exceljs + feste Planora-Vorlage, deterministische Validierung | `erfassung_zeile` (Zeilenvorschau) | nein |
+| Indexierung | 3 | Docling Serve (Tabellen/Struktur) [A, Einsatz in Stufe 3 pruefen], Chunking, lokaler Embedding-Server | `such_abschnitt` (ADR 0023) | nein (lokales Modell) |
+| Klassifikation | 4 | Claude (kleines Modell [A]), nur Text der ersten Seiten + Seitentitel | Dokumentart, KBOB-Vorschlag (E21), relevante Seitenbereiche | ja (sonst Benutzer waehlt) |
+| Spaltenzuordnung fremder Excel | 4 | Claude: Kopfzeile + 20 Beispielzeilen [A] | Zuordnungsvorschlag, dann Zeilenvorschau wie Stufe 1 | ja (sonst Planora-Vorlage/manuell, FA-38) |
+| Extraktion | 4 | Claude (groesseres Modell [A]), Seitenbloecke zu 20 Seiten [A], Bild + Text | strukturierte Vorschlaege mit Seite + Zitat | ja |
+| Validierung | 1 (Formular/Excel), 4 (KI) | deterministisch (5.6) | Pruefliste, Konfidenzstufe | nein |
+| Pruefung | 1 | Mensch | bestaetigt/verworfen | nein |
+
+Grundriss-Erkennung ist zurueckgestellt (Kap. 6). Modell-IDs werden in der Konfiguration gefuehrt und erst nach Golden-Set-Lauf (5.8) gewechselt; konkrete Modelle [A].
 
 ### 5.4 Idempotenz und Retries
 
-- Job-Schluessel: `<stufe>:<dokument_id>:<seitenblock>:<pipeline_version>`. Doppelter Job = kein zweiter Lauf.
-- KI-Antwort-Cache (`ki_cache`): Schluessel SHA-256(Seiteninhalt + Prompt-Version + Modell-ID + Katalog-Version) → kein Doppelbezahlen bei Retry nach DB-Fehler.
-- Vorschlaege tragen `extraktion_lauf_id`; ein wiederholter Lauf ersetzt die **noch unentschiedenen** Vorschlaege desselben Laufs, nie bestaetigte Angaben.
-- Dasselbe Dokument (gleicher SHA-256 im Mandanten) wird nicht neu extrahiert, ausser bei neuer Pipeline-/Prompt-Version auf Anforderung.
-- Abgleich mit Bestand: Element mit gleichem `anlagekennzeichen` im gleichen Gebaeude → Vorschlag als neue Angabe am bestehenden Element, nicht als neues Element.
+- Job-Schluessel: `<stufe>:<dokument_id>:<seitenblock>:<pipeline_version>`. Doppelter Job = kein zweiter Lauf. Job-Payloads tragen eine Schemaversion; der Worker lehnt unbekannte Versionen ab (ADR 0006, Kap. 10.3).
+- KI-Antwort-Cache (`ki_cache`, Stufe 4): Schluessel SHA-256(Seiteninhalt + Prompt-Version + Modell-ID + Katalog-Version) → kein Doppelbezahlen bei Retry nach DB-Fehler. Keine Exactly-once-Zusage fuer die Abrechnung: ein Request, dessen Antwort wegen Absturz verloren ging, gilt als "Abrechnung ungewiss" und wird in der Budget-Reconciliation (ADR 0017) gezaehlt.
+- Vorschlaege tragen `extraktion_lauf_id`; ein wiederholter Lauf ersetzt nur **noch unentschiedene** Vorschlaege desselben Laufs, nie bestaetigte Angaben.
+- Dasselbe Dokument (gleicher SHA-256 in der Instanz) wird nicht neu extrahiert, ausser bei neuer Pipeline-/Prompt-Version auf Anforderung.
+- Abgleich mit Bestand: Element mit gleichem `anlagekennzeichen` im gleichen Gebaeude → Vorschlag als neue Angabe am bestehenden Element.
 
 | Fehlerklasse | Retry | Grenze [A] |
 |---|---|---|
-| Bedrock Drosselung/5xx/Timeout | exponentiell 5 s … 10 min, Jitter | 6 Versuche, danach `fehlgeschlagen` + Alarm |
-| Bedrock 4xx (Validierung, Groesse) | kein Retry; Seitenblock halbieren, einmal erneut | 1 |
+| Claude API Drosselung (429)/5xx/Timeout | exponentiell 5 s … 10 min, Jitter, `retry-after` beachten | 6 Versuche, danach `fehlgeschlagen` + Alarm |
+| Claude API 4xx (Validierung, Groesse) | kein Retry; Seitenblock halbieren, einmal erneut | 1 |
+| Claude API 401/403 (Schluessel ungueltig/entzogen) | kein Retry; Modul KI pausiert, Admin-Meldung | 0 |
 | Antwort verletzt Schema | 1 Retry mit Fehlermeldung im Prompt | 1, danach Pruefliste "KI-Antwort ungueltig" |
 | docproc Absturz/Timeout | 2 Retries, danach Seitenblock einzeln | 3 |
+| Embedding-Server nicht erreichbar | exponentiell, Dokument bleibt im Viewer nutzbar | 6, danach `such_index=fehler` + Alarm |
 | DB-Konflikt (Version) | sofort, 3 Versuche | 3 |
-| Schutzschalter offen | Job wartet (verschoben), zaehlt nicht als Versuch | – |
+| Schutzschalter offen / Modul aus | Job wartet (verschoben), zaehlt nicht als Versuch | – |
 
-### 5.5 Strukturierte Ausgabe nur gegen Katalog-IDs
+### 5.5 Strukturierte Ausgabe nur gegen Katalog-IDs (Stufe 4)
 
-- Aufruf mit Tool-Definition/JSON-Schema; Feld `katalog_id` als **Enum der gueltigen IDs der aktuellen Katalogversion plus `null`** (null = unbekannt → Pruefliste). Freitext-Typen sind im Schema nicht vorgesehen (E8, FA-14).
-- Jedes Feld eines Vorschlags hat `{ wert, einheit, seite, zitat, konfidenz }`. Ohne `seite` und `zitat` ist ein Wert ungueltig.
-- Dokumente in DE/FR/IT/EN werden mit demselben Prompt verarbeitet (E20); Zitate bleiben in Originalsprache, Werte werden normalisiert (Dezimal- und Tausendertrennzeichen, Einheiten). OCR-Sprachen deu+fra+ita+eng [A].
-- Prompt enthaelt: Katalogliste (ID, Name, Kurzbeschreibung), Merkmalsliste mit Einheiten, Regeln ("nicht raten; null wenn nicht im Dokument"). Prompt-Caching fuer den statischen Teil [A: Verfuegbarkeit unter Bedrock in S5 pruefen].
+- Aufruf mit Tool-Definition/JSON-Schema; Feld `katalog_id` als **Enum der gueltigen IDs der aktuellen Katalogversion plus `null`** (null = unbekannt → Pruefliste). Keine Freitext-Typen (E8, FA-14).
+- Jedes Feld eines KI-Vorschlags hat `{ wert, einheit, seite, zitat, konfidenz }`. Ohne `seite` und `zitat` ist ein **KI**-Wert ungueltig. (Fuer Formular/Excel gilt die Herkunft aus Kap. 4.4; dort gibt es kein Zitat.)
+- Dokumente werden mit einem Prompt verarbeitet; Zitate bleiben in Originalsprache, Werte werden normalisiert (de-CH-Zahlen, Einheiten). Die Demo garantiert nur DE-Dokumente; FR/IT-Dokumente sind nicht ausgeschlossen, aber kein Abnahmekriterium (ADR 0019 zurueckgestellt). OCR-Sprache Demo `deu` (+ `eng`) [A].
+- Prompt enthaelt Katalogliste (ID, Name, Kurzbeschreibung), Merkmalsliste mit Einheiten, Regeln ("nicht raten; null wenn nicht im Dokument"). Prompt-Caching fuer den statischen Teil [A, Verfuegbarkeit bei direkter API bei Stufe-4-Start pruefen].
 
 ### 5.6 Validierung und Konfidenzschwellen
 
-Deterministische Pruefungen nach jeder KI-Antwort:
+Deterministische Pruefungen, fuer Formular/Excel (Stufe 1, Regeln 1 und 4) und nach jeder KI-Antwort (Stufe 4, alle Regeln):
 1. Schema (Zod) und Katalog-ID gueltig in der verwendeten Katalogversion.
-2. **Grounding:** `zitat` kommt im Seitentext (Docling/OCR) der angegebenen Seite vor (normalisiert: Leerraum, Bindestriche, Gross/Klein); unscharfe Uebereinstimmung ≥ 0,9 [A] zaehlt als "unscharf".
-3. **Wert im Zitat:** der Zahlenwert steht im Zitat (z.B. "50'000 h" → 50000, Einheit h).
+2. **Grounding (KI):** `zitat` kommt im Seitentext der angegebenen Seite vor (normalisiert: Leerraum, Bindestriche, Gross/Klein); unscharfe Uebereinstimmung ≥ 0,9 [A] zaehlt als "unscharf".
+3. **Wert im Zitat (KI):** der Zahlenwert steht im Zitat (z.B. "50'000 h" → 50000, Einheit h).
 4. **Plausibilitaet je Merkmal** [A]: Lebensdauer 1–100 Jahre; Stunden 1'000–200'000; Einbaudatum zwischen 1950 und Uebergabedatum + 1 Jahr; Menge 1–10'000; Leistung > 0.
-5. **Querpruefung:** derselbe Wert aus zwei Dokumenten → Bestaetigung; Widerspruch → beide "mittel" mit Hinweis.
+5. **Querpruefung (KI):** derselbe Wert aus zwei Dokumenten → Bestaetigung; Widerspruch → beide "mittel" mit Hinweis.
 
-Stufen [A, kalibriert am Golden Set so, dass Praezision der Stufe "hoch" ≥ 98 %]:
+Stufen fuer KI-Vorschlaege [A, kalibriert am Golden Set so, dass Praezision der Stufe "hoch" ≥ 98 %]:
 
 | Stufe | Bedingung | UI |
 |---|---|---|
@@ -432,27 +460,42 @@ Stufen [A, kalibriert am Golden Set so, dass Praezision der Stufe "hoch" ≥ 98 
 
 Bei Scans ohne verlaesslichen OCR-Text ist "hoch" ausgeschlossen. Nichts wird je automatisch bestaetigt.
 
-**Prompt Injection (E31, AD-6):** Dokumentinhalte sind nicht vertrauenswuerdig. Der Prompt grenzt Dokumenttext und -bilder als Daten ab und weist an, darin enthaltene Anweisungen zu ignorieren; das Modell hat keine Tools mit Nebenwirkung (nur das Extraktions-Schema). Das Golden Set enthaelt praeparierte Dokumente mit eingebetteten Anweisungen; erwartet wird keine Wirkung ausser Stufe "tief"/Pruefliste. Gilt auch fuer Reranking/Antworten der Suche (ADR 0023).
+**Prompt Injection (E31, AD-6):** Dokumentinhalte und Interview-Eingaben sind nicht vertrauenswuerdig. Der Prompt grenzt Dokumenttext/-bilder als Daten ab und weist an, darin enthaltene Anweisungen zu ignorieren; das Modell hat keine Tools mit Nebenwirkung (nur Extraktions- bzw. `weltbeschreibung`-Schema). Das Golden Set enthaelt praeparierte Dokumente mit eingebetteten Anweisungen; erwartet wird keine Wirkung ausser Stufe "tief"/Pruefliste. Gilt auch fuer ein spaeteres Claude-Reranking der Suche (Stufe 4, ADR 0023).
 
-### 5.7 Kostenbremse, Abschaltung, Datenfluss
+### 5.7 Kostenbremse, Abschaltung, Datenfluss (Stufe 4)
 
-- Kostenbremse: ADR 0017 (Schaetzung, Reservierung, Monats-/Tages-/Dokumentgrenzen, Cache, Schutzschalter).
-- Seitenvorauswahl: Haiku waehlt relevante Seiten (Datenblatt-Seiten mit Kennwerten, Listen), Sonnet sieht nur diese → Kosten und Laufzeit bei grossen Uploads begrenzt.
-- **KI pro Mandant abschaltbar (FA-37):** Pruefung an drei Stellen: beim Erzeugen des Jobs, im Job-Handler und im Provider-Adapter (letzte Schranke). Jeder Aufruf steht in `ki_aufruf`; Abnahmetest: Mandant mit KI aus, Upload von 10 Dokumenten → 0 Zeilen in `ki_aufruf`, 0 Netzaufrufe am Fake-Provider.
-- Protokolle mit Unterschriften: nur Textebene an die KI, keine Seitenbilder, wenn Text vorhanden [A, Datenminimierung].
+- Kostenbremse: ADR 0017 je Instanz (Schaetzung, Reservierung, Monats-/Tages-/Dokumentgrenzen, Cache, Schutzschalter, Reconciliation).
+- Seitenvorauswahl: das kleine Modell waehlt relevante Seiten, das groessere sieht nur diese → Kosten und Laufzeit bei grossen Uploads begrenzt.
+- **KI pro Instanz abschaltbar (FA-37, ADR 0029/0030):** Pruefung beim Erzeugen des Jobs, im Job-Handler **und unmittelbar vor jedem einzelnen Provider-Dispatch** im Adapter (letzte Schranke, liest den aktuellen Schalterstand, nicht einen Wert vom Jobstart). Abschalten waehrend eines laufenden Jobs: keine weiteren Requests; ein bereits abgesendeter Request laeuft zu Ende, sein Ergebnis wird gespeichert, aber der Job geht nach `pausiert_ki_aus`. Teilresultate bleiben als unentschiedene Vorschlaege; bei Reaktivierung setzt der Job am naechsten offenen Seitenblock fort [A, Vertrag in ADR 0029/0030 zu fixieren, Befund 5 in `08-pruefung.md`]. Abnahmetest: KI aus, Upload von 10 Dokumenten → 0 Zeilen in `ki_aufruf`, 0 Netzaufrufe am Fake-Provider; Race-Test Abschalten waehrend laufender Jobs.
+- Ohne gueltige Zustimmung oder ohne API-Schluessel der Instanz startet kein KI-Job (fail closed). Nach Restore bleibt KI gesperrt, bis der Admin die Konfiguration bestaetigt (Kap. 10.4).
+- Datenminimierung: Protokolle mit Unterschriften nur als Textebene an die KI, keine Seitenbilder, wenn Text vorhanden [A].
+- Datenfluss und Region: Kap. 9.8; keine CH/EU-Bindung zugesichert ([?] PO, `08-pruefung.md` PO-Entscheid Nr. 12).
 
-### 5.8 Prompt-/Modellversionierung und Golden Set
+### 5.8 Prompt-/Modellversionierung und Golden Set (Stufe 4)
 
-- Prompts liegen im Repo unter `src/module/extraktion/prompts/<prompt_id>/<semver>.md` mit Schema-Datei; nie zur Laufzeit editierbar. Modell-IDs und Profil-ARN in Konfiguration. `pipeline_version` = Kombination aus Prompt-Versionen, Validator-Version, docproc-Version.
-- **Golden Set:** (a) synthetische und oeffentliche Dokumente im Repo (`eval/`), (b) Pilotdokumente mit schriftlicher Zustimmung in einem separaten, zugriffsbeschraenkten Bucket in CH, nie im Repo. **Stand E18:** Der Pilotkunde liefert vorerst nur Architekturunterlagen (Grundrisse); fuer TGA-Listen und Datenblaetter stuetzt sich das Golden Set bis auf Weiteres auf oeffentlich verfuegbare Hersteller-Datenblaetter und synthetische Anlagelisten (DE/FR/IT) [A]. Die FA-13-Schwellen gelten erst als bewiesen, wenn echte TGA-Dokumente gemessen sind. Je Dokument: erwartete Raeume (Rechtecke), Elemente, Kennwerte mit Seite.
-- **Messgroessen:** Feld-Trefferquote je Merkmal und Dokumentart (FA-13: Excel ≥ 90 %, Scan ≥ 70 %), Raum-Recall und IoU (FA-12: ≥ 80 % Raeume), Praezision der Stufe "hoch", Rate "falscher Wert bestand Validierung" (Ziel ≤ 1 % [A]), Kosten pro Seite, Laufzeit.
-- **Regel:** Jede Aenderung an Prompt, Modell-ID, Katalog oder Validator laeuft durch das Golden Set (CI-Job, Bedrock-Staging-Konto). Release nur, wenn keine Kennzahl um mehr als 2 Prozentpunkte schlechter wird [A] und die FA-Schwellen halten. Ergebnisse versioniert unter `eval/ergebnisse/`.
+- Prompts liegen im Repo unter `src/module/extraktion/prompts/<prompt_id>/<semver>.md` mit Schema-Datei; nie zur Laufzeit editierbar. Modell-IDs in der Konfiguration. `pipeline_version` = Kombination aus Prompt-Versionen, Validator-Version, docproc-Version.
+- **Golden Set:** (a) synthetische und oeffentliche Dokumente im Repo (`eval/`), (b) Kundendokumente nur mit schriftlicher Zustimmung, in der Kundeninstanz oder einer freigegebenen Abnahme-Instanz, nie im Repo. Die FA-13-Schwellen gelten erst als bewiesen, wenn **echte, freigegebene TGA-Dokumente** mit dem **direkten Produktionsadapter** (Claude API) gemessen sind; Ergebnisse aus dem Abo-Modus oder nur synthetischen Daten sind kein Nachweis (historischer Stand Spike S2, `05-tests.md`).
+- **Messgroessen:** Feld-Trefferquote je Merkmal und Dokumentart (FA-13: Excel ≥ 90 %, Scan ≥ 70 %), Praezision der Stufe "hoch", Rate "falscher Wert bestand Validierung" (Ziel ≤ 1 % [A]), Kosten pro Seite, Laufzeit. Raum-Recall/IoU (FA-12) entfaellt mit der Grundriss-Erkennung.
+- **Regel:** Jede Aenderung an Prompt, Modell-ID, Katalog oder Validator laeuft durch das Golden Set (CI-Job mit Test-Schluessel, nur synthetische/oeffentliche Daten). Release nur, wenn eine **feste fachliche Mindestbaseline** gehalten wird (FA-Schwellen) und keine Kennzahl unter die letzte freigegebene Baseline faellt [A]; kein kumulativ erlaubter Qualitaetsverlust. Ergebnisse versioniert unter `eval/ergebnisse/`.
 
 ---
 
-## 6. Grundriss → Raum-Rechtecke
+## 6. Grundriss → Raum-Rechtecke (zurueckgestellt bis nach der Demo)
 
-> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: Grundriss-Erkennung ist zurueckgestellt bis nach der Demo (ADR 0014); Erfassung ueber Formular/Excel (Kap. 3, Modul `interview`). Grundrisse bleiben als Dokumente hochlad- und betrachtbar.
+> Welle 4b (E34–E37, 2026-11-09): umgestellt gemaess 07 Kap. 3. **Grundriss-Erkennung und Zeichen-Korrektur sind ein spaeteres Modul** (ADR 0014 zurueckgestellt); sie sind weder Voraussetzung noch Demo-Gate.
+
+### 6.1 Geltender Stand (Stufen 1–4)
+
+- **Erfassungsweg** ist Formular/Excel mit Zeilenvorschau → Weltgenerator → Bestaetigung (Kap. 7.0, ADR 0026). Raeume/Einheiten entstehen als schematische Rechtecke (`geometrie_quelle = schematisch`) aus dem Welt-Regelwerk, nicht aus Plaenen.
+- **Grundrisse bleiben Dokumente:** hochladen, scannen, im Viewer anzeigen und mit Gebaeude/Geschoss verknuepfen ist ab Stufe 1 moeglich (ADR 0022).
+- Massstab, Raum-Recall/IoU, Korrekturzeit und Claude Vision sind **kein** Abnahmekriterium der Stufen 1–4; Spike S1 und FA-12 gelten nur fuer das spaetere Modul.
+- Manuelle Feinkorrektur schematischer Rechtecke (verschieben/skalieren) ist [A] kein Demo-Umfang; der funktionale 2D-Weg (Kap. 7.3) zeigt die schematische Anordnung.
+- Elemente ohne bekannten Raum haengen am Geschoss (`raum_id NULL`, `geschoss_id` gesetzt) und erscheinen in 3D/2D in einer Geschoss-Sammelzone.
+- Wiederaufnahme als eigenes Modul nach ADR 0029 (eigene Lieferstufe, eigener Schalter, eigene Tabellen `raum_vorschlag`, Grundriss-Spalten an `geschoss`); echte Rechtecke duerfen bestehende Element-Zuordnungen nur nach Bestaetigung ersetzen.
+
+### 6.2 Historischer Entwurf (Stand vor Welle 4, nur fuer das spaetere Modul)
+
+[F] Unveraendert aus der Fassung vor Welle 4 uebernommen; gilt nicht fuer die Demo. Erwaehnte Bausteine (Claude Vision Sonnet, Konva-Korrektur-UI) sind bei Wiederaufnahme neu zu beurteilen.
 
 Hybrider Ablauf (ADR 0014):
 
@@ -481,50 +524,55 @@ flowchart LR
 
 ## 7. 3D-Pipeline
 
-> [A] **In Welle 4b anzupassen, siehe 07 Kap. 3:** GWR- und Grundriss-Vorbelegung gelten nicht mehr (zurueckgestellt); Erfassung ueber Formular/Excel (Stufe 1), Agent erst Stufe 4; Standard ist InstancedMesh (E33), Angaben zu BatchedMesh sind Altstand.
+> Welle 4b (E34–E37, 2026-11-09): umgestellt gemaess 07 Kap. 3 und Befund 1 in `08-pruefung.md`. Erfassung per **Formular/Excel** (Stufe 1), Claude-Agent erst Stufe 4 hinter Modul KI; **keine GWR- oder Grundriss-Vorbelegung** (ADR 0025, 0014 zurueckgestellt); Standard ist **`InstancedMesh`** (E33, ADR 0008). Fassung vor Welle 4 im Git-Verlauf (`e64fdb9`).
 
 ### 7.0 Geschlossene Welt (E33, ADR 0026)
 
 ```mermaid
 flowchart LR
-  kunde["Kunde beschreibt<br/>Gebaeude, Geschosse,<br/>Einheiten, Bauteile"] --> iv{"KI aktiv?"}
-  iv -- ja --> agent["Interview-Agent (Claude)<br/>Tool-Schema weltbeschreibung<br/>nur Regelwerk-Enums + Katalog-IDs"]
-  iv -- nein --> form["Formular-Assistent / Excel-Vorlage<br/>gleiches Schema"]
-  gwr["GWR (ADR 0025)<br/>Geschosse, Baujahr"] --> agent
-  gwr --> form
-  agent --> val["Validator<br/>Schema, Regelwerk, Plausibilitaet"]
-  form --> val
-  val --> gen["Weltgenerator (rein)<br/>Form, Platten, Einheiten,<br/>Bauteil-Positionen"]
+  kunde["Kunde beschreibt<br/>Gebaeude, Geschosse,<br/>Einheiten, Bauteile"] --> kanal{"Eingabekanal"}
+  kanal -- "Stufe 1" --> form["Formular-Assistent<br/>(react-hook-form + zod)"]
+  kanal -- "Stufe 1" --> xls["Excel-Vorlage<br/>validierte Zeilenvorschau"]
+  kanal -. "Stufe 4, Modul KI an" .-> agent["Interview-Agent (Claude API)<br/>Tool-Schema weltbeschreibung<br/>nur Regelwerk-Enums + Katalog-IDs"]
+  form --> schema["gemeinsames Schema<br/>weltbeschreibung"]
+  xls --> schema
+  agent -.-> schema
+  schema --> val["Validator<br/>Schema, Regelwerk, Plausibilitaet"]
+  val --> gen["Weltgenerator (rein)<br/>Form, Platten, Einheiten,<br/>Bauteil-Positionen, stabile IDs"]
   regel[("Welt-Regelwerk vN<br/>+ Katalog vN")] --> gen
-  gen --> vor["3D-Vorschau + Zusammenfassung"]
-  vor --> ok["Kunde bestaetigt → struktur + bestand<br/>quelle_art=interview"]
-  gr["Grundriss (ADR 0014)"] -. "echte Rechtecke ersetzen schematische" .-> gen
+  gen --> vor["3D-/2D-Vorschau + Zusammenfassung"]
+  vor --> ok["Kunde bestaetigt (atomar) →<br/>struktur + bestand<br/>Herkunft je Kanal (Kap. 4.4)"]
 ```
 
-- Die KI liefert nur die **Beschreibung**, nie Geometrie. Geometrie entsteht ausschliesslich im deterministischen Weltgenerator: gleiche Beschreibung + gleiche Regelwerk-Version → gleiche Welt.
-- Das Welt-Regelwerk (`katalog/welt-regelwerk.vN.json`) legt Gebaeudeformen, Geschoss-Codes, Einheit-Arten, erlaubte Bauteile je Einheit-Art, Layout- und Darstellungsregeln fest. Kunden koennen nur innerhalb dieser Regeln beschreiben, nicht frei modellieren.
+- Alle Kanaele schreiben **dasselbe Schema** `weltbeschreibung`; Formular und Excel erzeugen bei gleicher Beschreibung dieselbe Welt. Der Agent liefert ab Stufe 4 nur die Beschreibung, nie Geometrie, und nutzt denselben sicheren Schreibpfad (Validator → Vorschau → Bestaetigung).
+- Geometrie entsteht ausschliesslich im deterministischen Weltgenerator: gleiche Beschreibung + gleiche Regelwerk-Version → gleiche Welt, gleiche stabile IDs (`stabile_erfassungs_id`, Kap. 4.6).
+- Das Welt-Regelwerk (`katalog/welt-regelwerk.vN.json`) legt Gebaeudeformen, Geschoss-Codes, Einheit-Arten, erlaubte Bauteile je Einheit-Art, Layout- und Darstellungsregeln fest. Kunden beschreiben nur innerhalb dieser Regeln.
+- Stammdaten (Adresse, Baujahr, Geschosszahl, optional EGID) werden manuell erfasst; keine Vorbelegung aus GWR.
 - Schematische Einheiten und Positionen sind in UI und Export als "schematisch" gekennzeichnet.
+- **Bestaetigung atomar:** Vorschau und Uebernahme beziehen sich auf eine Erfassungs-Version; hat sich die Erfassung nach der Vorschau geaendert, wird die Uebernahme abgelehnt (409) und neu vorgeschaut.
+- **Wiederimport und Updates:** Ein erneuter Excel-Import oder eine Formular-Aenderung gleicht ueber stabile IDs ab (Merge, keine Duplikate). Ein neues Regelwerk oder ein Katalog-Update erzeugt bestehende Welten, Element-Zuordnungen und Dokumentverknuepfungen **nicht still neu**: bestehende Welten behalten ihre `regelwerk_version`; eine Neuerzeugung mit neuer Version ist eine sichtbare Aktion mit Vorschau, Differenzanzeige und Bestaetigung [A].
 
 ### 7.1 Katalog → GLB-Bibliothek → Szene
 
-1. **Modellierung** in Blender: Ursprung am Boden, Meter, keine Texturen, Ton-Look; je Katalog-ID ein Modell (30–50 [A, E8]).
+1. **Modellierung** in Blender: Ursprung am Boden, Meter, keine Texturen, Ton-Look; je Katalog-ID ein Modell (Anzahl fuer die Demo [?] PO, `08-pruefung.md` PO-Entscheid Nr. 8; bisher 30–50 [A, E8]).
 2. **Optimierung:** `gltf-transform optimize --compress meshopt` (+ `dedup`, `weld`, `simplify`) [F, Q53a-Tech]; LOD1 per `simplify` auf ca. 10 % [A].
-3. **Pruefung in CI** (Budgets unten), Hash in `katalog_eintrag.glb_sha256`; Auslieferung als unveraenderliche, gehashte statische Dateien (lange Cache-Dauer).
-4. **Szene-Endpunkt** (`szene`-Modul): pro Gebaeude kompakte Struktur: Geschosse (Hoehe, Reihenfolge), Raum-Rechtecke, Elemente (id, katalog_id, raum, Position oder Auto-Layout-Index, Ampel, Menge), Cluster-Vorberechnung; `datenstand`-Hash fuer HTTP-Caching.
-5. **Client (ADR 0008, E33):** Look nach Regelwerk: Glas-Geschossplatten (eine transparente Geometrie), Grenzlinien (eine `LineSegments`), Geschoss-Beschriftungen, optional graue Umgebung; Uebersicht mit Pins (instanzierte Sprites, Symbol je Gewerk, Ampelfarbe); im Detail (Geschoss/Einheit gewaehlt) Bauteil-Modelle als `InstancedMesh` pro Katalogtyp; Explosionsansicht = Y-Offset pro Geschoss; orthografische isometrische Kamera; **kein** Postprocessing, keine Echtzeit-Schatten; Zeichnen nur bei Aenderung (`frameloop="demand"`).
+3. **Pruefung in CI** (Budgets unten), Hash in `katalog_eintrag.glb_sha256`; Auslieferung als unveraenderliche, gehashte statische Dateien im Compose-Paket (lange Cache-Dauer, kein CDN noetig).
+4. **Szene-Endpunkt** (`szene`-Modul): pro Gebaeude kompakte Struktur: Geschosse (Hoehe, Reihenfolge), Raum-Rechtecke, Elemente (id, katalog_id, raum, Position oder Auto-Layout-Index, Menge, Ampel falls Modul `erneuerung` aktiv), Cluster-Vorberechnung; `datenstand`-Hash fuer HTTP-Caching. Nur Elemente aus Liegenschaften im Scope des Benutzers.
+5. **Client (ADR 0008, E33):** Look nach Regelwerk: Glas-Geschossplatten (eine transparente Geometrie), Grenzlinien (eine `LineSegments`), Geschoss-Beschriftungen, optional graue Umgebung; Uebersicht mit Pins (instanzierte Sprites, Symbol je Gewerk; Farbe = Ampel ab Stufe 2, in Stufe 1 neutral nach Gewerk); im Detail (Geschoss/Einheit gewaehlt) Bauteil-Modelle als `InstancedMesh` pro Katalogtyp; Explosionsansicht = Y-Offset pro Geschoss; orthografische isometrische Kamera; **kein** Postprocessing, keine Echtzeit-Schatten; Zeichnen nur bei Aenderung (`frameloop="demand"`).
 
-### 7.2 Auto-Layout, Clustering, LOD
+### 7.2 Auto-Layout, Clustering, LOD, Filter
 
-- **Auto-Layout:** Elemente eines Raums werden nach (katalog_id, element_id) sortiert und in einem Raster mit Randabstand 0,3 m [A] im Rechteck verteilt; Sammelelemente (`menge > 1`) als ein Modell mit Zaehler-Badge. Deterministisch: gleiche Daten → gleiche Positionen.
-- **Clustering:** Stufe 1 Geschoss (Zaehler je Ampelfarbe), Stufe 2 Raum, Stufe 3 Katalogtyp im Raum, Stufe 4 Einzelpin. Uebergang nach Zoomstufe und Bildschirmabstand < 24 px [A].
+- **Auto-Layout:** Elemente eines Raums werden nach (katalog_id, stabile ID) sortiert und in einem Raster mit Randabstand 0,3 m [A] im Rechteck verteilt; Sammelelemente (`menge > 1`) als ein Modell mit Zaehler-Badge. Deterministisch: gleiche Daten → gleiche Positionen.
+- **Clustering:** Ebene 1 Geschoss (Zaehler je Ampelfarbe bzw. je Gewerk in Stufe 1), Ebene 2 Raum, Ebene 3 Katalogtyp im Raum, Ebene 4 Einzelpin. Uebergang nach Zoomstufe und Bildschirmabstand < 24 px [A].
 - **LOD:** LOD0 nahe, LOD1 ab Bildschirmgroesse < 40 px [A], unterhalb 8 px [A] nur Pin, kein Modell.
-- **Filter (FA-36):** Sichtbarkeit pro Instanz (BatchedMesh `setVisibleAt`) statt Neuaufbau.
+- **Filter (FA-36):** Sichtbarkeit pro Instanz im `InstancedMesh` ohne Neuaufbau der Geometrie: ausgeblendete Instanzen erhalten eine Null-Skalierung in `instanceMatrix` (bzw. die sichtbaren Instanzen werden an den Anfang sortiert und `count` reduziert) [A, Variante im Scaffold messen]; Picking ignoriert ausgeblendete Instanzen. Die fruehere BatchedMesh-Methode `setVisibleAt` gilt nicht mehr.
 
-### 7.3 Performancebudget [A, Spike S3 beweist]
+### 7.3 Performancebudget [A, auf Kunden-Laptop und Kunden-VDI zu bestaetigen]
 
 | Groesse | Budget |
 |---|---|
 | Zielgeraet "Standard-Laptop" | integrierte GPU Klasse Intel Iris Xe, 16 GB RAM, 1920×1080, aktueller Chrome/Edge |
+| Zielgeraet "Kunden-VDI" [?] | Siemens-Arbeitsplatz bzw. VDI ohne GPU; konkrete Umgebung mit Siemens klaeren (`08-pruefung.md` PO-Entscheid Nr. 8) |
 | Elemente pro Gebaeude | 10'000 Ziel, 20'000 ohne Absturz (FA-34) |
 | Bildrate | 60 fps median beim Drehen, p95-Frame ≤ 33 ms (≥ 30 fps) |
 | Draw-Calls | ≤ 100 gesamt |
@@ -535,76 +583,88 @@ flowchart LR
 | Klick → Detailpanel | ≤ 100 ms (Picking ≤ 16 ms) |
 | GPU-Speicher | ≤ 512 MB |
 
-**Leistungsstufen (ADR 0008, Spike S3b):** *normal* (echte GPU: Glaettung an, dpr ≤ 1,5, Glas, Umgebung, Bauteil-Modelle im Detail) · *schwach* (Software-Renderer erkannt oder < 30 fps in den ersten 2 s: Glaettung aus, dpr 0,75, kein Glas, keine Umgebung, nur Pins) · *2D* (< 15 fps in "schwach", kein WebGL2 oder Benutzerwahl: 2D-Ansicht + Tabellen, alle Funktionen). Gemessen ohne GPU in Full HD [F, S3b]: ≈ 19 fps mit allen Effekten, ≈ 55 fps in Stufe "schwach".
+**Leistungsstufen (ADR 0008, Spike S3b):** *normal* (echte GPU: Glaettung an, dpr ≤ 1,5, Glas, Umgebung, Bauteil-Modelle im Detail) · *schwach* (Software-Renderer erkannt oder < 30 fps in den ersten 2 s: Glaettung aus, dpr 0,75, kein Glas, keine Umgebung, nur Pins) · *2D* (< 15 fps in "schwach", kein WebGL2 oder Benutzerwahl: 2D-Ansicht + Tabellen mit **allen** Funktionen, inkl. Dokumente oeffnen, Erfassung bestaetigen, ab Stufe 2 Ampel als Text). 
+**Historische Messwerte (Spike S3b, Welle 3, unveraendert):** gemessen ohne GPU in Full HD [F, S3b]: ≈ 19 fps mit allen Effekten, ≈ 55 fps in Stufe "schwach". Diese Werte stammen aus der Spike-Umgebung, nicht von Siemens-Hardware; sie ersetzen keine Messung auf Kunden-Laptop/VDI (`05-tests.md` Kap. 12).
 
 ---
 
-## 8. Erneuerungs- und Investitionsrechnung
+## 8. Lebensdauer und Ampel
 
-> [A] In Welle 4b anzupassen, siehe 07 Kap. 3: dieses Kapitel setzt noch Mandanten voraus. Bis dahin gilt Kap. 0 (E34–E37, ADR 0027–0031).
+> Welle 4b (E24, E34–E37, 2026-11-09): umgestellt gemaess 07 Kap. 3; bisher "Erneuerungs- und Investitionsrechnung". 8.1–8.3 und 8.6 sind Demo-Kern (Lieferstufe 2) und brauchen fachliche Abnahme; **8.4 Ersatzzyklen, 8.5 Kosten/Teuerung und die Investitionsanteile von 8.7 sind zurueckgestellt** (E24, ADR 0018). Fassung vor Welle 4 im Git-Verlauf (`e64fdb9`).
 
-Reiner Rechenkern (ADR 0013). Eingabe: Schnappschuss, `stichtag` S (Jahr s), Horizont H (10|20), `regelwerk_version`.
+Reiner Rechenkern (ADR 0013, Modul `erneuerung`, Lieferstufe 2). Eingabe: Schnappschuss der bestaetigten Daten, `stichtag` S (Jahr s), `regelwerk_version`, `katalog_version`. Kein Horizont, keine Geldwerte. Ausgabe je Element: L (Bandbreite), Einbaujahr E, technisches Ersatzjahr J1, Restlebensdauer RL, Ampel, Vollstaendigkeit, Rechenweg mit Quelle je Wert.
 
 ### 8.1 Lebensdauer L (Jahre), Rangfolge der Quellen (E11)
 
 | Rang | Quelle | Bedingung |
 |---|---|---|
-| 1 | Manuell am **Element** | Angabe `lebensdauer_*` am Element, `bestaetigt`, `quelle_art=manuell` (E11) |
-| 2 | Manuell am **Elementtyp** | `mandant_lebensdauer.quelle = manuell` (Benutzer hat die Lebensdauer-Tabelle angepasst) |
-| 3 | Herstellerdatenblatt am Elementtyp | Angabe `bestaetigt`, Dokumentart Datenblatt |
-| 4 | Planora-Standard | `mandant_lebensdauer` mit `quelle = planora_standard@vN` (bei Anlage des Typs aus `katalog_eintrag` kopiert) |
+| 1 | Manuell am **Element** | Angabe `lebensdauer_*` am Element, `bestaetigt`, vom Menschen erfasst (manuell/formular/excel, E11) |
+| 2 | Manuell am **Elementtyp** | `lebensdauer_tabelle.quelle = manuell` (Benutzer hat die Lebensdauer-Tabelle angepasst) |
+| 3 | Herstellerdatenblatt am Elementtyp | Angabe `bestaetigt`, Dokumentart Datenblatt (Beleg manuell markiert oder ab Stufe 4 aus KI-Vorschlag) |
+| 4 | Planora-Standard | `lebensdauer_tabelle` mit `quelle = planora_standard@vN` (bei Anlage des Typs aus `katalog_eintrag` kopiert) |
 
-(00-kontext "manuell > Herstellerdatenblatt > Richtwert", verfeinert durch E11.) Kopieren statt Verweisen: Eine neue Katalogversion aendert keine bestehenden Mandantenwerte still; ein Abgleich "neue Planora-Standards verfuegbar" wird dem Mandanten-Admin als Vorschlag angezeigt.
+(00-kontext "manuell > Herstellerdatenblatt > Richtwert", verfeinert durch E11.) Kopieren statt Verweisen: Eine neue Katalogversion aendert keine bestehenden Instanzwerte still; ein Abgleich "neue Planora-Standards verfuegbar" wird dem Instanz-Admin als Vorschlag angezeigt (Kap. 4.5).
 
 Bandbreite: Jede Stufe liefert L_min, L_mittel, L_max. Gibt eine Quelle nur einen Wert L' (z.B. Datenblatt), wird die Bandbreite proportional uebernommen: `L_min' = L' × L_min/L_mittel`, `L_max' = L' × L_max/L_mittel` aus dem Planora-Standard [A].
 
-Stundenangabe (FA-17): `L = L_h / h_a`, mit `h_a` = Betriebsstunden pro Jahr (Element > Elementtyp > Katalog-Default), gerundet auf 0,1 Jahr half-up. Rechenweg-Text: "50'000 h ÷ 2'500 h/a = 20,0 J." Fehlt `h_a`, ist die Stundenangabe nicht verwendbar → naechster Rang, Hinweis im Rechenweg.
+Stundenangabe (FA-17): `L = L_h / h_a`, mit `h_a` = Betriebsstunden pro Jahr (Element > Elementtyp > Katalog-Default > Instanz-Default), gerundet auf 0,1 Jahr half-up. Rechenweg-Text: "50'000 h ÷ 2'500 h/a = 20,0 J." Fehlt `h_a`, ist die Stundenangabe nicht verwendbar → naechster Rang, Hinweis im Rechenweg.
+
+Fehlt jede Quelle (kein Katalog-Standard fuer den Typ), ist L **unbekannt** → Element "unvollstaendig" (8.6 grau), nie ein Ersatzwert.
 
 ### 8.2 Einbaujahr E
 
-Bestaetigte Angabe `einbaudatum` (Protokoll, manuell) → sonst Uebergabedatum des Gebaeudes, markiert "abgeleitet" (FA-16). Ohne beides **und** ohne Bewertung: Element ist "unvollstaendig", erscheint in der Liste mit Hinweis, nicht im Plan, nie stillschweigend mit 0. Mit Bewertung genuegt die Bewertung (8.3, Aequivalenzalter).
+Bestaetigte Angabe `einbaudatum` (Formular, Excel, Protokoll, manuell) → sonst Uebergabedatum des Gebaeudes, markiert "abgeleitet" (FA-16). Ohne beides **und** ohne Bewertung: Element ist "unvollstaendig", erscheint in der Liste mit Hinweis und grau in 3D/2D, nie stillschweigend mit 0. Mit Bewertung genuegt die Bewertung (8.3, Aequivalenzalter), sofern Zustand im Scope ist.
 
-### 8.3 Zustand nach ZHAW-Methode, Ersatzjahr und Restlebensdauer (E14)
+### 8.3 Technisches Ersatzjahr, Restlebensdauer und Zustand
+
+**Ohne Zustandsbewertung (Mindestumfang Demo):** `J1 = E + rund(L_mittel)`; Bandbreite `E + rund(L_min)` … `E + rund(L_max)` als Spanne angezeigt. `RL = max(0, J1 − s)`.
+
+**Mit Zustand nach ZHAW-Methode (E14) – Umfang [?]:** Ob die Demo die volle ZHAW-Zustandsbewertung oder zunaechst nur Alter/Lebensdauer/Ampel umfasst, entscheidet der PO (`08-pruefung.md` PO-Entscheid Nr. 8; ADR 0021). Die angenaeherte Kurve unten ist **nicht fachlich freigegeben** und wird ohne Freigabe nicht als validierte Methode ausgeliefert (H16, Spike S10).
 
 Grundlage: Zustandswert z von 1 (neu) bis 0, lineare Alterung bis 0,4, darunter progressiv, Nutzungsgrenze 0,1–0,4 je Anforderung, Bandbreite min/mittel/max, Kurve wird durch Inspektion angepasst [F, Q12-Dom]. Die exakte Kurvenform ist im Artikel nicht als Formel uebernommen; Planora legt sie wie folgt fest [A, vor Umsetzung mit Hubbuch/Paganini 2015 abgleichen, Spike S10]:
 
-- Parameter je Element: L (aus 8.1), Nutzungsgrenze g (Typ > Mandant-Default 0,25 [A]), Knick k (Mandant, Default 0,75 [A]); `a_k = k × L`.
+- Parameter je Element: L (aus 8.1), Nutzungsgrenze g (Typ > Instanz-Default 0,25 [A]), Knick k (Instanz, Default 0,75 [A]); `a_k = k × L`.
 - **Alterungskurve** fuer Alter a:
   - `a ≤ a_k`: `z(a) = 1 − 0,6 × a / a_k` (linear bis 0,4)
   - `a_k < a ≤ L`: `z(a) = 0,4 − (0,4 − g) × ((a − a_k)/(L − a_k))²` (progressiv, erreicht g bei a = L)
-- **Ohne Bewertung:** `J1 = E + rund(L)`.
-- **Mit neuester Bewertung** im Jahr t mit Zustandswert z_t (Skala 1,0 … 0,0 in 0,1-Schritten, 10 Stufen plus 0 [A]): Aequivalenzalter a* = Umkehrfunktion der Kurve:
+- **Mit neuester Bewertung** im Jahr t mit Zustandswert z_t (Skala 1,0 … 0,0 in 0,1-Schritten [A]): Aequivalenzalter a* = Umkehrfunktion der Kurve:
   - `z_t ≥ 0,4`: `a* = a_k × (1 − z_t) / 0,6`
   - `g < z_t < 0,4`: `a* = a_k + (L − a_k) × √((0,4 − z_t)/(0,4 − g))`
   - `z_t ≤ g`: `a* = L` (Ersatz faellig)
   - `RL_t = L − a*`, `J1 = t + rund(RL_t)`. Ein unbekanntes Einbaujahr ist damit kein Hindernis (ZHAW "Ansatz 2" [F, Q12-Dom]).
-- **Bandbreite:** gleiche Rechnung mit L_min und L_max ergibt fruehestes und spaetestes Ersatzjahr; angezeigt als Spanne, der Plan rechnet mit L_mittel.
-- **Restlebensdauer** am Stichtag: `RL = max(0, J1 − s)`.
+- **Bandbreite:** gleiche Rechnung mit L_min und L_max ergibt fruehestes und spaetestes Ersatzjahr; Ampel rechnet mit L_mittel.
 - **Naechste Inspektion (Vorschlag, kein Auftrag, E10):** 5 Jahre vor `E + L_min`, bzw. 5 Jahre vor dem berechneten J1 nach einer Inspektion [F, Q12-Dom].
-- `rund` = kaufmaennisch half-up auf ganze Jahre; Quadratwurzel in Dezimalarithmetik mit fester Genauigkeit (≥ 20 Stellen [A]).
 - Das Zustandsmodell bleibt eine Strategie (`zustandsmodell = zhaw_v1`); eine spaetere Variante kommt als `zhaw_v2` daneben, alte Planstaende rechnen mit ihrer Version weiter.
-- **Geplantes Jahr (FA-28):** `ersatz_planung.geplantes_jahr` ersetzt J1 nur im Plan; beide Jahre werden angezeigt.
 
-### 8.4 Ersatzzyklen im Horizont (FA-27)
+**Rundung und Arithmetik (beide Varianten):** `rund` = kaufmaennisch half-up auf ganze Jahre; Quadratwurzel in Dezimalarithmetik mit fester Genauigkeit (≥ 20 Stellen [A]). Stichtag S ist immer explizit (kein `Date.now()` im Kern); Jahreswechsel aendert Ergebnisse nur ueber S.
 
-Folgejahre `J(n+1) = J(n) + rund(L_neu)` mit `L_neu` = L_mittel des Elementtyps aus der Lebensdauer-Tabelle (Rang 2 oder 4; Ersatzprodukt unbekannt) [A]; ohne Zustand. Ereignisse mit `s ≤ J ≤ s + H − 1` landen im Plan; ueberfaellige (J1 < s) werden im Jahr s ausgewiesen und als "ueberfaellig seit J1" markiert.
+### 8.4 Ersatzzyklen im Horizont – zurueckgestellt
 
-### 8.5 Kosten und Teuerung (FA-24, FA-25, E15, E16)
+[F] Folgezyklen `J(n+1) = J(n) + rund(L_neu)` und Planungshorizont 10/20 Jahre (FA-27) gehoeren zur Investitionsplanung und sind bis nach der Demo zurueckgestellt (E24). Die Demo zeigt nur das naechste technische Ersatzjahr J1. Wiederaufnahme im spaeteren Kosten-/Planungsmodul (ADR 0018), offene Befunde K02/H07/H14/H15 und E-T4 bleiben dort offen.
 
-- **Preis P** (Rappen) mit Preisjahr p und Bezugsgroesse aus der Preisdatenbank (Modul `preise`), Rangfolge: Mandantenpreis am Elementtyp > Mandantenpreis an der Katalog-ID > Herstellerpreis (global, Abgleich Hersteller + Artikel/Typ) > Planora-Standardpreis je Katalog-ID [A] > keiner. Je Stufe gilt der Eintrag mit dem juengsten `gueltig_ab ≤ Stichtag`.
-- **Automatische Aktualisierung (E15):** Eine Preisquelle schreibt nur **neue** `preis_eintrag`-Zeilen mit `gueltig_ab`; nichts wird ueberschrieben. Laufende Ansichten zeigen damit neue Preise ab Gueltigkeit, eingefrorene Planstaende behalten ihre Preise. V1: manuelle Pflege und Excel/CSV-Import; Feed-Adapter (z.B. BMEcat, Datanorm, Grosshandel [A]) folgen hinter dem Port `PreisQuelle`, sobald Quellen und Lizenzen geklaert sind (Spike S12, Risiko R11). Demontage/Nebenkosten als eigener Zuschlag pro Katalog-ID [A].
-- **Ereigniskosten:** `K(J) = rund_rappen( Menge × P × (1 + i)^(J − p) )`, i = fester Teuerungssatz des Mandanten, anpassbar (E16; Default 1,0 %/a [A]). Exponent mit Dezimalarithmetik (≥ 20 signifikante Stellen [A]), Rundung half-up **einmal pro Ereignis**.
-- Fehlender Preis → Ereignis mit `kosten = null`, Status "Kosten fehlen"; Summen zeigen "davon ohne Kosten: n Elemente", nie 0 CHF (FA-24).
+### 8.5 Kosten und Teuerung – zurueckgestellt
+
+[F] Preise, Preisrangfolge, Teuerung, Ereigniskosten und "Kosten fehlen" (FA-24, FA-25, E15, E16) sind bis nach der Demo zurueckgestellt (E24, ADR 0018). Der Rechenkern der Demo kennt keine Geldwerte; es gibt keine Preis- oder Geldspalten im Demo-Schema (Kap. 4.2). Der fruehere Text steht im Git-Verlauf (`e64fdb9`) und ist Ausgangspunkt fuer das spaetere Modul.
 
 ### 8.6 Ampel (FA-23, E17)
 
-N = Schwelle **pro Bauteiltyp**: `mandant_ampel(katalog_id)` > `katalog_eintrag.ampel_gelb_jahre` > `mandant_parameter.ampel_gelb_jahre_default` (Default 3 [A]). **rot** wenn J ≤ s; **gelb** wenn s < J ≤ s + N; **gruen** sonst; **grau** wenn unvollstaendig. J = geplantes Jahr falls gesetzt, sonst J1.
+N = Schwelle **pro Bauteiltyp**: `ampel_schwelle(katalog_id)` > `katalog_eintrag.ampel_gelb_jahre` > `instanz_einstellung.ampel_gelb_jahre_default` (Default 3 [A]). Massgeblich ist das **technische Ersatzjahr J1** (8.3), nicht eine Budgetverschiebung; eine geplante Verschiebung (`ersatz_planung`, FA-28) ist zurueckgestellt.
 
-### 8.7 Investitionsplan und Determinismus
+| Farbe | Bedingung | Anzeige (immer auch als Text, nicht nur Farbe) |
+|---|---|---|
+| **rot** | J1 ≤ s | "ueberfaellig seit J1" bzw. "Ersatz faellig" |
+| **gelb** | s < J1 ≤ s + N | "bald ersetzen (J1)" |
+| **gruen** | J1 > s + N | "Ersatz voraussichtlich J1" |
+| **grau** | unvollstaendig: L unbekannt, E unbekannt ohne Bewertung, oder unbestaetigte Pflichtangabe | "unvollstaendig: <fehlender Wert>"; nie gruen |
 
-- Plan = Summe der gerundeten Ereigniskosten je Jahr, gruppiert nach Gebaeude und Planora-Gruppe, wahlweise nach eBKP-H, wenn gemappt (FA-26, E13). Summen werden aus Zeilen gebildet, nie getrennt gerechnet.
-- Determinismus: keine Zeitfunktion, keine Zufallszahl, stabile Sortierung (Gebaeude, Gruppe, Katalog-ID, Element-ID), kanonisches JSON fuer `eingabe_hash`. Test: Eigenschaftstest "zweimal rechnen → identische Bytes"; Planstand-Nachrechnung im CI.
-- Excel-Export (FA-29) in DE/FR/IT: Werte plus Spalten fuer Rechenweg und Quelle; Summenzeilen als Excel-Formeln, deren Ergebnis im Test mit dem Kern verglichen wird.
+Bestandsabdeckung sichtbar: Liste und Gebaeudeuebersicht zeigen die Anzahl grauer Elemente (H17). In Stufe 1 ohne aktives Modul `erneuerung` zeigt die 3D-Welt keine Ampel.
+
+### 8.7 Determinismus und Export
+
+- Determinismus: keine Zeitfunktion, keine Zufallszahl, stabile Sortierung (Gebaeude, Gruppe, Katalog-ID, Element-ID), kanonisches JSON fuer `eingabe_hash`. Test: Eigenschaftstest "zweimal rechnen → identische Bytes"; Nachrechnung eines Planstands im CI.
+- Konsistenter Datenstand: Liste, 3D/2D und Export einer Anfrage rechnen auf demselben Schnappschuss und Stichtag (H13 ohne Preisanteil); eine Typaenderung invalidiert alle Elemente des Typs (Kap. 4.4).
+- Excel-Export (FA-29, neu begrenzt): Bestand mit Lebensdauer, J1, RL, Ampel, Quelle und Rechenweg je Zeile, de-CH-Zahlen/Datum, nur Deutsch. Texte aus Kundendaten werden beim Export gegen Formel-Injection neutralisiert (kein fuehrendes `=`, `+`, `-`, `@`).
+- **Zurueckgestellt (E24):** Investitionsplan je Jahr, Summen nach Planora-Gruppe/eBKP-H, Kostenspalten und Summen-Formeln.
 
 ---
 
