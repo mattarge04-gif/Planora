@@ -42,8 +42,10 @@ export async function setzeKontoStatus(pool: pg.Pool, benutzerId: string, status
   const c = await pool.connect();
   try {
     await c.query("begin");
-    const r = await c.query("update konto_status set status=$2 where benutzer_id=$1", [benutzerId, status]);
+    // Konto-Lock: serialisiert mit dem Trigger session_regeln (FOR SHARE bei Sitzungsanlage) (PP7-4)
+    const r = await c.query("select 1 from konto_status where benutzer_id=$1 for update", [benutzerId]);
     if (r.rowCount !== 1) throw new Error("Konto unbekannt");
+    await c.query("update konto_status set status=$2 where benutzer_id=$1", [benutzerId, status]);
     if (status !== "aktiv") await entzieheSitzungen(c, benutzerId);
     await auditEreignis(c, auditIdAusloeser, "konto.status", { status });
     await c.query("commit");

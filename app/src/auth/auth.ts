@@ -23,12 +23,28 @@ export const RATE_LIMIT = { anmelden: { window: 900, max: 10 }, reset: { window:
 /** Interner Header mit der vertrauenswuerdigen Client-IP; registriereAuth ueberschreibt jeden vom Client gelieferten Wert. */
 export const CLIENT_IP_HEADER = "x-planora-client-ip";
 
-export type AuthOptionen ={ baseURL: string; secret: string; sendeReset?: (email: string, url: string) => Promise<void> };
+/** Fehler des Triggers session_regeln (Konto nicht aktiv bei Sitzungsanlage) irgendwo in der cause-Kette? */
+const istKontoNichtAktiv = (e: unknown): boolean => {
+  for (let x: any = e, i = 0; x && i < 5; x = x.cause, i++) if (typeof x.message === "string" && x.message.includes("konto_nicht_aktiv")) return true;
+  return false;
+};
+/** PP7-4: verweigert die DB die Sitzungsanlage (Sperre parallel zum Login), antwortet Better Auth wie bei falschem Passwort statt 500. */
+function kontoSperreAlsAnmeldefehler<T extends (...a: any[]) => any>(fabrik: T): T {
+  return ((...a: any[]) => {
+    const adapter = fabrik(...a);
+    return { ...adapter, create: async (args: any) => {
+      try { return await adapter.create(args); }
+      catch (e) { if (istKontoNichtAktiv(e)) throw APIError.from("UNAUTHORIZED", BASE_ERROR_CODES.INVALID_EMAIL_OR_PASSWORD); throw e; }
+    } };
+  }) as T;
+}
+
+export type AuthOptionen = { baseURL: string; secret: string; sendeReset?: (email: string, url: string) => Promise<void> };
 export function baueAuth(pool: pg.Pool, o: AuthOptionen) {
   const db = drizzle(pool, { schema: authSchema });
   return betterAuth({
     baseURL: o.baseURL, secret: o.secret, trustedOrigins: [o.baseURL],
-    database: drizzleAdapter(db, { provider: "pg", schema: authSchema, transaction: true }),
+    database: kontoSperreAlsAnmeldefehler(drizzleAdapter(db, { provider: "pg", schema: authSchema, transaction: true })),
     session: { expiresIn: 43200, updateAge: 43200, cookieCache: { enabled: false } },
     // Client-IP nur aus dem von registriereAuth gesetzten Header (Quelle: req.ip), nie aus X-Forwarded-For des Clients (PP7-5)
     advanced: { disableOriginCheck: false, disableCSRFCheck: false, ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] } },
