@@ -12,7 +12,8 @@ export async function sendeJournal(o: OutboxOptionen) {
     if (!gesperrt) return;
     const instanzId=(await c.query("select wert from instanz_einstellung where schluessel='instanz_id'")).rows[0].wert as string;
     const offen=await c.query("select seq::text,art,ziel,zeit,zeit < clock_timestamp()-interval '15 minutes' alt from loesch_journal where zustand='offen' order by seq");
-    for (const r of offen.rows) {
+    let versandFehler:unknown;
+    try { for (const r of offen.rows) {
       if (r.alt) o.alarm(`Journal-Sicherung seit ueber 15 Minuten offen (seq ${r.seq})`);
       const eintrag: JournalEintrag={instanzId,seq:r.seq,art:r.art,ziel:r.ziel,zeit:r.zeit.toISOString()};
       const neu=await o.verschluesseln(Buffer.from(JSON.stringify(eintrag)));
@@ -20,10 +21,16 @@ export async function sendeJournal(o: OutboxOptionen) {
       const gespeichert=await o.ziel.schreibe(`journal/${instanzId}/${r.seq}.age`,verschluesselt,true);
       if (!gespeichert.equals(verschluesselt)) throw new Error("Journal-Objektkonflikt; keine Quittung");
       await c.query("select journal_quittiere($1)",[r.seq]);
-    }
+    } } catch(e) { versandFehler=e; }
     const stand=(await c.query("select coalesce(max(seq),0)::text seq,clock_timestamp() zeit from loesch_journal where zustand='quittiert'")).rows[0];
     const daten: JournalStand={instanzId,letzteQuittierteSeq:stand.seq,zeit:stand.zeit.toISOString()};
-    await o.ziel.schreibe(`journal/${instanzId}/stand.age`,await o.verschluesseln(Buffer.from(JSON.stringify(daten))),false);
+    try {
+      await o.ziel.schreibe(`journal/${instanzId}/stand.age`,await o.verschluesseln(Buffer.from(JSON.stringify(daten))),false);
+    } catch(e) {
+      o.alarm("Journal-Stand konnte nicht aktualisiert werden");
+      throw versandFehler??e;
+    }
+    if(versandFehler)throw versandFehler;
     return daten;
   } finally {
     try { if (gesperrt) await c.query("select pg_advisory_unlock($1)",[LOCK]); } finally { c.release(); }

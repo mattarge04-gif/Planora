@@ -37,7 +37,8 @@ it("wiederholt nach PUT/Quittungs-Crash mit identischen Bytes ohne Recovery-Key"
 it("laesst bei Zielfehler Eintraege offen und alarmiert nach 15 Minuten",async()=>{
   await db.pool.query("select journal_eintrag('konto.sperren','a'); update loesch_journal set zeit=now()-interval '16 minutes'");
   const u=umgebung();u.o.ziel.schreibe=async()=>{throw new Error("Ziel aus");};
-  await expect(sendeJournal(u.o)).rejects.toThrow(/Ziel aus/);expect(u.alarme).toHaveLength(1);
+  await expect(sendeJournal(u.o)).rejects.toThrow(/Ziel aus/);expect(u.alarme).toHaveLength(2);
+  expect(u.alarme[0]).toContain("15 Minuten");expect(u.alarme[1]).toContain("Stand");
   expect((await db.pool.query("select zustand from loesch_journal")).rows[0].zustand).toBe("offen");
 });
 it("verweigert ein fremdes Objekt am unveraenderlichen Zielpfad",async()=>{
@@ -78,4 +79,17 @@ it("journalisiert nur echte Rollen-/Scope-Entzuege am Transaktionsende",async()=
   expect((await db.pool.query("select count(*)::int n from loesch_journal")).rows[0].n).toBe(2);
   await setzeRolle(db.pool,id,"admin",[scope2],audit); // Aufwertung verliert keine Rechte.
   expect((await db.pool.query("select seq from journal_zaehler")).rows[0].seq).toBe("2");
+});
+it.each(["PUT-Fehler","Konflikt"])("aktualisiert stand.age trotz %s nur bis zur letzten echten Quittung",async(fehler)=>{
+  await db.pool.query("select journal_eintrag('konto.sperren','a');select journal_eintrag('konto.sperren','b')");
+  const u=umgebung(),original=u.o.ziel.schreibe;
+  u.o.ziel.schreibe=async(k,d,fest)=>{
+    if(k.endsWith('/2.age')){if(fehler==="PUT-Fehler")throw new Error("PUT-Fehler");return Buffer.from("fremd");}
+    return original(k,d,fest);
+  };
+  await expect(sendeJournal(u.o)).rejects.toThrow(fehler==="Konflikt"?/Objektkonflikt/:/PUT-Fehler/);
+  const stand=[...u.objekte].find(([k])=>k.endsWith("/stand.age"))![1];
+  const daten=JSON.parse(Buffer.from(JSON.parse(stand.toString()).daten,"base64").toString());
+  expect(daten.letzteQuittierteSeq).toBe("1");expect(Number.isFinite(Date.parse(daten.zeit))).toBe(true);
+  expect((await db.pool.query("select zustand from loesch_journal where seq=2")).rows[0].zustand).toBe("offen");
 });
