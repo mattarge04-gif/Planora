@@ -4,10 +4,12 @@
   "scripts": {
     "test": "vitest run",
     "migriere": "tsx src/db/migrator.ts",
-    "test:docker": "vitest run --config vitest.docker.config.ts"
+    "test:docker": "vitest run --config vitest.docker.config.ts",
+    "test:docker:b": "vitest run --config vitest.docker-b.config.ts"
   },
   "type": "module",
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1166.0",
     "@node-rs/argon2": "2.2.2",
     "better-auth": "1.7.18",
     "drizzle-orm": "0.45.4",

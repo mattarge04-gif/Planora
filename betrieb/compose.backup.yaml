@@ -1,0 +1,48 @@
+services:
+  backup: &backup
+    image: ${PLANORA_BACKUP_IMAGE:?Digest-gepinntes Backup-Image setzen}
+    profiles: [betrieb]
+    entrypoint: [node, dist/betrieb/backup/cli.js]
+    env_file:
+      - ${PLANORA_BACKUP_ENV:?Env-Datei ausserhalb des Repositories setzen}
+    environment:
+      XDG_CACHE_HOME: /tmp/cache
+    volumes:
+      - dokumente:/dokumente:ro
+      - backup-staging:/staging
+      - type: bind
+        source: ${PLANORA_BACKUP_ZIEL:?Separates Zielverzeichnis setzen}
+        target: /ziel
+      - type: bind
+        source: ${PLANORA_SECRETS:?Secret-Verzeichnis ausserhalb des Repositories setzen}
+        target: /run/secrets
+        read_only: true
+    networks: [intern, backup-ausgang]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  restore:
+    <<: *backup
+    profiles: [recovery]
+    volumes:
+      - dokumente:/dokumente
+      - backup-staging:/staging
+      - type: bind
+        source: ${PLANORA_BACKUP_ZIEL:?Separates Zielverzeichnis setzen}
+        target: /ziel
+      - type: bind
+        source: ${PLANORA_SECRETS:?Secret-Verzeichnis ausserhalb des Repositories setzen}
+        target: /run/secrets
+        read_only: true
+      - type: bind
+        source: ${PLANORA_RESTORE_AUSGABE:-/var/lib/planora/wiederherstellung}
+        target: /ausgabe
+      - type: bind
+        source: ${PLANORA_RECOVERY_DATEI:-/etc/planora/offline-recovery.key}
+        target: /run/recovery.key
+        read_only: true
+        bind:
+          create_host_path: false
+networks:
+  backup-ausgang: {}

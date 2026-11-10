@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:18-bookworm@sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5
+    environment:
+      POSTGRES_PASSWORD: ${PLANORA_TEST_PW:?Zufaelliges Testpasswort fehlt}
+      POSTGRES_DB: planora
+    ports: ["127.0.0.1:${PLANORA_TEST_DBPORT:-25432}:5432"]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U postgres -d planora]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    volumes: [pgdata:/var/lib/postgresql]
+  backup: &backup
+    image: ${PLANORA_TEST_PROJEKT:-planora-b}-backup:test
+    build:
+      context: ../..
+      dockerfile: betrieb/backup/Dockerfile
+    profiles: [betrieb]
+    environment:
+      PLANORA_BETRIEB_DB: ${PLANORA_TEST_BETRIEB_DB:?}
+      PLANORA_BACKUP_DB: ${PLANORA_TEST_BACKUP_DB:?}
+      PLANORA_RELEASE: m1-test
+      PLANORA_RECOVERY_EMPFAENGER: ${PLANORA_TEST_RECOVERY_EMPFAENGER:-}
+      PLANORA_KONFIGURATION_FILE: /ziel/konfiguration.json
+      PLANORA_INVENTAR_FILE: /ziel/inventar.json
+      PLANORA_RECOVERY_KEY_PFAD: /ziel/recovery.key
+      PLANORA_ROLLEN_DB: ${PLANORA_TEST_ROLLEN_DB:-}
+      PLANORA_RESTORE_DB: postgres://planora_migrator@db:5432/planora
+      PLANORA_RESTORE_KONFIGURATION_PFAD: /ziel/wiederhergestellt/konfiguration.json
+      PLANORA_RESTORE_INVENTAR_PFAD: /ziel/wiederhergestellt/inventar.json
+      RESTIC_REPOSITORY: /ziel/restic
+      RESTIC_PASSWORD: ${PLANORA_TEST_RESTIC_PW:?}
+      XDG_CACHE_HOME: /tmp/cache
+    volumes:
+      - dokumente:/dokumente:ro
+      - backup-staging:/staging
+      - type: bind
+        source: ${PLANORA_TEST_ZIEL:?}
+        target: /ziel
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  restore:
+    <<: *backup
+    profiles: [recovery]
+    volumes:
+      - dokumente:/dokumente
+      - backup-staging:/staging
+      - type: bind
+        source: ${PLANORA_TEST_ZIEL:?}
+        target: /ziel
+volumes:
+  pgdata: {}
+  dokumente: {}
+  backup-staging: {}
