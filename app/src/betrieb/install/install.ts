@@ -1,4 +1,4 @@
-// Ablauf von `planora install` (Spec Â§9). Seiteneffekte auf Docker hinter InstallUmgebung, damit Unit-Tests mit Fake laufen.
+// Ablauf von `planora install` (Spec §9). Seiteneffekte auf Docker hinter InstallUmgebung, damit Unit-Tests mit Fake laufen.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statfsSync, copyFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
 import { join, resolve } from "node:path";
@@ -18,7 +18,7 @@ export interface InstallUmgebung {
   subnetze(): Promise<string[]>;
   ladeImage(archiv: string): Promise<void>;
   imageId(referenz: string): Promise<string | null>;
-  /** db â†’ migrator â†’ api/worker â†’ proxy, ohne Pull; wartet bis alles gesund ist */
+  /** db → migrator → api/worker → proxy, ohne Pull; wartet bis alles gesund ist */
   starte(i: InstanzPfad): Promise<void>;
   sql(i: InstanzPfad, rolle: string, befehl: string): Promise<string>;
   setupToken(i: InstanzPfad): Promise<string>;
@@ -48,7 +48,7 @@ export function leseInstanzen(): Bestand["instanzen"] {
 
 export const composeDateien = (bundle: string) => [join(bundle, "compose.yaml"), ...(existsSync(join(bundle, "compose.backup.yaml")) ? [join(bundle, "compose.backup.yaml")] : [])];
 
-/** Laedt die Images des Release (falls im Bundle) und prueft jede Image-ID gegen das Manifest (Â§8 Schritt 4, Â§9 offline). */
+/** Laedt die Images des Release (falls im Bundle) und prueft jede Image-ID gegen das Manifest (§8 Schritt 4, §9 offline). */
 export async function ladeUndPruefeImages(release: Release, bundle: string, u: Pick<InstallUmgebung, "ladeImage" | "imageId">, dienste?: string[]) {
   for (const img of release.images) {
     if (dienste && !dienste.includes(img.dienst)) continue;
@@ -66,7 +66,7 @@ export async function ladeUndPruefeImages(release: Release, bundle: string, u: P
 
 export async function installiere(o: InstallOptionen, u: InstallUmgebung): Promise<InstallErgebnis> {
   const melde = o.melde ?? (() => {});
-  // 1. Eingaben, Bundle, Signatur â€“ nichts wird veraendert
+  // 1. Eingaben, Bundle, Signatur – nichts wird veraendert
   const plan = planeInstanz(o);
   for (const f of ["compose.yaml", "Caddyfile", "wartung.html", "release.json"]) if (!existsSync(join(o.bundle, f))) throw new Error(`Bundle unvollstaendig: ${f} fehlt`);
   if (!existsSync(o.schluessel)) throw new Error("Oeffentlicher Release-Schluessel fehlt (--schluessel)");

@@ -33,7 +33,7 @@ describe("Worker-Platzhalter", () => {
     wert = false; await pause(30); stopp.abort(); await lauf;
     expect(status).toEqual(["restore_gesperrt", "bereit"]);
   });
-  it("meldet Statuswechsel bereit â†’ wartung â†’ db_nicht_erreichbar und endet beim Abbruchsignal", async () => {
+  it("meldet Statuswechsel bereit → wartung → db_nicht_erreichbar und endet beim Abbruchsignal", async () => {
     let antwort: () => Promise<{ rows: unknown[] }> = async () => ({ rows: [{ schluessel: "wartung", wert: false }] });
     const pool = { query: () => antwort() } as unknown as pg.Pool;
     const status: string[] = []; const stopp = new AbortController();
@@ -67,8 +67,8 @@ describe("Worker-Platzhalter", () => {
     const status: string[] = []; const stopp = new AbortController(); const t0 = Date.now();
     const lauf = workerSchleife(pool, { intervallMs: 60_000, signal: stopp.signal, melde: (s) => status.push(s), abfrageTimeoutMs: 60_000 });
     await pause(20);
-    stopp.abort();                    // Signal zuerst â€¦
-    loese({ rows: [{ schluessel: "wartung", wert: false }] }); // â€¦ Antwort danach
+    stopp.abort();                    // Signal zuerst …
+    loese({ rows: [{ schluessel: "wartung", wert: false }] }); // … Antwort danach
     await lauf;
     expect(Date.now() - t0).toBeLessThan(2000);
     expect(status).toEqual([]);
@@ -123,6 +123,6 @@ describe("PP9-5: DB nimmt Verbindungen an und antwortet nie", () => {
     const lauf = workerSchleife(p, { intervallMs: 5000, signal: stopp.signal, melde: () => {} });
     await pause(200); stopp.abort(); await lauf;
     expect(Date.now() - t0).toBeLessThan(2000);
-    expect(await beendeBegrenzt([() => p.end()], 500)).toBe("zeit"); // pool.end() haengt â€“ der Stopp wartet es nicht ab
+    expect(await beendeBegrenzt([() => p.end()], 500)).toBe("zeit"); // pool.end() haengt – der Stopp wartet es nicht ab
   });
 });

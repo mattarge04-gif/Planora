@@ -25,7 +25,7 @@ export async function baueServer(o: ServerOptionen) {
   // Health: ohne Auth (Proxy, Container-Healthcheck, Update-Smoke). Bewusst keine registrierte Route, sondern exakter
   // Vergleich des rohen Pfads: Guard und Sitzungsregeln gelten fuer jede registrierte /api-Route und bleiben unberuehrt.
   // 503, wenn die DB nicht antwortet; Wartung allein ist kein Fehler.
-  // Wartung (Spec Â§8 Schritt 1, Â§14.4): alle Mutationen gesperrt, Abmelden bleibt moeglich. Read pro Anfrage, DB-Fehler â†’ 503.
+  // Wartung (Spec §8 Schritt 1, §14.4): alle Mutationen gesperrt, Abmelden bleibt moeglich. Read pro Anfrage, DB-Fehler → 503.
   app.addHook("onRequest", async (req, reply) => {
     if (req.method === "GET" && req.url.split("?", 1)[0] === "/api/health") {
       const lage = await wartungsLage(o.pool);
@@ -36,7 +36,7 @@ export async function baueServer(o: ServerOptionen) {
     if (req.routeOptions.url === "/api/auth/*" && (req.params as Record<string, string>)["*"] === "sign-out") return;
     if (await wartungAktiv(o.pool)) return reply.code(503).header("retry-after", "60").send({ fehler: "wartung" });
   });
-  registriereModulGuard(app, o.pool, o.stufe);       // onRequest: nicht gelieferte/inaktive Module â†’ 404, DB-Fehler â†’ 503
+  registriereModulGuard(app, o.pool, o.stufe);       // onRequest: nicht gelieferte/inaktive Module → 404, DB-Fehler → 503
   registriereAuth(app, auth, o.baseURL);              // /api/auth/*
   registriereSitzungsregeln(app, auth, o.pool, [o.baseURL]); // preHandler: Sitzung, Leerlauf, Kontostatus, Schreib-Header
 
@@ -76,7 +76,7 @@ export async function baueServer(o: ServerOptionen) {
     } catch (e) { return reply.code(409).send({ fehler: (e as Error).message }); }
   });
 
-  // Platzhalter fuer Fachmodule bis M2â€“M8: erreichbar nur, wenn Guard und Sitzung sie durchlassen
+  // Platzhalter fuer Fachmodule bis M2–M8: erreichbar nur, wenn Guard und Sitzung sie durchlassen
   for (const m of MANIFEST) for (const r of m.routen) {
     if (r.startsWith("/api/auth") || r.startsWith("/api/admin")) continue;
     app.all(`${r.replace(/\/$/, "")}/*`, async (_req, reply) => reply.code(501).send({ fehler: "noch nicht umgesetzt" }));

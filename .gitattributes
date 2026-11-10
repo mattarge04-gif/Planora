@@ -1,3 +1,6 @@
 *.sql text eol=lf
 *.ts text eol=lf
 *.json text eol=lf
+betrieb/planora text eol=lf
+*.service text eol=lf
+*.timer text eol=lf

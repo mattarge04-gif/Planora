@@ -1,5 +1,5 @@
 #!/bin/sh
-# planora â€“ Betriebswerkzeug auf dem Host (Spec Â§8, Â§9). POSIX-sh, nur ein duenner Einstieg:
+# planora – Betriebswerkzeug auf dem Host (Spec §8, §9). POSIX-sh, nur ein duenner Einstieg:
 # die Logik liegt in TypeScript (app/src/betrieb), gebaut nach <bundle>/werkzeug (nur node:-Module, kein node_modules).
 #
 #   planora install --instanz <name> --domain <d> --tls acme|internal --schluessel <release.pub> [...]

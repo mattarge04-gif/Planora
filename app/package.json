@@ -5,7 +5,8 @@
     "test": "vitest run",
     "migriere": "tsx src/db/migrator.ts",
     "test:docker": "vitest run --config vitest.docker.config.ts",
-    "test:docker:b": "vitest run --config vitest.docker-b.config.ts"
+    "test:docker:b": "vitest run --config vitest.docker-b.config.ts",
+    "pruefe:typen": "tsc --noEmit -p tsconfig.docker.json"
   },
   "type": "module",
   "dependencies": {

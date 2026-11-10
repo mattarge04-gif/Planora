@@ -1,5 +1,21 @@
 # M1b – Notizen der Spuren
 
+## Integration abgeschlossen (2026-11-10)
+
+- [F] Originalzweige unveraendert per Merge in `m1b-server-paket` integriert: `9171869` (A), `746fe96` (B); `main` bleibt `4af0a27`, kein Push. Ausgangsarbeitsverzeichnis sauber, keine fremde uncommittete Arbeit vorhanden. Keine lokale `AGENTS.md` im Projekt oder seinen Vorfahren gefunden.
+- [F] Ponytail installiert aus Originalquelle `https://github.com/DietrichGebert/ponytail`, `skills/ponytail`, Upstream `96608e078b2d5ea607c5c3b8b5a54d1c1fba6846`; SKILL.md SHA-256 `9badd22a32e19cb884e46dfa8d3aae82bb81dfa5484105b8b4f0262df823a509`. Echte Regeln gelesen und im Modus full angewandt: vorhandene Module, Node-Standardbibliothek, keine neue Dependency, vollstaendige Validierung und Anschluesse.
+- [F] `c226252`: Installation mit externen Secret-/Inventar-/Konfigurationsdateien, echtem Backup-Overlay, Journal-Dienst und Host-Reconcile verbunden; Linux-systemd-Vorlagen fuer Start/stuendliches Reconcile und naechtliche Sicherung. Backup laeuft als UID 1000, passend zur unveraenderlichen Dokumentablage; keine regulaere Recovery-Identity im Secret-Satz.
+- [F] Restore-Rueckweg implementiert: neue Zieldatenbank statt In-place-Import oder DROP der bestehenden DB; alter signierter Release und passendes Recovery-Image geprueft; Offline-Key nur temporaer; Import als Migrator/Owner, begrenzter Recovery-Login und dessen temporaere Grants danach entfernt; alle Konten gesperrt, Worker bis Host-Token-Einloesung gesperrt. Wiederaufnahme ist an die Update-ID gebunden. Bei DB-Ausfall bleibt Verarbeitung geschlossen.
+- [F] Kompatibler Image-Rueckweg erhaelt das signierte Recovery-Werkzeug des bereits migrierten Schema-Stands, damit Folgesicherungen unter dem alten App-Release pruefbar bleiben.
+- [F] `e47eefe`: minimale Admin-API fuer Konten-/Rollen-/Scope-/Journal-Sicht und Bestaetigung von Nicht-Admins; Lizenz-Dossier-Geruest mit explizit offener Lieferfreigabe.
+- [F] Finale normale Pruefung: **234 Tests gruen**, 23 Docker-Tests uebersprungen (38.04 s); `npm run pruefe:typen` einschliesslich Docker-Tests ohne Befund; `bash -n betrieb/planora` und `git diff --check` ohne Befund.
+- [F] Docker getrennt nachgewiesen: Paket **13/13** (87.34 s); Backup/Restore **5/5** (66.73 s); kombinierte Installation/Backup/Update/Restore/Reconcile/Worker-Freigabe **5/5** (198.19 s), danach letzte gezielte Restore-Pruefung **1/1** (111.60 s). Projekte `planora-paket-1110`, `planora-backup-1110`, `planora-integration-final1110-u`; Ports 22880/22843, 26571, 21881/21844. Keine Summe aus alten 179/150 oder ueberlappenden Abnahmen bilden.
+- [F] Fruehe kombinierte Laeufe schlugen fehl; Schema-Rechte, begrenzte Rollenoptionen und temporaere Grants wurden korrigiert und erfolgreich nachgeprueft. Nach drei Diagnoseversuchen wurde der Restore-Punkt zunaechst geparkt und erst nach den weiteren Paket-/Betriebspruefungen mit konkretem Befund wieder aufgenommen.
+- [F] Alle eigenen Compose-Ressourcen und Test-Image-Tags entfernt; Basis-Images und fremde Projekte unberuehrt, kein Prune. Ein irrtuemlicher Parallelstart mit gleichem Testnamen wurde beendet; eine lokale Dateisperre verhindert kuenftig die Kollision bereits vor dem Image-Bau.
+- [?] **M1 noch nicht technisch abnahmebereit:** frische Linux-VM samt Host-Bind-Mounts/systemd, echter CH-S3-Endpunkt, freizugebende gemeinsame Retention-Politik und menschliche Lizenz-/Lieferfreigabe fehlen. Inventar und Journal werden weiter konservativ aufbewahrt; keine automatische Loeschpolitik erfunden. Vollstaendiger Image-SBOM und produktiver externer Alarmkanal sind nicht durch das Dossier-Geruest bzw. Test-Logs ersetzt.
+
+Betriebsaufrufe und Grenzen: `betrieb/README.md`; vollstaendiger Ergebnisbericht: `2026-11-10-m1b-integrationsbericht.md`. Die folgenden Spur-Sektionen sind historische Originalnotizen; insbesondere **Stand bei Abbruch** wird durch **A5 Update (Codex)** und diesen Integrationsstand teilweise ersetzt.
+
 Kennzeichnung: [F] Fakt · [A] Annahme · [?] offen.
 
 ## Spur A
@@ -66,7 +82,7 @@ Kennzeichnung: [F] Fakt · [A] Annahme · [?] offen.
 
 - [F] Echter Update-Docker-Test (isoliert `planora-a-codex-u`, Ports 19081/19444): 3/3 gruen, 100.67 s. Belegt echten Installationsadapter, exklusiven DB-Lock + Backend-Verlust, neue Migration mit Daten, erzwungenes Worker-Ende (137), Wartung vor Freigabe, Rueckweg auf kompatibles altes Image, Wiederaufnahme und Entfernung aller Smoke-Sessions. Backup ist ein klar gekennzeichneter Stub.
 
-### Stand bei Abbruch (2026-11-10, PO-Stopp)
+### Historisch: Stand bei Abbruch (2026-11-10, PO-Stopp)
 
 **Erledigt (Commit)**
 
@@ -101,8 +117,6 @@ Letzter Teststand auf diesem Commit-Stand: `cd app && npm test` → 14 Dateien g
 **Docker:** eigenes Projekt `planora-a` vollstaendig abgebaut (keine Container, Volumes, Netze); eigene Test-Images `planora-app:planora-a-1`, `:test-1`, `:a2` entfernt. Basis-Images (node, postgres, caddy) und alles von `planora-b*` unberuehrt.
 
 **Naechster Schritt:** PP9-6 umsetzen, dann "PP9-Fixes bereit" mit Hash und Docker-Testbeweis an den Ueberwacher; danach A5.
-
-# M1b – Annahmen und Integrationsnotizen
 
 ## Spur B
 
