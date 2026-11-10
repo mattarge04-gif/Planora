@@ -33,35 +33,74 @@ export async function docker(args: string[], o: { eingabe?: string; timeoutMs?: 
   return r;
 }
 
-export async function baueImage(tag: string, release: string) {
-  await docker(["build", "-q", "-t", tag, "--build-arg", `PLANORA_RELEASE=${release}`, APP], { timeoutMs: 900_000 });
+/**
+ * Testkonfiguration (PP9-2): Projekt, Ports und Image-Tag kommen aus der Umgebung, damit parallele Laeufe (z.B. ein
+ * Reviewer) ein eigenes Projekt nutzen: PLANORA_TEST_PROJEKT, PLANORA_TEST_HTTPS_PORT, PLANORA_TEST_HTTP_PORT.
+ * Standard ist das Projekt der Spur A.
+ */
+const zahl = (name: string, standard: number) => {
+  const n = Number(process.env[name] ?? standard);
+  if (!Number.isInteger(n) || n < 1 || n > 65535) throw new Error(`${name} ungueltig`);
+  return n;
+};
+export const TEST = (() => {
+  const projekt = process.env.PLANORA_TEST_PROJEKT ?? "planora-a";
+  if (!/^[a-z][a-z0-9-]{1,40}$/.test(projekt)) throw new Error("PLANORA_TEST_PROJEKT ungueltig");
+  return { projekt, httpsPort: zahl("PLANORA_TEST_HTTPS_PORT", 18443), httpPort: zahl("PLANORA_TEST_HTTP_PORT", 18080), tag: (n: number) => `planora-app:${projekt}-${n}` };
+})();
+
+/** Baut das App-Image und liefert die unveraenderliche Referenz tag@sha256:<Image-ID> (PP9-6). */
+export async function baueImage(tag: string, release: string, kontext = APP, datei?: string): Promise<{ referenz: string; imageId: string }> {
+  await docker(["build", "-q", "-t", tag, "--build-arg", `PLANORA_RELEASE=${release}`, ...(datei ? ["-f", datei] : []), kontext], { timeoutMs: 900_000 });
+  const imageId = (await docker(["image", "inspect", tag, "--format", "{{.Id}}"])).stdout.trim();
+  return { referenz: `${tag}@${imageId}`, imageId };
 }
 
 /** Wegwerf-Instanz: Secrets pro Lauf zufaellig in einem Temp-Verzeichnis, nie im Repo. */
-export function testInstanz(o: { projekt: string; httpsPort: number; httpPort: number; image: string; zusatzDateien?: string[] }) {
-  const verzeichnis = mkdtempSync(join(tmpdir(), `${o.projekt}-`));
+export function testInstanz(o: { image: string; zusatzDateien?: string[]; projekt?: string; httpsPort?: number; httpPort?: number }) {
+  const projekt = o.projekt ?? TEST.projekt, httpsPort = o.httpsPort ?? TEST.httpsPort, httpPort = o.httpPort ?? TEST.httpPort;
+  const verzeichnis = mkdtempSync(join(tmpdir(), `${projekt}-`));
   const secrets = join(verzeichnis, "secrets");
   erzeugeSecrets(secrets);
   const envDatei = join(verzeichnis, "instanz.env");
-  const basis = `https://localhost:${o.httpsPort}`;
+  const basis = `https://localhost:${httpsPort}`;
   const schreibeEnv = (image: string) => writeFileSync(envDatei, [
     `PLANORA_SECRETS=${secrets.replace(/\\/g, "/")}`, "PLANORA_DOMAIN=localhost", "PLANORA_TLS=internal",
-    `PLANORA_HTTPS_PORT=${o.httpsPort}`, `PLANORA_HTTP_PORT=${o.httpPort}`, `PLANORA_BASE_URL=${basis}`, `PLANORA_IMAGE_APP=${image}`, "",
+    `PLANORA_HTTPS_PORT=${httpsPort}`, `PLANORA_HTTP_PORT=${httpPort}`, `PLANORA_BASE_URL=${basis}`, `PLANORA_IMAGE_APP=${image}`, "",
   ].join("\n"));
   schreibeEnv(o.image);
   const dateien = [join(BETRIEB, "compose.yaml"), ...(o.zusatzDateien ?? [])];
-  const basisArgs = ["compose", "-p", o.projekt, "--env-file", envDatei, ...dateien.flatMap((d) => ["-f", d])];
+  const basisArgs = ["compose", "-p", projekt, "--env-file", envDatei, ...dateien.flatMap((d) => ["-f", d])];
   const compose = (args: string[], opt: Parameters<typeof docker>[1] = {}) => docker([...basisArgs, ...args], opt);
+  let angelegt = false;
   return {
-    verzeichnis, envDatei, basis, projekt: o.projekt, composeDateien: dateien, compose, schreibeEnv,
+    verzeichnis, envDatei, secrets, basis, projekt, composeDateien: dateien, compose, schreibeEnv,
+    /**
+     * Startet das Paket. Existiert das Projekt oder eines seiner Volumes bereits, wird abgebrochen und NICHTS geloescht:
+     * es koennte ein fremder oder parallel laufender Stand sein (PP9-2).
+     */
+    async starte() {
+      const projekte = (JSON.parse((await docker(["compose", "ls", "-a", "--format", "json"])).stdout || "[]") as { Name: string }[]).map((p) => p.Name);
+      const volumes = (await docker(["volume", "ls", "--format", "{{.Name}}"])).stdout.split(/\r?\n/).filter((v) => v.startsWith(`${projekt}_`));
+      if (projekte.includes(projekt) || volumes.length) {
+        throw new Error(`Compose-Projekt ${projekt} existiert bereits (Volumes: ${volumes.join(", ") || "keine"}). Der Test loescht keine fremden Ressourcen: `
+          + "anderes Projekt per PLANORA_TEST_PROJEKT/PLANORA_TEST_HTTPS_PORT/PLANORA_TEST_HTTP_PORT waehlen oder selbst abbauen.");
+      }
+      angelegt = true;
+      await compose(["up", "-d", "--pull", "never", "--wait", "--wait-timeout", "300"], { timeoutMs: 400_000 });
+    },
+    /** Als selbst angelegt markieren (Installation ueber das Werkzeug statt starte()). */
+    markiereAngelegt() { angelegt = true; },
+    async containerId(dienst: string) { return (await compose(["ps", "-a", "-q", dienst])).stdout.trim().split(/\r?\n/)[0]; },
+    async inspect(dienst: string) { return JSON.parse((await docker(["inspect", await this.containerId(dienst)])).stdout)[0]; },
     /** SQL ueber den lokalen Socket im db-Container (wie das Betriebswerkzeug). */
     async sql(rolle: string, sql: string, opt: { erlaubeFehler?: boolean } = {}) {
       const r = await compose(["exec", "-T", "db", "psql", "-X", "-v", "ON_ERROR_STOP=1", "-U", rolle, "-d", "planora", "-At", "-c", sql], opt);
       return { ...r, text: r.stdout.trim() };
     },
-    /** Nur das eigene Projekt entfernen (nie fremde Ressourcen). */
+    /** Baut nur ab, was dieser Lauf selbst angelegt hat. */
     async aufraeumen() {
-      await compose(["--profile", "konsole", "down", "-v", "--remove-orphans"], { erlaubeFehler: true, timeoutMs: 300_000 });
+      if (angelegt) await compose(["--profile", "konsole", "down", "-v", "--remove-orphans"], { erlaubeFehler: true, timeoutMs: 300_000 });
       rmSync(verzeichnis, { recursive: true, force: true });
     },
   };
