@@ -8,6 +8,7 @@ import { join, resolve } from "node:path";
 import pg from "pg";
 import { createServer } from "node:net";
 import { migriere } from "../src/db/migrator.js";
+import { sha } from "../src/betrieb/backup/manifest.js";
 const exec=promisify(execFile);
 const docker=process.env.PLANORA_DOCKER ?? (process.platform==="win32" ? "C:/Program Files/Docker/Docker/resources/bin/docker.exe" : "docker");
 let ziel: string, pool: pg.Pool;
@@ -41,7 +42,7 @@ beforeAll(async () => {
   env.PLANORA_TEST_RECOVERY_EMPFAENGER=(await werkzeug("age-keygen","-y","/ziel/recovery.key")).trim();
 });
 afterAll(async () => {
-  try {await pool?.end();if(projektAngelegt)await compose("down","-v");if(ziel)await fs.rm(ziel,{recursive:true,force:true});}
+  try {await pool?.end();if(projektAngelegt)await compose("--profile","betrieb","down","-v");if(ziel)await fs.rm(ziel,{recursive:true,force:true});}
   finally {if(sperre){await sperre.close();await fs.rm(sperrPfad,{force:true});}}
 });
 it("sichert unter Minimalrollen einen echten pg_dump in restic",async () => {
@@ -65,5 +66,37 @@ it("verschluesselt das Journal mit age und quittiert einzeln im echten Ziel",asy
   expect(eintrag.ziel).toBe("test-konto");
   await werkzeug("node","dist/betrieb/journal/cli.js","--einmal");
   expect(await fs.readFile(join(ziel,`journal/${instanz}/${seq}.age`))).toEqual(vor);
+});
+it("haelt reale Dateien und Referenzwechsel waehrend pg_dump im selben Snapshot",async()=>{
+  const dateien=["Dateistand vor Snapshot","Dateistand nach Snapshot"].map((inhalt)=>{
+    const hash=sha(inhalt);return{inhalt,schluessel:`sha256/${hash.slice(0,2)}/${hash.slice(2,4)}/${hash}`,sha256:hash,groesse:Buffer.byteLength(inhalt)};
+  });
+  for(const d of dateien){
+    await werkzeug("node","--input-type=module","-e",`import {mkdir,writeFile} from 'node:fs/promises';import {dirname} from 'node:path';const p='/dokumente/'+${JSON.stringify(d.schluessel)};await mkdir(dirname(p),{recursive:true});await writeFile(p,${JSON.stringify(d.inhalt)});`);
+    await pool.query("insert into datei(schluessel,sha256,groesse) values($1,$2,$3)",[d.schluessel,d.sha256,d.groesse]);
+  }
+  await pool.query("insert into datei_referenz values($1,'snapshot-test')",[dateien[0].schluessel]);
+  const blockierer=await pool.connect();let backup:Promise<string>|undefined;
+  try{
+    await blockierer.query("begin; lock table liegenschaft in access exclusive mode");
+    backup=compose("run","--rm","backup","sichern","--anlass","paralleltest");
+    // pg_dump importiert den Snapshot vor dem Tabellenlock. Der Exporter ist hier noch offen.
+    let wartet=false;
+    for(let i=0;i<400;i++){
+      const r=await pool.query("select 1 from pg_stat_activity where application_name='pg_dump' and wait_event_type='Lock'");
+      if(r.rowCount){wartet=true;break;}await new Promise((r)=>setTimeout(r,50));
+    }
+    expect(wartet).toBe(true);
+    await pool.query("update datei_referenz set schluessel=$1 where objekt='snapshot-test'",[dateien[1].schluessel]);
+    await blockierer.query("commit");
+    const r=JSON.parse((await backup).trim().split("\n").at(-1)!);
+    const snapshots=JSON.parse(await werkzeug("restic","snapshots","--json","--tag",r.backupId));
+    const manifest=JSON.parse(await werkzeug("restic","dump",snapshots[0].id,`/staging/${r.backupId}/manifest.json`));
+    expect(manifest.dateien).toEqual([{schluessel:dateien[0].schluessel,sha256:dateien[0].sha256,groesse:dateien[0].groesse}]);
+    const sql=await werkzeug("node","--input-type=module","-e",`import{execFileSync as run}from'node:child_process';import{writeFileSync}from'node:fs';writeFileSync('/tmp/stand.dump',run('restic',['dump',${JSON.stringify(snapshots[0].id)},${JSON.stringify(`/staging/${r.backupId}/daten.dump`)}]));process.stdout.write(run('pg_restore',['--data-only','--table=datei_referenz','--file=-','/tmp/stand.dump']));`);
+    expect(sql).toContain(dateien[0].schluessel+"\tsnapshot-test");expect(sql).not.toContain(dateien[1].schluessel+"\tsnapshot-test");
+  }finally{
+    await blockierer.query("rollback");blockierer.release();await backup?.catch(()=>{});
+  }
 });
 });
