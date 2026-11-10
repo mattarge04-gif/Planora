@@ -85,7 +85,7 @@ describe("Secrets und instanz.env", () => {
     for (const n of SECRETS) expect(readFileSync(join(s, n), "utf8")).toMatch(/^[0-9a-f]{64}$/);
     expect(new Set(SECRETS.map((n) => readFileSync(join(s, n), "utf8"))).size).toBe(SECRETS.length);
     expect(readdirSync(join(s, "db")).sort()).toEqual(["db_app_passwort", "db_backup_passwort", "db_betrieb_passwort", "db_migrator_passwort", "db_superuser_passwort"]);
-    expect(readdirSync(join(s, "app")).sort()).toEqual(["auth_secret", "db_app_passwort", "db_migrator_passwort"]);
+    expect(readdirSync(join(s, "app")).sort()).toEqual(["auth_secret", "db_app_passwort", "db_betrieb_passwort", "db_migrator_passwort"]);
     expect(readFileSync(join(s, "app", "db_app_passwort"), "utf8")).toBe(readFileSync(join(s, "db_app_passwort"), "utf8"));
     expect(readFileSync(join(s, "db", "db_app_passwort"), "utf8")).toBe(readFileSync(join(s, "db_app_passwort"), "utf8"));
     if (process.platform !== "win32") expect(statSync(join(s, "auth_secret")).mode & 0o777).toBe(0o600);

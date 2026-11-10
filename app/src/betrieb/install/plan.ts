@@ -108,7 +108,7 @@ export function pruefePlattform(ist: PlattformIst, releaseArchitektur?: string):
 export const SECRETS = ["db_superuser_passwort", "db_app_passwort", "db_migrator_passwort", "db_backup_passwort", "db_betrieb_passwort", "auth_secret"] as const;
 const KOPIEN: Record<string, { uid: number; namen: readonly string[] }> = {
   db: { uid: 999, namen: ["db_superuser_passwort", "db_app_passwort", "db_migrator_passwort", "db_backup_passwort", "db_betrieb_passwort"] },
-  app: { uid: 1000, namen: ["db_app_passwort", "db_migrator_passwort", "auth_secret"] },
+  app: { uid: 1000, namen: ["db_app_passwort", "db_migrator_passwort", "db_betrieb_passwort", "auth_secret"] },
 };
 
 /** Legt secrets/ neu an (nie ueberschreiben). Werte: 32 Zufallsbytes hex. Gibt nur Pfade zurueck, nie Inhalte. */

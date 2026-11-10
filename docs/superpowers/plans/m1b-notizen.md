@@ -39,3 +39,7 @@ Kennzeichnung: [F] Fakt · [A] Annahme · [?] offen.
 - [A] Kollision (A2): gleicher Projektname, vorhandene Volumes `planora-<instanz>_*`, vorhandene Konfiguration, gleiches Backup-Ziel (`PLANORA_BACKUP_ZIEL` in `instanz.env`, normalisiert verglichen) oder gleiche Host-Ports einer anderen Instanz → Ablehnung vor jeder Aenderung. **Hinweis Spur B:** `--backup-ziel` wird nur gespeichert und verglichen; welches Format B erwartet, ist offen.
 - [A] Profil P1 = keine Option aktiv; `install` prueft das nach dem Start in der DB und schreibt `betrieb.install` ins Audit.
 - [F] Secrets: kanonisch `secrets/<name>`, Kopien `secrets/db/` (UID 999) und `secrets/app/` (UID 1000), alle 600; chown nur als root auf Linux.
+
+### PP9-Befunde (Stand nach Behebung)
+- **PP9-1** [F] Getrennte Secret-Kopien je Leser-UID (`secrets/db/` 999, `secrets/app/` 1000), Compose mountet je Dienst die passende Quelle auf denselben Zielnamen. Nachweis im Docker-Test: `erzeugeSecrets` laeuft als root in einem Linux-Container auf einem Volume → Eigentuemer/Modus per `stat` geprueft, fremde UID kann nicht lesen; alle vier Rollen melden sich ueber TCP (scram) mit dem Passwort aus ihrer Datei an, falsches Passwort scheitert. [?] Start des ganzen Pakets mit echten Host-Bind-Mounts auf einer Linux-VM bleibt offen (hier nur Docker Desktop/Windows; Abnahme A1).
+- **PP9-2** [F] Docker-Tests: Projekt/Ports per `PLANORA_TEST_PROJEKT`, `PLANORA_TEST_HTTPS_PORT`, `PLANORA_TEST_HTTP_PORT`; kein vorangestelltes `down -v`; Abbruch, wenn das Projekt existiert; Abbau nur des selbst Angelegten.
