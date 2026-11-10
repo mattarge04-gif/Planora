@@ -17,7 +17,11 @@ RUN npx tsc --outDir dist --rootDir src --target ES2023 --module NodeNext --modu
 FROM ${NODE_IMAGE} AS abh
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
+RUN npm ci --omit=dev --no-audit --no-fund \
+ # better-auth hat vitest als optionalen Peer; npm behandelt dessen Baum als devOptional.
+ # Explizites Entfernen verhindert, dass Test-/Buildwerkzeuge ins Produktionsimage gelangen.
+ && npm rm --no-save --omit=dev --omit=peer --no-audit --no-fund vitest tsx \
+ && npm cache clean --force
 
 # --- Laufzeit
 FROM ${NODE_IMAGE}

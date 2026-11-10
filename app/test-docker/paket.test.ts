@@ -29,6 +29,18 @@ describe.skipIf(!DOCKER_TESTS)("Compose-Paket (Docker)", () => {
     expect(r.json()).toEqual({ ok: true, db: true, wartung: false, release: "test-1" });
   });
 
+  it("PP9-7: Laufzeitbaum ohne Compiler und Testwerkzeuge, natives Argon2 bleibt vorhanden", async () => {
+    const r = await inst.compose(["exec", "-T", "api", "node", "--input-type=module", "-e",
+      `import {existsSync,readdirSync} from 'node:fs';
+       for(const p of ['vitest','vite','esbuild','tsx','typescript','@vitest','@vitejs','@esbuild']) {
+         const d='/app/node_modules/'+p;
+         if(existsSync(d) && (!p.startsWith('@') || readdirSync(d).length)) throw Error('Dev-Paket im Image: '+p);
+       }
+       const a=await import('@node-rs/argon2'); const h=await a.hash('laufzeitprobe');
+       if(!await a.verify(h,'laufzeitprobe')) throw Error('Argon2 defekt'); console.log('ok');`]);
+    expect(r.stdout.trim()).toBe("ok");
+  });
+
   it("Migrator endet mit Exit 0 und hat alle Migrationen angewendet", async () => {
     const m = await inst.inspect("migrator");
     expect([m.State.Status, m.State.ExitCode]).toEqual(["exited", 0]);

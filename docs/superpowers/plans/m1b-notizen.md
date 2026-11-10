@@ -50,6 +50,7 @@ Kennzeichnung: [F] Fakt · [A] Annahme · [?] offen.
 - **PP9-8 Nachtrag** [F] `proxy-init` scheiterte beim zweiten `compose up` (root ohne DAC-Capability auf dem bereits uebergebenen Volume). Jetzt idempotent; durch den PP9-5-Test abgedeckt (zweites `up` im selben Projekt).
 
 ### Uebernahme Codex
+- [F] PP9-7: Nach `npm ci --omit=dev` entfernt `npm rm --no-save --omit=dev --omit=peer vitest tsx` die optionalen Peer-Testbaeume; Argon2s natives Optionalpaket bleibt. Der Pakettest prueft fehlende Werkzeuge sowie Argon2, Migration und Erstadmin-Login. Ein reines `npm prune` entfernte den devOptional-Baum nicht; leere Scope-Verzeichnisse sind keine Pakete.
 - [F] PP9-6: alle Manifest-Referenzen verlangen festen Tag plus SHA-256-Digest; widerspruechliche Digest-Felder werden abgelehnt. Install prueft weiterhin nach docker load die Image-ID und schreibt exakt die gepruefte Digest-Referenz in instanz.env. Unit: `npm.cmd exec vitest run test/release.test.ts test/release-install.test.ts` ? 34/34.
 - [A] Lokal gebaute Offline-Images verwenden den containerd-Image-Store (Docker 29), dessen RepoDigest der Image-ID entspricht; der Docker-Pakettest startet diese Referenz.
 
