@@ -13,7 +13,8 @@ function woerterbuch(o: unknown, leer=false) {
 }
 export function pruefeInventar(o: unknown): asserts o is Schluesselinventar {
   const i=o as Schluesselinventar;
-  if (!i || i.format!==1 || !istUuid(i.instanzId) || !i.restic?.repository || !i.restic?.passwort || !woerterbuch(i.zielCredentials,true) || !woerterbuch(i.appSecrets) || !woerterbuch(i.dbRollen) || ["planora_app","planora_betrieb","planora_backup","planora_migrator"].some((r)=>!i.dbRollen[r as keyof typeof i.dbRollen])) throw new Error("Schluesselinventar unvollstaendig");
+  if (!i || i.format!==1 || !istUuid(i.instanzId) || typeof i.restic?.repository!=="string" || !i.restic.repository || typeof i.restic?.passwort!=="string" || !i.restic.passwort || !woerterbuch(i.zielCredentials,true) || !woerterbuch(i.appSecrets) || !woerterbuch(i.dbRollen) || ["planora_app","planora_betrieb","planora_backup","planora_migrator"].some((r)=>!i.dbRollen[r as keyof typeof i.dbRollen])) throw new Error("Schluesselinventar unvollstaendig");
+  if(Object.keys(i.zielCredentials).some((k)=>!["AWS_ACCESS_KEY_ID","AWS_SECRET_ACCESS_KEY","AWS_SESSION_TOKEN","AWS_DEFAULT_REGION","AWS_REGION"].includes(k)))throw new Error("Unbekannte Ziel-Credentials im Inventar");
 }
 function pfad(instanzId:string,backupId:string) {
   if (!istUuid(instanzId)||!istUuid(backupId)) throw new Error("Ungueltige Inventar-ID");

@@ -11,7 +11,8 @@ services:
       timeout: 3s
       retries: 60
     volumes: [pgdata:/var/lib/postgresql]
-  backup:
+  backup: &backup
+    image: ${PLANORA_TEST_PROJEKT:-planora-b}-backup:test
     build:
       context: ../..
       dockerfile: betrieb/backup/Dockerfile
@@ -23,9 +24,27 @@ services:
       PLANORA_RECOVERY_EMPFAENGER: ${PLANORA_TEST_RECOVERY_EMPFAENGER:-}
       PLANORA_KONFIGURATION_FILE: /ziel/konfiguration.json
       PLANORA_INVENTAR_FILE: /ziel/inventar.json
+      PLANORA_RECOVERY_KEY_PFAD: /ziel/recovery.key
+      PLANORA_ROLLEN_DB: ${PLANORA_TEST_ROLLEN_DB:-}
+      PLANORA_RESTORE_DB: postgres://planora_migrator@db:5432/planora
+      PLANORA_RESTORE_KONFIGURATION_PFAD: /ziel/wiederhergestellt/konfiguration.json
+      PLANORA_RESTORE_INVENTAR_PFAD: /ziel/wiederhergestellt/inventar.json
       RESTIC_REPOSITORY: /ziel/restic
       RESTIC_PASSWORD: ${PLANORA_TEST_RESTIC_PW:?}
       XDG_CACHE_HOME: /tmp/cache
+    volumes:
+      - dokumente:/dokumente:ro
+      - backup-staging:/staging
+      - type: bind
+        source: ${PLANORA_TEST_ZIEL:?}
+        target: /ziel
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  restore:
+    <<: *backup
+    profiles: [recovery]
     volumes:
       - dokumente:/dokumente
       - backup-staging:/staging

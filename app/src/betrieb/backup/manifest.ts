@@ -31,6 +31,7 @@ export function snapshotAbgleichen(json: string, manifest: Manifest) {
   const gesehen = new Set<string>();
   for (const zeile of json.trim().split("\n")) {
     const n = JSON.parse(zeile);
+    if(n.type && n.type!=="file" && n.type!=="dir")throw new Error("Unerlaubter Dateityp im Snapshot");
     if (n.type !== "file") continue;
     if (!erwartet.has(n.path) || gesehen.has(n.path) || (erwartet.get(n.path) !== undefined && n.size !== erwartet.get(n.path))) throw new Error("Snapshot passt nicht zum Manifest");
     gesehen.add(n.path);

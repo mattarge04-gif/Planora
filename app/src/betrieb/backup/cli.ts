@@ -7,6 +7,10 @@ export { geheimnis } from "./umgebung.js";
 import { ageVerschluesseln } from "../journal/age.js";
 import { pruefeInventar } from "./inventar.js";
 export async function cli(args: string[]) {
+  if(args[0]==="restore")return(await import("../restore/cli.js")).restoreCli(args.slice(1));
+  if(args[0]==="freigabe")return(await import("../freigabe.js")).freigabeCli(args.slice(1));
+  if(args[0]==="journal")return(await import("../journal/cli.js")).journalCli(args.slice(1));
+  if(args[0]==="reconcile")return(await import("./reconcile.js")).reconcileCli(args);
   if (args[0] !== "sichern" || args[1] !== "--anlass" || !args[2] || args.length !== 3) throw new Error("Aufruf: sichern --anlass <anlass>");
   const betrieb = new pg.Pool({ connectionString: await geheimnis("PLANORA_BETRIEB_DB") });
   try {
@@ -24,5 +28,5 @@ export async function cli(args: string[]) {
   } finally { await betrieb.end(); }
 }
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  cli(process.argv.slice(2)).catch(() => { console.error("Backup fehlgeschlagen; Betriebsalarm: Sicherung pruefen"); process.exitCode=1; });
+  cli(process.argv.slice(2)).catch(() => { console.error(process.argv[2]==="restore"?"Restore fehlgeschlagen; Freigabe bleibt gesperrt":"Betriebsbefehl fehlgeschlagen; Betriebsalarm: Sicherung pruefen"); process.exitCode=1; });
 }
