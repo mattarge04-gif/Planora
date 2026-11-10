@@ -131,24 +131,25 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
       ladeImage: async (a) => { aufrufe.push(`load ${a.replace(/\\/g, "/").split("/").slice(-2).join("/")}`); },
       imageId: async (r) => release.images.find((i) => i.referenz === r)?.imageId ?? null,
       starte: async (i) => { aufrufe.push(`up ${i.projekt}`); },
-      sql: async (_i, rolle, befehl) => { aufrufe.push(`sql ${rolle} ${befehl.slice(0, 30)}`); return "0"; },
+      sql: async (_i, rolle, befehl) => { aufrufe.push(`sql ${rolle} ${befehl.slice(0, 30)}`); return befehl.includes("instanz_id") ? JSON.stringify("11111111-1111-4111-8111-111111111111") : "0"; },
+      backupStart: async () => {},
       setupToken: async () => { aufrufe.push("setup-token"); return "TOKEN-123"; },
       ...ueber,
     };
     return { u, aufrufe };
   };
-  const optionen = (ueber: object = {}) => ({ instanz: "kunde-a", domain: "localhost", tls: "internal" as const, httpsPort: 18443, httpPort: 18080, bundle, schluessel: pub, ...ueber });
+  const optionen = (ueber: object = {}) => ({ instanz: "kunde-a", domain: "localhost", tls: "internal" as const, httpsPort: 18443, httpPort: 18080, bundle, schluessel: pub, recoveryEmpfaenger: "age1" + "q".repeat(58), backupZiel: join(dir,"ziel"), ...ueber });
 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), "planora-install-"));
     alt = { etc: process.env.PLANORA_ETC, var: process.env.PLANORA_VAR };
     process.env.PLANORA_ETC = join(dir, "etc"); process.env.PLANORA_VAR = join(dir, "var");
     bundle = join(dir, "bundle"); mkdirSync(join(bundle, "images"), { recursive: true });
-    for (const f of ["compose.yaml", "Caddyfile", "wartung.html"]) writeFileSync(join(bundle, f), "");
+    for (const f of ["compose.yaml", "Caddyfile", "wartung.html", "compose.backup.yaml", "planora-betrieb@.service", "planora-sicherung@.service", "planora-sicherung@.timer"]) writeFileSync(join(bundle, f), "");
     writeFileSync(join(bundle, "images", "app.tar"), "x");
     release = erzeugeRelease({
       version: "1.0.0", architektur: "amd64", migrationsVerzeichnis: MIGRATIONEN, modulmanifestVersion: "m1", vonVersionen: [], schemaVorher: [],
-      images: [{ dienst: "app", referenz: `planora-app:1.0.0@${ID("a")}`, digest: null, imageId: ID("a"), architektur: "amd64", archiv: "images/app.tar" }],
+      images: [{ dienst: "app", referenz: `planora-app:1.0.0@${ID("a")}`, digest: null, imageId: ID("a"), architektur: "amd64", archiv: "images/app.tar" }, ...(["db", "proxy", "backup"] as const).map((dienst) => ({ dienst, referenz: `planora-${dienst}:test@sha256:${"a".repeat(64)}`, digest: null, imageId: `sha256:${"a".repeat(64)}`, architektur: "amd64" }))],
     });
     writeFileSync(join(bundle, "release.json"), JSON.stringify(signiereRelease(release, paar.privateKey.export({ type: "pkcs8", format: "pem" }) as string)));
     pub = join(dir, "release.pub"); writeFileSync(pub, paar.publicKey.export({ type: "spki", format: "pem" }) as string);
@@ -162,7 +163,7 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
     const { u, aufrufe } = fake();
     const r = await installiere(optionen(), u);
     expect(r).toMatchObject({ instanz: "kunde-a", projekt: "planora-kunde-a", baseURL: "https://localhost:18443", release: "1.0.0", setupToken: "TOKEN-123" });
-    expect(aufrufe).toEqual(["load images/app.tar", "up planora-kunde-a", "sql planora_app select count(*) from modul_sch", "sql planora_betrieb select betrieb_ereignis('insta", "setup-token"]);
+    expect(aufrufe).toEqual(["load images/app.tar", "up planora-kunde-a", "sql planora_betrieb select wert from instanz_einst", "sql planora_app select count(*) from modul_sch", "sql planora_betrieb select betrieb_ereignis('insta", "setup-token"]);
     const env = leseEnv(join(dir, "etc", "kunde-a", "instanz.env"));
     expect(env).toMatchObject({ PLANORA_INSTANZ: "kunde-a", PLANORA_RELEASE: "1.0.0", PLANORA_DOMAIN: "localhost", PLANORA_TLS: "internal", PLANORA_HTTPS_PORT: "18443", PLANORA_IMAGE_APP: `planora-app:1.0.0@${ID("a")}`,
       PLANORA_VORNE_SUBNETZ: "172.31.240.0/29", PLANORA_PROXY_IP: "172.31.240.2", PLANORA_API_IP: "172.31.240.3" });
@@ -180,11 +181,11 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
     expect(readFileSync(join(dir, "etc", "kunde-a", "secrets", "auth_secret"), "utf8")).toBe(vorher);
   });
   it("zweite Instanz mit gleichem Backup-Ziel oder gleichen Ports wird abgelehnt; mit eigenen Werten angenommen", async () => {
-    await installiere(optionen({ backupZiel: "s3:https://s3.example.ch/a" }), fake().u);
-    await expect(installiere(optionen({ instanz: "kunde-b", backupZiel: "s3:https://s3.example.ch/a/", httpsPort: 28443, httpPort: 28080 }), fake().u)).rejects.toThrow(/Backup-Ziel wird bereits von Instanz kunde-a/);
-    await expect(installiere(optionen({ instanz: "kunde-b", backupZiel: "s3:https://s3.example.ch/b" }), fake().u)).rejects.toThrow(/Host-Port 18443/);
+    await installiere(optionen({ backupZiel: join(dir,"ziel-a") }), fake().u);
+    await expect(installiere(optionen({ instanz: "kunde-b", backupZiel: join(dir,"ziel-a") + "/", httpsPort: 28443, httpPort: 28080 }), fake().u)).rejects.toThrow(/Backup-Ziel wird bereits von Instanz kunde-a/);
+    await expect(installiere(optionen({ instanz: "kunde-b", backupZiel: join(dir,"ziel-b") }), fake().u)).rejects.toThrow(/Host-Port 18443/);
     expect(existsSync(join(dir, "etc", "kunde-b"))).toBe(false);
-    const r = await installiere(optionen({ instanz: "kunde-b", backupZiel: "s3:https://s3.example.ch/b", httpsPort: 28443, httpPort: 28080 }), fake().u);
+    const r = await installiere(optionen({ instanz: "kunde-b", backupZiel: join(dir,"ziel-b"), httpsPort: 28443, httpPort: 28080 }), fake().u);
     expect(r.projekt).toBe("planora-kunde-b");
     // eigenes Subnetz, auch wenn das Netz der ersten Instanz gerade nicht existiert
     expect(leseEnv(join(dir, "etc", "kunde-b", "instanz.env")).PLANORA_VORNE_SUBNETZ).toBe("172.31.240.8/29");
@@ -213,7 +214,7 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
     expect(existsSync(join(dir, "etc"))).toBe(false);
   });
   it("aktive Option nach dem Start verletzt Profil P1 → Fehler, kein Setup-Token", async () => {
-    const { u, aufrufe } = fake({ sql: async () => "1" });
+    const { u, aufrufe } = fake({ sql: async (_i, _r, b) => b.includes("instanz_id") ? JSON.stringify("11111111-1111-4111-8111-111111111111") : "1" });
     await expect(installiere(optionen(), u)).rejects.toThrow(/Profil P1 verletzt/);
     expect(aufrufe).not.toContain("setup-token");
   });

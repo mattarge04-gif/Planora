@@ -9,6 +9,7 @@ import { backupVorbereiten, backupKonfigurieren } from "./backup.js";
 import { reconcileHost } from "../host.js";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { pruefeComposeBindung } from "../update/compose.js";
 
 export interface InstallUmgebung {
   plattform(): Promise<PlattformIst>;
@@ -23,6 +24,7 @@ export interface InstallUmgebung {
   sql(i: InstanzPfad, rolle: string, befehl: string): Promise<string>;
   setupToken(i: InstanzPfad): Promise<string>;
   backupStart?(i: InstanzPfad): Promise<void>;
+  pruefeCompose?(i: InstanzPfad, release: Release): Promise<void>;
 }
 
 export type InstallOptionen = InstallEingabe & {
@@ -99,6 +101,7 @@ export async function installiere(o: InstallOptionen, u: InstallUmgebung): Promi
   melde(`Konfiguration angelegt: ${pfade.etc}`);
   // 6. Start ohne Pull
   const instanz: InstanzPfad = { projekt: plan.projekt, envDatei: pfade.envDatei, composeDateien: composeDateien(o.bundle) };
+  await u.pruefeCompose?.(instanz, release);
   await u.starte(instanz);
   if (mitBackup) {
     const instanzId = JSON.parse(await u.sql(instanz, "planora_betrieb", "select wert from instanz_einstellung where schluessel='instanz_id'"));
@@ -119,6 +122,7 @@ export async function installiere(o: InstallOptionen, u: InstallUmgebung): Promi
 export function dockerInstallUmgebung(docker: Ausfuehrer, platzPfad: string): InstallUmgebung {
   const zeilen = (t: string) => t.split(/\r?\n/).map((z) => z.trim()).filter(Boolean);
   return {
+    pruefeCompose: (i, release) => pruefeComposeBindung(docker, i, release),
     async plattform() {
       const v = await mussGelingen(docker, ["version", "--format", "{{.Server.Version}}|{{.Server.Arch}}|{{.Server.Os}}"], { timeoutMs: 60_000 });
       const [engine, architektur, betriebssystem] = v.stdout.trim().split("|");

@@ -82,3 +82,16 @@ it("laesst weitere Konten erst durch einen aktivierten Admin bestaetigen",async(
     expect((await u.db.pool.query("select status from konto_status where benutzer_id=$1",[u.leser])).rows[0].status).toBe("aktiv");
   }finally{await app.end();}
 });
+
+it("widerruft alte Host-Tokens bei erneuter Admin-Sperre und prueft den aktuellen Kontostatus",async()=>{
+  const u=await umgebung();
+  const[t]=await freigabe(u.betrieb,{zeige:()=>{},bestaetige:async()=>true});
+  await u.db.pool.query("update konto_status set status='gesperrt' where benutzer_id=$1",[u.admin]);
+  expect((await u.db.pool.query("select count(*)::int n from freigabe_token where benutzer_id=$1",[u.admin])).rows[0].n).toBe(0);
+  await expect(loeseFreigabeTokenEin(u.betrieb,t.token,randomBytes(16).toString("hex"))).rejects.toThrow(/Token/);
+  // Selbst ein noch vorhandenes Token darf den aktuellen Status nicht ueberstimmen.
+  await u.db.pool.query("insert into freigabe_token(hash,benutzer_id,gueltig_bis) values($1,$2,now()+interval '15 minutes')",[sha(t.token),u.admin]);
+  await expect(loeseFreigabeTokenEin(u.betrieb,t.token,randomBytes(16).toString("hex"))).rejects.toThrow(/Konto/);
+  expect((await u.db.pool.query("select status from konto_status where benutzer_id=$1",[u.admin])).rows[0].status).toBe("gesperrt");
+  expect((await u.db.pool.query("select wert from instanz_einstellung where schluessel='restore_gesperrt'")).rows[0].wert).toBe(true);
+});

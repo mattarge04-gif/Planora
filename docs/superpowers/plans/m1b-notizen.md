@@ -1,5 +1,15 @@
 # M1b – Notizen der Spuren
 
+## Nachpruefung PP9 / PP10b (2026-11-10)
+
+- [F] Die vier nachgereichten Befunde bestanden bei `ffb4615` noch: Token-Einloesung ohne aktuellen Kontostatus, verlorene Restore-TLS-Parameter, unvollstaendige Pflichtimages/geerbte Compose-Werte und nicht aufgeloeste Backup-Pfad-Aliase.
+- [F] PP10b-2: neue Migration `011_freigabe_widerruf.sql`, keine Aenderung angewendeter Migrationen. Token-Einloesung sperrt zuerst das Konto und verlangt `zu_bestaetigen`; jede erneute explizite Sperre widerruft dessen ausstehende Host-Tokens. Regression prueft Widerruf, Statusschutz und unveraendert gesetzte Worker-Sperre.
+- [F] PP10b-4: gemeinsame explizite Restore-TLS-Konfiguration fuer pg und psql; `require`/`verify-full`, CA und Client-Zertifikatspfade bleiben erhalten. Unbekannte TLS-Parameter werden abgelehnt. Tests pruefen den CLI-Uebergang, den psql-Import-Parameter und abgelehnte pg-Verbindung gegen eine unverschluesselte DB. Kein positiver Realnachweis eines produktiven TLS-Endpunkts behauptet.
+- [F] PP9-6: Manifest verlangt eindeutig `app`, `db`, `proxy`, `backup`; effektiv gerenderte Compose-Dienste muessen zu den signierten Referenzen passen. Alle Profile werden fuer die Pruefung gerendert, ohne sie zu starten. Docker-Aufrufe, DB-Lock und POSIX-Wrapper uebernehmen keine geerbten Image-/Compose-Overrides.
+- [F] PP9-10: lokale Ziele per resolve/realpath einschliesslich existierender Vorfahren normalisiert; Junction-/Symlink-, Punktsegment- und file-URL-Aliase werden als dasselbe Ziel erkannt. S3 normalisiert Endpoint/URL, behaelt aber die Gross-/Kleinschreibung der Objektschluessel.
+- [F] Bereits in der ersten Integration erledigt: Admin-API in `e47eefe`; Wartung/Restore-Sperre des Workers und Install-Profilpruefung als `planora_app` in `c226252`. Diese Pfade bleiben erhalten.
+- [F] Gezielt 77 Tests in acht betroffenen Dateien bestanden; TLS-Datei nach zwei zusaetzlichen CLI-Regressionen 6/6 bestanden (ueberlappt mit vier Tests des ersten Laufs). Kombinierter Docker-Lauf 6/6 bestanden, 200.71 s, Projekt `planora-nachpruefung-1110-u`, Ports 23881/23844. Der erste Lauf fand ausgeblendete Profildienste; die Konfigurationspruefung wurde auf alle Profile korrigiert und erfolgreich nachgeprueft. TypeScript einschliesslich Docker-Tests und POSIX-Syntaxpruefung ohne Befund. Keine erneute ungezielte Vollpruefung.
+
 ## Integration abgeschlossen (2026-11-10)
 
 - [F] Originalzweige unveraendert per Merge in `m1b-server-paket` integriert: `9171869` (A), `746fe96` (B); `main` bleibt `4af0a27`, kein Push. Ausgangsarbeitsverzeichnis sauber, keine fremde uncommittete Arbeit vorhanden. Keine lokale `AGENTS.md` im Projekt oder seinen Vorfahren gefunden.

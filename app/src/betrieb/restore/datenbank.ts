@@ -7,7 +7,7 @@ import type { Schluesselinventar } from "../backup/inventar.js";
 import type { RestoreUmgebung } from "./restore.js";
 /** Rollen-Provisionierung benoetigt CREATEROLE + ADMIN fuer pg_read_all_data,
  * keinen Superuser. Dump-Import laeuft separat als planora_migrator. */
-export function datenbankUmgebung(o:{rollenDb:pg.PoolConfig;zielDb:pg.ClientConfig;konfigurationDatei:string;inventarDatei:string;lauf?:Prozess}) {
+export function datenbankUmgebung(o:{rollenDb:pg.PoolConfig;zielDb:pg.ClientConfig;pgEnv?:NodeJS.ProcessEnv;konfigurationDatei:string;inventarDatei:string;lauf?:Prozess}) {
   const rollen=new pg.Pool(o.rollenDb);let betrieb:pg.Pool|undefined;
   const lauf=o.lauf??prozess;
   function ziel(inventar:Schluesselinventar,user:keyof Schluesselinventar["dbRollen"]){return{...o.zielDb,options:user==="planora_migrator"?o.zielDb.options:undefined,user,password:inventar.dbRollen[user]};}
@@ -40,7 +40,7 @@ export function datenbankUmgebung(o:{rollenDb:pg.PoolConfig;zielDb:pg.ClientConf
     async importiere(inventar,m,ordner){
       const cfg=ziel(inventar,"planora_migrator"),c=new pg.Client(cfg);await c.connect();
       try{if((await c.query("select rolsuper from pg_roles where rolname=current_user")).rows[0].rolsuper)throw new Error("Migrator darf kein Superuser sein");}finally{await c.end();}
-      const env={PGHOST:cfg.host,PGPORT:String(cfg.port??5432),PGDATABASE:cfg.database,PGUSER:cfg.user,PGPASSWORD:cfg.password as string,PGSSLMODE:o.zielDb.ssl?"require":"prefer",PGOPTIONS:cfg.options};
+      const env={PGHOST:cfg.host,PGPORT:String(cfg.port??5432),PGDATABASE:cfg.database,PGUSER:cfg.user,PGPASSWORD:cfg.password as string,PGSSLMODE:o.zielDb.ssl?"verify-full":"disable",...o.pgEnv,PGOPTIONS:cfg.options};
       const sqlDatei=join(ordner,"import.sql"),sperreDatei=join(ordner,"sperre.sql");
       await erfolgreich(lauf,{programm:"pg_restore",args:["--no-owner","--file",sqlDatei,join(ordner,"daten.dump")]});
       await fs.chmod(sqlDatei,0o600);

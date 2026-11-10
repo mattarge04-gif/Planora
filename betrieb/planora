@@ -45,6 +45,9 @@ instanz_aus() {
 }
 
 compose() {
+  # Env-Datei ist verbindlich; geerbte Shellwerte und Compose-Overrides nicht uebernehmen.
+  for name in $(sed -n 's/^\([A-Z][A-Z0-9_]*\)=.*/\1/p' "$ENVDATEI"); do unset "$name"; done
+  for name in $(env | sed -n 's/^\(COMPOSE_[A-Z0-9_]*\)=.*/\1/p'); do unset "$name"; done
   if [ -f "$PLANORA_BUNDLE/compose.backup.yaml" ]; then
     docker compose -p "planora-$INSTANZ" --env-file "$ENVDATEI" -f "$PLANORA_BUNDLE/compose.yaml" -f "$PLANORA_BUNDLE/compose.backup.yaml" "$@"
   else

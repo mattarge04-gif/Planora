@@ -8,6 +8,7 @@ import { instanzPfade, leseEnv, schreibeEnv } from "../install/plan.js";
 import { kanonisch, pruefeKompatibilitaet, pruefeRelease } from "../release.js";
 import { backupKonfigurieren } from "../install/backup.js";
 import { restoreHost } from "../restore/host.js";
+import { pruefeComposeBindung } from "./compose.js";
 
 const text = (s: string) => `'${s.replace(/'/g, "''")}'`;
 export function dockerBetriebsumgebung(docker: Ausfuehrer, instanz: string, altesBundle: string): Betriebsumgebung {
@@ -37,6 +38,7 @@ export function dockerBetriebsumgebung(docker: Ausfuehrer, instanz: string, alte
     sperren: () => dbSperre(i()),
     async vorpruefen(z) {
       releasePruefen(z);
+      await pruefeComposeBindung(docker, { ...i(), composeDateien: composeDateien(z.bundle) }, z.release);
       for (const f of ["compose.yaml", "Caddyfile", "wartung.html"]) if (!existsSync(join(z.bundle, f))) throw new Error(`Bundle unvollstaendig: ${f}`);
       // Nichttransaktionale Schritte sind im M1a-Migrator noch nicht sicher wiederaufnehmbar: geschlossen ablehnen.
       if (z.release.matrix.nichttransaktionaleSchritte.length) throw new Error("Nichttransaktionale Migrationen werden von diesem Werkzeug noch nicht unterstuetzt");

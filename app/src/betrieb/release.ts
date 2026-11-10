@@ -111,8 +111,11 @@ export function pruefeForm(r: unknown): asserts r is Release {
   if (!istText(x.erzeugt) || Number.isNaN(Date.parse(x.erzeugt))) f("erzeugt");
   if (!istText(x.architektur)) f("architektur");
   if (!Array.isArray(x.images) || !x.images.length) f("images fehlen");
+  const dienste = new Set<string>();
   for (const i of x.images) {
     if (!i || !istText(i.dienst) || !istText(i.referenz) || !istText(i.architektur)) f("image unvollstaendig");
+    if (!["app", "db", "proxy", "backup", "clamav"].includes(i.dienst) || dienste.has(i.dienst)) f("image-Dienst unbekannt oder doppelt");
+    dienste.add(i.dienst);
     if (/:latest(@|$)/.test(i.referenz) || !/^[^\s@]+:[^\s/:@]+@sha256:[0-9a-f]{64}$/.test(i.referenz)) f(`image ${i.dienst}: Referenz braucht festen Tag und Digest (latest verboten)`);
     if (!SHA.test(i.imageId)) f(`image ${i.dienst}: imageId`);
     if (i.digest !== null && !SHA.test(i.digest)) f(`image ${i.dienst}: digest`);
@@ -120,7 +123,7 @@ export function pruefeForm(r: unknown): asserts r is Release {
     if (i.archiv !== undefined && (!istText(i.archiv) || i.archiv.includes("..") || /^([/\\]|[A-Za-z]:)/.test(i.archiv))) f(`image ${i.dienst}: archiv muss relativ im Bundle liegen`);
     if (i.architektur !== x.architektur) f(`image ${i.dienst}: Architektur weicht ab`);
   }
-  if (!x.images.some((i: ImageEintrag) => i.dienst === "app")) f("app-Image fehlt");
+  for (const dienst of ["app", "db", "proxy", "backup"]) if (!dienste.has(dienst)) f(`${dienst}-Image fehlt`);
   if (!Array.isArray(x.migrationen) || !x.migrationen.length || !x.migrationen.every((m: any) => m && istText(m.name) && /^[0-9a-f]{64}$/.test(m.sha256))) f("migrationen");
   if (x.schemaVersion !== x.migrationen[x.migrationen.length - 1].name) f("schemaVersion passt nicht zur letzten Migration");
   if (!istText(x.modulmanifestVersion)) f("modulmanifestVersion");

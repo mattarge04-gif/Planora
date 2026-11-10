@@ -10,7 +10,7 @@ it("erzeugt ein ungeprueftes Dossier nur aus signiertem Release und ueberschreib
   const dir = mkdtempSync(join(tmpdir(), "planora-dossier-")), key = generateKeyPairSync("ed25519");
   try {
     const digest = `sha256:${"a".repeat(64)}`;
-    const release = erzeugeRelease({ version: "dossier-test", architektur: "amd64", images: [{ dienst: "app", referenz: `planora:test@${digest}`, imageId: digest, digest: null, architektur: "amd64" }],
+    const release = erzeugeRelease({ version: "dossier-test", architektur: "amd64", images: [{ dienst: "app", referenz: `planora:test@${digest}`, imageId: digest, digest: null, architektur: "amd64" }, ...(["db", "proxy", "backup"] as const).map((dienst) => ({ dienst, referenz: `planora-${dienst}:test@sha256:${"a".repeat(64)}`, digest: null, imageId: `sha256:${"a".repeat(64)}`, architektur: "amd64" }))],
       migrationsVerzeichnis: resolve("src/db/migrationen"), modulmanifestVersion: "test", vonVersionen: [], schemaVorher: [] });
     writeFileSync(join(dir, "release.json"), JSON.stringify(signiereRelease(release, key.privateKey.export({ type: "pkcs8", format: "pem" }) as string)));
     writeFileSync(join(dir, "release.pub"), key.publicKey.export({ type: "spki", format: "pem" }));

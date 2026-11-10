@@ -1,10 +1,10 @@
 // Offene psql-Sitzung: Session-Advisory-Lock ueberlebt einzelne Docker-Aufrufe, aber keinen DB-Neustart.
 import { spawn } from "node:child_process";
-import { composeArgs, dockerBinary, type InstanzPfad } from "./docker.js";
+import { composeArgs, dockerBinary, dockerProzessEnv, type InstanzPfad } from "./docker.js";
 import { leseEnv } from "../install/plan.js";
 
 export async function dbSperre(i: InstanzPfad, binary = dockerBinary()) {
-  const p = spawn(binary, [...composeArgs(i), "exec", "-T", "db", "psql", "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "-U", "planora_betrieb", "-d", leseEnv(i.envDatei).PLANORA_DB_NAME ?? "planora"], { windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
+  const p = spawn(binary, [...composeArgs(i), "exec", "-T", "db", "psql", "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "-U", "planora_betrieb", "-d", leseEnv(i.envDatei).PLANORA_DB_NAME ?? "planora"], { env: dockerProzessEnv(), windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
   let verloren: Error | undefined, geschlossen = false, puffer = "", nummer = 0;
   const wartend = new Map<string, { ok: () => void; fehler: (e: Error) => void; timer: NodeJS.Timeout }>();
   const verliere = (e: Error) => { verloren = e; for (const w of wartend.values()) { clearTimeout(w.timer); w.fehler(e); } wartend.clear(); };

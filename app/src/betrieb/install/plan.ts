@@ -1,8 +1,9 @@
 // Reine Logik von `planora install` (Spec §9, Abnahme A2): Eingaben pruefen, Kollisionen ablehnen, Plattform pruefen,
 // Secrets und instanz.env anlegen. Keine Docker-Aufrufe hier; nur node:-Module.
 import { randomBytes } from "node:crypto";
-import { chmodSync, chownSync, closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { chmodSync, chownSync, closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export type TlsModus = "acme" | "internal";
 export type InstallEingabe = {
@@ -78,8 +79,24 @@ export function planeInstanz(e: InstallEingabe): InstanzPlan {
   };
 }
 
-/** Vergleichsform eines Backup-Ziels: Gross/Klein, abschliessende Schraegstriche und Leerraum zaehlen nicht. */
-export const normalisiereZiel = (z: string) => z.trim().replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+/** Dateisystem-Aliase aufloesen; bei S3 nur Endpoint/URL normalisieren, nicht die Schluessel-Grossschreibung. */
+export function normalisiereZiel(ziel: string): string {
+  const z = ziel.trim();
+  if (/^s3:/i.test(z)) {
+    const u = new URL(z.slice(3));
+    if (u.protocol !== "https:" || u.username || u.password || u.search || u.hash) throw new Error("S3-Ziel muss eine HTTPS-Adresse ohne Credentials sein");
+    return `s3:${u.origin}${decodeURIComponent(u.pathname).replace(/\/+$/, "")}`;
+  }
+  let p = resolve(/^file:/i.test(z) ? fileURLToPath(z) : z);
+  const rest: string[] = [];
+  while (!existsSync(p)) {
+    const parent = dirname(p);
+    if (parent === p) throw new Error("Backup-Ziel nicht aufloesbar");
+    rest.unshift(basename(p)); p = parent;
+  }
+  const echt = join(realpathSync.native(p), ...rest);
+  return `datei:${process.platform === "win32" ? echt.toLowerCase() : echt}`;
+}
 
 export type Bestand = {
   /** vorhandene Compose-Projekte (`docker compose ls -a`) */

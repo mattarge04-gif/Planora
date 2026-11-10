@@ -8,7 +8,7 @@ import { erzeugeRelease } from "../src/betrieb/release.js";
 
 const release = () => erzeugeRelease({
   version: "2", architektur: "amd64", migrationsVerzeichnis: fileURLToPath(new URL("../src/db/migrationen", import.meta.url)), modulmanifestVersion: "m1",
-  images: [{ dienst: "app", referenz: `planora-app:2@sha256:${"a".repeat(64)}`, digest: null, imageId: `sha256:${"a".repeat(64)}`, architektur: "amd64" }],
+  images: [{ dienst: "app", referenz: `planora-app:2@sha256:${"a".repeat(64)}`, digest: null, imageId: `sha256:${"a".repeat(64)}`, architektur: "amd64" }, ...(["db", "proxy", "backup"] as const).map((dienst) => ({ dienst, referenz: `planora-${dienst}:test@sha256:${"a".repeat(64)}`, digest: null, imageId: `sha256:${"a".repeat(64)}`, architektur: "amd64" }))],
   vonVersionen: ["1"], schemaVorher: ["007_ablage.sql"], rueckwegAltesImage: ["1"],
 });
 let dir: string;

@@ -4,6 +4,9 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { leseEnv } from "../install/plan.js";
 
+/** Compose darf keine Konfiguration aus der aufrufenden Shell erben. */
+export const dockerProzessEnv = () => Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(PLANORA_|COMPOSE_)/i.test(k)));
+
 export type Lauf = { code: number; stdout: string; stderr: string };
 export type AusfuehrOptionen = { eingabe?: string; timeoutMs?: number };
 /** docker <args> */
@@ -17,7 +20,7 @@ export function dockerBinary(): string {
 
 export function dockerAusfuehrer(binary = dockerBinary()): Ausfuehrer {
   return (args, o = {}) => new Promise((ok, fehler) => {
-    const p = spawn(binary, args, { windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
+    const p = spawn(binary, args, { env: dockerProzessEnv(), windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
     let stdout = "", stderr = "";
     const t = setTimeout(() => { p.kill(); fehler(new Error(`Zeitueberschreitung: docker ${args.slice(0, 6).join(" ")} …`)); }, o.timeoutMs ?? 600_000);
     p.stdout.on("data", (d) => { stdout += d; }); p.stderr.on("data", (d) => { stderr += d; });

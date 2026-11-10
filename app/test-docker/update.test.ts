@@ -16,6 +16,7 @@ import { aktualisiere, leseZustand } from "../src/betrieb/update/zustand.js";
 import { dockerBetriebsumgebung } from "../src/betrieb/update/umgebung.js";
 import { composeArgs, mussGelingen, sql, type InstanzPfad } from "../src/betrieb/update/docker.js";
 import { dbSperre } from "../src/betrieb/update/sperre.js";
+import { pruefeComposeBindung } from "../src/betrieb/update/compose.js";
 
 describe.skipIf(!DOCKER_TESTS)("Host-Update (Docker)", () => {
   let dir: string, alt: Record<string, string | undefined>, altBundle: string, neuBundle: string, restoreBundle: string, recoveryKey: string, instanz: string, i: InstanzPfad, basis: string;
@@ -47,7 +48,7 @@ describe.skipIf(!DOCKER_TESTS)("Host-Update (Docker)", () => {
     recoveryKey = join(dir, "offline.key");
     await docker(["run","--rm","--entrypoint","age-keygen","--mount",`type=bind,source=${dir},target=/ausgabe`,backup1.referenz,"-o","/ausgabe/offline.key"]);
     const empfaenger = (await docker(["run","--rm","--entrypoint","age-keygen","--mount",`type=bind,source=${dir},target=/ausgabe,readonly`,backup1.referenz,"-y","/ausgabe/offline.key"])).stdout.trim();
-    writeFileSync(join(kontext, "src/db/migrationen/011_updateprobe.sql"), "create table update_probe(id int primary key, wert text); grant select on update_probe to planora_app;\n");
+    writeFileSync(join(kontext, "src/db/migrationen/012_updateprobe.sql"), "create table update_probe(id int primary key, wert text); grant select on update_probe to planora_app;\n");
     const image2 = await baueImage(TEST.tag(12), "update-2", kontext);
     cpSync(join(kontext,"src"), join(backupKontext,"app/src"), { recursive:true });
     const backup2 = await baueImage(TEST.tag(22), "update-2", backupKontext, join(BETRIEB,"backup/Dockerfile"));
@@ -63,7 +64,7 @@ describe.skipIf(!DOCKER_TESTS)("Host-Update (Docker)", () => {
       cpSync(join(BETRIEB,"compose.backup.yaml"), join(b,"compose.backup.yaml"));
       // Nur der Worker haengt absichtlich; Sicherung und Restore sind echte Services.
       writeFileSync(join(b,"compose.worker.yaml"), JSON.stringify({services:{worker:{command:["node","-e","process.on('SIGTERM',()=>{});setInterval(()=>{},1000)"]}}}));
-      const r = erzeugeRelease({ version: name, architektur: "amd64", migrationsVerzeichnis: migrationen, modulmanifestVersion: MANIFEST_VERSION, vonVersionen: von, schemaVorher: ["010_admin_restore.sql", "011_updateprobe.sql"], rueckwegAltesImage: von,
+      const r = erzeugeRelease({ version: name, architektur: "amd64", migrationsVerzeichnis: migrationen, modulmanifestVersion: MANIFEST_VERSION, vonVersionen: von, schemaVorher: ["011_freigabe_widerruf.sql", "012_updateprobe.sql"], rueckwegAltesImage: von,
         images: [
           { dienst:"backup", ...(name === "update-1" ? backup1 : backup2), digest:null, architektur:"amd64" },
           { dienst: "app", referenz: image.referenz, digest: null, imageId: image.imageId, architektur: "amd64" },
@@ -99,6 +100,14 @@ describe.skipIf(!DOCKER_TESTS)("Host-Update (Docker)", () => {
       await db("select pg_terminate_backend(pid) from pg_locks where locktype='advisory' and objid=7310003 and pid<>pg_backend_pid()");
       await expect(lock.pruefen()).rejects.toThrow(/Updatesperre/);
     } finally { await lock.loesen(); }
+  });
+  it("geerbte Compose-/Image-Overrides koennen die signierte Image-Bindung nicht umgehen",async()=>{
+    const keys=["PLANORA_IMAGE_APP","PLANORA_BACKUP_IMAGE","COMPOSE_FILE","COMPOSE_PROFILES"],alt=keys.map(k=>process.env[k]);
+    try {
+      for(const k of keys)process.env[k]="unerlaubter-override";
+      await pruefeComposeBindung(aus,i,JSON.parse(readFileSync(join(altBundle,"release.json"),"utf8")).release);
+      expect((await compose(["exec","-T","api","node","-e","process.stdout.write(process.env.PLANORA_RELEASE)"])).stdout).toBe("update-1");
+    }finally{keys.forEach((k,n)=>{if(alt[n]===undefined)delete process.env[k];else process.env[k]=alt[n];});}
   });
   it("Host-Reconcile laesst laufende Backups stehen und erkennt einen hart beendeten echten Dump", async () => {
     const name = `${i.projekt}-abbruch`;
@@ -145,7 +154,7 @@ describe.skipIf(!DOCKER_TESTS)("Host-Update (Docker)", () => {
     expect((await aktualisiere(rollback,umgebung())).status).toBe("zurueck");
     expect(leseEnv(instanzPfade(instanz).envDatei).PLANORA_DB_NAME).toMatch(/^planora_restore_/);
     expect(await db("select count(*) from pg_database where datname='planora'")).toBe("1");
-    expect(await db("select count(*) from migration_journal where name='011_updateprobe.sql'")).toBe("0");
+    expect(await db("select count(*) from migration_journal where name='012_updateprobe.sql'")).toBe("0");
     expect(await db("select wert from instanz_einstellung where schluessel='restore_gesperrt'")).toBe("true");
     expect(await db("select distinct status from konto_status")).toBe("zu_bestaetigen");
     expect((await https(basis,"POST","/api/auth/sign-in/email",{headers:{origin:basis},body:{email:"restore@planora.test",password:adminPw}})).status).toBe(401);
@@ -186,7 +195,7 @@ describe.skipIf(!DOCKER_TESTS)("Host-Update (Docker)", () => {
     expect((await aktualisiere({ datei: o.datei, sperre: o.sperre, modus: "fortsetzen" }, umgebung())).status).toBe("fertig");
     expect(exitCode).toBe(137); // Der haengende Handler ist durch Prozessende beendet.
     expect((await https(basis, "GET", "/api/health")).json()).toMatchObject({ release: "update-2", wartung: false });
-    expect(await db("select name from migration_journal order by name desc limit 1")).toBe("011_updateprobe.sql");
+    expect(await db("select name from migration_journal order by name desc limit 1")).toBe("012_updateprobe.sql");
     expect(await db("select name from liegenschaft where id='33333333-3333-4333-8333-333333333333'")).toBe("Update-Daten");
     expect(await db(`select count(*) from "user" where email like 'smoke-%@planora.invalid'`)).toBe("0");
     expect(await db("select count(*) from session")).toBe("0");

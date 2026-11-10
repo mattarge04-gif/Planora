@@ -16,15 +16,24 @@ const neuesRelease = (ueber: Partial<Parameters<typeof erzeugeRelease>[0]> = {})
   images: [
     { dienst: "app", referenz: `planora-app:1.1.0@${ID("a")}`, digest: null, imageId: ID("a"), architektur: "amd64", archiv: "images/app.tar" },
     { dienst: "db", referenz: `postgres:18.6-bookworm@${ID("b")}`, digest: ID("b"), imageId: ID("c"), architektur: "amd64" },
+    ...(["proxy", "backup"] as const).map((dienst) => ({ dienst, referenz: `planora-${dienst}:test@${ID("a")}`, digest: null, imageId: ID("a"), architektur: "amd64" })),
   ],
   jobTypen: MANIFEST.flatMap((m) => m.jobs), vonVersionen: ["1.0.0"], schemaVorher: ["007_ablage.sql"], rueckwegAltesImage: ["1.0.0"], ...ueber,
 });
 
 describe("Release-Manifest", () => {
+  it.each(["app", "db", "proxy", "backup"])("lehnt ein Manifest ohne Pflichtimage %s ab", (dienst) => {
+    const r = neuesRelease(); r.images = r.images.filter((i) => i.dienst !== dienst);
+    expect(() => pruefeForm(r)).toThrow(`${dienst}-Image fehlt`);
+  });
+  it("lehnt mehrdeutige Image-Dienste ab", () => {
+    const r = neuesRelease(); r.images.push(r.images[0]);
+    expect(() => pruefeForm(r)).toThrow(/doppelt/);
+  });
   it("enthaelt die Angaben aus Spec §3 und die Matrix aus §8.1", () => {
     const r = neuesRelease();
     expect(r.version).toBe("1.1.0");
-    expect(r.images.map((i) => i.dienst)).toEqual(["app", "db"]);
+    expect(r.images.map((i) => i.dienst)).toEqual(["app", "db", "proxy", "backup"]);
     expect(r.migrationen.map((m) => m.name)).toEqual(migrationsPruefsummen(MIGRATIONEN).map((m) => m.name));
     expect(r.schemaVersion).toBe(r.migrationen.at(-1)!.name);
     expect(r.modulmanifestVersion).toBe(MANIFEST_VERSION);
