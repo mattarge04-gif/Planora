@@ -49,6 +49,10 @@ Kennzeichnung: [F] Fakt · [A] Annahme · [?] offen.
 - **PP9-5** [F] `wartungsLage` hat eine eigene Zeitgrenze (3 s); `dbKonfig` setzt Verbindungs-, Statement- und Query-Timeouts (Migrator ohne Abfragegrenze); Worker bricht auch waehrend einer haengenden Abfrage ab; Stopp raeumt zeitbegrenzt auf. Docker-Test mit pausierter DB: Health/Mutation 503, `worker` und `api` enden mit Exit 0 innerhalb der Grace-Zeit.
 - **PP9-8 Nachtrag** [F] `proxy-init` scheiterte beim zweiten `compose up` (root ohne DAC-Capability auf dem bereits uebergebenen Volume). Jetzt idempotent; durch den PP9-5-Test abgedeckt (zweites `up` im selben Projekt).
 
+### Uebernahme Codex
+- [F] PP9-6: alle Manifest-Referenzen verlangen festen Tag plus SHA-256-Digest; widerspruechliche Digest-Felder werden abgelehnt. Install prueft weiterhin nach docker load die Image-ID und schreibt exakt die gepruefte Digest-Referenz in instanz.env. Unit: `npm.cmd exec vitest run test/release.test.ts test/release-install.test.ts` ? 34/34.
+- [A] Lokal gebaute Offline-Images verwenden den containerd-Image-Store (Docker 29), dessen RepoDigest der Image-ID entspricht; der Docker-Pakettest startet diese Referenz.
+
 ### Stand bei Abbruch (2026-11-10, PO-Stopp)
 
 **Erledigt (Commit)**

@@ -14,7 +14,7 @@ const ID = (z: string) => `sha256:${z.repeat(64)}`;
 const neuesRelease = (ueber: Partial<Parameters<typeof erzeugeRelease>[0]> = {}) => erzeugeRelease({
   version: "1.1.0", architektur: "amd64", migrationsVerzeichnis: MIGRATIONEN, modulmanifestVersion: MANIFEST_VERSION,
   images: [
-    { dienst: "app", referenz: "planora-app:1.1.0", digest: null, imageId: ID("a"), architektur: "amd64", archiv: "images/app.tar" },
+    { dienst: "app", referenz: `planora-app:1.1.0@${ID("a")}`, digest: null, imageId: ID("a"), architektur: "amd64", archiv: "images/app.tar" },
     { dienst: "db", referenz: `postgres:18.6-bookworm@${ID("b")}`, digest: ID("b"), imageId: ID("c"), architektur: "amd64" },
   ],
   jobTypen: MANIFEST.flatMap((m) => m.jobs), vonVersionen: ["1.0.0"], schemaVorher: ["007_ablage.sql"], rueckwegAltesImage: ["1.0.0"], ...ueber,
@@ -46,6 +46,8 @@ describe("Release-Manifest", () => {
     const mit = (aend: (r: any) => void) => { const k = structuredClone(basis) as any; aend(k); return () => pruefeForm(k); };
     expect(mit((r) => { r.images[0].referenz = "planora-app:latest"; })).toThrow(/latest/);
     expect(mit((r) => { r.images[0].referenz = "planora-app"; })).toThrow(/Tag/);
+    expect(mit((r) => { r.images[0].referenz = "planora-app:1.1.0"; })).toThrow(/Digest/);
+    expect(mit((r) => { r.images[1].digest = ID("f"); })).toThrow(/digest passt/);
     expect(mit((r) => { r.images[0].archiv = "../../etc/passwd"; })).toThrow(/archiv/);
     expect(mit((r) => { r.images[0].archiv = "/tmp/app.tar"; })).toThrow(/archiv/);
     expect(mit((r) => { r.images[0].imageId = "abc"; })).toThrow(/imageId/);

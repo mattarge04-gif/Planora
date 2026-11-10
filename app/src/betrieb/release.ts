@@ -6,7 +6,7 @@ import { join } from "node:path";
 
 export type ImageEintrag = {
   dienst: "app" | "db" | "proxy" | "clamav" | "backup";
-  /** Referenz, die compose.yaml startet (name:tag oder name:tag@sha256:...); nie latest */
+  /** Unveraenderliche Referenz, die compose.yaml startet (name:tag@sha256:...); nie latest */
   referenz: string;
   /** Registry-Digest, falls das Image aus einer Registry stammt; lokal gebaute Images haben keinen */
   digest: string | null;
@@ -113,9 +113,10 @@ export function pruefeForm(r: unknown): asserts r is Release {
   if (!Array.isArray(x.images) || !x.images.length) f("images fehlen");
   for (const i of x.images) {
     if (!i || !istText(i.dienst) || !istText(i.referenz) || !istText(i.architektur)) f("image unvollstaendig");
-    if (/:latest(@|$)/.test(i.referenz) || !/:[^/@]+(@sha256:[0-9a-f]{64})?$/.test(i.referenz)) f(`image ${i.dienst}: Referenz ohne festen Tag (latest verboten)`);
+    if (/:latest(@|$)/.test(i.referenz) || !/^[^\s@]+:[^\s/:@]+@sha256:[0-9a-f]{64}$/.test(i.referenz)) f(`image ${i.dienst}: Referenz braucht festen Tag und Digest (latest verboten)`);
     if (!SHA.test(i.imageId)) f(`image ${i.dienst}: imageId`);
     if (i.digest !== null && !SHA.test(i.digest)) f(`image ${i.dienst}: digest`);
+    if (i.digest !== null && !i.referenz.endsWith(`@${i.digest}`)) f(`image ${i.dienst}: digest passt nicht zur Referenz`);
     if (i.archiv !== undefined && (!istText(i.archiv) || i.archiv.includes("..") || /^([/\\]|[A-Za-z]:)/.test(i.archiv))) f(`image ${i.dienst}: archiv muss relativ im Bundle liegen`);
     if (i.architektur !== x.architektur) f(`image ${i.dienst}: Architektur weicht ab`);
   }

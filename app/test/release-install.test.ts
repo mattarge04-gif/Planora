@@ -148,7 +148,7 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
     writeFileSync(join(bundle, "images", "app.tar"), "x");
     release = erzeugeRelease({
       version: "1.0.0", architektur: "amd64", migrationsVerzeichnis: MIGRATIONEN, modulmanifestVersion: "m1", vonVersionen: [], schemaVorher: [],
-      images: [{ dienst: "app", referenz: "planora-app:1.0.0", digest: null, imageId: ID("a"), architektur: "amd64", archiv: "images/app.tar" }],
+      images: [{ dienst: "app", referenz: `planora-app:1.0.0@${ID("a")}`, digest: null, imageId: ID("a"), architektur: "amd64", archiv: "images/app.tar" }],
     });
     writeFileSync(join(bundle, "release.json"), JSON.stringify(signiereRelease(release, paar.privateKey.export({ type: "pkcs8", format: "pem" }) as string)));
     pub = join(dir, "release.pub"); writeFileSync(pub, paar.publicKey.export({ type: "spki", format: "pem" }) as string);
@@ -164,7 +164,7 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
     expect(r).toMatchObject({ instanz: "kunde-a", projekt: "planora-kunde-a", baseURL: "https://localhost:18443", release: "1.0.0", setupToken: "TOKEN-123" });
     expect(aufrufe).toEqual(["load images/app.tar", "up planora-kunde-a", "sql planora_betrieb select count(*) from modul_sch", "sql planora_betrieb select betrieb_ereignis('insta", "setup-token"]);
     const env = leseEnv(join(dir, "etc", "kunde-a", "instanz.env"));
-    expect(env).toMatchObject({ PLANORA_INSTANZ: "kunde-a", PLANORA_RELEASE: "1.0.0", PLANORA_DOMAIN: "localhost", PLANORA_TLS: "internal", PLANORA_HTTPS_PORT: "18443", PLANORA_IMAGE_APP: "planora-app:1.0.0",
+    expect(env).toMatchObject({ PLANORA_INSTANZ: "kunde-a", PLANORA_RELEASE: "1.0.0", PLANORA_DOMAIN: "localhost", PLANORA_TLS: "internal", PLANORA_HTTPS_PORT: "18443", PLANORA_IMAGE_APP: `planora-app:1.0.0@${ID("a")}`,
       PLANORA_VORNE_SUBNETZ: "172.31.240.0/29", PLANORA_PROXY_IP: "172.31.240.2", PLANORA_API_IP: "172.31.240.3" });
     // keine Geheimnisse in der Env-Datei, Secrets als Dateien daneben, Vertrauensanker kopiert
     const envText = readFileSync(join(dir, "etc", "kunde-a", "instanz.env"), "utf8");
@@ -199,7 +199,7 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
   });
   it("manipuliertes release.json, fremder Schluessel, falsche Image-ID, fehlendes Archiv → Abbruch vor jeder Aenderung", async () => {
     const { u, aufrufe } = fake({ imageId: async () => ID("b") });
-    await expect(installiere(optionen(), u)).rejects.toThrow(/Image-ID von planora-app:1.0.0 weicht vom Manifest ab/);
+    await expect(installiere(optionen(), u)).rejects.toThrow(/Image-ID von planora-app:1.0.0@sha256:.* weicht vom Manifest ab/);
     expect(aufrufe).toEqual(["load images/app.tar"]);
     await expect(installiere(optionen(), fake({ imageId: async () => null }).u)).rejects.toThrow(/nicht vorhanden/);
     const datei = JSON.parse(readFileSync(join(bundle, "release.json"), "utf8"));
