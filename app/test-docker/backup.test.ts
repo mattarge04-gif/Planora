@@ -11,7 +11,7 @@ const exec=promisify(execFile);
 const docker=process.env.PLANORA_DOCKER ?? (process.platform==="win32" ? "C:/Program Files/Docker/Docker/resources/bin/docker.exe" : "docker");
 let ziel: string, pool: pg.Pool;
 const pw=randomBytes(24).toString("hex"), betriebPw=randomBytes(24).toString("hex"), backupPw=randomBytes(24).toString("hex");
-const env={...process.env,PLANORA_TEST_PW:pw,PLANORA_TEST_RESTIC_PW:randomBytes(24).toString("hex"),PLANORA_TEST_BETRIEB_DB:`postgres://planora_betrieb:${betriebPw}@db:5432/planora`,PLANORA_TEST_BACKUP_DB:`postgres://planora_backup:${backupPw}@db:5432/planora`,PLANORA_TEST_ZIEL:""};
+const env={...process.env,PLANORA_TEST_PW:pw,PLANORA_TEST_RESTIC_PW:randomBytes(24).toString("hex"),PLANORA_TEST_BETRIEB_DB:`postgres://planora_betrieb:${betriebPw}@db:5432/planora`,PLANORA_TEST_BACKUP_DB:`postgres://planora_backup:${backupPw}@db:5432/planora`,PLANORA_TEST_ZIEL:"",PLANORA_TEST_RECOVERY_EMPFAENGER:""};
 async function compose(...args:string[]) { return (await exec(docker,["compose","-p","planora-b","-f",resolve("test-docker/backup-umgebung.yaml"),...args],{env,maxBuffer:16*1024*1024})).stdout; }
 async function werkzeug(...args:string[]) { return compose("run","--rm","--no-deps","--entrypoint",args[0],"backup",...args.slice(1)); }
 describe.runIf(process.env.PLANORA_DOCKER_TEST === "b")("Backup-Container", () => {
@@ -23,6 +23,8 @@ beforeAll(async () => {
   // Passwoerter pro Testlauf zufaellig; keine festen Test-Secrets im Repository.
   await pool.query(`alter role planora_betrieb login password '${betriebPw}'; alter role planora_backup login password '${backupPw}'`);
   await werkzeug("restic","init");
+  await werkzeug("age-keygen","-o","/ziel/recovery.key");
+  env.PLANORA_TEST_RECOVERY_EMPFAENGER=(await werkzeug("age-keygen","-y","/ziel/recovery.key")).trim();
 });
 afterAll(async () => { await pool?.end(); await compose("down","-v"); if (ziel) await fs.rm(ziel,{recursive:true,force:true}); });
 it("sichert unter Minimalrollen einen echten pg_dump in restic",async () => {
@@ -34,5 +36,17 @@ it("sichert unter Minimalrollen einen echten pg_dump in restic",async () => {
   expect(snapshots).toHaveLength(1);
   const rollen=await werkzeug("restic","dump",snapshots[0].id,`/staging/${r.backupId}/rollen.sql`);
   expect(rollen).not.toContain("PASSWORD");
+});
+it("verschluesselt das Journal mit age und quittiert einzeln im echten Ziel",async()=>{
+  const seq=(await pool.query("select journal_eintrag('konto.sperren','test-konto') seq")).rows[0].seq;
+  await werkzeug("node","dist/betrieb/journal/cli.js","--einmal");
+  const instanz=(await pool.query("select wert from instanz_einstellung where schluessel='instanz_id'")).rows[0].wert;
+  const datei=`/ziel/journal/${instanz}/${seq}.age`;
+  const vor=await fs.readFile(join(ziel,`journal/${instanz}/${seq}.age`));
+  expect(vor.includes(Buffer.from("test-konto"))).toBe(false);
+  const eintrag=JSON.parse(await werkzeug("age","-d","-i","/ziel/recovery.key",datei));
+  expect(eintrag.ziel).toBe("test-konto");
+  await werkzeug("node","dist/betrieb/journal/cli.js","--einmal");
+  expect(await fs.readFile(join(ziel,`journal/${instanz}/${seq}.age`))).toEqual(vor);
 });
 });

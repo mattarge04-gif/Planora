@@ -64,3 +64,39 @@ revoke all on function backup_lauf_start(uuid), backup_lauf_heartbeat(uuid), bac
   journal_quittiere(bigint), backup_reconcile(boolean) from public;
 grant execute on function backup_lauf_start(uuid), backup_lauf_heartbeat(uuid), backup_lauf_setze(uuid,text),
   journal_quittiere(bigint), backup_reconcile(boolean) to planora_betrieb;
+
+-- Verschluesseltes Versandmaterial bleibt fuer Retry identisch; der Online-Prozess
+-- benoetigt nur den oeffentlichen Recovery-Empfaenger, niemals den privaten Key.
+alter table loesch_journal add column versand_inhalt bytea;
+create function journal_vorbereiten(p_seq bigint, p_inhalt bytea) returns bytea
+language plpgsql security definer set search_path = pg_catalog, public as $$
+declare v_inhalt bytea;
+begin
+  if octet_length(p_inhalt)=0 then raise exception 'Leeres Versandmaterial'; end if;
+  update public.loesch_journal set versand_inhalt=coalesce(versand_inhalt,p_inhalt) where seq=p_seq returning versand_inhalt into v_inhalt;
+  if not found then raise exception 'Journal unbekannt'; end if;
+  return v_inhalt;
+end $$;
+revoke all on function journal_vorbereiten(bigint,bytea) from public;
+grant execute on function journal_vorbereiten(bigint,bytea) to planora_betrieb;
+
+-- Sicherheitsereignis und Outbox-Eintrag in derselben Transaktion, auch fuer
+-- bestehende M1a-Aufrufer (keine getrennte, verlierbare Nachricht in der App).
+create function sicherheits_journal() returns trigger
+language plpgsql security definer set search_path = pg_catalog, public as $$
+begin
+  if tg_table_name='konto_status' then
+    if new.status='gesperrt' and old.status is distinct from new.status then
+      perform public.journal_eintrag('konto.sperren',new.benutzer_id);
+    end if;
+  elsif tg_table_name='rolle_zuordnung' then
+    perform public.journal_eintrag('rolle.entziehen',old.benutzer_id);
+  else
+    perform public.journal_eintrag('scope.entziehen',jsonb_build_object('benutzerId',old.benutzer_id,'liegenschaftId',old.liegenschaft_id)::text);
+  end if;
+  return null;
+end $$;
+revoke all on function sicherheits_journal() from public;
+create trigger konto_sperrjournal after update of status on konto_status for each row execute function sicherheits_journal();
+create trigger rollen_entzugsjournal after update or delete on rolle_zuordnung for each row execute function sicherheits_journal();
+create trigger scope_entzugsjournal after update or delete on rolle_liegenschaft for each row execute function sicherheits_journal();
