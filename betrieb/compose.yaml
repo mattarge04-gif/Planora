@@ -114,7 +114,12 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD_FILE: /run/secrets/db_superuser_passwort
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --data-checksums"
-    secrets: [db_superuser_passwort, db_app_passwort, db_migrator_passwort, db_backup_passwort, db_betrieb_passwort]
+    secrets:
+      - db_superuser_passwort
+      - { source: dbinit_app_passwort, target: db_app_passwort }
+      - { source: dbinit_migrator_passwort, target: db_migrator_passwort }
+      - { source: dbinit_backup_passwort, target: db_backup_passwort }
+      - { source: dbinit_betrieb_passwort, target: db_betrieb_passwort }
     configs:
       - source: db_rollen
         target: /docker-entrypoint-initdb.d/10-rollen.sql
@@ -165,13 +170,17 @@ configs:
       revoke connect on database planora from public;
       grant connect on database planora to planora_app, planora_backup, planora_betrieb;
 
+# Datei-Secrets sind Bind-Mounts mit den Rechten des Hosts (Modus 600). Deshalb liegt je Empfaenger eine Kopie mit
+# passendem Eigentuemer vor: secrets/db/ (postgres, UID 999) und secrets/app/ (node, UID 1000); `planora install` legt sie an.
 secrets:
-  db_superuser_passwort: { file: "${PLANORA_SECRETS:?PLANORA_SECRETS fehlt}/db_superuser_passwort" }
-  db_app_passwort: { file: "${PLANORA_SECRETS}/db_app_passwort" }
-  db_migrator_passwort: { file: "${PLANORA_SECRETS}/db_migrator_passwort" }
-  db_backup_passwort: { file: "${PLANORA_SECRETS}/db_backup_passwort" }
-  db_betrieb_passwort: { file: "${PLANORA_SECRETS}/db_betrieb_passwort" }
-  auth_secret: { file: "${PLANORA_SECRETS}/auth_secret" }
+  db_superuser_passwort: { file: "${PLANORA_SECRETS:?PLANORA_SECRETS fehlt}/db/db_superuser_passwort" }
+  dbinit_app_passwort: { file: "${PLANORA_SECRETS}/db/db_app_passwort" }
+  dbinit_migrator_passwort: { file: "${PLANORA_SECRETS}/db/db_migrator_passwort" }
+  dbinit_backup_passwort: { file: "${PLANORA_SECRETS}/db/db_backup_passwort" }
+  dbinit_betrieb_passwort: { file: "${PLANORA_SECRETS}/db/db_betrieb_passwort" }
+  db_app_passwort: { file: "${PLANORA_SECRETS}/app/db_app_passwort" }
+  db_migrator_passwort: { file: "${PLANORA_SECRETS}/app/db_migrator_passwort" }
+  auth_secret: { file: "${PLANORA_SECRETS}/app/auth_secret" }
 
 volumes:
   pgdata:

@@ -1,11 +1,12 @@
 // Gemeinsame Hilfen der Docker-Integrationstests von Spur A (paket*, update*). Kein Test, nur Werkzeug.
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { request } from "node:https";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { erzeugeSecrets } from "../src/betrieb/install/plan.js";
 
 export const DOCKER_TESTS = process.env.PLANORA_DOCKER_TESTS === "1";
 export const APP = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -36,13 +37,11 @@ export async function baueImage(tag: string, release: string) {
   await docker(["build", "-q", "-t", tag, "--build-arg", `PLANORA_RELEASE=${release}`, APP], { timeoutMs: 900_000 });
 }
 
-export const SECRET_NAMEN = ["db_superuser_passwort", "db_app_passwort", "db_migrator_passwort", "db_backup_passwort", "db_betrieb_passwort", "auth_secret"] as const;
-
 /** Wegwerf-Instanz: Secrets pro Lauf zufaellig in einem Temp-Verzeichnis, nie im Repo. */
 export function testInstanz(o: { projekt: string; httpsPort: number; httpPort: number; image: string; zusatzDateien?: string[] }) {
   const verzeichnis = mkdtempSync(join(tmpdir(), `${o.projekt}-`));
-  const secrets = join(verzeichnis, "secrets"); mkdirSync(secrets);
-  for (const n of SECRET_NAMEN) writeFileSync(join(secrets, n), randomBytes(32).toString("hex"), { mode: 0o600 });
+  const secrets = join(verzeichnis, "secrets");
+  erzeugeSecrets(secrets);
   const envDatei = join(verzeichnis, "instanz.env");
   const basis = `https://localhost:${o.httpsPort}`;
   const schreibeEnv = (image: string) => writeFileSync(envDatei, [

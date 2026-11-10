@@ -29,3 +29,13 @@ Kennzeichnung: [F] Fakt · [A] Annahme · [?] offen.
 - [?] **Secret-Dateirechte auf Linux:** Compose-Datei-Secrets sind Bind-Mounts mit Host-Rechten. Bei Modus 600 muss der Eigentuemer die Container-UID sein (app-Secrets 1000 `node`, DB-Secrets 999 `postgres`). Auf Docker Desktop/Windows nicht pruefbar; `planora install` setzt die Eigentuemer (A4), Abnahme auf Linux-VM steht aus (A1, nicht in M1b).
 - [A] Hilfsdatei `app/test-docker/paket-hilfe.ts` (kein Test) gehoert zu Spur A; Docker-Tests ueberspringen sich ohne `PLANORA_DOCKER_TESTS=1` selbst, weil `vitest.config.ts` (nicht Spur A) sonst auch `test-docker/` einsammelt. `npm test` zeigt sie als "skipped".
 - [F] Docker Desktop zeigt als Client-IP die Gateway-Adresse des Netzes `aussen` (NAT); echte Client-IPs erst auf Linux-Host pruefbar.
+
+### A4 Install-Skript + Release-Manifest
+- [F] `release.json` = `{ release, schluesselId, signatur }`, Ed25519 (`node:crypto`) ueber die kanonische JSON-Form. Tests erzeugen Wegwerf-Schluessel; im Repo liegt kein Schluessel.
+- [A] **Vertrauensanker:** der oeffentliche Release-Schluessel kommt bei `install` per `--schluessel` und liegt danach in `/etc/planora/<instanz>/release.pub`; `update` prueft nur gegen diese Datei, nie gegen einen Schluessel aus dem Bundle.
+- [A] **Bundle-Aufbau:** `planora`, `compose.yaml`, `Caddyfile`, `wartung.html`, `release.json`, `images/*.tar`, `werkzeug/` (kompiliertes `app/src/betrieb`, nur `node:`-Module).
+- [?] **Host braucht Node.js >= 24** fuer `planora install|update` (Logik in TypeScript, vom Plan gewuenscht; DB-Zugriffe laufen ueber `docker compose exec db psql`, deshalb kein `node_modules` auf dem Host). Alternative waere ein Werkzeug-Container mit Docker-Socket – bewusst nicht gewaehlt (Socket = Root auf dem Host). Entscheid PO/Koordinator.
+- [A] Mindestversionen: Engine >= 29.0, Compose >= 2.24, frei >= 20 GiB (Abbruch); unter 100 GiB / 8 GiB RAM / 4 CPU / nicht Linux nur Warnung (Spec §13 laesst Mindestversionen offen).
+- [A] Kollision (A2): gleicher Projektname, vorhandene Volumes `planora-<instanz>_*`, vorhandene Konfiguration, gleiches Backup-Ziel (`PLANORA_BACKUP_ZIEL` in `instanz.env`, normalisiert verglichen) oder gleiche Host-Ports einer anderen Instanz → Ablehnung vor jeder Aenderung. **Hinweis Spur B:** `--backup-ziel` wird nur gespeichert und verglichen; welches Format B erwartet, ist offen.
+- [A] Profil P1 = keine Option aktiv; `install` prueft das nach dem Start in der DB und schreibt `betrieb.install` ins Audit.
+- [F] Secrets: kanonisch `secrets/<name>`, Kopien `secrets/db/` (UID 999) und `secrets/app/` (UID 1000), alle 600; chown nur als root auf Linux.
