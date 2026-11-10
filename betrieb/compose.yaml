@@ -15,7 +15,7 @@ x-app: &app
 
 x-app-env: &app-env
   PLANORA_DB_HOST: db
-  PLANORA_DB_NAME: planora
+  PLANORA_DB_NAME: ${PLANORA_DB_NAME:-planora}
   PLANORA_STUFE: ${PLANORA_STUFE:-1}
 
 x-proxy-image: &proxy-image ${PLANORA_IMAGE_PROXY:-caddy:2.11.9-alpine@sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9}

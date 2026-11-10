@@ -16,7 +16,7 @@ export async function restoreCli(args:string[],lauf?:Prozess){
   if(args.length!==3||args[1]!=="--instanz-id")throw new Error("Aufruf: restore <backup-id> --instanz-id <uuid>");
   const url=new URL(await geheimnis("PLANORA_RESTORE_DB"));
   if(decodeURIComponent(url.username)!=="planora_migrator")throw new Error("Restore-Import verlangt planora_migrator");
-  const db=datenbankUmgebung({rollenDb:{connectionString:await geheimnis("PLANORA_ROLLEN_DB")},zielDb:{host:url.hostname,port:Number(url.port||5432),database:decodeURIComponent(url.pathname.slice(1))},konfigurationDatei:await geheimnis("PLANORA_RESTORE_KONFIGURATION_PFAD"),inventarDatei:await geheimnis("PLANORA_RESTORE_INVENTAR_PFAD"),lauf});
+  const db=datenbankUmgebung({rollenDb:{connectionString:await geheimnis("PLANORA_ROLLEN_DB")},zielDb:{host:url.hostname,port:Number(url.port||5432),database:decodeURIComponent(url.pathname.slice(1)),...(process.env.PLANORA_RESTORE_OWNER === "planora_owner" ? {options:"-c role=planora_owner"} : {})},konfigurationDatei:await geheimnis("PLANORA_RESTORE_KONFIGURATION_PFAD"),inventarDatei:await geheimnis("PLANORA_RESTORE_INVENTAR_PFAD"),lauf});
   try{
     const r=await restore({backupId:args[0],instanzId:args[2],ziel:await zielAusUmgebung(),entschluesseln:ageEntschluesseln(await geheimnis("PLANORA_RECOVERY_KEY_PFAD")),staging:process.env.PLANORA_STAGING??"/staging",dokumente:process.env.PLANORA_DOKUMENTE??"/dokumente",release:await geheimnis("PLANORA_RELEASE"),schema:await aktuellesSchema(),umgebung:db.umgebung,lauf});
     console.log(JSON.stringify(r));

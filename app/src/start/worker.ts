@@ -31,9 +31,9 @@ function oderAbbruch<T>(p: Promise<T>, signal: AbortSignal): Promise<T | "abbruc
 export async function workerSchleife(pool: Pick<pg.Pool, "query">, o: { intervallMs: number; signal: AbortSignal; melde?: (status: string) => void; abfrageTimeoutMs?: number }) {
   let letzter = "";
   while (!o.signal.aborted) {
-    const lage = await oderAbbruch(wartungsLage(pool, o.abfrageTimeoutMs), o.signal);
+    const lage = await oderAbbruch(wartungsLage(pool, o.abfrageTimeoutMs, true), o.signal);
     if (lage === "abbruch" || o.signal.aborted) break;
-    const status = !lage.db ? "db_nicht_erreichbar" : lage.wartung ? "wartung" : "bereit";
+    const status = !lage.db ? "db_nicht_erreichbar" : lage.restoreGesperrt ? "restore_gesperrt" : lage.wartung ? "wartung" : "bereit";
     if (status !== letzter) { letzter = status; (o.melde ?? ((s) => logge("status", { status: s, verarbeitet: 0 })))(status); }
     // status === "bereit": hier holen spaetere Module ihre Jobs; in M1 gibt es nichts zu verarbeiten.
     await warte(o.intervallMs, o.signal);

@@ -14,14 +14,18 @@ services:
         source: ${PLANORA_BACKUP_ZIEL:?Separates Zielverzeichnis setzen}
         target: /ziel
       - type: bind
-        source: ${PLANORA_SECRETS:?Secret-Verzeichnis ausserhalb des Repositories setzen}
-        target: /run/secrets
+        source: ${PLANORA_BACKUP_DATEIEN:?Backup-Konfiguration ausserhalb des Repositories setzen}
+        target: /run/backup
         read_only: true
     networks: [intern, backup-ausgang]
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
+  journal:
+    <<: *backup
+    command: [journal, --dienst]
+    restart: unless-stopped
   restore:
     <<: *backup
     profiles: [recovery]
@@ -32,8 +36,8 @@ services:
         source: ${PLANORA_BACKUP_ZIEL:?Separates Zielverzeichnis setzen}
         target: /ziel
       - type: bind
-        source: ${PLANORA_SECRETS:?Secret-Verzeichnis ausserhalb des Repositories setzen}
-        target: /run/secrets
+        source: ${PLANORA_BACKUP_DATEIEN:?Backup-Konfiguration ausserhalb des Repositories setzen}
+        target: /run/backup
         read_only: true
       - type: bind
         source: ${PLANORA_RESTORE_AUSGABE:-/var/lib/planora/wiederherstellung}

@@ -23,13 +23,23 @@ async function schwarzesLoch() {
 }
 
 describe("Worker-Platzhalter", () => {
-  it("meldet Statuswechsel bereit → wartung → db_nicht_erreichbar und endet beim Abbruchsignal", async () => {
-    let antwort: () => Promise<{ rows: unknown[] }> = async () => ({ rows: [{ wert: false }] });
+  it("bleibt nach Restore bis zur Host-Freigabe gesperrt und behandelt ungueltige Flags geschlossen", async () => {
+    let wert: unknown = true;
+    const pool = { query: async () => ({ rows: [{ schluessel: "wartung", wert: false }, { schluessel: "restore_gesperrt", wert }] }) } as unknown as pg.Pool;
+    const status: string[] = [], stopp = new AbortController();
+    const lauf = workerSchleife(pool, { intervallMs: 5, signal: stopp.signal, melde: (s) => status.push(s) });
+    await pause(30); wert = "ungueltig"; await pause(30);
+    expect(status).toEqual(["restore_gesperrt"]);
+    wert = false; await pause(30); stopp.abort(); await lauf;
+    expect(status).toEqual(["restore_gesperrt", "bereit"]);
+  });
+  it("meldet Statuswechsel bereit â†’ wartung â†’ db_nicht_erreichbar und endet beim Abbruchsignal", async () => {
+    let antwort: () => Promise<{ rows: unknown[] }> = async () => ({ rows: [{ schluessel: "wartung", wert: false }] });
     const pool = { query: () => antwort() } as unknown as pg.Pool;
     const status: string[] = []; const stopp = new AbortController();
     const lauf = workerSchleife(pool, { intervallMs: 10, signal: stopp.signal, melde: (s) => status.push(s) });
     await pause(50);
-    antwort = async () => ({ rows: [{ wert: true }] });
+    antwort = async () => ({ rows: [{ schluessel: "wartung", wert: true }] });
     await pause(50);
     antwort = async () => { throw new Error("db weg"); };
     await pause(50);
@@ -38,7 +48,7 @@ describe("Worker-Platzhalter", () => {
     expect(status).toEqual(["bereit", "wartung", "db_nicht_erreichbar"]);
   });
   it("Abbruch waehrend der Wartezeit beendet sofort (SIGTERM-Pfad)", async () => {
-    const pool = { query: async () => ({ rows: [{ wert: false }] }) } as unknown as pg.Pool;
+    const pool = { query: async () => ({ rows: [{ schluessel: "wartung", wert: false }] }) } as unknown as pg.Pool;
     const stopp = new AbortController(); const t0 = Date.now();
     const lauf = workerSchleife(pool, { intervallMs: 60_000, signal: stopp.signal, melde: () => {} });
     await pause(20); stopp.abort(); await lauf;
@@ -57,8 +67,8 @@ describe("Worker-Platzhalter", () => {
     const status: string[] = []; const stopp = new AbortController(); const t0 = Date.now();
     const lauf = workerSchleife(pool, { intervallMs: 60_000, signal: stopp.signal, melde: (s) => status.push(s), abfrageTimeoutMs: 60_000 });
     await pause(20);
-    stopp.abort();                    // Signal zuerst …
-    loese({ rows: [{ wert: false }] }); // … Antwort danach
+    stopp.abort();                    // Signal zuerst â€¦
+    loese({ rows: [{ schluessel: "wartung", wert: false }] }); // â€¦ Antwort danach
     await lauf;
     expect(Date.now() - t0).toBeLessThan(2000);
     expect(status).toEqual([]);
@@ -113,6 +123,6 @@ describe("PP9-5: DB nimmt Verbindungen an und antwortet nie", () => {
     const lauf = workerSchleife(p, { intervallMs: 5000, signal: stopp.signal, melde: () => {} });
     await pause(200); stopp.abort(); await lauf;
     expect(Date.now() - t0).toBeLessThan(2000);
-    expect(await beendeBegrenzt([() => p.end()], 500)).toBe("zeit"); // pool.end() haengt – der Stopp wartet es nicht ab
+    expect(await beendeBegrenzt([() => p.end()], 500)).toBe("zeit"); // pool.end() haengt â€“ der Stopp wartet es nicht ab
   });
 });

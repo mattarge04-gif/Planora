@@ -1,0 +1,9 @@
+[Unit]
+Description=Planora naechtlicher Sicherungssatz (%i)
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/planora/%i/instanz.env
+ExecStart=/bin/sh ${PLANORA_BUNDLE_DIR}/planora sichern --instanz %i --anlass nacht

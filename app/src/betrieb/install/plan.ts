@@ -180,6 +180,17 @@ export function erzeugeSecrets(verzeichnis: string): { verzeichnis: string; date
   return { verzeichnis, dateien };
 }
 
+/** Nach geprueftem Restore die bereits inventarisierten Werte samt Leser-Kopien materialisieren. */
+export function restauriereSecrets(verzeichnis: string, werte: Record<string, string>) {
+  for (const name of SECRETS) if (!werte[name] || /[\r\n]/.test(werte[name])) throw new Error(`Restore-Inventar ohne gueltiges Secret: ${name}`);
+  for (const name of SECRETS) schreibeAtomar(join(verzeichnis, name), werte[name]);
+  for (const [unter, k] of Object.entries(KOPIEN)) for (const name of k.namen) {
+    const datei = join(verzeichnis, unter, name);
+    schreibeAtomar(datei, werte[name]);
+    if (process.getuid?.() === 0) chownSync(datei, k.uid, k.uid);
+  }
+}
+
 /** KEY=VALUE-Datei lesen (Kommentare und Leerzeilen ignoriert). */
 export function leseEnv(datei: string): Record<string, string> {
   const werte: Record<string, string> = {};

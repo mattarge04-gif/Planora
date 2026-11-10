@@ -6,6 +6,8 @@ import { atomar, type Betriebsumgebung, type Zustand } from "./zustand.js";
 import { composeDateien, dockerInstallUmgebung, ladeUndPruefeImages } from "../install/install.js";
 import { instanzPfade, leseEnv, schreibeEnv } from "../install/plan.js";
 import { kanonisch, pruefeKompatibilitaet, pruefeRelease } from "../release.js";
+import { backupKonfigurieren } from "../install/backup.js";
+import { restoreHost } from "../restore/host.js";
 
 const text = (s: string) => `'${s.replace(/'/g, "''")}'`;
 export function dockerBetriebsumgebung(docker: Ausfuehrer, instanz: string, altesBundle: string): Betriebsumgebung {
@@ -20,9 +22,10 @@ export function dockerBetriebsumgebung(docker: Ausfuehrer, instanz: string, alte
     return r;
   };
   const setzeImages = (z: Zustand) => {
-    const w: Record<string, string> = { ...z.altEnv, PLANORA_RELEASE: z.release.version, PLANORA_BUNDLE_DIR: z.bundle };
+    const w: Record<string, string> = { ...z.altEnv, PLANORA_RELEASE: z.release.version, PLANORA_BUNDLE_DIR: z.bundle, PLANORA_RECOVERY_BUNDLE_DIR: z.bundle };
     for (const img of z.release.images) w[img.dienst === "backup" ? "PLANORA_BACKUP_IMAGE" : `PLANORA_IMAGE_${img.dienst.toUpperCase()}`] = img.referenz;
     schreibeEnv(pfade.envDatei, w); bundle = z.bundle;
+    if (w.PLANORA_BACKUP_ENV) backupKonfigurieren(instanz, JSON.parse(readFileSync(join(pfade.etc, "backup/konfiguration.json"), "utf8")).instanzId);
   };
   const starte = async (dienste: string[]) => { await compose(["up", "-d", "--no-deps", "--pull", "never", "--wait", "--wait-timeout", "180", ...dienste]); };
   const health = async (erwartet: string, wartung: boolean) => {
@@ -52,6 +55,7 @@ export function dockerBetriebsumgebung(docker: Ausfuehrer, instanz: string, alte
       if (frisch !== "t") throw new Error("Kein gepruefter Sicherungssatz juenger als 24 Stunden");
       const wartung = await db("select wert from instanz_einstellung where schluessel='wartung'");
       if (wartung !== "false") throw new Error("Instanz ist bereits in Wartung; vor neuem Update Ursache klaeren");
+      if (await db("select coalesce((select wert from instanz_einstellung where schluessel='restore_gesperrt'),'false'::jsonb)") !== "false") throw new Error("Host-Freigabe nach Restore fehlt");
       // Backup-Service muss vorhanden sein; kein Update, das erst nach dem Stopp seine fehlende Sicherung entdeckt.
       if (!composeDateien(z.bundle).some((f) => f.endsWith("compose.backup.yaml"))) throw new Error("Backup-Overlay fehlt im Bundle");
     },
@@ -75,7 +79,7 @@ export function dockerBetriebsumgebung(docker: Ausfuehrer, instanz: string, alte
       if (verbindungen !== 0) throw new Error(`Nach Stopp noch ${verbindungen} App-Verbindungen`);
     },
     async backup() {
-      const r = await compose(["--profile", "betrieb", "run", "--rm", "-T", "--no-deps", "backup", "sichern", "--anlass", "update"], 7_200_000);
+      const r = await compose(["--profile", "betrieb", "run", "--pull", "never", "--rm", "-T", "--no-deps", "backup", "sichern", "--anlass", "update"], 7_200_000);
       const b = JSON.parse(letzteZeile(r.stdout));
       if (b.zustand !== "geprueft" || !/^[0-9a-f-]{36}$/.test(b.backupId ?? "")) throw new Error("Backup ohne geprueften Sicherungssatz");
       const zustand = await db(`select zustand from backup_lauf where id=${text(b.backupId)}::uuid`);
@@ -89,7 +93,7 @@ export function dockerBetriebsumgebung(docker: Ausfuehrer, instanz: string, alte
     async migrieren(z) {
       releasePruefen(z); setzeImages(z);
       // Einmaliger Migrator; sein eigener DB-Advisory-Lock und Journal machen erneute Starts idempotent.
-      await compose(["run", "--rm", "-T", "--no-deps", "migrator"], 3_600_000);
+      await compose(["run", "--pull", "never", "--rm", "-T", "--no-deps", "migrator"], 3_600_000);
       const migrationen = JSON.parse(await db("select coalesce(json_agg(json_build_object('name',name,'sha256',pruefsumme) order by name),'[]') from migration_journal"));
       if (kanonisch(migrationen) !== kanonisch(z.release.migrationen)) throw new Error("Migrationsjournal weicht vom Release-Manifest ab");
     },
@@ -116,12 +120,26 @@ export function dockerBetriebsumgebung(docker: Ausfuehrer, instanz: string, alte
     },
     async zurueck(z, modus) {
       if (modus === "restore") {
-        // Restore benoetigt den offline Recovery-Key und anschliessende Host-Freigabe (§15.2).
-        // Ohne diesen Vertrag darf der Updatepfad nie einen ungeprueften Import oder automatische Kontofreigabe ausfuehren.
         atomar(join(pfade.var, "restore-auftrag.json"), { backupId: z.backupId, updateId: z.id, instanz: z.instanz });
-        throw new Error(`Restore erforderlich: Satz ${z.backupId}; restore-auftrag.json geschrieben, Wartung bleibt aktiv bis manuellem Restore und Host-Freigabe`);
+        const alt = pruefeRelease(readFileSync(join(z.altesBundle, "release.json"), "utf8"), readFileSync(pfade.schluessel, "utf8"));
+        if (alt.version !== z.altEnv.PLANORA_RELEASE) throw new Error("Altes Release passt nicht zum Restore-Auftrag");
+        await compose(["stop", "journal"]);
+        await restoreHost(docker, i(), instanz, z.backupId!, z.altesBundle, alt.version, z.altEnv.PLANORA_RECOVERY_BUNDLE_DIR ?? z.altesBundle, z.id);
+        bundle = z.altesBundle;
+        copyFileSync(join(z.altesBundle, "release.json"), join(pfade.etc, "release.json"));
+        await starte(["api", "worker", "proxy", "journal"]); await health(alt.version, true);
+        return;
       }
-      schreibeEnv(pfade.envDatei, z.altEnv); bundle = z.altesBundle;
+      const rueckEnv = { ...z.altEnv };
+      const schema = await db("select name from migration_journal order by name desc limit 1");
+      // Kompatibler Image-Rueckweg laesst Migrationen stehen: der Restore braucht weiterhin deren signiertes Werkzeug.
+      if (schema === z.release.schemaVersion) {
+        rueckEnv.PLANORA_RECOVERY_BUNDLE_DIR = z.bundle;
+        const backup = z.release.images.find((img) => img.dienst === "backup");
+        if (backup) rueckEnv.PLANORA_BACKUP_IMAGE = backup.referenz;
+      }
+      schreibeEnv(pfade.envDatei, rueckEnv); bundle = z.altesBundle;
+      if (z.altEnv.PLANORA_BACKUP_ENV) backupKonfigurieren(instanz, JSON.parse(readFileSync(join(pfade.etc, "backup/konfiguration.json"), "utf8")).instanzId);
       await starte(["api", "worker", "proxy"]); await health(z.altEnv.PLANORA_RELEASE, true);
     },
     async audit(art, z) { await db(`select betrieb_ereignis(${text(art)}, jsonb_build_object('updateId',${text(z.id)},'release',${text(z.release.version)},'backupId',${text(z.backupId ?? "")}))`); },

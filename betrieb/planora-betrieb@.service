@@ -1,0 +1,14 @@
+[Unit]
+Description=Planora Journal und Backup-Reconcile (%i)
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/planora/%i/instanz.env
+ExecStart=/usr/bin/env node ${PLANORA_BUNDLE_DIR}/werkzeug/betrieb/host-cli.js dienst --instanz %i
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

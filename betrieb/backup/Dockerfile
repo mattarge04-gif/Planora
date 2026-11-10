@@ -15,12 +15,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
  && curl --fail --location --output /tmp/age.tar.gz https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz \
  && echo 'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10  /tmp/age.tar.gz' | sha256sum -c - \
  && tar xzf /tmp/age.tar.gz -C /tmp && install -m 755 /tmp/age/age /tmp/age/age-keygen /usr/local/bin/ && rm -rf /tmp/age /tmp/age.tar.gz \
- && useradd --uid 10001 --create-home planora && mkdir /staging /ziel /dokumente && chown planora:planora /staging /ziel /dokumente
+ && useradd --uid 1000 --create-home planora && mkdir /staging /ziel /dokumente && chown planora:planora /staging /ziel /dokumente
 COPY --from=bau /usr/local/bin/node /usr/local/bin/node
 WORKDIR /app
 COPY --from=bau /app/package.json ./
 COPY --from=bau /app/node_modules ./node_modules
 COPY --from=bau /app/dist ./dist
 COPY app/src/db/migrationen ./dist/db/migrationen
-USER 10001:10001
+USER 1000:1000
 ENTRYPOINT ["node", "dist/betrieb/backup/cli.js"]

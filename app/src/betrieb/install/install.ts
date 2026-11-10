@@ -1,10 +1,14 @@
-// Ablauf von `planora install` (Spec §9). Seiteneffekte auf Docker hinter InstallUmgebung, damit Unit-Tests mit Fake laufen.
+// Ablauf von `planora install` (Spec Â§9). Seiteneffekte auf Docker hinter InstallUmgebung, damit Unit-Tests mit Fake laufen.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statfsSync, copyFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
 import { join, resolve } from "node:path";
 import { pruefeRelease, type Release } from "../release.js";
 import { composeArgs, imageId, letzteZeile, mussGelingen, sql, type Ausfuehrer, type InstanzPfad } from "../update/docker.js";
 import { envWerte, erzeugeSecrets, etcWurzel, instanzPfade, leseEnv, planeInstanz, planeVorneNetz, pruefeKollision, pruefePlattform, schreibeEnv, type Bestand, type InstallEingabe, type PlattformIst } from "./plan.js";
+import { backupVorbereiten, backupKonfigurieren } from "./backup.js";
+import { reconcileHost } from "../host.js";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 export interface InstallUmgebung {
   plattform(): Promise<PlattformIst>;
@@ -14,10 +18,11 @@ export interface InstallUmgebung {
   subnetze(): Promise<string[]>;
   ladeImage(archiv: string): Promise<void>;
   imageId(referenz: string): Promise<string | null>;
-  /** db → migrator → api/worker → proxy, ohne Pull; wartet bis alles gesund ist */
+  /** db â†’ migrator â†’ api/worker â†’ proxy, ohne Pull; wartet bis alles gesund ist */
   starte(i: InstanzPfad): Promise<void>;
   sql(i: InstanzPfad, rolle: string, befehl: string): Promise<string>;
   setupToken(i: InstanzPfad): Promise<string>;
+  backupStart?(i: InstanzPfad): Promise<void>;
 }
 
 export type InstallOptionen = InstallEingabe & {
@@ -25,6 +30,7 @@ export type InstallOptionen = InstallEingabe & {
   bundle: string;
   /** Oeffentlicher Release-Schluessel (Vertrauensanker); wird nach /etc/planora/<instanz>/release.pub kopiert */
   schluessel: string;
+  recoveryEmpfaenger?: string;
   melde?: (text: string) => void;
 };
 export type InstallErgebnis = { instanz: string; projekt: string; baseURL: string; release: string; envDatei: string; setupToken: string; warnungen: string[] };
@@ -42,7 +48,7 @@ export function leseInstanzen(): Bestand["instanzen"] {
 
 export const composeDateien = (bundle: string) => [join(bundle, "compose.yaml"), ...(existsSync(join(bundle, "compose.backup.yaml")) ? [join(bundle, "compose.backup.yaml")] : [])];
 
-/** Laedt die Images des Release (falls im Bundle) und prueft jede Image-ID gegen das Manifest (§8 Schritt 4, §9 offline). */
+/** Laedt die Images des Release (falls im Bundle) und prueft jede Image-ID gegen das Manifest (Â§8 Schritt 4, Â§9 offline). */
 export async function ladeUndPruefeImages(release: Release, bundle: string, u: Pick<InstallUmgebung, "ladeImage" | "imageId">, dienste?: string[]) {
   for (const img of release.images) {
     if (dienste && !dienste.includes(img.dienst)) continue;
@@ -60,11 +66,14 @@ export async function ladeUndPruefeImages(release: Release, bundle: string, u: P
 
 export async function installiere(o: InstallOptionen, u: InstallUmgebung): Promise<InstallErgebnis> {
   const melde = o.melde ?? (() => {});
-  // 1. Eingaben, Bundle, Signatur – nichts wird veraendert
+  // 1. Eingaben, Bundle, Signatur â€“ nichts wird veraendert
   const plan = planeInstanz(o);
   for (const f of ["compose.yaml", "Caddyfile", "wartung.html", "release.json"]) if (!existsSync(join(o.bundle, f))) throw new Error(`Bundle unvollstaendig: ${f} fehlt`);
   if (!existsSync(o.schluessel)) throw new Error("Oeffentlicher Release-Schluessel fehlt (--schluessel)");
   const release = pruefeRelease(readFileSync(join(o.bundle, "release.json"), "utf8"), readFileSync(o.schluessel, "utf8"));
+  const mitBackup = release.images.some((img) => img.dienst === "backup");
+  if (mitBackup && (!existsSync(join(o.bundle, "compose.backup.yaml")) || !o.backupZiel || !/^age1[0-9a-z]{58}$/.test(o.recoveryEmpfaenger ?? ""))) throw new Error("Backup verlangt Overlay, --backup-ziel (lokaler Pfad) und --recovery-empfaenger (oeffentlicher age-Key)");
+  if (mitBackup) for (const f of ["planora-betrieb@.service", "planora-sicherung@.service", "planora-sicherung@.timer"]) if (!existsSync(join(o.bundle, f))) throw new Error(`Bundle unvollstaendig: ${f}`);
   melde(`Release ${release.version} geprueft (Signatur gueltig)`);
   // 2. Plattform und Platz
   const p = pruefePlattform(await u.plattform(), release.architektur);
@@ -84,12 +93,19 @@ export async function installiere(o: InstallOptionen, u: InstallUmgebung): Promi
   erzeugeSecrets(pfade.secrets);
   copyFileSync(o.schluessel, pfade.schluessel);
   const ref = (d: string) => release.images.find((i) => i.dienst === d)?.referenz;
-  schreibeEnv(pfade.envDatei, { ...envWerte(plan, { secrets: pfade.secrets, release: release.version, vorne, images: { app: ref("app"), db: ref("db"), proxy: ref("proxy"), clamav: ref("clamav") } }), PLANORA_BUNDLE_DIR: resolve(o.bundle), PLANORA_BACKUP_IMAGE: ref("backup") });
+  const backupEnv = mitBackup ? backupVorbereiten(plan.instanz, o.backupZiel!, o.recoveryEmpfaenger!) : {};
+  schreibeEnv(pfade.envDatei, { ...envWerte(plan, { secrets: pfade.secrets, release: release.version, vorne, images: { app: ref("app"), db: ref("db"), proxy: ref("proxy"), clamav: ref("clamav") } }), ...backupEnv, PLANORA_BUNDLE_DIR: resolve(o.bundle), PLANORA_RECOVERY_BUNDLE_DIR: resolve(o.bundle), PLANORA_BACKUP_IMAGE: ref("backup") });
   copyFileSync(join(o.bundle, "release.json"), join(pfade.etc, "release.json"));
   melde(`Konfiguration angelegt: ${pfade.etc}`);
   // 6. Start ohne Pull
   const instanz: InstanzPfad = { projekt: plan.projekt, envDatei: pfade.envDatei, composeDateien: composeDateien(o.bundle) };
   await u.starte(instanz);
+  if (mitBackup) {
+    const instanzId = JSON.parse(await u.sql(instanz, "planora_betrieb", "select wert from instanz_einstellung where schluessel='instanz_id'"));
+    backupKonfigurieren(plan.instanz, instanzId);
+    if (!u.backupStart) throw new Error("Backup-Start fehlt in Installationsumgebung");
+    await u.backupStart(instanz);
+  }
   // 7. Installationsprofil P1 (Kern Stufe 1): alle Optionen aus (ADR 0029). Pruefen statt annehmen, dann auditieren.
   const aktiv = Number(await u.sql(instanz, "planora_app", "select count(*) from modul_schalter where aktiv"));
   if (aktiv !== 0) throw new Error(`Profil P1 verletzt: ${aktiv} Option(en) aktiv`);
@@ -125,9 +141,29 @@ export function dockerInstallUmgebung(docker: Ausfuehrer, platzPfad: string): In
     async ladeImage(archiv) { await mussGelingen(docker, ["load", "-i", archiv], { timeoutMs: 1_800_000 }); },
     imageId: (referenz) => imageId(docker, referenz),
     async starte(i) { await mussGelingen(docker, [...composeArgs(i), "up", "-d", "--pull", "never", "--wait", "--wait-timeout", "300"], { timeoutMs: 600_000 }); },
+    async backupStart(i) {
+      await mussGelingen(docker, [...composeArgs(i), "run", "--pull", "never", "--rm", "-T", "backup", "initialisieren"]);
+      await reconcileHost(docker, i);
+      await mussGelingen(docker, [...composeArgs(i), "run", "--pull", "never", "--rm", "-T", "backup", "journal", "--einmal"]);
+      await mussGelingen(docker, [...composeArgs(i), "up", "-d", "--no-deps", "--pull", "never", "journal"]);
+      if (process.platform === "linux") {
+        if (process.getuid?.() !== 0 || !existsSync("/run/systemd/system")) throw new Error("Periodischer Host-Betrieb verlangt root und systemd; Journal laeuft, Timer noch nicht aktiviert");
+        if (etcWurzel() !== "/etc/planora") throw new Error("systemd-Vorlagen verlangen /etc/planora; fuer abweichende Pfade Betriebsdienst manuell konfigurieren");
+        const bundle = leseEnv(i.envDatei).PLANORA_BUNDLE_DIR;
+        for (const name of ["planora-betrieb@.service", "planora-sicherung@.service", "planora-sicherung@.timer"]) {
+          const ziel = join("/etc/systemd/system", name), quelle = join(bundle, name);
+          if (existsSync(ziel) && readFileSync(ziel, "utf8") !== readFileSync(quelle, "utf8")) throw new Error(`Vorhandene abweichende systemd-Datei bleibt erhalten: ${ziel}`);
+          if (!existsSync(ziel)) copyFileSync(quelle, ziel);
+        }
+        const aus = promisify(execFile);
+        await aus("systemctl", ["daemon-reload"]);
+        const instanz = i.projekt.replace(/^planora-/, "");
+        await aus("systemctl", ["enable", "--now", `planora-betrieb@${instanz}.service`, `planora-sicherung@${instanz}.timer`]);
+      }
+    },
     sql: (i, rolle, befehl) => sql(docker, i, rolle, befehl),
     async setupToken(i) {
-      const r = await mussGelingen(docker, [...composeArgs(i), "--profile", "konsole", "run", "--rm", "-T", "konsole", "setup-token"], { timeoutMs: 120_000 });
+      const r = await mussGelingen(docker, [...composeArgs(i), "--profile", "konsole", "run", "--pull", "never", "--rm", "-T", "konsole", "setup-token"], { timeoutMs: 120_000 });
       return letzteZeile(r.stdout);
     },
   };

@@ -1,5 +1,5 @@
 #!/bin/sh
-# planora – Betriebswerkzeug auf dem Host (Spec §8, §9). POSIX-sh, nur ein duenner Einstieg:
+# planora â€“ Betriebswerkzeug auf dem Host (Spec Â§8, Â§9). POSIX-sh, nur ein duenner Einstieg:
 # die Logik liegt in TypeScript (app/src/betrieb), gebaut nach <bundle>/werkzeug (nur node:-Module, kein node_modules).
 #
 #   planora install --instanz <name> --domain <d> --tls acme|internal --schluessel <release.pub> [...]
@@ -40,10 +40,16 @@ instanz_aus() {
   esac
   ENVDATEI=$PLANORA_ETC/$INSTANZ/instanz.env
   [ -f "$ENVDATEI" ] || fehler "Instanz $INSTANZ ist nicht installiert ($ENVDATEI fehlt)"
+  installiertes_bundle=$(sed -n 's/^PLANORA_BUNDLE_DIR=//p' "$ENVDATEI")
+  [ -z "$installiertes_bundle" ] || PLANORA_BUNDLE=$installiertes_bundle
 }
 
 compose() {
-  docker compose -p "planora-$INSTANZ" --env-file "$ENVDATEI" -f "$PLANORA_BUNDLE/compose.yaml" "$@"
+  if [ -f "$PLANORA_BUNDLE/compose.backup.yaml" ]; then
+    docker compose -p "planora-$INSTANZ" --env-file "$ENVDATEI" -f "$PLANORA_BUNDLE/compose.yaml" -f "$PLANORA_BUNDLE/compose.backup.yaml" "$@"
+  else
+    docker compose -p "planora-$INSTANZ" --env-file "$ENVDATEI" -f "$PLANORA_BUNDLE/compose.yaml" "$@"
+  fi
 }
 
 befehl=${1:-}
@@ -60,13 +66,28 @@ case "$befehl" in
   setup)
     instanz_aus "$@"
     echo "Setup-Token fuer den Erstadmin (15 Minuten gueltig, nur einmal verwendbar):" >&2
-    compose --profile konsole run --rm -T konsole setup-token
+    compose --profile konsole run --pull never --rm -T konsole setup-token
+    ;;
+  start|reconcile|dienst|restore)
+    brauche_node host-cli.js
+    exec node "$WERKZEUG/betrieb/host-cli.js" "$befehl" "$@"
+    ;;
+  sichern|journal|freigabe)
+    instanz_aus "$@"
+    # Nur --instanz entfernen; alle anderen Argumente unveraendert weitergeben.
+    [ "${1:-}" = --instanz ] || fehler "Aufruf: planora $befehl --instanz <name> ..."
+    shift 2
+    if [ "$befehl" = freigabe ]; then
+      compose run --pull never --rm --no-deps backup "$befehl" "$@"
+    else
+      compose run --pull never --rm -T --no-deps backup "$befehl" "$@"
+    fi
     ;;
   status)
     instanz_aus "$@"
     compose ps -a
     ;;
   *)
-    fehler "Aufruf: planora install|update|setup|status ... (siehe Kopf dieses Skripts)"
+    fehler "Aufruf: planora install|update|setup|status|start|dienst|sichern|journal|reconcile|restore|freigabe ..."
     ;;
 esac

@@ -7,6 +7,11 @@ export { geheimnis } from "./umgebung.js";
 import { ageVerschluesseln } from "../journal/age.js";
 import { pruefeInventar } from "./inventar.js";
 export async function cli(args: string[]) {
+  if (args.length === 1 && args[0] === "initialisieren") {
+    const { erfolgreich, prozess } = await import("./prozess.js");
+    await erfolgreich(prozess, { programm: "restic", args: ["init"], env: { RESTIC_REPOSITORY: await geheimnis("RESTIC_REPOSITORY"), RESTIC_PASSWORD: await geheimnis("RESTIC_PASSWORD") } });
+    return;
+  }
   if(args[0]==="restore")return(await import("../restore/cli.js")).restoreCli(args.slice(1));
   if(args[0]==="freigabe")return(await import("../freigabe.js")).freigabeCli(args.slice(1));
   if(args[0]==="journal")return(await import("../journal/cli.js")).journalCli(args.slice(1));

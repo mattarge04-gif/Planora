@@ -2,6 +2,7 @@
 // Nur node:-Module (laeuft ohne node_modules). Kein Docker-Socket in Containern: das Werkzeug ruft die CLI des Hosts.
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { leseEnv } from "../install/plan.js";
 
 export type Lauf = { code: number; stdout: string; stderr: string };
 export type AusfuehrOptionen = { eingabe?: string; timeoutMs?: number };
@@ -40,7 +41,8 @@ export const composeArgs = (i: InstanzPfad) => ["compose", "-p", i.projekt, "--e
 
 /** SQL ueber den lokalen Socket im db-Container (pg_hba: local trust; wer exec darf, ist ohnehin Host-Root). Rueckgabe: -At-Ausgabe. */
 export async function sql(docker: Ausfuehrer, i: InstanzPfad, rolle: string, befehl: string): Promise<string> {
-  const r = await mussGelingen(docker, [...composeArgs(i), "exec", "-T", "db", "psql", "-X", "-v", "ON_ERROR_STOP=1", "-U", rolle, "-d", "planora", "-At", "-c", befehl], { timeoutMs: 120_000 });
+  const datenbank = existsSync(i.envDatei) ? leseEnv(i.envDatei).PLANORA_DB_NAME ?? "planora" : "planora";
+  const r = await mussGelingen(docker, [...composeArgs(i), "exec", "-T", "db", "psql", "-X", "-v", "ON_ERROR_STOP=1", "-U", rolle, "-d", datenbank, "-At", "-c", befehl], { timeoutMs: 120_000 });
   return r.stdout.trim();
 }
 
