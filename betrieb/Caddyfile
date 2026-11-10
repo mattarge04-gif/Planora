@@ -1,0 +1,53 @@
+# Statische Konfiguration (Spec §3): kein Docker-Socket, keine Admin-API, Aenderung nur ueber Paket + Neustart.
+{
+	admin off
+}
+
+# Bereitschaftsprobe fuer den Container-Healthcheck, nur auf Loopback im Container.
+http://127.0.0.1:2019 {
+	bind 127.0.0.1
+	respond /bereit 200
+}
+
+{$PLANORA_DOMAIN} {
+	# internal | ACME-Kontaktadresse | "<cert.pem> <key.pem>" (Kunden-CA)
+	tls {$PLANORA_TLS}
+
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		-Server
+	}
+
+	# Wartungsschalter (Spec §8 Schritt 1): existiert die Datei /data/wartung/aktiv, liefert Caddy fuer alle Routen die
+	# statische Wartungsseite mit 503. Ausnahme /api/health (Smoke-Checks, Monitoring). Die Datei wird pro Anfrage geprueft.
+	@wartung {
+		file {
+			root /data/wartung
+			try_files /aktiv
+		}
+		not path /api/health
+	}
+	handle @wartung {
+		header Retry-After 120
+		header Cache-Control no-store
+		@lesen method GET HEAD
+		handle @lesen {
+			root * /srv/wartung
+			rewrite * /wartung.html
+			file_server {
+				status 503
+			}
+		}
+		# schreibende Methoden: file_server wuerde 405 liefern; auch sie erhalten 503
+		handle {
+			respond "Wartung" 503
+		}
+	}
+
+	handle {
+		reverse_proxy api:3000
+	}
+}

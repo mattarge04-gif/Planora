@@ -1,0 +1,189 @@
+# Planora Server-Paket (Spec §3). Eine Instanz = ein Compose-Projekt:
+#   docker compose -p planora-<instanz> --env-file /etc/planora/<instanz>/instanz.env -f compose.yaml up -d --pull never
+# Volumes und Netze tragen den Projektnamen als Praefix; zwei Instanzen teilen nichts (Abnahme A2).
+# Geheimnisse liegen nur als Dateien in ${PLANORA_SECRETS} (= /etc/planora/<instanz>/secrets, Rechte 600), nie im Paket.
+# Images: Digest gepinnt, kein latest. Offline-Bundle: `planora install` schreibt die geladenen Referenzen in instanz.env.
+
+x-app: &app
+  image: ${PLANORA_IMAGE_APP:?PLANORA_IMAGE_APP fehlt (planora-app:<release>)}
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  networks: [intern]
+
+x-app-env: &app-env
+  PLANORA_DB_HOST: db
+  PLANORA_DB_NAME: planora
+  PLANORA_STUFE: ${PLANORA_STUFE:-1}
+
+services:
+  proxy:
+    image: ${PLANORA_IMAGE_PROXY:-caddy:2.11.9-alpine@sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9}
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    # Einziger Dienst mit veroeffentlichten Ports: 443, dazu 80 fuer ACME und die Umleitung auf HTTPS.
+    ports:
+      - "${PLANORA_HTTPS_PORT:-443}:443"
+      - "${PLANORA_HTTP_PORT:-80}:80"
+    environment:
+      PLANORA_DOMAIN: ${PLANORA_DOMAIN:?PLANORA_DOMAIN fehlt}
+      # "internal" (Caddy-eigene CA, Root-Export zur Verteilung), ACME-Kontaktadresse (CH-VM) oder
+      # "/zertifikat/cert.pem /zertifikat/key.pem" (Kunden-CA, per Bind-Mount in einer Override-Datei).
+      PLANORA_TLS: ${PLANORA_TLS:?PLANORA_TLS fehlt (internal | ACME-Kontakt | Zertifikatspfade)}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./wartung.html:/srv/wartung/wartung.html:ro
+      - caddy-data:/data            # Zertifikate/ACME-Konto und der Wartungsschalter /data/wartung/aktiv
+    tmpfs: [/config]
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+    networks: [aussen, vorne]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/bereit"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 10s
+
+  api:
+    <<: *app
+    depends_on:
+      migrator: { condition: service_completed_successfully }
+    environment:
+      <<: *app-env
+      PLANORA_DIENST: api
+      PLANORA_BASE_URL: ${PLANORA_BASE_URL:?PLANORA_BASE_URL fehlt (https://<domain>[:port])}
+      # Nur der eigene Caddy erreicht api (kein veroeffentlichter Port, Netze intern/vorne sind internal): seine Adresse
+      # liegt in einem privaten Docker-Bereich.
+      PLANORA_VERTRAUTE_PROXIES: ${PLANORA_VERTRAUTE_PROXIES:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+    secrets: [db_app_passwort, auth_secret]
+    volumes:
+      - dokumente:/daten/dokumente
+    networks: [intern, vorne]
+
+  worker:
+    <<: *app
+    command: ["node", "dist/start/worker.js"]
+    depends_on:
+      migrator: { condition: service_completed_successfully }
+    environment:
+      <<: *app-env
+      PLANORA_DIENST: worker
+    secrets: [db_app_passwort]
+    volumes:
+      - dokumente:/daten/dokumente
+    healthcheck: { disable: true }
+    stop_grace_period: 60s
+
+  # Einmaliger Lauf, einzige Rolle mit DDL. api/worker starten erst nach Exit 0.
+  migrator:
+    <<: *app
+    restart: "no"
+    command: ["node", "dist/start/migrator.js"]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      <<: *app-env
+      PLANORA_DIENST: migrator
+    secrets: [db_migrator_passwort]
+    healthcheck: { disable: true }
+
+  # Host-Konsole (Spec §5): nur per `docker compose --profile konsole run --rm -T konsole setup-token|erstadmin`.
+  konsole:
+    <<: *app
+    profiles: [konsole]
+    restart: "no"
+    entrypoint: ["node", "dist/start/konsole.js"]
+    command: ["setup-token"]
+    environment:
+      <<: *app-env
+      PLANORA_DIENST: konsole
+    secrets: [db_migrator_passwort]
+    healthcheck: { disable: true }
+
+  db:
+    image: ${PLANORA_IMAGE_DB:-postgres:18.6-bookworm@sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: planora
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_superuser_passwort
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --data-checksums"
+    secrets: [db_superuser_passwort, db_app_passwort, db_migrator_passwort, db_backup_passwort, db_betrieb_passwort]
+    configs:
+      - source: db_rollen
+        target: /docker-entrypoint-initdb.d/10-rollen.sql
+    volumes:
+      - pgdata:/var/lib/postgresql
+    shm_size: 256mb
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    security_opt: ["no-new-privileges:true"]
+    networks: [intern]
+    stop_grace_period: 120s
+    healthcheck:
+      # ueber TCP: waehrend der Initialisierung lauscht der temporaere Server nur auf dem Socket und gilt noch nicht als bereit
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "planora_betrieb", "-d", "planora"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 20s
+
+  # Vorbereitet, in Stufe 1 noch nicht genutzt [A]: startet nur mit `--profile scan`.
+  clamav:
+    image: ${PLANORA_IMAGE_CLAMAV:-clamav/clamav:1.5@sha256:45fe5149fbee5a46509c9848ef20d0c354b7b2323c9369f285939a37cf33422a}
+    profiles: [scan]
+    restart: unless-stopped
+    volumes:
+      - clamav-signaturen:/var/lib/clamav
+    security_opt: ["no-new-privileges:true"]
+    networks: [intern, signaturen]
+
+configs:
+  # Erstinitialisierung der DB (laeuft genau einmal bei leerem pgdata, als Superuser ueber den lokalen Socket).
+  # Die Migrationen legen die Rollen NOLOGIN an, falls sie fehlen; hier entstehen sie vorher mit LOGIN und Passwort aus
+  # den Secret-Dateien. Passwoerter werden per psql-Backtick gelesen: nie in Argumenten, Env oder Logs.
+  db_rollen:
+    content: |
+      \set ON_ERROR_STOP on
+      \set app `cat /run/secrets/db_app_passwort`
+      \set migrator `cat /run/secrets/db_migrator_passwort`
+      \set backup `cat /run/secrets/db_backup_passwort`
+      \set betrieb `cat /run/secrets/db_betrieb_passwort`
+      create role planora_migrator login password :'migrator';
+      create role planora_app login password :'app';
+      create role planora_backup login password :'backup';
+      create role planora_betrieb login password :'betrieb';
+      -- planora_migrator besitzt Datenbank und Schema (einzige Rolle mit DDL) und darf pg_read_all_data weitergeben (001).
+      alter database planora owner to planora_migrator;
+      grant pg_read_all_data to planora_migrator with admin true, inherit false, set false;
+      revoke connect on database planora from public;
+      grant connect on database planora to planora_app, planora_backup, planora_betrieb;
+
+secrets:
+  db_superuser_passwort: { file: "${PLANORA_SECRETS:?PLANORA_SECRETS fehlt}/db_superuser_passwort" }
+  db_app_passwort: { file: "${PLANORA_SECRETS}/db_app_passwort" }
+  db_migrator_passwort: { file: "${PLANORA_SECRETS}/db_migrator_passwort" }
+  db_backup_passwort: { file: "${PLANORA_SECRETS}/db_backup_passwort" }
+  db_betrieb_passwort: { file: "${PLANORA_SECRETS}/db_betrieb_passwort" }
+  auth_secret: { file: "${PLANORA_SECRETS}/auth_secret" }
+
+volumes:
+  pgdata:
+  dokumente:
+  caddy-data:
+  backup-staging:      # vom Overlay compose.backup.yaml (Spur B) genutzt
+  clamav-signaturen:
+
+networks:
+  aussen:              # nur proxy: veroeffentlichte Ports, ACME
+  vorne:               # proxy <-> api
+    internal: true
+  intern:              # api/worker/migrator <-> db; kein Weg nach aussen
+    internal: true
+  signaturen:          # nur clamav (Profil scan): Signatur-Updates, abschaltbar (PO 6)

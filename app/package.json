@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "test": "vitest run",
-    "migriere": "tsx src/db/migrator.ts"
+    "migriere": "tsx src/db/migrator.ts",
+    "test:docker": "vitest run --config vitest.docker.config.ts"
   },
   "type": "module",
   "dependencies": {
