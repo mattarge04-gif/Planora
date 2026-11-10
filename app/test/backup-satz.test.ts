@@ -11,6 +11,7 @@ import type { Prozess } from "../src/betrieb/backup/prozess.js";
 import { snapshotAbgleichen, type Manifest } from "../src/betrieb/backup/manifest.js";
 import { promisify } from "node:util";
 import { execFile } from "node:child_process";
+import { pruefeKonfiguration, type Instanzkonfiguration } from "../src/betrieb/backup/konfiguration.js";
 let db: Awaited<ReturnType<typeof frischeDb>>, betrieb: pg.Pool;
 const ordner: string[] = [];
 beforeAll(async () => { db = await frischeDb(); betrieb = new pg.Pool({ ...db.cfg, options: "-c role=planora_betrieb" }); });
@@ -53,7 +54,8 @@ async function umgebung(fehler?: string, manipulation = false) {
     }
     return { code:0,stdout:"" };
   };
-  return { basis, datei, aufrufe, manifest: () => manifest, optionen: { betrieb, backupDb: {...db.cfg,options:"-c role=planora_backup"}, pgEnv:{},resticEnv:{},dokumente,staging:join(basis,"staging"),release:"m1-test",konfiguration:{},anlass:"test",lauf } };
+  const konfiguration:Instanzkonfiguration={format:1,instanzId:(await db.pool.query("select wert from instanz_einstellung where schluessel='instanz_id'")).rows[0].wert,release:"m1-test",domain:"planora.test",tls:"internal",profil:"P1",zeitzone:"Europe/Zurich"};
+  return { basis, datei, aufrufe, manifest: () => manifest, optionen: { betrieb, backupDb: {...db.cfg,options:"-c role=planora_backup"}, pgEnv:{},resticEnv:{},dokumente,staging:join(basis,"staging"),release:"m1-test",konfiguration,anlass:"test",lauf } };
 }
 it("sichert Manifest und Dump im gleichen Snapshot unter Minimalrollen", async () => {
   const u = await umgebung(); const r = await sichern(u.optionen);
@@ -123,4 +125,7 @@ it.each(["groesse","doppelt","zusaetzlich"])("verweigert restic-ls-Abweichung %s
 it("liefert bei CLI-Fehler Exit ungleich Null und kein Erfolgs-JSON",async()=>{
   try{await promisify(execFile)(process.execPath,["--import","tsx","src/betrieb/backup/cli.ts","ungueltig"]);throw new Error("CLI erfolgreich");}
   catch(e){const r=e as {code:number;stdout:string;stderr:string};expect(r.code).toBe(1);expect(r.stdout).not.toContain('"zustand":"geprueft"');expect(r.stderr).toContain("fehlgeschlagen");}
+});
+it("weist Geheimnisse in der nicht geheimen Konfiguration zurueck",async()=>{
+  const u=await umgebung();expect(()=>pruefeKonfiguration({...u.optionen.konfiguration,passwort:"unzulässig"})).toThrow();
 });

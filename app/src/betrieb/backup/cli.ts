@@ -2,6 +2,7 @@ import pg from "pg";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { sichern } from "./satz.js";
+import { pruefeKonfiguration } from "./konfiguration.js";
 export async function geheimnis(name: string) {
   const datei = process.env[`${name}_FILE`];
   const wert = datei ? (await readFile(datei,"utf8")).trim() : process.env[name];
@@ -14,10 +15,11 @@ export async function cli(args: string[]) {
   try {
     const url = new URL(await geheimnis("PLANORA_BACKUP_DB"));
     const pgEnv = { PGHOST: url.hostname, PGPORT: url.port || "5432", PGDATABASE: decodeURIComponent(url.pathname.slice(1)), PGUSER: decodeURIComponent(url.username), PGPASSWORD: decodeURIComponent(url.password), PGSSLMODE: url.searchParams.get("sslmode") ?? "prefer" };
+    const konfiguration=JSON.parse(await geheimnis("PLANORA_KONFIGURATION")); pruefeKonfiguration(konfiguration);
     const ergebnis = await sichern({ betrieb, backupDb: { connectionString: url.href }, pgEnv,
       resticEnv: { RESTIC_REPOSITORY: await geheimnis("RESTIC_REPOSITORY"), RESTIC_PASSWORD: await geheimnis("RESTIC_PASSWORD") },
       dokumente: process.env.PLANORA_DOKUMENTE ?? "/dokumente", staging: process.env.PLANORA_STAGING ?? "/staging",
-      release: await geheimnis("PLANORA_RELEASE"), anlass: args[2], konfiguration: { release: await geheimnis("PLANORA_RELEASE") },
+      release: await geheimnis("PLANORA_RELEASE"), anlass: args[2], konfiguration,
     });
     console.log(JSON.stringify(ergebnis));
   } finally { await betrieb.end(); }

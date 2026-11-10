@@ -35,6 +35,8 @@ beforeAll(async () => {
   await compose("build","backup"); projektAngelegt=true; await compose("up","-d","--wait","db");
   const cfg={host:"127.0.0.1",port:dbPort,user:"postgres",password:pw,database:"planora"};
   await migriere(cfg); pool=new pg.Pool(cfg);
+  const instanzId=(await pool.query("select wert from instanz_einstellung where schluessel='instanz_id'")).rows[0].wert;
+  await fs.writeFile(join(ziel,"konfiguration.json"),JSON.stringify({format:1,instanzId,release:"m1-test",domain:"planora.test",tls:"internal",profil:"P1",zeitzone:"Europe/Zurich",smtp:{host:"smtp.test",port:587,absender:"planora@example.test",starttls:true}}),{mode:0o600});
   // Passwoerter pro Testlauf zufaellig; keine festen Test-Secrets im Repository.
   await pool.query(`alter role planora_betrieb login password '${betriebPw}'; alter role planora_backup login password '${backupPw}'`);
   await werkzeug("restic","init");
@@ -54,6 +56,8 @@ it("sichert unter Minimalrollen einen echten pg_dump in restic",async () => {
   expect(snapshots).toHaveLength(1);
   const rollen=await werkzeug("restic","dump",snapshots[0].id,`/staging/${r.backupId}/rollen.sql`);
   expect(rollen).not.toContain("PASSWORD");
+  const konfiguration=await werkzeug("restic","dump",snapshots[0].id,`/staging/${r.backupId}/konfiguration.json`);
+  expect(JSON.parse(konfiguration)).toEqual(JSON.parse(await fs.readFile(join(ziel,"konfiguration.json"),"utf8")));
 });
 it("verschluesselt das Journal mit age und quittiert einzeln im echten Ziel",async()=>{
   const seq=(await pool.query("select journal_eintrag('konto.sperren','test-konto') seq")).rows[0].seq;

@@ -5,14 +5,16 @@ import { dirname, join, resolve } from "node:path";
 import { MANIFEST_VERSION } from "../../module/manifest.js";
 import { dateiHash, pruefeDatei, quelldatei, snapshotAbgleichen, type Datei, type Manifest } from "./manifest.js";
 import { erfolgreich, prozess, type Prozess } from "./prozess.js";
+import { pruefeKonfiguration, type Instanzkonfiguration } from "./konfiguration.js";
 export type SicherungsOptionen = {
   betrieb: pg.Pool; backupDb: pg.ClientConfig; pgEnv: NodeJS.ProcessEnv;
   resticEnv: NodeJS.ProcessEnv; dokumente: string; staging: string; release: string;
-  konfiguration: Record<string, unknown>; anlass: string; lauf?: Prozess; heartbeatMs?: number;
+  konfiguration: Instanzkonfiguration; anlass: string; lauf?: Prozess; heartbeatMs?: number;
   jetzt?: () => Date;
 };
 export async function sichern(o: SicherungsOptionen) {
   if (!o.release) throw new Error("Release fehlt");
+  pruefeKonfiguration(o.konfiguration);
   const backupId = randomUUID(), ordner = resolve(o.staging, backupId);
   const lauf = o.lauf ?? prozess, abbruch = new AbortController();
   const exporter = new pg.Client(o.backupDb);
@@ -42,6 +44,7 @@ export async function sichern(o: SicherungsOptionen) {
       anlass: o.anlass, satzPfad: ordner.replaceAll("\\", "/"), dateien, bestandteile: [],
     };
     if (!instanzId) throw new Error("Instanz-ID fehlt");
+    if (o.konfiguration.instanzId!==instanzId || o.konfiguration.release!==o.release) throw new Error("Instanzkonfiguration passt nicht zur Sicherung");
     // Exporter muss bis zum erfolgreichen Ende des Dumps offen bleiben.
     await schritt("pg_dump", ["-Fc", `--snapshot=${snapshot}`, "--no-password", "--file", join(ordner,"daten.dump")], { env: o.pgEnv });
     await exporter.query("select 1");
