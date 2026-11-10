@@ -1,6 +1,15 @@
 # Planora – gemeinsamer Fortsetzungsstand, 2026-11-11
 
-Einstieg fuer die naechste Sitzung. Historische Worker-Notizen und alte Stoppmeldungen ersetzen diesen Stand nicht. Nach Konsolidierung ist der einzige Arbeitsbereich `C:/web agency/planora/Planora` auf `main`.
+Einstieg fuer die naechste Sitzung. Historische Worker-Notizen und alte Stoppmeldungen ersetzen diesen Stand nicht. Der einzige Arbeitsbereich ist `C:/web agency/planora/Planora` auf `main`.
+
+## Konsolidierung abgeschlossen
+
+- Gesamten Entwicklungsstand einschliesslich `11d3b90` und E38-Dokumentation auf `main` zusammengefuehrt und mit `3605306` auf GitHub `origin/main` gepusht.
+- Sechs gepruefte Neben-Worktrees ueber Orca entfernt: `m1a-spur-a`, `m1a-spur-b`, `m1b-pp9`, `m1b-pp9b`, `m1b-spur-a`, `m1b-spur-b`. Vor jedem Entfernen erneut sauberer Status und Commit-Abstammung von main geprueft.
+- Alle bereits gemergten lokalen Arbeitszweige sicher entfernt; lokal bleibt nur `main`. Remote-Branches nicht geloescht; ihre Commits sind ebenfalls im gemeinsamen Verlauf enthalten.
+- Zwei ueberholte offene Worker kontrolliert gestoppt; alte untatige Claude-Sitzung geschlossen. Abschliessende Orca-Abfrage: ein Haupt-Worktree und nur der aktuelle Koordinator als Terminal, keine offenen Worker-Auftraege.
+- Git-Arbeitsverzeichnis sauber, main und origin/main identisch. Die abschliessende Dokumentation wird als Folgecommit ebenfalls gepusht.
+- In dieser Konsolidierung nur Dokumentation geaendert, keine neue Runtime-Aenderung. `git diff --check` geprueft; vorhandene Code-/Docker-Pruefungen nicht erneut ausgefuehrt. M1-Abnahmen bleiben ausdruecklich offen.
 
 ## Gesicherter Fortschritt
 
