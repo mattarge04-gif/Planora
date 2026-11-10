@@ -1,0 +1,72 @@
+#!/bin/sh
+# planora – Betriebswerkzeug auf dem Host (Spec §8, §9). POSIX-sh, nur ein duenner Einstieg:
+# die Logik liegt in TypeScript (app/src/betrieb), gebaut nach <bundle>/werkzeug (nur node:-Module, kein node_modules).
+#
+#   planora install --instanz <name> --domain <d> --tls acme|internal --schluessel <release.pub> [...]
+#   planora update  --instanz <name> <bundle> | --fortsetzen | --rueckweg | --status
+#   planora setup   --instanz <name>            neues Setup-Token (15 min) fuer den Erstadmin
+#   planora status  --instanz <name>            Container und Health
+#
+# [A] Voraussetzung: Node.js >= 24 auf dem Host (Entscheid offen, siehe docs/superpowers/plans/m1b-notizen.md).
+# Pfade: PLANORA_ETC (Standard /etc/planora), PLANORA_VAR (Standard /var/lib/planora), PLANORA_BUNDLE (Standard: Ort dieses Skripts).
+set -eu
+
+HIER=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+PLANORA_BUNDLE=${PLANORA_BUNDLE:-$HIER}
+WERKZEUG=${PLANORA_WERKZEUG:-$PLANORA_BUNDLE/werkzeug}
+PLANORA_ETC=${PLANORA_ETC:-/etc/planora}
+export PLANORA_BUNDLE PLANORA_ETC
+
+fehler() { printf 'planora: %s\n' "$*" >&2; exit 1; }
+
+brauche_node() {
+  command -v node >/dev/null 2>&1 || fehler "Node.js >= 24 fehlt auf dem Host"
+  haupt=$(node -p 'process.versions.node.split(".")[0]')
+  [ "$haupt" -ge 24 ] || fehler "Node.js >= 24 noetig (gefunden: $haupt)"
+  [ -f "$WERKZEUG/betrieb/$1" ] || fehler "Werkzeug fehlt: $WERKZEUG/betrieb/$1"
+}
+
+# --instanz <name> aus den Argumenten lesen (fuer setup/status)
+instanz_aus() {
+  INSTANZ=
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --instanz) [ $# -ge 2 ] || fehler "--instanz braucht einen Namen"; INSTANZ=$2; shift ;;
+    esac
+    shift
+  done
+  case "$INSTANZ" in
+    ''|*[!a-z0-9-]*) fehler "--instanz <name> fehlt oder ist ungueltig" ;;
+  esac
+  ENVDATEI=$PLANORA_ETC/$INSTANZ/instanz.env
+  [ -f "$ENVDATEI" ] || fehler "Instanz $INSTANZ ist nicht installiert ($ENVDATEI fehlt)"
+}
+
+compose() {
+  docker compose -p "planora-$INSTANZ" --env-file "$ENVDATEI" -f "$PLANORA_BUNDLE/compose.yaml" "$@"
+}
+
+befehl=${1:-}
+[ $# -gt 0 ] && shift
+case "$befehl" in
+  install)
+    brauche_node install/cli.js
+    exec node "$WERKZEUG/betrieb/install/cli.js" --bundle "$PLANORA_BUNDLE" "$@"
+    ;;
+  update)
+    brauche_node update/cli.js
+    exec node "$WERKZEUG/betrieb/update/cli.js" "$@"
+    ;;
+  setup)
+    instanz_aus "$@"
+    echo "Setup-Token fuer den Erstadmin (15 Minuten gueltig, nur einmal verwendbar):" >&2
+    compose --profile konsole run --rm -T konsole setup-token
+    ;;
+  status)
+    instanz_aus "$@"
+    compose ps -a
+    ;;
+  *)
+    fehler "Aufruf: planora install|update|setup|status ... (siehe Kopf dieses Skripts)"
+    ;;
+esac
