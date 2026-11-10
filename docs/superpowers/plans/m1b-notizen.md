@@ -46,3 +46,41 @@ Kennzeichnung: [F] Fakt · [A] Annahme · [?] offen.
 - **PP9-3** [F] `planora_owner` (NOLOGIN) besitzt Datenbank, Schema und alle Objekte. `planora_migrator` (LOGIN, NOINHERIT) ist die einzige Rolle mit `SET ROLE planora_owner`; `start/migrator.ts` wechselt per Verbindungsparameter `-c role=planora_owner`. Die Konsole nutzt `planora_betrieb` und nur `setup_token_anlegen` / `erstadmin_anlegen` (SECURITY DEFINER, in 008); im Konsolen-Container liegt nur `db_betrieb_passwort`. Damit sind die frueheren [A] "Konsole mit planora_migrator" und "Eigentuemer = planora_migrator" ersetzt. [A] Die Funktionen stehen in `008_wartung.sql`, weil nur diese Migration zu Spur A gehoert; `erstadmin_anlegen` bildet `loeseSetupTokenEin` (auth/setup.ts, nicht Spur A) in SQL nach – bei Aenderungen dort beide anpassen.
 - **PP9-4** [F] Netz `vorne` hat ein eigenes /29 je Instanz mit festen Adressen (Gateway +1, Proxy +2, api +3); api vertraut nur `PLANORA_PROXY_IP`. `planora install` waehlt das erste freie /29 aus 172.31.240.0/20 (frei = kein vorhandenes Docker-Netz, keine andere Instanz laut `instanz.env`) oder prueft `--vorne-subnetz`. Docker-Test: Worker mit gefaelschtem `X-Forwarded-For` zaehlt mit seiner eigenen Adresse; ueber Caddy zaehlt weder die Proxy-Adresse noch ein Client-Header. Damit ist das fruehere [A] "private Bereiche als vertraute Proxies" ersetzt.
 - **PP9-8** [F] Caddy laeuft als UID/GID 1001 ohne Capabilities (`cap_drop: ALL`, `ip_unprivileged_port_start=0`); ein einmaliger Dienst `proxy-init` (ohne Netz, nur `CHOWN`) uebergibt `caddy-data` an diese UID. TLS-Ausstellung (`tls internal`), Wartungsschalter und Neustart laufen im Docker-Test damit.
+- **PP9-5** [F] `wartungsLage` hat eine eigene Zeitgrenze (3 s); `dbKonfig` setzt Verbindungs-, Statement- und Query-Timeouts (Migrator ohne Abfragegrenze); Worker bricht auch waehrend einer haengenden Abfrage ab; Stopp raeumt zeitbegrenzt auf. Docker-Test mit pausierter DB: Health/Mutation 503, `worker` und `api` enden mit Exit 0 innerhalb der Grace-Zeit.
+- **PP9-8 Nachtrag** [F] `proxy-init` scheiterte beim zweiten `compose up` (root ohne DAC-Capability auf dem bereits uebergebenen Volume). Jetzt idempotent; durch den PP9-5-Test abgedeckt (zweites `up` im selben Projekt).
+
+### Stand bei Abbruch (2026-11-10, PO-Stopp)
+
+**Erledigt (Commit)**
+
+| Punkt | Commit | Nachweis |
+|---|---|---|
+| A1 Health + Wartungsflag | 7195cb6 | Unit |
+| A2 Start-Einstiege + Dockerfile | 3102026 | Build, Docker-Test |
+| A3 Compose-Paket + Caddy | 02a5a31 | Docker-Test |
+| A4 Release-Manifest + install | d3758cb | Unit (install nur mit Fake-Umgebung) |
+| PP9-2 Test isoliert | b1527ce | Docker-Test |
+| PP9-1 Secret-Kopien je UID | 526671f | Docker-Test (Linux-Container), [?] Linux-VM offen |
+| PP9-3 planora_owner NOLOGIN, Konsole ohne DDL | e918313 | Unit + Docker-Test |
+| PP9-4 nur Caddy-Adresse vertraut | d0d7f15 | Unit + Docker-Test |
+| PP9-8 Caddy unprivilegiert | 83e7dd6, 4b2ba07 | Docker-Test |
+| PP9-5 DB-Zeitgrenzen, sauberer Stopp | 1dbb00b | Unit + Docker-Test |
+
+Letzter Teststand auf diesem Commit-Stand: `cd app && npm test` → 14 Dateien gruen, 157 Tests gruen, 12 uebersprungen (Docker-Tests ohne Flag). `cd app && npm run test:docker` → `paket.test.ts` 12/12 gruen (91 s). `npx tsc --noEmit -p .` ohne Befund.
+
+**Offen**
+
+- **PP9-6** (mittel) nicht begonnen: `release.ts`/`install` akzeptieren noch Referenzen ohne `@sha256:`. [F] Vorarbeit: mit dem containerd-Image-Store (Docker 29) gilt fuer lokal gebaute/geladene Images RepoDigest = Image-ID, `planora-app:<tag>@sha256:<id>` laesst sich starten; die Testhilfe `baueImage` liefert bereits solche Referenzen. Naechster Schritt: `pruefeForm` verlangt `@sha256:` in jeder Referenz, `install` lehnt reine Tags ab, Test dazu. [A] setzt den containerd-Image-Store auf dem Zielhost voraus.
+- **PP9-7** (niedrig) nicht begonnen: Dev-Pakete im Laufzeit-Image. Idee: nach `npm ci --omit=dev` im Dockerfile `npm rm --no-save vitest tsx` und danach Laufzeit-Smoke (Login, Migration); sonst dokumentierte Dossier-Ausnahme.
+- **PP9-Nachpruefung:** die Fixes PP9-1 bis PP9-5 und PP9-8 sind **nicht** vom Ueberwacher bestaetigt ("PP9-Fixes bereit" wurde wegen des Stopps nicht mehr gemeldet).
+- **A5 Update-Zustandsmaschine nicht begonnen.** Es gibt nur `app/src/betrieb/update/docker.ts` (CLI-Hilfen, von install genutzt). `betrieb/planora update` verweist auf `werkzeug/betrieb/update/cli.js`, das es noch nicht gibt. Entwurf (nicht umgesetzt): Seiteneffekte hinter `Betriebsumgebung`; DB-Zugriffe des Host-Werkzeugs ueber `docker compose exec db psql`; Advisory-Lock ueber eine offen gehaltene psql-Sitzung; Smoke als `start/smoke.ts` im api-Container mit prozessinternem Login (Wartung sperrt den HTTP-Login); haengender Worker im Test per Compose-Override.
+- **A6 Lizenz-Dossier** nicht begonnen. **PP10** entfaellt bis A5.
+- **Backup-Reconcile-Verdrahtung** in `betrieb/planora` (Hinweis aus PP9b, Vertrag von Spur B) nicht begonnen.
+- **Ungetestet:** `dockerInstallUmgebung` und `betrieb/planora` sind nie gegen echtes Docker gelaufen (install nur mit Fake; Skript nur `sh -n`). Geplant war der Echtlauf im Update-Docker-Test.
+- Weiter offen aus frueheren Abschnitten: [?] Node >= 24 auf dem Host, [?] Start mit Host-Bind-Mounts auf einer Linux-VM, [A] `/api/health` im onRequest-Hook (Wunsch: Eintrag in `FREIE_API_ROUTEN`).
+
+**Stash:** nichts. Arbeitsverzeichnis sauber, kein `pp9-wip`.
+
+**Docker:** eigenes Projekt `planora-a` vollstaendig abgebaut (keine Container, Volumes, Netze); eigene Test-Images `planora-app:planora-a-1`, `:test-1`, `:a2` entfernt. Basis-Images (node, postgres, caddy) und alles von `planora-b*` unberuehrt.
+
+**Naechster Schritt:** PP9-6 umsetzen, dann "PP9-Fixes bereit" mit Hash und Docker-Testbeweis an den Ueberwacher; danach A5.
