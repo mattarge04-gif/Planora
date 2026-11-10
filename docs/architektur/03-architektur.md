@@ -1,5 +1,7 @@
 # 03 – Architektur Planora V1
 
+> **Aktualisierung 2026-11-11:** E38 / [ADR 0032](adr/0032-gebaeude-vorbereiten-kunde-erfasst-technik.md) praezisiert die Erfassung: Planora erstellt die schematische Huelle; Kunden definieren Einheiten und Technik mit Folgefragen. Standort und Versorgung sind getrennt zu modellieren. Aktueller Implementierungs-/Abnahmestand und naechste Aufgaben: [Fortsetzungsplan](../superpowers/plans/2026-11-11-fortsetzung.md). Diese Produktpraezisierung ist geplant, noch nicht implementiert.
+
 Stand: 2026-11-08 · Rolle: System-Architekt (Welle 2, Orca-Task task_5a6b938dca10) · Status: **Entwurf zur Freigabe**
 Basis (verbindlich): `00-kontext.md` (E1–E10 und PO-Antworten E11–E22), `01-domaene.md` (FA-01..FA-38), `02-tech-recherche.md`.
 Die PO-Antworten E11–E22 (Stand 2026-11-08) sind eingearbeitet; wo 01-domaene ein anderes Default vorschlug, gilt E11–E22.

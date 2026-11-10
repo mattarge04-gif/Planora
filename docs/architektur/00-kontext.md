@@ -1,4 +1,10 @@
-# Planora: Kontext und Entscheide (Stand 2026-11-08)
+# Planora: Kontext und Entscheide (aktualisiert 2026-11-11)
+
+Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1b einschliesslich Sicherheitsnachpruefung implementiert und lokal getestet. Reale Betriebsabnahmen bleiben offen. Historische Abschnitte anhand neuerer Entscheide lesen.
+
+## E38 – Kunden-Erfassung in vorbereiteter 3D-Welt (PO bestaetigt, 2026-11-11)
+
+Planora bereitet je Kunde die schematische Gebaeudehuelle mit Geschossen vor. Kunden definieren Einheiten und Technik ueber gefuehrte Formulare, zuerst Heizung (HK/FBH/TABS, Verteiler, Kreise, Mengen). Standort und versorgte Einheiten getrennt; kein automatischer Verteiler je Einheit. Unbekannt, Kopieren, einfache Layoutkorrektur und bestaetigte Vorschlaege gehoeren dazu. Eine Codebasis, deterministischer Generator. Verbindliche Praezisierung: [ADR 0032](adr/0032-gebaeude-vorbereiten-kunde-erfasst-technik.md). Zusatzschaetzungen im Fortsetzungsplan; noch nicht implementiert.
 
 Quelle fuer alle Worker des Architektur-Teams. Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 Sprache aller Dokumente: Deutsch (de-CH), kein Eszett, immer `ss`.

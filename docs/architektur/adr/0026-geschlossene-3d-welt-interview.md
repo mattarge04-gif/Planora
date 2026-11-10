@@ -1,5 +1,7 @@
 # 0026 – Geschlossene 3D-Welt: Regelwerk, Interview-Agent und Weltgenerator
 
+> **Praezisierung 2026-11-11, E38 / [ADR 0032](0032-gebaeude-vorbereiten-kunde-erfasst-technik.md):** Planora bereitet die Huelle vor, Kunden erfassen Einheiten und Technik mit Folgefragen. Standort und Versorgung getrennt. Formularweg Stufe 1, Lebensdauer/Ampel Stufe 2, KI-Interview Stufe 4. Neuere Entscheide gehen historischem Text vor.
+
 > **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
 > [A] Regelwerk, Beschreibungsschema, Generator und bestaetigte Weltvorschau bleiben Stufe 2; Formular/Excel zuerst, Claude-Interview erst Stufe 4 (ADR 0030).
 > [A] Bedrock, GWR- und Grundriss-Vorbelegung sowie FR/IT entfallen; Herkunft je Eingabekanal (ADR 0012) und Verhalten bestehender Welten bei Regelwerk-Updates definieren.

@@ -44,6 +44,7 @@ Kennzeichnung: [F] Fakt mit Quelle aus `01-domaene.md` (Qn-Domaene) bzw. `02-tec
 | 0029 | Feature-Schalter / Kundenmodule pro Instanz | E37 | nein | vorgeschlagen (neu Welle 4) | neu | – | 1 |
 | 0030 | KI ueber Claude API direkt (Stufe 4, pro Instanz aus) | E36, E37 | **ja, teilweise** (Datenregion us/global) | vorgeschlagen (neu Welle 4) | neu | ersetzt 0003 | 4 |
 | 0031 | Instanz-Isolation statt RLS | E34, E35 | nein | vorgeschlagen (neu Welle 4) | neu | ersetzt 0010 | 1 |
+| 0032 | Gebaeude vorbereiten, Kunde erfasst Einheiten und Technik | E38 | nein | akzeptiert (PO 2026-11-11) | praezisiert 0026/0008 | – | 1 Erfassung · 2 Ampel · 4 Agent |
 
 ## Vorlage
 
