@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { frischeDb } from "./hilfe.js";
 import { sendeJournal } from "../src/betrieb/journal/outbox.js";
 import type { Ziel } from "../src/betrieb/backup/ziel.js";
+import { setzeRolle } from "../src/rechte/rechte.js";
 let db: Awaited<ReturnType<typeof frischeDb>>, pool:pg.Pool;
 beforeAll(async () => {db=await frischeDb();pool=new pg.Pool({...db.cfg,options:"-c role=planora_betrieb"});});
 afterAll(async () => {await pool.end();await db.ende();});
@@ -53,4 +54,28 @@ it("haelt Sicherheitsjournal und Zaehler bei Rollback lueckenlos",async()=>{
   expect((await db.pool.query("select seq from journal_zaehler")).rows[0].seq).toBe("0");
   await db.pool.query("update konto_status set status='gesperrt' where benutzer_id=$1",[id]);
   expect((await db.pool.query("select seq,art,ziel from loesch_journal")).rows).toEqual([{seq:"1",art:"konto.sperren",ziel:id}]);
+});
+it("journalisiert nur echte Rollen-/Scope-Entzuege am Transaktionsende",async()=>{
+  const id=randomUUID(),audit=randomUUID(),scope1=randomUUID(),scope2=randomUUID();
+  await db.pool.query(`insert into "user" values ($1,'Test',$2,true,null,now(),now())`,[id,id+"@test.ch"]);
+  await db.pool.query("insert into konto_status values($1,'aktiv',$2)",[id,audit]);
+  await db.pool.query("insert into rolle_zuordnung values($1,'bearbeiter')",[id]);
+  for(const s of [scope1,scope2]){await db.pool.query("insert into liegenschaft values($1,'Test')",[s]);await db.pool.query("insert into rolle_liegenschaft values($1,$2)",[id,s]);}
+  await setzeRolle(db.pool,id,"bearbeiter",[scope1,scope2],audit);
+  await db.pool.query("update rolle_zuordnung set rolle=rolle where benutzer_id=$1",[id]);
+  await db.pool.query("update rolle_liegenschaft set liegenschaft_id=liegenschaft_id where benutzer_id=$1",[id]);
+  expect((await db.pool.query("select count(*)::int n from loesch_journal")).rows[0].n).toBe(0);
+  await setzeRolle(db.pool,id,"bearbeiter",[scope2],audit);
+  await setzeRolle(db.pool,id,"leser",[scope2],audit);
+  const eintraege=(await db.pool.query("select art,ziel from loesch_journal order by seq")).rows;
+  expect(eintraege.map((e)=>({art:e.art,ziel:JSON.parse(e.ziel)}))).toEqual([
+    {art:"scope.entziehen",ziel:{benutzerId:id,liegenschaftId:scope1}},
+    {art:"rolle.entziehen",ziel:{benutzerId:id,rolle:"bearbeiter"}},
+  ]);
+  const c=await db.pool.connect();try{
+    await c.query("begin");await c.query("delete from rolle_zuordnung where benutzer_id=$1",[id]);await c.query("delete from rolle_liegenschaft where benutzer_id=$1",[id]);await c.query("rollback");
+  }finally{c.release();}
+  expect((await db.pool.query("select count(*)::int n from loesch_journal")).rows[0].n).toBe(2);
+  await setzeRolle(db.pool,id,"admin",[scope2],audit); // Aufwertung verliert keine Rechte.
+  expect((await db.pool.query("select seq from journal_zaehler")).rows[0].seq).toBe("2");
 });

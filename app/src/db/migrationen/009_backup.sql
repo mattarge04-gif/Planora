@@ -90,13 +90,23 @@ begin
       perform public.journal_eintrag('konto.sperren',new.benutzer_id);
     end if;
   elsif tg_table_name='rolle_zuordnung' then
-    perform public.journal_eintrag('rolle.entziehen',old.benutzer_id);
+    -- Am Transaktionsende den effektiven Endstand vergleichen. Reine
+    -- Wiederholungen und Aufwertungen verlieren keine bisherigen Rechte.
+    if not exists(select 1 from public.rolle_zuordnung r where r.benutzer_id=old.benutzer_id and
+       (r.rolle=old.rolle or (old.rolle='leser' and r.rolle in ('bearbeiter','admin')) or (old.rolle='bearbeiter' and r.rolle='admin'))) then
+      perform public.journal_eintrag('rolle.entziehen',jsonb_build_object('benutzerId',old.benutzer_id,'rolle',old.rolle)::text);
+    end if;
   else
-    perform public.journal_eintrag('scope.entziehen',jsonb_build_object('benutzerId',old.benutzer_id,'liegenschaftId',old.liegenschaft_id)::text);
+    -- setzeRolle loescht/erneuert Scopes auch bei unveraenderter Zuweisung.
+    if not exists(select 1 from public.rolle_liegenschaft r where r.benutzer_id=old.benutzer_id and r.liegenschaft_id=old.liegenschaft_id) then
+      perform public.journal_eintrag('scope.entziehen',jsonb_build_object('benutzerId',old.benutzer_id,'liegenschaftId',old.liegenschaft_id)::text);
+    end if;
   end if;
   return null;
 end $$;
 revoke all on function sicherheits_journal() from public;
 create trigger konto_sperrjournal after update of status on konto_status for each row execute function sicherheits_journal();
-create trigger rollen_entzugsjournal after update or delete on rolle_zuordnung for each row execute function sicherheits_journal();
-create trigger scope_entzugsjournal after update or delete on rolle_liegenschaft for each row execute function sicherheits_journal();
+create constraint trigger rollen_entzugsjournal after update or delete on rolle_zuordnung
+  deferrable initially deferred for each row execute function sicherheits_journal();
+create constraint trigger scope_entzugsjournal after update or delete on rolle_liegenschaft
+  deferrable initially deferred for each row execute function sicherheits_journal();
