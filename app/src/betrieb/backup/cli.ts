@@ -1,14 +1,11 @@
 import pg from "pg";
-import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { sichern } from "./satz.js";
 import { pruefeKonfiguration } from "./konfiguration.js";
-export async function geheimnis(name: string) {
-  const datei = process.env[`${name}_FILE`];
-  const wert = datei ? (await readFile(datei,"utf8")).trim() : process.env[name];
-  if (!wert) throw new Error(`Konfiguration fehlt: ${name}`);
-  return wert;
-}
+import { geheimnis, zielAusUmgebung } from "./umgebung.js";
+export { geheimnis } from "./umgebung.js";
+import { ageVerschluesseln } from "../journal/age.js";
+import { pruefeInventar } from "./inventar.js";
 export async function cli(args: string[]) {
   if (args[0] !== "sichern" || args[1] !== "--anlass" || !args[2] || args.length !== 3) throw new Error("Aufruf: sichern --anlass <anlass>");
   const betrieb = new pg.Pool({ connectionString: await geheimnis("PLANORA_BETRIEB_DB") });
@@ -16,10 +13,12 @@ export async function cli(args: string[]) {
     const url = new URL(await geheimnis("PLANORA_BACKUP_DB"));
     const pgEnv = { PGHOST: url.hostname, PGPORT: url.port || "5432", PGDATABASE: decodeURIComponent(url.pathname.slice(1)), PGUSER: decodeURIComponent(url.username), PGPASSWORD: decodeURIComponent(url.password), PGSSLMODE: url.searchParams.get("sslmode") ?? "prefer" };
     const konfiguration=JSON.parse(await geheimnis("PLANORA_KONFIGURATION")); pruefeKonfiguration(konfiguration);
+    const inventar=JSON.parse(await geheimnis("PLANORA_INVENTAR")); pruefeInventar(inventar);
     const ergebnis = await sichern({ betrieb, backupDb: { connectionString: url.href }, pgEnv,
       resticEnv: { RESTIC_REPOSITORY: await geheimnis("RESTIC_REPOSITORY"), RESTIC_PASSWORD: await geheimnis("RESTIC_PASSWORD") },
       dokumente: process.env.PLANORA_DOKUMENTE ?? "/dokumente", staging: process.env.PLANORA_STAGING ?? "/staging",
       release: await geheimnis("PLANORA_RELEASE"), anlass: args[2], konfiguration,
+      inventar:{inhalt:inventar,ziel:await zielAusUmgebung(),verschluesseln:ageVerschluesseln(await geheimnis("PLANORA_RECOVERY_EMPFAENGER"))},
     });
     console.log(JSON.stringify(ergebnis));
   } finally { await betrieb.end(); }

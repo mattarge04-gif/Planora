@@ -12,6 +12,9 @@ import { snapshotAbgleichen, type Manifest } from "../src/betrieb/backup/manifes
 import { promisify } from "node:util";
 import { execFile } from "node:child_process";
 import { pruefeKonfiguration, type Instanzkonfiguration } from "../src/betrieb/backup/konfiguration.js";
+import { randomBytes } from "node:crypto";
+import { lokalesZiel } from "../src/betrieb/backup/ziel.js";
+import type { Schluesselinventar } from "../src/betrieb/backup/inventar.js";
 let db: Awaited<ReturnType<typeof frischeDb>>, betrieb: pg.Pool;
 const ordner: string[] = [];
 beforeAll(async () => { db = await frischeDb(); betrieb = new pg.Pool({ ...db.cfg, options: "-c role=planora_betrieb" }); });
@@ -55,7 +58,9 @@ async function umgebung(fehler?: string, manipulation = false) {
     return { code:0,stdout:"" };
   };
   const konfiguration:Instanzkonfiguration={format:1,instanzId:(await db.pool.query("select wert from instanz_einstellung where schluessel='instanz_id'")).rows[0].wert,release:"m1-test",domain:"planora.test",tls:"internal",profil:"P1",zeitzone:"Europe/Zurich"};
-  return { basis, datei, aufrufe, manifest: () => manifest, optionen: { betrieb, backupDb: {...db.cfg,options:"-c role=planora_backup"}, pgEnv:{},resticEnv:{},dokumente,staging:join(basis,"staging"),release:"m1-test",konfiguration,anlass:"test",lauf } };
+  const passwort=randomBytes(24).toString("hex");
+  const inventar:Schluesselinventar={format:1,instanzId:konfiguration.instanzId,restic:{repository:"test",passwort},zielCredentials:{},appSecrets:{auth:randomBytes(24).toString("hex")},dbRollen:{planora_app:passwort,planora_backup:passwort,planora_betrieb:passwort,planora_migrator:passwort}};
+  return { basis, datei, aufrufe, manifest: () => manifest, optionen: { betrieb, backupDb: {...db.cfg,options:"-c role=planora_backup"}, pgEnv:{},resticEnv:{RESTIC_REPOSITORY:"test",RESTIC_PASSWORD:passwort},dokumente,staging:join(basis,"staging"),release:"m1-test",konfiguration,anlass:"test",lauf,inventar:{inhalt:inventar,ziel:lokalesZiel(join(basis,"ziel")),verschluesseln:async(d:Buffer)=>Buffer.from(d.toString("base64"))} } };
 }
 it("sichert Manifest und Dump im gleichen Snapshot unter Minimalrollen", async () => {
   const u = await umgebung(); const r = await sichern(u.optionen);

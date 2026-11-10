@@ -6,11 +6,15 @@ import { MANIFEST_VERSION } from "../../module/manifest.js";
 import { dateiHash, pruefeDatei, quelldatei, snapshotAbgleichen, type Datei, type Manifest } from "./manifest.js";
 import { erfolgreich, prozess, type Prozess } from "./prozess.js";
 import { pruefeKonfiguration, type Instanzkonfiguration } from "./konfiguration.js";
+import { sichereInventar, type Schluesselinventar } from "./inventar.js";
+import type { Ziel } from "./ziel.js";
+import type { Verschluesseln } from "../journal/age.js";
 export type SicherungsOptionen = {
   betrieb: pg.Pool; backupDb: pg.ClientConfig; pgEnv: NodeJS.ProcessEnv;
   resticEnv: NodeJS.ProcessEnv; dokumente: string; staging: string; release: string;
   konfiguration: Instanzkonfiguration; anlass: string; lauf?: Prozess; heartbeatMs?: number;
   jetzt?: () => Date;
+  inventar: { inhalt: Schluesselinventar; ziel: Ziel; verschluesseln: Verschluesseln };
 };
 export async function sichern(o: SicherungsOptionen) {
   if (!o.release) throw new Error("Release fehlt");
@@ -45,6 +49,8 @@ export async function sichern(o: SicherungsOptionen) {
     };
     if (!instanzId) throw new Error("Instanz-ID fehlt");
     if (o.konfiguration.instanzId!==instanzId || o.konfiguration.release!==o.release) throw new Error("Instanzkonfiguration passt nicht zur Sicherung");
+    if (o.inventar.inhalt.instanzId!==instanzId || o.inventar.inhalt.restic.passwort!==o.resticEnv.RESTIC_PASSWORD || o.inventar.inhalt.restic.repository!==o.resticEnv.RESTIC_REPOSITORY) throw new Error("Inventar passt nicht zur Sicherungskonfiguration");
+    await sichereInventar(o.inventar.inhalt,backupId,o.inventar.ziel,o.inventar.verschluesseln);
     // Exporter muss bis zum erfolgreichen Ende des Dumps offen bleiben.
     await schritt("pg_dump", ["-Fc", `--snapshot=${snapshot}`, "--no-password", "--file", join(ordner,"daten.dump")], { env: o.pgEnv });
     await exporter.query("select 1");

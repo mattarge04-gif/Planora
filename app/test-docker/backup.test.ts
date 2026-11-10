@@ -42,6 +42,7 @@ beforeAll(async () => {
   await werkzeug("restic","init");
   await werkzeug("age-keygen","-o","/ziel/recovery.key");
   env.PLANORA_TEST_RECOVERY_EMPFAENGER=(await werkzeug("age-keygen","-y","/ziel/recovery.key")).trim();
+  await fs.writeFile(join(ziel,"inventar.json"),JSON.stringify({format:1,instanzId,restic:{repository:"/ziel/restic",passwort:env.PLANORA_TEST_RESTIC_PW},zielCredentials:{},appSecrets:{auth:randomBytes(32).toString("hex")},dbRollen:{planora_app:randomBytes(24).toString("hex"),planora_betrieb:betriebPw,planora_backup:backupPw,planora_migrator:randomBytes(24).toString("hex")}}),{mode:0o600});
 });
 afterAll(async () => {
   try {await pool?.end();if(projektAngelegt)await compose("--profile","betrieb","down","-v");if(ziel)await fs.rm(ziel,{recursive:true,force:true});}
@@ -58,6 +59,10 @@ it("sichert unter Minimalrollen einen echten pg_dump in restic",async () => {
   expect(rollen).not.toContain("PASSWORD");
   const konfiguration=await werkzeug("restic","dump",snapshots[0].id,`/staging/${r.backupId}/konfiguration.json`);
   expect(JSON.parse(konfiguration)).toEqual(JSON.parse(await fs.readFile(join(ziel,"konfiguration.json"),"utf8")));
+  const instanz=JSON.parse(konfiguration).instanzId;
+  const inventar=JSON.parse(await werkzeug("age","-d","-i","/ziel/recovery.key",`/ziel/inventar/${instanz}/${r.backupId}.age`));
+  expect(inventar.restic.passwort).toBe(env.PLANORA_TEST_RESTIC_PW);
+  expect((await fs.readFile(join(ziel,`inventar/${instanz}/${r.backupId}.age`))).includes(Buffer.from(env.PLANORA_TEST_RESTIC_PW))).toBe(false);
 });
 it("verschluesselt das Journal mit age und quittiert einzeln im echten Ziel",async()=>{
   const seq=(await pool.query("select journal_eintrag('konto.sperren','test-konto') seq")).rows[0].seq;

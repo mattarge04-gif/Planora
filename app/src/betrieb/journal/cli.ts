@@ -1,13 +1,8 @@
 import pg from "pg";
 import { fileURLToPath } from "node:url";
-import { geheimnis } from "../backup/cli.js";
-import { lokalesZiel, s3Ziel } from "../backup/ziel.js";
+import { geheimnis, zielAusUmgebung } from "../backup/umgebung.js";
 import { ageVerschluesseln } from "./age.js";
 import { journalDienst, sendeJournal } from "./outbox.js";
-export async function zielAusUmgebung() {
-  if (process.env.PLANORA_ZIEL_ART === "s3") return s3Ziel({endpoint:await geheimnis("PLANORA_S3_ENDPOINT"),region:await geheimnis("AWS_REGION"),bucket:await geheimnis("PLANORA_S3_BUCKET"),accessKeyId:await geheimnis("AWS_ACCESS_KEY_ID"),secretAccessKey:await geheimnis("AWS_SECRET_ACCESS_KEY")});
-  return lokalesZiel(process.env.PLANORA_OBJEKT_ZIEL ?? "/ziel");
-}
 export async function journalCli(args: string[]) {
   if (args.length!==1 || !["--einmal","--dienst"].includes(args[0])) throw new Error("Aufruf: journal --einmal|--dienst");
   const pool=new pg.Pool({connectionString:await geheimnis("PLANORA_BETRIEB_DB")});

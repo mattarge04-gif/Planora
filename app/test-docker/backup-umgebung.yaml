@@ -22,6 +22,7 @@ services:
       PLANORA_RELEASE: m1-test
       PLANORA_RECOVERY_EMPFAENGER: ${PLANORA_TEST_RECOVERY_EMPFAENGER:-}
       PLANORA_KONFIGURATION_FILE: /ziel/konfiguration.json
+      PLANORA_INVENTAR_FILE: /ziel/inventar.json
       RESTIC_REPOSITORY: /ziel/restic
       RESTIC_PASSWORD: ${PLANORA_TEST_RESTIC_PW:?}
       XDG_CACHE_HOME: /tmp/cache
