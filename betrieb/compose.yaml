@@ -27,7 +27,9 @@ services:
     image: *proxy-image
     restart: "no"
     user: "0:0"
-    entrypoint: ["sh", "-c", "mkdir -p /data/wartung && chown -R 1001:1001 /data"]
+    # Idempotent: nur beim ersten Start (Volume gehoert noch root). Danach gehoert alles UID 1001, und root ohne
+    # DAC-Capability koennte die 0700-Verzeichnisse von Caddy gar nicht mehr durchlaufen.
+    entrypoint: ["sh", "-c", "[ \"$$(stat -c %u /data)\" = 1001 ] || { mkdir -p /data/wartung && chown -R 1001:1001 /data; }"]
     volumes:
       - caddy-data:/data
     network_mode: none
