@@ -1,7 +1,7 @@
 import pg from "pg";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { hashPasswort, normalisiereEmail } from "../auth/auth.js";
-import { dbKonfig, starte } from "./konfig.js";
+import { beendeBegrenzt, dbKonfig, starte } from "./konfig.js";
 
 /**
  * Host-Konsole (Spec §5 Erstadmin): laeuft als einmaliger Container `konsole` (Compose-Profil), nie im api-Container.
@@ -51,5 +51,5 @@ if (process.argv[1]?.replace(/\\/g, "/").endsWith("/start/konsole.js")) starte(a
     try { e = JSON.parse(await stdinText()); } catch { throw new Error("stdin ist kein JSON"); }
     const r = await konsoleErstadmin(pool, e ?? {});
     process.stdout.write(JSON.stringify({ ok: true, benutzerId: r.benutzerId }) + "\n");
-  } finally { await pool.end().catch(() => {}); }
+  } finally { await beendeBegrenzt([() => pool.end()], 5000); }
 });

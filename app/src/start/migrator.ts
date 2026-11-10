@@ -9,6 +9,6 @@ starte(async () => {
   const verzeichnis = env("PLANORA_MIGRATIONEN", "");
   const rolle = env("PLANORA_EIGENTUEMER_ROLLE", "planora_owner");
   if (!/^[a-z_][a-z0-9_]*$/.test(rolle)) throw new Error("PLANORA_EIGENTUEMER_ROLLE ungueltig");
-  const r = await migriere({ ...dbKonfig("planora_migrator"), options: `-c role=${rolle}` }, verzeichnis || undefined);
+  const r = await migriere({ ...dbKonfig("planora_migrator", { abfrageMs: 0 }), options: `-c role=${rolle}` }, verzeichnis || undefined);
   logge("migriert", { release: release(), angewendet: r.angewendet });
 });

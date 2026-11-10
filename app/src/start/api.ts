@@ -1,7 +1,7 @@
 import pg from "pg";
 import { baueServer } from "../server.js";
 import type { Stufe } from "../module/manifest.js";
-import { dbKonfig, env, geheimnis, logge, release, starte } from "./konfig.js";
+import { beendeBegrenzt, dbKonfig, env, geheimnis, logge, release, starte } from "./konfig.js";
 
 // Einstieg des Containers `api`: Fastify hinter Caddy, einzige DB-Rolle planora_app.
 starte(async () => {
@@ -20,8 +20,9 @@ starte(async () => {
   const beende = async (signal: string) => {
     if (endet) return; endet = true;
     logge("stopp", { signal });
-    await app.close().catch(() => {});
-    await pool.end().catch(() => {});
+    // offene Anfragen und haengende DB-Verbindungen hoechstens 10 s abwarten, dann sauber enden (PP9-5)
+    const r = await beendeBegrenzt([() => app.close(), () => pool.end()], 10_000);
+    logge("beendet", { aufgeraeumt: r === "fertig" });
     process.exit(0);
   };
   process.on("SIGTERM", () => void beende("SIGTERM"));

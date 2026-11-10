@@ -206,4 +206,36 @@ describe.skipIf(!DOCKER_TESTS)("Compose-Paket (Docker)", () => {
       expect((await inst.compose(["logs", "--no-log-prefix", "worker"])).stdout).toContain('"status":"wartung"');
     } finally { await inst.sql("planora_betrieb", "select setze_wartung(false)"); }
   });
+
+  it("PP9-5: haengende DB (pausiert) → Health zeitbegrenzt 503, Worker und api enden bei SIGTERM sauber innerhalb der Grace-Zeit", async () => {
+    const dbId = await inst.containerId("db");
+    await docker(["pause", dbId]);
+    try {
+      const t0 = Date.now();
+      const h = await https(inst.basis, "GET", "/api/health");
+      expect(h.status).toBe(503);
+      expect(h.json()).toMatchObject({ ok: false, db: false });
+      const m = await https(inst.basis, "POST", "/api/auth/sign-in/email", { headers: { origin: inst.basis }, body: { email: "x@planora.invalid", password: "x" } });
+      expect(m.status).toBe(503);
+      expect(Date.now() - t0).toBeLessThan(15_000);
+      await new Promise((r) => setTimeout(r, 6000)); // Worker steckt jetzt in einer Abfrage gegen die stille DB
+      const t1 = Date.now();
+      await inst.compose(["stop", "-t", "30", "worker", "api"], { timeoutMs: 120_000 });
+      expect(Date.now() - t1).toBeLessThan(25_000); // deutlich vor dem Kill nach 30 s
+      for (const dienst of ["worker", "api"]) {
+        const c = await inst.inspect(dienst);
+        expect([dienst, c.State.Status, c.State.ExitCode]).toEqual([dienst, "exited", 0]); // 137 waere SIGKILL
+      }
+      expect((await inst.compose(["logs", "--no-log-prefix", "--tail", "5", "worker"])).stdout).toContain('"ereignis":"beendet"');
+    } finally {
+      await docker(["unpause", dbId], { erlaubeFehler: true });
+      // waehrend der Pause ist der Healthcheck der DB fehlgeschlagen: warten, bis sie wieder gesund gemeldet wird
+      for (let i = 0; i < 60; i++) {
+        if ((await docker(["inspect", dbId, "--format", "{{.State.Health.Status}}"])).stdout.trim() === "healthy") break;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      await inst.compose(["up", "-d", "--pull", "never", "--wait", "--wait-timeout", "180"], { timeoutMs: 300_000 });
+    }
+    expect((await https(inst.basis, "GET", "/api/health")).status).toBe(200);
+  });
 });
