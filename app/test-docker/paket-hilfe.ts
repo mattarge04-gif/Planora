@@ -6,7 +6,7 @@ import { request } from "node:https";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { erzeugeSecrets } from "../src/betrieb/install/plan.js";
+import { erzeugeSecrets, vorneAdressen, waehleVorneSubnetz } from "../src/betrieb/install/plan.js";
 
 export const DOCKER_TESTS = process.env.PLANORA_DOCKER_TESTS === "1";
 export const APP = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -64,7 +64,9 @@ export function testInstanz(o: { image: string; zusatzDateien?: string[]; projek
   erzeugeSecrets(secrets);
   const envDatei = join(verzeichnis, "instanz.env");
   const basis = `https://localhost:${httpsPort}`;
+  let vorne = vorneAdressen("172.31.240.0/29");
   const schreibeEnv = (image: string) => writeFileSync(envDatei, [
+    `PLANORA_VORNE_SUBNETZ=${vorne.subnetz}`, `PLANORA_PROXY_IP=${vorne.proxy}`, `PLANORA_API_IP=${vorne.api}`,
     `PLANORA_SECRETS=${secrets.replace(/\\/g, "/")}`, "PLANORA_DOMAIN=localhost", "PLANORA_TLS=internal",
     `PLANORA_HTTPS_PORT=${httpsPort}`, `PLANORA_HTTP_PORT=${httpPort}`, `PLANORA_BASE_URL=${basis}`, `PLANORA_IMAGE_APP=${image}`, "",
   ].join("\n"));
@@ -75,6 +77,7 @@ export function testInstanz(o: { image: string; zusatzDateien?: string[]; projek
   let angelegt = false;
   return {
     verzeichnis, envDatei, secrets, basis, projekt, composeDateien: dateien, compose, schreibeEnv,
+    get vorne() { return vorne; },
     /**
      * Startet das Paket. Existiert das Projekt oder eines seiner Volumes bereits, wird abgebrochen und NICHTS geloescht:
      * es koennte ein fremder oder parallel laufender Stand sein (PP9-2).
@@ -86,6 +89,11 @@ export function testInstanz(o: { image: string; zusatzDateien?: string[]; projek
         throw new Error(`Compose-Projekt ${projekt} existiert bereits (Volumes: ${volumes.join(", ") || "keine"}). Der Test loescht keine fremden Ressourcen: `
           + "anderes Projekt per PLANORA_TEST_PROJEKT/PLANORA_TEST_HTTPS_PORT/PLANORA_TEST_HTTP_PORT waehlen oder selbst abbauen.");
       }
+      // freies /29 fuer das Netz vorne waehlen (wie planora install)
+      const ids = (await docker(["network", "ls", "-q"])).stdout.split(/\r?\n/).filter(Boolean);
+      const belegt = (await docker(["network", "inspect", ...ids, "--format", "{{range .IPAM.Config}}{{.Subnet}} {{end}}"])).stdout.split(/\s+/).filter(Boolean);
+      vorne = vorneAdressen(waehleVorneSubnetz(belegt));
+      schreibeEnv(o.image);
       angelegt = true;
       await compose(["up", "-d", "--pull", "never", "--wait", "--wait-timeout", "300"], { timeoutMs: 400_000 });
     },

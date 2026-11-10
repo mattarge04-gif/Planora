@@ -4,12 +4,14 @@ import { cpus, totalmem } from "node:os";
 import { join, resolve } from "node:path";
 import { pruefeRelease, type Release } from "../release.js";
 import { composeArgs, imageId, letzteZeile, mussGelingen, sql, type Ausfuehrer, type InstanzPfad } from "../update/docker.js";
-import { envWerte, erzeugeSecrets, etcWurzel, instanzPfade, leseEnv, planeInstanz, pruefeKollision, pruefePlattform, schreibeEnv, type Bestand, type InstallEingabe, type PlattformIst } from "./plan.js";
+import { envWerte, erzeugeSecrets, etcWurzel, instanzPfade, leseEnv, planeInstanz, planeVorneNetz, pruefeKollision, pruefePlattform, schreibeEnv, type Bestand, type InstallEingabe, type PlattformIst } from "./plan.js";
 
 export interface InstallUmgebung {
   plattform(): Promise<PlattformIst>;
   projekte(): Promise<string[]>;
   volumes(): Promise<string[]>;
+  /** Subnetze aller vorhandenen Docker-Netze */
+  subnetze(): Promise<string[]>;
   ladeImage(archiv: string): Promise<void>;
   imageId(referenz: string): Promise<string | null>;
   /** db → migrator → api/worker → proxy, ohne Pull; wartet bis alles gesund ist */
@@ -34,7 +36,7 @@ export function leseInstanzen(): Bestand["instanzen"] {
   return readdirSync(wurzel, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => {
     const env = join(wurzel, d.name, "instanz.env");
     const w = existsSync(env) ? leseEnv(env) : {};
-    return { instanz: d.name, backupZiel: w.PLANORA_BACKUP_ZIEL, httpsPort: w.PLANORA_HTTPS_PORT ? Number(w.PLANORA_HTTPS_PORT) : undefined, httpPort: w.PLANORA_HTTP_PORT ? Number(w.PLANORA_HTTP_PORT) : undefined };
+    return { instanz: d.name, vorneSubnetz: w.PLANORA_VORNE_SUBNETZ, backupZiel: w.PLANORA_BACKUP_ZIEL, httpsPort: w.PLANORA_HTTPS_PORT ? Number(w.PLANORA_HTTPS_PORT) : undefined, httpPort: w.PLANORA_HTTP_PORT ? Number(w.PLANORA_HTTP_PORT) : undefined };
   });
 }
 
@@ -69,8 +71,10 @@ export async function installiere(o: InstallOptionen, u: InstallUmgebung): Promi
   if (p.fehler.length) throw new Error(`Plattform ungeeignet: ${p.fehler.join("; ")}`);
   p.warnungen.forEach((w) => melde(`Warnung: ${w}`));
   // 3. Kollisionen (A2)
-  const kollision = pruefeKollision(plan, { projekte: await u.projekte(), volumes: await u.volumes(), instanzen: leseInstanzen() });
+  const bestand = { projekte: await u.projekte(), volumes: await u.volumes(), instanzen: leseInstanzen(), subnetze: await u.subnetze() };
+  const kollision = pruefeKollision(plan, bestand);
   if (kollision.length) throw new Error(`Installation abgelehnt: ${kollision.join("; ")}`);
+  const vorne = planeVorneNetz(bestand, o.vorneSubnetz);
   // 4. Images offline laden und gegen das Manifest pruefen (clamav nur, wenn im Bundle: Profil scan ist in Stufe 1 aus)
   await ladeUndPruefeImages(release, o.bundle, u, release.images.filter((i) => i.dienst !== "clamav" || i.archiv).map((i) => i.dienst));
   // 5. Erst jetzt Dateien anlegen: Secrets (600), Vertrauensanker, instanz.env
@@ -80,7 +84,7 @@ export async function installiere(o: InstallOptionen, u: InstallUmgebung): Promi
   erzeugeSecrets(pfade.secrets);
   copyFileSync(o.schluessel, pfade.schluessel);
   const ref = (d: string) => release.images.find((i) => i.dienst === d)?.referenz;
-  schreibeEnv(pfade.envDatei, envWerte(plan, { secrets: pfade.secrets, release: release.version, images: { app: ref("app"), db: ref("db"), proxy: ref("proxy"), clamav: ref("clamav") } }));
+  schreibeEnv(pfade.envDatei, envWerte(plan, { secrets: pfade.secrets, release: release.version, vorne, images: { app: ref("app"), db: ref("db"), proxy: ref("proxy"), clamav: ref("clamav") } }));
   melde(`Konfiguration angelegt: ${pfade.etc}`);
   // 6. Start ohne Pull
   const instanz: InstanzPfad = { projekt: plan.projekt, envDatei: pfade.envDatei, composeDateien: composeDateien(o.bundle) };
@@ -109,6 +113,12 @@ export function dockerInstallUmgebung(docker: Ausfuehrer, platzPfad: string): In
     async projekte() {
       const r = await mussGelingen(docker, ["compose", "ls", "-a", "--format", "json"], { timeoutMs: 60_000 });
       return (JSON.parse(r.stdout || "[]") as { Name: string }[]).map((p) => p.Name);
+    },
+    async subnetze() {
+      const ids = zeilen((await mussGelingen(docker, ["network", "ls", "-q"], { timeoutMs: 60_000 })).stdout);
+      if (!ids.length) return [];
+      const r = await mussGelingen(docker, ["network", "inspect", ...ids, "--format", "{{range .IPAM.Config}}{{.Subnet}} {{end}}"], { timeoutMs: 60_000 });
+      return r.stdout.split(/\s+/).filter(Boolean);
     },
     async volumes() { return zeilen((await mussGelingen(docker, ["volume", "ls", "--format", "{{.Name}}"], { timeoutMs: 60_000 })).stdout); },
     async ladeImage(archiv) { await mussGelingen(docker, ["load", "-i", archiv], { timeoutMs: 1_800_000 }); },

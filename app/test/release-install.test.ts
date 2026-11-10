@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { erzeugeRelease, signiereRelease, type Release } from "../src/betrieb/release.js";
-import { SECRETS, erzeugeSecrets, leseEnv, planeInstanz, pruefeKollision, pruefePlattform, schreibeEnv, type Bestand, type PlattformIst } from "../src/betrieb/install/plan.js";
+import { SECRETS, erzeugeSecrets, leseEnv, planeInstanz, planeVorneNetz, ueberlappt, pruefeKollision, pruefePlattform, schreibeEnv, type Bestand, type PlattformIst } from "../src/betrieb/install/plan.js";
 import { installiere, type InstallUmgebung } from "../src/betrieb/install/install.js";
 import { leseArgumente } from "../src/betrieb/install/argumente.js";
 
@@ -55,6 +55,25 @@ describe("Kollisionspruefung (Abnahme A2)", () => {
     const bestand = { ...leer, instanzen: [{ instanz: "kunde-b", httpsPort: 443, httpPort: 80 }] };
     expect(pruefeKollision(plan(), bestand)).toEqual(["Host-Port 443 wird bereits von Instanz kunde-b verwendet", "Host-Port 80 wird bereits von Instanz kunde-b verwendet"]);
     expect(pruefeKollision(plan(), { ...leer, instanzen: [{ instanz: "kunde-a" }] })).toEqual(["Instanz kunde-a ist bereits installiert (Konfiguration vorhanden)"]);
+  });
+});
+
+describe("Netz vorne (PP9-4)", () => {
+  it("waehlt das erste freie /29 und leitet feste Adressen fuer Proxy und api ab", () => {
+    expect(planeVorneNetz(leer)).toEqual({ subnetz: "172.31.240.0/29", proxy: "172.31.240.2", api: "172.31.240.3" });
+    expect(planeVorneNetz({ ...leer, subnetze: ["172.17.0.0/16", "172.31.240.0/29", "fd00::/64"] }).subnetz).toBe("172.31.240.8/29");
+    expect(planeVorneNetz({ ...leer, subnetze: ["172.31.240.0/24"], instanzen: [{ instanz: "kunde-b", vorneSubnetz: "172.31.241.0/29" }] }).subnetz).toBe("172.31.241.8/29");
+    expect(() => planeVorneNetz({ ...leer, subnetze: ["172.16.0.0/12"] })).toThrow(/Kein freies Subnetz/);
+  });
+  it("prueft ein gewuenschtes Subnetz: privat, hoechstens /29, Netzadresse, keine Ueberlappung", () => {
+    expect(planeVorneNetz(leer, "10.99.0.0/29")).toEqual({ subnetz: "10.99.0.0/29", proxy: "10.99.0.2", api: "10.99.0.3" });
+    expect(() => planeVorneNetz(leer, "10.99.0.0/30")).toThrow(/ungueltig/);
+    expect(() => planeVorneNetz(leer, "10.99.0.4/29")).toThrow(/ungueltig/);
+    expect(() => planeVorneNetz(leer, "8.8.8.0/29")).toThrow(/privat/);
+    expect(() => planeVorneNetz(leer, "kaputt")).toThrow(/ungueltig/);
+    expect(() => planeVorneNetz({ ...leer, subnetze: ["10.99.0.0/16"] }, "10.99.0.0/29")).toThrow(/ueberlappt/);
+    expect(ueberlappt("172.31.240.0/29", "172.31.240.8/29")).toBe(false);
+    expect(ueberlappt("172.31.240.0/29", "172.31.240.4/30")).toBe(true);
   });
 });
 
@@ -108,7 +127,7 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
     const aufrufe: string[] = [];
     const u: InstallUmgebung = {
       plattform: async () => ({ betriebssystem: "linux", architektur: "amd64", engine: "29.9.3", compose: "5.7.0", freiBytes: 200 * GIB, ramBytes: 8 * GIB, cpus: 4 }),
-      projekte: async () => [], volumes: async () => [],
+      projekte: async () => [], volumes: async () => [], subnetze: async () => ["172.17.0.0/16"],
       ladeImage: async (a) => { aufrufe.push(`load ${a.replace(/\\/g, "/").split("/").slice(-2).join("/")}`); },
       imageId: async (r) => release.images.find((i) => i.referenz === r)?.imageId ?? null,
       starte: async (i) => { aufrufe.push(`up ${i.projekt}`); },
@@ -145,7 +164,8 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
     expect(r).toMatchObject({ instanz: "kunde-a", projekt: "planora-kunde-a", baseURL: "https://localhost:18443", release: "1.0.0", setupToken: "TOKEN-123" });
     expect(aufrufe).toEqual(["load images/app.tar", "up planora-kunde-a", "sql planora_betrieb select count(*) from modul_sch", "sql planora_betrieb select betrieb_ereignis('insta", "setup-token"]);
     const env = leseEnv(join(dir, "etc", "kunde-a", "instanz.env"));
-    expect(env).toMatchObject({ PLANORA_INSTANZ: "kunde-a", PLANORA_RELEASE: "1.0.0", PLANORA_DOMAIN: "localhost", PLANORA_TLS: "internal", PLANORA_HTTPS_PORT: "18443", PLANORA_IMAGE_APP: "planora-app:1.0.0" });
+    expect(env).toMatchObject({ PLANORA_INSTANZ: "kunde-a", PLANORA_RELEASE: "1.0.0", PLANORA_DOMAIN: "localhost", PLANORA_TLS: "internal", PLANORA_HTTPS_PORT: "18443", PLANORA_IMAGE_APP: "planora-app:1.0.0",
+      PLANORA_VORNE_SUBNETZ: "172.31.240.0/29", PLANORA_PROXY_IP: "172.31.240.2", PLANORA_API_IP: "172.31.240.3" });
     // keine Geheimnisse in der Env-Datei, Secrets als Dateien daneben, Vertrauensanker kopiert
     const envText = readFileSync(join(dir, "etc", "kunde-a", "instanz.env"), "utf8");
     for (const n of SECRETS) expect(envText).not.toContain(readFileSync(join(dir, "etc", "kunde-a", "secrets", n), "utf8"));
@@ -166,6 +186,8 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
     expect(existsSync(join(dir, "etc", "kunde-b"))).toBe(false);
     const r = await installiere(optionen({ instanz: "kunde-b", backupZiel: "s3:https://s3.example.ch/b", httpsPort: 28443, httpPort: 28080 }), fake().u);
     expect(r.projekt).toBe("planora-kunde-b");
+    // eigenes Subnetz, auch wenn das Netz der ersten Instanz gerade nicht existiert
+    expect(leseEnv(join(dir, "etc", "kunde-b", "instanz.env")).PLANORA_VORNE_SUBNETZ).toBe("172.31.240.8/29");
     // getrennte Secrets
     expect(readFileSync(join(dir, "etc", "kunde-b", "secrets", "auth_secret"), "utf8")).not.toBe(readFileSync(join(dir, "etc", "kunde-a", "secrets", "auth_secret"), "utf8"));
   });

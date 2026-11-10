@@ -42,7 +42,9 @@ services:
     cap_drop: [ALL]
     cap_add: [NET_BIND_SERVICE]
     security_opt: ["no-new-privileges:true"]
-    networks: [aussen, vorne]
+    networks:
+      aussen: {}
+      vorne: { ipv4_address: "${PLANORA_PROXY_IP:?PLANORA_PROXY_IP fehlt}" }
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/bereit"]
       interval: 10s
@@ -58,13 +60,15 @@ services:
       <<: *app-env
       PLANORA_DIENST: api
       PLANORA_BASE_URL: ${PLANORA_BASE_URL:?PLANORA_BASE_URL fehlt (https://<domain>[:port])}
-      # Nur der eigene Caddy erreicht api (kein veroeffentlichter Port, Netze intern/vorne sind internal): seine Adresse
-      # liegt in einem privaten Docker-Bereich.
-      PLANORA_VERTRAUTE_PROXIES: ${PLANORA_VERTRAUTE_PROXIES:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+      # X-Forwarded-For gilt nur, wenn die Anfrage von genau der festen Adresse des eigenen Caddy im Netz vorne kommt
+      # (PP9-4). Jeder andere Peer (worker, db, weitere Container) zaehlt mit seiner Socket-Adresse.
+      PLANORA_VERTRAUTE_PROXIES: ${PLANORA_PROXY_IP}
     secrets: [db_app_passwort, auth_secret]
     volumes:
       - dokumente:/daten/dokumente
-    networks: [intern, vorne]
+    networks:
+      intern: {}
+      vorne: { ipv4_address: "${PLANORA_API_IP:?PLANORA_API_IP fehlt}" }
 
   worker:
     <<: *app
@@ -198,8 +202,11 @@ volumes:
 
 networks:
   aussen:              # nur proxy: veroeffentlichte Ports, ACME
-  vorne:               # proxy <-> api
+  vorne:               # proxy <-> api, eigenes kleines Subnetz mit festen Adressen (von `planora install` gewaehlt)
     internal: true
+    ipam:
+      config:
+        - subnet: "${PLANORA_VORNE_SUBNETZ:?PLANORA_VORNE_SUBNETZ fehlt}"
   intern:              # api/worker/migrator <-> db; kein Weg nach aussen
     internal: true
   signaturen:          # nur clamav (Profil scan): Signatur-Updates, abschaltbar (PO 6)

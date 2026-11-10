@@ -8,10 +8,44 @@ export type TlsModus = "acme" | "internal";
 export type InstallEingabe = {
   instanz: string; domain: string; tls: TlsModus; acmeKontakt?: string;
   httpsPort?: number; httpPort?: number; backupZiel?: string;
+  /** Subnetz des Netzes vorne (hoechstens /29, privat); ohne Angabe waehlt install ein freies */
+  vorneSubnetz?: string;
 };
 export type InstanzPlan = {
   instanz: string; projekt: string; domain: string; tlsWert: string; httpsPort: number; httpPort: number; baseURL: string; backupZiel?: string;
 };
+
+// --- Netz "vorne" (PP9-4): eigenes /29 je Instanz mit festen Adressen, damit api genau einer Proxy-Adresse vertraut.
+const ipZahl = (ip: string) => {
+  const t = ip.split(".").map(Number);
+  if (t.length !== 4 || t.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) throw new Error(`ungueltige IPv4-Adresse: ${ip}`);
+  return ((t[0] * 256 + t[1]) * 256 + t[2]) * 256 + t[3];
+};
+const zahlIp = (n: number) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".");
+/** [erste, letzte] Adresse eines IPv4-CIDR; null fuer IPv6 oder Unlesbares (wird beim Kollisionsvergleich ignoriert). */
+export function cidrBereich(cidr: string): [number, number] | null {
+  const m = /^(\d+\.\d+\.\d+\.\d+)\/(\d+)$/.exec(cidr.trim());
+  if (!m || Number(m[2]) > 32) return null;
+  try { const groesse = 2 ** (32 - Number(m[2])); const start = Math.floor(ipZahl(m[1]) / groesse) * groesse; return [start, start + groesse - 1]; } catch { return null; }
+}
+export const ueberlappt = (a: string, b: string) => { const x = cidrBereich(a), y = cidrBereich(b); return !!x && !!y && x[0] <= y[1] && y[0] <= x[1]; };
+/** Gateway = +1 (Docker), Proxy = +2, api = +3. */
+export function vorneAdressen(subnetz: string): { subnetz: string; proxy: string; api: string } {
+  const b = cidrBereich(subnetz);
+  if (!b || b[1] - b[0] < 7 || zahlIp(b[0]) !== subnetz.split("/")[0]) throw new Error(`Subnetz fuer das Netz vorne ungueltig (IPv4, hoechstens /29, Netzadresse): ${subnetz}`);
+  const privat = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"].some((p) => { const y = cidrBereich(p)!; return b[0] >= y[0] && b[1] <= y[1]; });
+  if (!privat) throw new Error(`Subnetz fuer das Netz vorne muss privat sein: ${subnetz}`);
+  return { subnetz, proxy: zahlIp(b[0] + 2), api: zahlIp(b[0] + 3) };
+}
+/** Erstes freies /29 aus 172.31.240.0/20, das kein vorhandenes Docker-Netz und keine andere Instanz ueberlappt. */
+export function waehleVorneSubnetz(belegt: string[]): string {
+  const [start, ende] = cidrBereich("172.31.240.0/20")!;
+  for (let n = start; n + 7 <= ende; n += 8) {
+    const kandidat = `${zahlIp(n)}/29`;
+    if (!belegt.some((b) => ueberlappt(kandidat, b))) return kandidat;
+  }
+  throw new Error("Kein freies Subnetz fuer das Netz vorne gefunden (172.31.240.0/20 belegt); --vorne-subnetz angeben");
+}
 
 export const projektName = (instanz: string) => `planora-${instanz}`;
 export const etcWurzel = () => process.env.PLANORA_ETC ?? "/etc/planora";
@@ -53,8 +87,22 @@ export type Bestand = {
   /** vorhandene Volumes (`docker volume ls`) */
   volumes: string[];
   /** bereits installierte Instanzen laut /etc/planora/<name>/instanz.env */
-  instanzen: { instanz: string; backupZiel?: string; httpsPort?: number; httpPort?: number }[];
+  instanzen: { instanz: string; backupZiel?: string; httpsPort?: number; httpPort?: number; vorneSubnetz?: string }[];
+  /** Subnetze vorhandener Docker-Netze (`docker network inspect`) */
+  subnetze?: string[];
 };
+
+/** Subnetz des Netzes vorne: Wunsch pruefen oder ein freies waehlen (frei = kein Docker-Netz, keine andere Instanz). */
+export function planeVorneNetz(bestand: Bestand, wunsch?: string) {
+  const belegt = [...(bestand.subnetze ?? []), ...bestand.instanzen.map((i) => i.vorneSubnetz).filter((s): s is string => !!s)];
+  if (wunsch) {
+    const a = vorneAdressen(wunsch);
+    const kollision = belegt.find((b) => ueberlappt(wunsch, b));
+    if (kollision) throw new Error(`Subnetz ${wunsch} ueberlappt ein vorhandenes Netz (${kollision})`);
+    return a;
+  }
+  return vorneAdressen(waehleVorneSubnetz(belegt));
+}
 
 /**
  * Abnahme A2: eine zweite Instanz darf nichts mit einer bestehenden teilen. Liefert alle Ablehnungsgruende (leer = ok).
@@ -161,8 +209,9 @@ export function schreibeEnv(datei: string, werte: Record<string, string | undefi
 }
 
 /** Inhalt von instanz.env: nur Konfiguration, keine Geheimnisse (die liegen als Dateien unter PLANORA_SECRETS). */
-export function envWerte(plan: InstanzPlan, o: { secrets: string; release: string; images: Partial<Record<"app" | "db" | "proxy" | "clamav", string>> }): Record<string, string | undefined> {
+export function envWerte(plan: InstanzPlan, o: { secrets: string; release: string; images: Partial<Record<"app" | "db" | "proxy" | "clamav", string>>; vorne: { subnetz: string; proxy: string; api: string } }): Record<string, string | undefined> {
   return {
+    PLANORA_VORNE_SUBNETZ: o.vorne.subnetz, PLANORA_PROXY_IP: o.vorne.proxy, PLANORA_API_IP: o.vorne.api,
     PLANORA_INSTANZ: plan.instanz, PLANORA_RELEASE: o.release, PLANORA_SECRETS: o.secrets.replace(/\\/g, "/"),
     PLANORA_DOMAIN: plan.domain, PLANORA_TLS: plan.tlsWert, PLANORA_HTTPS_PORT: String(plan.httpsPort), PLANORA_HTTP_PORT: String(plan.httpPort),
     PLANORA_BASE_URL: plan.baseURL, PLANORA_IMAGE_APP: o.images.app, PLANORA_IMAGE_DB: o.images.db, PLANORA_IMAGE_PROXY: o.images.proxy,

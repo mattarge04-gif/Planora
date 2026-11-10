@@ -140,6 +140,35 @@ describe.skipIf(!DOCKER_TESTS)("Compose-Paket (Docker)", () => {
     expect(fremd.status).toBe(403);
   });
 
+  it("PP9-4: X-Forwarded-For gilt nur vom Caddy; ein anderer interner Peer kann keine Client-IP behaupten", async () => {
+    const proxy = await inst.inspect("proxy"), api = await inst.inspect("api");
+    expect(proxy.NetworkSettings.Networks[`${inst.projekt}_vorne`].IPAddress).toBe(inst.vorne.proxy);
+    expect(api.NetworkSettings.Networks[`${inst.projekt}_vorne`].IPAddress).toBe(inst.vorne.api);
+    expect(api.Config.Env).toContain(`PLANORA_VERTRAUTE_PROXIES=${inst.vorne.proxy}`);
+    // Zaehler der Fehlversuchssperre je Client-IP: zeigt, welche Adresse api als Client angesehen hat
+    const zaehler = async () => new Map((await inst.sql("postgres", "select schluessel || '=' || anzahl from anmelde_fehlversuch where schluessel like 'ip:%'")).text
+      .split(/\r?\n/).filter(Boolean).map((z) => { const i = z.lastIndexOf("="); return [z.slice(0, i), Number(z.slice(i + 1))] as const; }));
+    const gestiegen = (vorher: Map<string, number>, nachher: Map<string, number>) => [...nachher].filter(([k, n]) => n > (vorher.get(k) ?? 0)).map(([k]) => k);
+    // negativ: Worker (Netz intern) ruft api direkt und behauptet eine fremde Client-IP
+    const z0 = await zaehler();
+    const skript = `fetch("http://api:3000/api/auth/sign-in/email",{method:"POST",headers:{"content-type":"application/json",origin:process.env.O,"x-forwarded-for":"203.0.113.23"},body:JSON.stringify({email:"peer@planora.invalid",password:"falsch-falsch-1"})}).then(r=>{console.log(r.status)})`;
+    const direkt = await inst.compose(["exec", "-T", "-e", `O=${inst.basis}`, "worker", "node", "-e", skript]);
+    expect(direkt.stdout.trim()).toBe("401");
+    const workerIp = (await inst.inspect("worker")).NetworkSettings.Networks[`${inst.projekt}_intern`].IPAddress as string;
+    const z1 = await zaehler();
+    expect(gestiegen(z0, z1)).toEqual([`ip:${workerIp}`]);
+    expect(z1.has("ip:203.0.113.23")).toBe(false);
+    // positiv: ueber Caddy zaehlt die Adresse, die Caddy als Client sieht – nicht die des Proxys und nicht ein vom Client gesetzter Header
+    const ueberCaddy = await https(inst.basis, "POST", "/api/auth/sign-in/email", { headers: { origin: inst.basis, "x-forwarded-for": "203.0.113.99" }, body: { email: "caddy@planora.invalid", password: "falsch-falsch-1" } });
+    expect(ueberCaddy.status).toBe(401);
+    const z2 = await zaehler();
+    const client = gestiegen(z1, z2);
+    expect(client).toHaveLength(1);
+    expect([`ip:${inst.vorne.proxy}`, "ip:203.0.113.99", `ip:${workerIp}`]).not.toContain(client[0]);
+    expect(z2.has(`ip:${inst.vorne.proxy}`)).toBe(false);
+    expect(z2.has("ip:203.0.113.99")).toBe(false);
+  });
+
   it("Wartungsschalter in Caddy: alle Routen 503 mit Wartungsseite, /api/health bleibt; Schalter aus → normal", async () => {
     await inst.compose(["exec", "-T", "proxy", "sh", "-c", "mkdir -p /data/wartung && touch /data/wartung/aktiv"]);
     try {
