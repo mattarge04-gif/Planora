@@ -8,7 +8,9 @@ import { frischeDb } from "./hilfe.js";
 import { dateiAblage, speichereUndReferenziere } from "../src/ablage/ablage.js";
 import { sichern } from "../src/betrieb/backup/satz.js";
 import type { Prozess } from "../src/betrieb/backup/prozess.js";
-import type { Manifest } from "../src/betrieb/backup/manifest.js";
+import { snapshotAbgleichen, type Manifest } from "../src/betrieb/backup/manifest.js";
+import { promisify } from "node:util";
+import { execFile } from "node:child_process";
 let db: Awaited<ReturnType<typeof frischeDb>>, betrieb: pg.Pool;
 const ordner: string[] = [];
 beforeAll(async () => { db = await frischeDb(); betrieb = new pg.Pool({ ...db.cfg, options: "-c role=planora_betrieb" }); });
@@ -80,4 +82,45 @@ it.each([["2026-11-01T00:00:00Z","--read-data"],["2026-11-02T00:00:00Z","--read-
   u.optionen.lauf=async(a)=>{if(a.programm==="restic"&&a.args[0]==="check")args=a.args;return original(a);};
   await sichern({...u.optionen,jetzt:()=>new Date(zeit)});
   expect(args).toEqual(["check",option]);
+});
+it("meldet Exporter-Verlust waehrend pg_dump fehlgeschlagen",async()=>{
+  const u=await umgebung();const original=u.optionen.lauf;
+  u.optionen.lauf=async(a)=>{
+    if(a.programm==="pg_dump"){
+      await db.pool.query("select pg_terminate_backend(pid) from pg_stat_activity where application_name='planora-test-exporter'");
+      await new Promise((r)=>setTimeout(r,10));return{code:0,stdout:""};
+    }return original(a);
+  };
+  await expect(sichern({...u.optionen,backupDb:{...u.optionen.backupDb,application_name:"planora-test-exporter"}})).rejects.toThrow();
+  expect((await db.pool.query("select zustand from backup_lauf")).rows[0].zustand).toBe("fehlgeschlagen");
+});
+it("bricht bei Heartbeat-Verlust ab und kann danach neu starten",async()=>{
+  const u=await umgebung();const original=u.optionen.lauf;
+  u.optionen.lauf=async(a)=>{const r=await original(a);if(a.programm==="pg_dump")await new Promise((r)=>setTimeout(r,25));return r;};
+  const kaputt={query:async(sql:string,werte:unknown[])=>{if(sql.includes("backup_lauf_heartbeat"))throw new Error("Steuerverbindung weg");return betrieb.query(sql,werte);}} as unknown as pg.Pool;
+  await expect(sichern({...u.optionen,betrieb:kaputt,heartbeatMs:5})).rejects.toThrow(/Heartbeat/);
+  const neu=await umgebung();expect((await sichern(neu.optionen)).zustand).toBe("geprueft");
+});
+it("wartet beim Registrieren auf den exklusiven GC-Lock",async()=>{
+  const u=await umgebung(),c=await db.pool.connect();let lauf:Promise<unknown>|undefined;
+  try{
+    await c.query("select pg_advisory_lock(7310002)");lauf=sichern(u.optionen);
+    let wartet=false;
+    for(let i=0;i<100;i++){
+      if((await db.pool.query("select 1 from pg_locks where locktype='advisory' and objid=7310002 and not granted")).rowCount){wartet=true;break;}
+      await new Promise((r)=>setTimeout(r,5));
+    }
+    expect(wartet).toBe(true);expect(u.aufrufe).toEqual([]);
+    expect((await db.pool.query("select count(*)::int n from backup_lauf")).rows[0].n).toBe(0);
+  }finally{await c.query("select pg_advisory_unlock(7310002)");c.release();await lauf;}
+});
+it.each(["groesse","doppelt","zusaetzlich"])("verweigert restic-ls-Abweichung %s",async(art)=>{
+  const u=await umgebung();await sichern(u.optionen);const m=u.manifest()!;
+  const dateien=[...m.dateien.map((d)=>({type:"file",path:`${m.satzPfad}/dokumente/${d.schluessel}`,size:d.groesse})),...m.bestandteile.map((d)=>({type:"file",path:`${m.satzPfad}/${d.schluessel}`,size:d.groesse})),{type:"file",path:`${m.satzPfad}/manifest.json`,size:1}];
+  if(art==="groesse")dateien[0].size++;else if(art==="doppelt")dateien.push(dateien[0]);else dateien.push({type:"file",path:"/fremd",size:1});
+  expect(()=>snapshotAbgleichen(dateien.map((d)=>JSON.stringify(d)).join("\n"),m)).toThrow();
+});
+it("liefert bei CLI-Fehler Exit ungleich Null und kein Erfolgs-JSON",async()=>{
+  try{await promisify(execFile)(process.execPath,["--import","tsx","src/betrieb/backup/cli.ts","ungueltig"]);throw new Error("CLI erfolgreich");}
+  catch(e){const r=e as {code:number;stdout:string;stderr:string};expect(r.code).toBe(1);expect(r.stdout).not.toContain('"zustand":"geprueft"');expect(r.stderr).toContain("fehlgeschlagen");}
 });

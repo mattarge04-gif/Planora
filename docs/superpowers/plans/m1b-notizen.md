@@ -14,3 +14,4 @@
 - PP9b-2: Monatliche Vollpruefung explizit mit `restic check --read-data`; beide Kalenderzweige getestet.
 - PP9b-3: Docker-Testprojekt per `PLANORA_TEST_PROJEKT=planora-b[-suffix]`, DB-Port per `PLANORA_TEST_DBPORT` parametrierbar. Exklusiver Host-Testlock, freie Portprobe und Pruefung auf vorhandene Container/Volumes/Netze vor Mutationen; Cleanup nur nach eigener Projektanlage.
 - PP9b-4: Echter Docker-Nachweis mit zwei Dateien und Tabellenlock-Barriere im realen `pg_dump`: Referenzwechsel erst waehrend der Dump nach Snapshot-Import wartet; Manifest und restaurierter Dump zeigen beide die alte Referenz, die Live-DB die neue.
+- PP9b-5: Negativtests fuer Exporter-Kill, Heartbeat-Verlust und Folgelauf, exklusiven GC-Lock vor Backup-Start, CLI-Exitcode ohne Erfolgs-JSON und restic-ls mit falscher Groesse, doppelten und zusaetzlichen Dateien.
