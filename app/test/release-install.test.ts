@@ -162,7 +162,7 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
     const { u, aufrufe } = fake();
     const r = await installiere(optionen(), u);
     expect(r).toMatchObject({ instanz: "kunde-a", projekt: "planora-kunde-a", baseURL: "https://localhost:18443", release: "1.0.0", setupToken: "TOKEN-123" });
-    expect(aufrufe).toEqual(["load images/app.tar", "up planora-kunde-a", "sql planora_betrieb select count(*) from modul_sch", "sql planora_betrieb select betrieb_ereignis('insta", "setup-token"]);
+    expect(aufrufe).toEqual(["load images/app.tar", "up planora-kunde-a", "sql planora_app select count(*) from modul_sch", "sql planora_betrieb select betrieb_ereignis('insta", "setup-token"]);
     const env = leseEnv(join(dir, "etc", "kunde-a", "instanz.env"));
     expect(env).toMatchObject({ PLANORA_INSTANZ: "kunde-a", PLANORA_RELEASE: "1.0.0", PLANORA_DOMAIN: "localhost", PLANORA_TLS: "internal", PLANORA_HTTPS_PORT: "18443", PLANORA_IMAGE_APP: `planora-app:1.0.0@${ID("a")}`,
       PLANORA_VORNE_SUBNETZ: "172.31.240.0/29", PLANORA_PROXY_IP: "172.31.240.2", PLANORA_API_IP: "172.31.240.3" });

@@ -84,13 +84,14 @@ export async function installiere(o: InstallOptionen, u: InstallUmgebung): Promi
   erzeugeSecrets(pfade.secrets);
   copyFileSync(o.schluessel, pfade.schluessel);
   const ref = (d: string) => release.images.find((i) => i.dienst === d)?.referenz;
-  schreibeEnv(pfade.envDatei, envWerte(plan, { secrets: pfade.secrets, release: release.version, vorne, images: { app: ref("app"), db: ref("db"), proxy: ref("proxy"), clamav: ref("clamav") } }));
+  schreibeEnv(pfade.envDatei, { ...envWerte(plan, { secrets: pfade.secrets, release: release.version, vorne, images: { app: ref("app"), db: ref("db"), proxy: ref("proxy"), clamav: ref("clamav") } }), PLANORA_BUNDLE_DIR: resolve(o.bundle), PLANORA_BACKUP_IMAGE: ref("backup") });
+  copyFileSync(join(o.bundle, "release.json"), join(pfade.etc, "release.json"));
   melde(`Konfiguration angelegt: ${pfade.etc}`);
   // 6. Start ohne Pull
   const instanz: InstanzPfad = { projekt: plan.projekt, envDatei: pfade.envDatei, composeDateien: composeDateien(o.bundle) };
   await u.starte(instanz);
   // 7. Installationsprofil P1 (Kern Stufe 1): alle Optionen aus (ADR 0029). Pruefen statt annehmen, dann auditieren.
-  const aktiv = Number(await u.sql(instanz, "planora_betrieb", "select count(*) from modul_schalter where aktiv"));
+  const aktiv = Number(await u.sql(instanz, "planora_app", "select count(*) from modul_schalter where aktiv"));
   if (aktiv !== 0) throw new Error(`Profil P1 verletzt: ${aktiv} Option(en) aktiv`);
   await u.sql(instanz, "planora_betrieb", `select betrieb_ereignis('install', jsonb_build_object('release', '${release.version.replace(/'/g, "''")}', 'profil', 'P1'))`);
   // 8. Setup-Token (15 min) fuer den Erstadmin
