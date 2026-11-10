@@ -80,7 +80,8 @@ services:
     healthcheck: { disable: true }
     stop_grace_period: 60s
 
-  # Einmaliger Lauf, einzige Rolle mit DDL. api/worker starten erst nach Exit 0.
+  # Einmaliger Lauf. Einziger Dienst mit dem Passwort von planora_migrator, der einzigen Login-Rolle, die in die
+  # Eigentuemerrolle planora_owner (NOLOGIN) wechseln darf: DDL gibt es nur hier. api/worker starten erst nach Exit 0.
   migrator:
     <<: *app
     restart: "no"
@@ -94,6 +95,7 @@ services:
     healthcheck: { disable: true }
 
   # Host-Konsole (Spec §5): nur per `docker compose --profile konsole run --rm -T konsole setup-token|erstadmin`.
+  # Rolle planora_betrieb: nur die SECURITY-DEFINER-Funktionen aus 008, kein DDL, kein Eigentuemer-/Migrator-Passwort (PP9-3).
   konsole:
     <<: *app
     profiles: [konsole]
@@ -103,7 +105,7 @@ services:
     environment:
       <<: *app-env
       PLANORA_DIENST: konsole
-    secrets: [db_migrator_passwort]
+    secrets: [db_betrieb_passwort]
     healthcheck: { disable: true }
 
   db:
@@ -160,15 +162,19 @@ configs:
       \set migrator `cat /run/secrets/db_migrator_passwort`
       \set backup `cat /run/secrets/db_backup_passwort`
       \set betrieb `cat /run/secrets/db_betrieb_passwort`
-      create role planora_migrator login password :'migrator';
+      -- planora_owner besitzt Datenbank, Schema und alle Objekte und hat kein Login (Spec §5, ADR 0031).
+      create role planora_owner nologin;
+      -- planora_migrator ist die einzige Login-Rolle, die per SET ROLE Eigentuemer werden darf; selbst erbt sie nichts.
+      create role planora_migrator login noinherit password :'migrator';
+      grant planora_owner to planora_migrator with inherit false, set true;
       create role planora_app login password :'app';
       create role planora_backup login password :'backup';
       create role planora_betrieb login password :'betrieb';
-      -- planora_migrator besitzt Datenbank und Schema (einzige Rolle mit DDL) und darf pg_read_all_data weitergeben (001).
-      alter database planora owner to planora_migrator;
-      grant pg_read_all_data to planora_migrator with admin true, inherit false, set false;
+      alter database planora owner to planora_owner;
+      -- 001 gibt pg_read_all_data an planora_backup weiter: dafuer braucht der Eigentuemer nur die ADMIN-Option.
+      grant pg_read_all_data to planora_owner with admin true, inherit false, set false;
       revoke connect on database planora from public;
-      grant connect on database planora to planora_app, planora_backup, planora_betrieb;
+      grant connect on database planora to planora_migrator, planora_app, planora_backup, planora_betrieb;
 
 # Datei-Secrets sind Bind-Mounts mit den Rechten des Hosts (Modus 600). Deshalb liegt je Empfaenger eine Kopie mit
 # passendem Eigentuemer vor: secrets/db/ (postgres, UID 999) und secrets/app/ (node, UID 1000); `planora install` legt sie an.
@@ -179,6 +185,7 @@ secrets:
   dbinit_backup_passwort: { file: "${PLANORA_SECRETS}/db/db_backup_passwort" }
   dbinit_betrieb_passwort: { file: "${PLANORA_SECRETS}/db/db_betrieb_passwort" }
   db_app_passwort: { file: "${PLANORA_SECRETS}/app/db_app_passwort" }
+  db_betrieb_passwort: { file: "${PLANORA_SECRETS}/app/db_betrieb_passwort" }
   db_migrator_passwort: { file: "${PLANORA_SECRETS}/app/db_migrator_passwort" }
   auth_secret: { file: "${PLANORA_SECRETS}/app/auth_secret" }
 

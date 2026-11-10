@@ -53,16 +53,35 @@ describe.skipIf(!DOCKER_TESTS)("Compose-Paket (Docker)", () => {
     expect(Object.keys(db.NetworkSettings.Networks)).toEqual([`${inst.projekt}_intern`]);
   });
 
-  it("DB-Rollen: Login-Rollen aus Secret-Dateien, keine ist Superuser, planora_app ohne DDL, planora_migrator besitzt die Tabellen", async () => {
+  it("DB-Rollen (PP9-3): planora_owner NOLOGIN besitzt alles; DDL nur ueber den Rollenwechsel des Migrators; app/betrieb/konsole ohne DDL", async () => {
     const rollen = (await inst.sql("postgres", "select rolname || ':' || rolcanlogin || ':' || rolsuper from pg_roles where rolname like 'planora%' order by 1")).text.split(/\r?\n/);
-    expect(rollen).toEqual(["planora_app:true:false", "planora_backup:true:false", "planora_betrieb:true:false", "planora_migrator:true:false"]);
-    expect((await inst.sql("postgres", "select distinct tableowner from pg_tables where schemaname='public'")).text).toBe("planora_migrator");
-    const ddl = await inst.sql("planora_app", "create table darf_nicht(x int)", { erlaubeFehler: true });
-    expect(ddl.code).not.toBe(0);
-    expect(ddl.stderr).toMatch(/permission denied/);
-    // api verbindet sich wirklich als planora_app (nicht als Eigentuemer)
+    expect(rollen).toEqual(["planora_app:true:false", "planora_backup:true:false", "planora_betrieb:true:false", "planora_migrator:true:false", "planora_owner:false:false"]);
+    expect((await inst.sql("postgres", "select distinct tableowner from pg_tables where schemaname='public'")).text).toBe("planora_owner");
+    expect((await inst.sql("postgres", "select pg_get_userbyid(datdba) from pg_database where datname='planora'")).text).toBe("planora_owner");
+    expect((await inst.sql("postgres", "select distinct pg_get_userbyid(proowner) from pg_proc where pronamespace='public'::regnamespace")).text).toBe("planora_owner");
+    // nur planora_migrator darf in die Eigentuemerrolle wechseln
+    expect((await inst.sql("postgres", "select string_agg(member::regrole::text, ',') from pg_auth_members where roleid='planora_owner'::regrole")).text).toBe("planora_migrator");
+    for (const rolle of ["planora_app", "planora_betrieb", "planora_backup", "planora_migrator"]) {
+      const ddl = await inst.sql(rolle, "create table darf_nicht(x int)", { erlaubeFehler: true });
+      expect(ddl.code, rolle).not.toBe(0);
+      expect(ddl.stderr, rolle).toMatch(/permission denied/);
+    }
+    for (const rolle of ["planora_app", "planora_betrieb", "planora_backup"]) {
+      const wechsel = await inst.sql(rolle, "set role planora_owner", { erlaubeFehler: true });
+      expect(wechsel.code, rolle).not.toBe(0);
+    }
+    // der Migrator kommt nur ueber den ausdruecklichen Rollenwechsel zu DDL (und nimmt die Probe wieder weg)
+    expect((await inst.sql("planora_migrator", "set role planora_owner; create table ddl_probe(x int); drop table ddl_probe; select current_user")).text.split(/\r?\n/).pop()).toBe("planora_owner");
+    // planora_owner kann sich nicht anmelden (auch nicht mit einem bekannten Passwort)
+    const login = await inst.compose(["exec", "-T", "db", "sh", "-c", 'PGPASSWORD="$(cat /run/secrets/db_migrator_passwort)" psql -X -h 127.0.0.1 -U planora_owner -d planora -Atc "select 1"'], { erlaubeFehler: true });
+    expect(login.code).not.toBe(0);
+    // api/worker verbinden sich als planora_app; die Konsole bekommt nur das Passwort der Betriebsrolle
     const nutzer = (await inst.sql("postgres", "select distinct usename from pg_stat_activity where application_name in ('planora-api','planora-worker')")).text;
     expect(nutzer).toBe("planora_app");
+    const konsole = await inst.compose(["--profile", "konsole", "run", "--rm", "-T", "--entrypoint", "ls", "konsole", "/run/secrets"]);
+    expect(konsole.stdout.trim().split(/\r?\n/)).toEqual(["db_betrieb_passwort"]);
+    const api = await inst.compose(["exec", "-T", "api", "ls", "/run/secrets"]);
+    expect(api.stdout.trim().split(/\r?\n/).sort()).toEqual(["auth_secret", "db_app_passwort"]);
   });
 
   it("PP9-1: jede Rolle meldet sich ueber TCP mit dem Passwort aus ihrer Secret-Datei an; falsches Passwort scheitert", async () => {
