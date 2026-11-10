@@ -40,6 +40,15 @@ describe.skipIf(!DOCKER_TESTS)("Compose-Paket (Docker)", () => {
     const ps = (await inst.compose(["ps", "--format", "{{.Service}}|{{.Ports}}"])).stdout.trim().split(/\r?\n/);
     const veroeffentlicht = ps.filter((z) => z.includes("->")).map((z) => z.split("|")[0]);
     expect(veroeffentlicht).toEqual(["proxy"]);
+    // PP9-8: auch der Proxy laeuft unprivilegiert und ohne zusaetzliche Capabilities
+    const proxy = await inst.inspect("proxy");
+    expect(proxy.Config.User).toBe("1001:1001");
+    expect(proxy.HostConfig.CapAdd ?? []).toEqual([]);
+    expect(proxy.HostConfig.CapDrop).toEqual(["ALL"]);
+    expect(proxy.HostConfig.ReadonlyRootfs).toBe(true);
+    expect((await inst.compose(["exec", "-T", "proxy", "sh", "-c", "id -u; stat -c %u /data /data/wartung"])).stdout.trim().split(/\r?\n/)).toEqual(["1001", "1001", "1001"]);
+    const init = await inst.inspect("proxy-init");
+    expect([init.State.Status, init.State.ExitCode, init.HostConfig.NetworkMode]).toEqual(["exited", 0, "none"]);
     const api = await inst.inspect("api");
     expect(api.Config.User).toBe("node");
     expect(api.HostConfig.ReadonlyRootfs).toBe(true);

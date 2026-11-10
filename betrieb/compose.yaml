@@ -18,12 +18,34 @@ x-app-env: &app-env
   PLANORA_DB_NAME: planora
   PLANORA_STUFE: ${PLANORA_STUFE:-1}
 
+x-proxy-image: &proxy-image ${PLANORA_IMAGE_PROXY:-caddy:2.11.9-alpine@sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9}
+
 services:
+  # Einmaliger Lauf vor dem Proxy: uebergibt das Volume caddy-data der unprivilegierten Proxy-UID 1001 (PP9-8).
+  # Ohne Netz, einzige Faehigkeit CHOWN.
+  proxy-init:
+    image: *proxy-image
+    restart: "no"
+    user: "0:0"
+    entrypoint: ["sh", "-c", "mkdir -p /data/wartung && chown -R 1001:1001 /data"]
+    volumes:
+      - caddy-data:/data
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN]
+    security_opt: ["no-new-privileges:true"]
+
   proxy:
-    image: ${PLANORA_IMAGE_PROXY:-caddy:2.11.9-alpine@sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9}
+    image: *proxy-image
     restart: unless-stopped
+    # Unprivilegiert: Ports 80/443 im Container ohne Root und ohne Capability (net.ipv4.ip_unprivileged_port_start=0).
+    user: "1001:1001"
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: "0"
     depends_on:
       api: { condition: service_healthy }
+      proxy-init: { condition: service_completed_successfully }
     # Einziger Dienst mit veroeffentlichten Ports: 443, dazu 80 fuer ACME und die Umleitung auf HTTPS.
     ports:
       - "${PLANORA_HTTPS_PORT:-443}:443"
@@ -37,10 +59,9 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./wartung.html:/srv/wartung/wartung.html:ro
       - caddy-data:/data            # Zertifikate/ACME-Konto und der Wartungsschalter /data/wartung/aktiv
-    tmpfs: [/config]
+    tmpfs: ["/config:uid=1001,gid=1001,mode=0700"]
     read_only: true
     cap_drop: [ALL]
-    cap_add: [NET_BIND_SERVICE]
     security_opt: ["no-new-privileges:true"]
     networks:
       aussen: {}
