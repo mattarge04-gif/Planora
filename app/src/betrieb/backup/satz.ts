@@ -9,6 +9,7 @@ export type SicherungsOptionen = {
   betrieb: pg.Pool; backupDb: pg.ClientConfig; pgEnv: NodeJS.ProcessEnv;
   resticEnv: NodeJS.ProcessEnv; dokumente: string; staging: string; release: string;
   konfiguration: Record<string, unknown>; anlass: string; lauf?: Prozess; heartbeatMs?: number;
+  jetzt?: () => Date;
 };
 export async function sichern(o: SicherungsOptionen) {
   if (!o.release) throw new Error("Release fehlt");
@@ -62,7 +63,7 @@ export async function sichern(o: SicherungsOptionen) {
     const inhalt = await schritt("restic", ["ls", "--json", snapshotId], { env: o.resticEnv });
     snapshotAbgleichen(inhalt,manifest);
     // [A] Vollpruefung am ersten Monatstag, sonst 5 Prozent (Spec 7.1).
-    await schritt("restic", ["check", ...(new Date().getUTCDate() === 1 ? [] : ["--read-data-subset=5%"] )], { env: o.resticEnv });
+    await schritt("restic", ["check", ...((o.jetzt?.() ?? new Date()).getUTCDate() === 1 ? ["--read-data"] : ["--read-data-subset=5%"] )], { env: o.resticEnv });
     abbruch.signal.throwIfAborted();
     if (heartbeat) clearInterval(heartbeat); await heartbeatArbeit;
     abbruch.signal.throwIfAborted();

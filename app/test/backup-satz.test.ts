@@ -75,3 +75,9 @@ it("verweigert fehlende und veraenderte Manifest-Dateien", async () => {
     await expect(sichern(u.optionen)).rejects.toThrow();
   }
 });
+it.each([["2026-11-01T00:00:00Z","--read-data"],["2026-11-02T00:00:00Z","--read-data-subset=5%"]])("liest am %s die vorgesehenen Repository-Daten",async(zeit,option)=>{
+  const u=await umgebung();const original=u.optionen.lauf;let args:string[]=[];
+  u.optionen.lauf=async(a)=>{if(a.programm==="restic"&&a.args[0]==="check")args=a.args;return original(a);};
+  await sichern({...u.optionen,jetzt:()=>new Date(zeit)});
+  expect(args).toEqual(["check",option]);
+});
