@@ -6,19 +6,33 @@ import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import pg from "pg";
+import { createServer } from "node:net";
 import { migriere } from "../src/db/migrator.js";
 const exec=promisify(execFile);
 const docker=process.env.PLANORA_DOCKER ?? (process.platform==="win32" ? "C:/Program Files/Docker/Docker/resources/bin/docker.exe" : "docker");
 let ziel: string, pool: pg.Pool;
+const projekt=process.env.PLANORA_TEST_PROJEKT ?? "planora-b";
+const dbPort=Number(process.env.PLANORA_TEST_DBPORT ?? "25432");
+let projektAngelegt=false, sperre: Awaited<ReturnType<typeof fs.open>>|undefined;
+const sperrPfad=join(tmpdir(),`planora-dockertest-${projekt}.lock`);
 const pw=randomBytes(24).toString("hex"), betriebPw=randomBytes(24).toString("hex"), backupPw=randomBytes(24).toString("hex");
 const env={...process.env,PLANORA_TEST_PW:pw,PLANORA_TEST_RESTIC_PW:randomBytes(24).toString("hex"),PLANORA_TEST_BETRIEB_DB:`postgres://planora_betrieb:${betriebPw}@db:5432/planora`,PLANORA_TEST_BACKUP_DB:`postgres://planora_backup:${backupPw}@db:5432/planora`,PLANORA_TEST_ZIEL:"",PLANORA_TEST_RECOVERY_EMPFAENGER:""};
-async function compose(...args:string[]) { return (await exec(docker,["compose","-p","planora-b","-f",resolve("test-docker/backup-umgebung.yaml"),...args],{env,maxBuffer:16*1024*1024})).stdout; }
+async function compose(...args:string[]) { return (await exec(docker,["compose","-p",projekt,"-f",resolve("test-docker/backup-umgebung.yaml"),...args],{env,maxBuffer:16*1024*1024})).stdout; }
 async function werkzeug(...args:string[]) { return compose("run","--rm","--no-deps","--entrypoint",args[0],"backup",...args.slice(1)); }
 describe.runIf(process.env.PLANORA_DOCKER_TEST === "b")("Backup-Container", () => {
 beforeAll(async () => {
+  if (!/^planora-b(?:-[a-z0-9-]+)?$/.test(projekt) || !Number.isInteger(dbPort) || dbPort<1024 || dbPort>65535) throw new Error("Ungueltige Testisolation");
+  sperre=await fs.open(sperrPfad,"wx",0o600);
+  for (const args of [["ps","-aq"],["volume","ls","-q"],["network","ls","-q"]]) {
+    const r=await exec(docker,[...args,"--filter",`label=com.docker.compose.project=${projekt}`],{env});
+    if (r.stdout.trim()) throw new Error("Compose-Projekt bereits belegt; keine Ressourcen veraendert");
+  }
+  const portProbe=createServer();
+  await new Promise<void>((resolve,reject)=>{portProbe.once("error",reject);portProbe.listen({host:"127.0.0.1",port:dbPort,exclusive:true},resolve);});
+  await new Promise<void>((resolve,reject)=>portProbe.close((e)=>e?reject(e):resolve()));
   ziel=await fs.mkdtemp(join(tmpdir(),"planora-b-ziel-")); env.PLANORA_TEST_ZIEL=ziel;
-  await compose("build","backup"); await compose("up","-d","--wait","db");
-  const cfg={host:"127.0.0.1",port:25432,user:"postgres",password:pw,database:"planora"};
+  await compose("build","backup"); projektAngelegt=true; await compose("up","-d","--wait","db");
+  const cfg={host:"127.0.0.1",port:dbPort,user:"postgres",password:pw,database:"planora"};
   await migriere(cfg); pool=new pg.Pool(cfg);
   // Passwoerter pro Testlauf zufaellig; keine festen Test-Secrets im Repository.
   await pool.query(`alter role planora_betrieb login password '${betriebPw}'; alter role planora_backup login password '${backupPw}'`);
@@ -26,7 +40,10 @@ beforeAll(async () => {
   await werkzeug("age-keygen","-o","/ziel/recovery.key");
   env.PLANORA_TEST_RECOVERY_EMPFAENGER=(await werkzeug("age-keygen","-y","/ziel/recovery.key")).trim();
 });
-afterAll(async () => { await pool?.end(); await compose("down","-v"); if (ziel) await fs.rm(ziel,{recursive:true,force:true}); });
+afterAll(async () => {
+  try {await pool?.end();if(projektAngelegt)await compose("down","-v");if(ziel)await fs.rm(ziel,{recursive:true,force:true});}
+  finally {if(sperre){await sperre.close();await fs.rm(sperrPfad,{force:true});}}
+});
 it("sichert unter Minimalrollen einen echten pg_dump in restic",async () => {
   const ausgabe=await compose("run","--rm","backup","sichern","--anlass","test");
   const r=JSON.parse(ausgabe.trim().split("\n").at(-1)!);
