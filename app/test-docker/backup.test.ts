@@ -22,7 +22,7 @@ async function compose(...args:string[]) { return (await exec(docker,["compose",
 async function werkzeug(...args:string[]) { return compose("run","--rm","--no-deps","--entrypoint",args[0],"backup",...args.slice(1)); }
 describe.runIf(process.env.PLANORA_DOCKER_TEST === "b")("Backup-Container", () => {
 beforeAll(async () => {
-  if (!/^planora-b(?:-[a-z0-9-]+)?$/.test(projekt) || !Number.isInteger(dbPort) || dbPort<1024 || dbPort>65535) throw new Error("Ungueltige Testisolation");
+  if (!/^[a-z0-9][a-z0-9_-]*$/.test(projekt) || !Number.isInteger(dbPort) || dbPort<1024 || dbPort>65535) throw new Error("Ungueltige Testisolation");
   sperre=await fs.open(sperrPfad,"wx",0o600);
   for (const args of [["ps","-aq"],["volume","ls","-q"],["network","ls","-q"]]) {
     const r=await exec(docker,[...args,"--filter",`label=com.docker.compose.project=${projekt}`],{env});
