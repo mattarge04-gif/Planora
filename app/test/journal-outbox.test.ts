@@ -11,7 +11,7 @@ afterAll(async () => {await pool.end();await db.ende();});
 beforeEach(async () => {await db.pool.query("truncate loesch_journal; update journal_zaehler set seq=0");});
 function umgebung() {
   const objekte=new Map<string,Buffer>(), reihenfolge:string[]=[], alarme:string[]=[];
-  const ziel:Ziel={lese:async(k) => {if(!objekte.has(k))throw new Error("fehlt");return objekte.get(k)!;},liste:async(p)=>[...objekte.keys()].filter((k)=>k.startsWith(p+"/")),schreibe:async(k,d,fest)=>{reihenfolge.push(k);if(!fest||!objekte.has(k))objekte.set(k,d);return objekte.get(k)!;}};
+  const ziel:Ziel={lese:async(k) => {if(!objekte.has(k))throw new Error("fehlt");return objekte.get(k)!;},liste:async(p)=>[...objekte.keys()].filter((k)=>k.startsWith(p+"/")),schreibe:async(k,d,fest)=>{reihenfolge.push(k);if(!fest||!objekte.has(k))objekte.set(k,d);return objekte.get(k)!;},loesche:async(k)=>{objekte.delete(k);}};
   // Simuliert zufaellige age-Ciphertexte: bei Retry duerfen andere Bytes nicht quittiert werden.
   const verschluesseln=async(d:Buffer) => Buffer.from(JSON.stringify({zufall:randomUUID(),daten:d.toString("base64")}));
   return {objekte,reihenfolge,alarme,o:{pool,ziel,verschluesseln,alarm:(s:string)=>alarme.push(s)}};

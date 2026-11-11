@@ -1,12 +1,14 @@
 import { promises as fs } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
-import { S3Client, GetObjectCommand, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, PutObjectCommand, ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 export type Ziel = {
   lese(schluessel: string): Promise<Buffer>;
   /** Liefert bei unveraenderlichen Objekten die bereits vorhandenen Bytes zur Inhaltspruefung. */
   schreibe(schluessel: string, daten: Buffer, unveraenderlich: boolean): Promise<Buffer>;
   liste(prefix: string): Promise<string[]>;
+  /** Nur fuer die Retention (Inventar entfernter Saetze, nicht mehr benoetigte Journal-Objekte); fehlend ist kein Fehler. */
+  loesche(schluessel: string): Promise<void>;
 };
 function pruefe(s: string) {
   if (!/^[a-zA-Z0-9_./-]+$/.test(s) || s.startsWith("/") || s.split("/").some((t) => t === ".." || t === "." || !t)) throw new Error("Ungueltiger Zielschluessel");
@@ -50,6 +52,7 @@ export function lokalesZiel(wurzel: string): Ziel {
       }
       await besuche(start,prefix); return ergebnis.sort();
     },
+    async loesche(s) { await fs.rm(await pfad(s),{force:true}); },
   }; return ziel;
 }
 /** [A] Echter CH-S3-Endpunkt noch ungetestet; nur HTTPS und bedingtes PUT zulassen. */
@@ -77,5 +80,6 @@ export function s3Ziel(o: { endpoint: string; region: string; bucket: string; ac
       } while (token);
       return result.sort();
     },
+    async loesche(s) { pruefe(s); await client.send(new DeleteObjectCommand({Bucket:o.bucket,Key:s})); },
   }; return ziel;
 }

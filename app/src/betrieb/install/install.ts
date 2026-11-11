@@ -10,6 +10,7 @@ import { reconcileHost } from "../host.js";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { pruefeComposeBindung } from "../update/compose.js";
+import { legeKundenzertifikatAb, pruefeKundenzertifikat } from "./zertifikat.js";
 
 export interface InstallUmgebung {
   plattform(): Promise<PlattformIst>;
@@ -33,6 +34,8 @@ export type InstallOptionen = InstallEingabe & {
   /** Oeffentlicher Release-Schluessel (Vertrauensanker); wird nach /etc/planora/<instanz>/release.pub kopiert */
   schluessel: string;
   recoveryEmpfaenger?: string;
+  /** Nur --tls kundenzertifikat: PEM-Kette (Blatt zuerst) und unverschluesselter PEM-Schluessel des Kunden */
+  tlsZertifikat?: string; tlsSchluessel?: string;
   melde?: (text: string) => void;
 };
 export type InstallErgebnis = { instanz: string; projekt: string; baseURL: string; release: string; envDatei: string; setupToken: string; warnungen: string[] };
@@ -76,6 +79,12 @@ export async function installiere(o: InstallOptionen, u: InstallUmgebung): Promi
   const mitBackup = release.images.some((img) => img.dienst === "backup");
   if (mitBackup && (!existsSync(join(o.bundle, "compose.backup.yaml")) || !o.backupZiel || !/^age1[0-9a-z]{58}$/.test(o.recoveryEmpfaenger ?? ""))) throw new Error("Backup verlangt Overlay, --backup-ziel (lokaler Pfad) und --recovery-empfaenger (oeffentlicher age-Key)");
   if (mitBackup) for (const f of ["planora-betrieb@.service", "planora-sicherung@.service", "planora-sicherung@.timer"]) if (!existsSync(join(o.bundle, f))) throw new Error(`Bundle unvollstaendig: ${f}`);
+  if ((o.tls === "kundenzertifikat") !== !!(o.tlsZertifikat && o.tlsSchluessel)) throw new Error("--tls kundenzertifikat verlangt --tls-zertifikat und --tls-schluessel (und nur dann)");
+  if (o.tls === "kundenzertifikat") {
+    const z = pruefeKundenzertifikat(readFileSync(o.tlsZertifikat!, "utf8"), readFileSync(o.tlsSchluessel!, "utf8"), plan.domain);
+    melde(`Kunden-Zertifikat geprueft: ${z.subjekt.replace(/\n/g, ", ")}, gueltig bis ${z.gueltigBis.slice(0, 10)}`);
+    z.warnungen.forEach((w) => melde(`Warnung: ${w}`));
+  }
   melde(`Release ${release.version} geprueft (Signatur gueltig)`);
   // 2. Plattform und Platz
   const p = pruefePlattform(await u.plattform(), release.architektur);
@@ -96,7 +105,9 @@ export async function installiere(o: InstallOptionen, u: InstallUmgebung): Promi
   copyFileSync(o.schluessel, pfade.schluessel);
   const ref = (d: string) => release.images.find((i) => i.dienst === d)?.referenz;
   const backupEnv = mitBackup ? backupVorbereiten(plan.instanz, o.backupZiel!, o.recoveryEmpfaenger!) : {};
-  schreibeEnv(pfade.envDatei, { ...envWerte(plan, { secrets: pfade.secrets, release: release.version, vorne, images: { app: ref("app"), db: ref("db"), proxy: ref("proxy"), clamav: ref("clamav") } }), ...backupEnv, PLANORA_BUNDLE_DIR: resolve(o.bundle), PLANORA_RECOVERY_BUNDLE_DIR: resolve(o.bundle), PLANORA_BACKUP_IMAGE: ref("backup") });
+  const tlsVerzeichnis = o.tls === "kundenzertifikat" ? join(pfade.etc, "tls") : undefined;
+  if (tlsVerzeichnis) legeKundenzertifikatAb(tlsVerzeichnis, o.tlsZertifikat!, o.tlsSchluessel!, plan.domain);
+  schreibeEnv(pfade.envDatei, { ...envWerte(plan, { secrets: pfade.secrets, release: release.version, vorne, images: { app: ref("app"), db: ref("db"), proxy: ref("proxy"), clamav: ref("clamav") } }), ...backupEnv, PLANORA_BUNDLE_DIR: resolve(o.bundle), PLANORA_RECOVERY_BUNDLE_DIR: resolve(o.bundle), PLANORA_BACKUP_IMAGE: ref("backup"), PLANORA_TLS_VERZEICHNIS: tlsVerzeichnis?.replace(/\\/g, "/") });
   copyFileSync(join(o.bundle, "release.json"), join(pfade.etc, "release.json"));
   melde(`Konfiguration angelegt: ${pfade.etc}`);
   // 6. Start ohne Pull

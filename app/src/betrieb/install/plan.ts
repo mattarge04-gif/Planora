@@ -4,8 +4,11 @@ import { randomBytes } from "node:crypto";
 import { chmodSync, chownSync, closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+/** PLANORA_TLS fuer Kunden-Zertifikate: Pfade im Proxy-Container (Volume /zertifikat, compose.yaml). */
+// Kette und Schluessel in EINER Datei (paar.pem): atomarer Wechsel ohne gemischtes Paar (PP11a-5).
+export const KUNDENZERTIFIKAT_TLS = "/zertifikat/paar.pem /zertifikat/paar.pem";
 
-export type TlsModus = "acme" | "internal";
+export type TlsModus = "acme" | "internal" | "kundenzertifikat";
 export type InstallEingabe = {
   instanz: string; domain: string; tls: TlsModus; acmeKontakt?: string;
   httpsPort?: number; httpPort?: number; backupZiel?: string;
@@ -66,7 +69,7 @@ export function planeInstanz(e: InstallEingabe): InstanzPlan {
   if (!INSTANZ.test(e.instanz ?? "")) fehler.push("--instanz: 2–32 Zeichen, Kleinbuchstaben, Ziffern, Bindestrich, beginnt mit Buchstabe");
   const domain = (e.domain ?? "").toLowerCase();
   if (!DOMAIN.test(domain)) fehler.push("--domain: kein gueltiger Hostname");
-  if (e.tls !== "acme" && e.tls !== "internal") fehler.push("--tls: acme oder internal");
+  if (e.tls !== "acme" && e.tls !== "internal" && e.tls !== "kundenzertifikat") fehler.push("--tls: acme, internal oder kundenzertifikat");
   if (e.tls === "acme" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.acmeKontakt ?? "")) fehler.push("--acme-kontakt: E-Mail-Adresse fuer ACME noetig");
   if (e.tls === "acme" && (domain === "localhost" || !domain.includes("."))) fehler.push("--tls acme braucht einen oeffentlichen Hostnamen");
   const httpsPort = e.httpsPort ?? 443, httpPort = e.httpPort ?? 80;
@@ -74,7 +77,7 @@ export function planeInstanz(e: InstallEingabe): InstanzPlan {
   if (e.backupZiel !== undefined && !e.backupZiel.trim()) fehler.push("--backup-ziel: leer");
   if (fehler.length) throw new Error(fehler.join("; "));
   return {
-    instanz: e.instanz, projekt: projektName(e.instanz), domain, tlsWert: e.tls === "internal" ? "internal" : e.acmeKontakt!,
+    instanz: e.instanz, projekt: projektName(e.instanz), domain, tlsWert: e.tls === "internal" ? "internal" : e.tls === "kundenzertifikat" ? KUNDENZERTIFIKAT_TLS : e.acmeKontakt!,
     httpsPort, httpPort, baseURL: `https://${domain}${httpsPort === 443 ? "" : `:${httpsPort}`}`, backupZiel: e.backupZiel?.trim(),
   };
 }

@@ -6,6 +6,8 @@
 #   planora update  --instanz <name> <bundle> | --fortsetzen | --rueckweg | --status
 #   planora setup   --instanz <name>            neues Setup-Token (15 min) fuer den Erstadmin
 #   planora status  --instanz <name>            Container und Health
+#   planora alarm --instanz <name> --test|--wiederholen   Testalarm senden / offene Alarme sofort zustellen
+#   planora zertifikat --instanz <name> --tls-zertifikat <kette.pem> --tls-schluessel <key.pem>   Kunden-Zertifikat rotieren
 #
 # [A] Voraussetzung: Node.js >= 24 auf dem Host (Entscheid offen, siehe docs/superpowers/plans/m1b-notizen.md).
 # Pfade: PLANORA_ETC (Standard /etc/planora), PLANORA_VAR (Standard /var/lib/planora), PLANORA_BUNDLE (Standard: Ort dieses Skripts).
@@ -71,11 +73,13 @@ case "$befehl" in
     echo "Setup-Token fuer den Erstadmin (15 Minuten gueltig, nur einmal verwendbar):" >&2
     compose --profile konsole run --pull never --rm -T konsole setup-token
     ;;
-  start|reconcile|dienst|restore)
+  # sichern/aufbewahren laufen ueber das Host-Werkzeug: Sperre mit Update/Restore, Reservierung offener
+  # Update-Saetze und Betriebsalarm gelten auch fuer manuelle Aufrufe (PP11a-3, PP11a-6).
+  start|reconcile|dienst|restore|zertifikat|alarm|sichern|aufbewahren)
     brauche_node host-cli.js
     exec node "$WERKZEUG/betrieb/host-cli.js" "$befehl" "$@"
     ;;
-  sichern|journal|freigabe)
+  journal|freigabe)
     instanz_aus "$@"
     # Nur --instanz entfernen; alle anderen Argumente unveraendert weitergeben.
     [ "${1:-}" = --instanz ] || fehler "Aufruf: planora $befehl --instanz <name> ..."
@@ -91,6 +95,6 @@ case "$befehl" in
     compose ps -a
     ;;
   *)
-    fehler "Aufruf: planora install|update|setup|status|start|dienst|sichern|journal|reconcile|restore|freigabe ..."
+    fehler "Aufruf: planora install|update|setup|status|start|dienst|sichern|aufbewahren|journal|reconcile|restore|freigabe|zertifikat|alarm ..."
     ;;
 esac

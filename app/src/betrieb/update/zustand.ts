@@ -36,22 +36,32 @@ export function leseZustand(datei: string): Zustand | null {
 }
 
 const gehalten = new Set<string>();
-/** Ein liegengebliebener Lock wird nur bei --fortsetzen/--rueckweg UND nachgewiesen totem lokalen PID uebernommen. */
-export function dateiSperre(datei: string, uebernehmen: boolean) {
-  if (gehalten.has(datei)) throw new Error("Update laeuft bereits (Dateisperre)");
+/**
+ * Dateisperre fuer Update, Restore, Sicherung und Zertifikatswechsel. Eine liegengebliebene Sperre wird nur bei
+ * nachgewiesen totem lokalen PID uebernommen, und nur:
+ * - mit uebernehmen=true (--fortsetzen/--rueckweg) jede Sperre,
+ * - mit einer Liste nur Sperren dieser Zwecke (Sicherung uebernimmt nur Sicherungssperren, PP11a-N-1),
+ * - immer eine verwaiste Sicherungssperre (Sicherung per SIGTERM beendet; blockiert sonst Update/Restore, PP11a-N-2).
+ */
+export function dateiSperre(datei: string, uebernehmen: boolean | readonly string[], zweck = "update") {
+  if (gehalten.has(datei)) throw new Error(`${zweck === "update" ? "Update" : zweck} laeuft bereits (Dateisperre)`);
   mkdirSync(dirname(datei), { recursive: true, mode: 0o700 });
   if (existsSync(datei)) {
-    if (!uebernehmen) throw new Error("Update-Lock vorhanden; --fortsetzen oder --rueckweg verwenden");
-    const alt = JSON.parse(readFileSync(datei, "utf8")) as { pid: number; host: string };
+    const alt = JSON.parse(readFileSync(datei, "utf8")) as { pid: number; host: string; zweck?: string };
+    const altZweck = alt.zweck ?? "update";
+    const erlaubt = altZweck === "Sicherung" || uebernehmen === true || (Array.isArray(uebernehmen) && uebernehmen.includes(altZweck));
+    if (!erlaubt) throw new Error(altZweck === "update" ? "Update-Lock vorhanden; --fortsetzen oder --rueckweg verwenden" : `Sperre durch ${altZweck} (PID ${alt.pid}) vorhanden; keine automatische Uebernahme`);
     if (alt.host !== hostname() || !Number.isInteger(alt.pid) || alt.pid <= 0) throw new Error("Lock-Eigentuemer unbekannt; keine automatische Uebernahme");
     let lebt = true;
     try { process.kill(alt.pid, 0); } catch (e) { if ((e as NodeJS.ErrnoException).code === "ESRCH") lebt = false; else throw e; }
-    // Derselbe Prozess darf nach einem fehlgeschlagenen Aufruf erneut starten (keine aktive lokale Sperre).
-    if (lebt && alt.pid !== process.pid) throw new Error("Update-Prozess lebt noch");
+    // Derselbe Prozess darf nach einem fehlgeschlagenen Update erneut starten (keine aktive lokale Sperre);
+    // (in diesem Prozess aktive Sperren lehnt bereits "gehalten" ab).
+    const eigener = alt.pid === process.pid;
+    if (lebt && !eigener) throw new Error(altZweck === "Sicherung" ? `Sperre durch laufende Sicherung (PID ${alt.pid}); spaeter erneut versuchen` : `${altZweck === "update" ? "Update-Prozess" : `Prozess der ${altZweck}`} lebt noch`);
     unlinkSync(datei);
   }
   const fd = openSync(datei, "wx", 0o600);
-  try { writeFileSync(fd, JSON.stringify({ pid: process.pid, host: hostname() })); fsyncSync(fd); } finally { closeSync(fd); }
+  try { writeFileSync(fd, JSON.stringify({ pid: process.pid, host: hostname(), zweck })); fsyncSync(fd); } finally { closeSync(fd); }
   gehalten.add(datei);
   return (erfolgreich: boolean) => { gehalten.delete(datei); if (erfolgreich) unlinkSync(datei); };
 }

@@ -55,12 +55,16 @@ services:
     environment:
       PLANORA_DOMAIN: ${PLANORA_DOMAIN:?PLANORA_DOMAIN fehlt}
       # "internal" (Caddy-eigene CA, Root-Export zur Verteilung), ACME-Kontaktadresse (CH-VM) oder
-      # "/zertifikat/cert.pem /zertifikat/key.pem" (Kunden-CA, per Bind-Mount in einer Override-Datei).
+      # "/zertifikat/paar.pem /zertifikat/paar.pem" (Kunden-CA: `planora install --tls kundenzertifikat` legt Schluessel und
+      # Kette als ein Paar unter /etc/planora/<instanz>/tls/paar.pem ab und setzt PLANORA_TLS_VERZEICHNIS; ohne Kunden-CA
+      # bleibt /zertifikat ein leeres Volume).
       PLANORA_TLS: ${PLANORA_TLS:?PLANORA_TLS fehlt (internal | ACME-Kontakt | Zertifikatspfade)}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./wartung.html:/srv/wartung/wartung.html:ro
       - caddy-data:/data            # Zertifikate/ACME-Konto und der Wartungsschalter /data/wartung/aktiv
+      # Absoluter Pfad = Bind-Mount des Kunden-Zertifikats, sonst benanntes leeres Volume (nur lesend).
+      - ${PLANORA_TLS_VERZEICHNIS:-kundenzertifikat}:/zertifikat:ro
     tmpfs: ["/config:uid=1001,gid=1001,mode=0700"]
     read_only: true
     cap_drop: [ALL]
@@ -220,6 +224,7 @@ volumes:
   pgdata:
   dokumente:
   caddy-data:
+  kundenzertifikat:    # leer, solange keine Kunden-CA genutzt wird (PLANORA_TLS_VERZEICHNIS nicht gesetzt)
   backup-staging:      # vom Overlay compose.backup.yaml (Spur B) genutzt
   clamav-signaturen:
 

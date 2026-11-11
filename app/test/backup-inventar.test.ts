@@ -24,6 +24,6 @@ it("legt ein instanzgebundenes Inventar ausserhalb von restic ab und liest es mi
 });
 it("verweigert unvollstaendige Inventare vor dem Schreiben",async()=>{
   const i=inventar();delete (i.dbRollen as Partial<typeof i.dbRollen>).planora_migrator;
-  let geschrieben=false;const ziel={lese:async()=>Buffer.alloc(0),liste:async()=>[],schreibe:async()=>{geschrieben=true;return Buffer.alloc(0);}};
+  let geschrieben=false;const ziel={lese:async()=>Buffer.alloc(0),liste:async()=>[],schreibe:async()=>{geschrieben=true;return Buffer.alloc(0);},loesche:async()=>{}};
   await expect(sichereInventar(i,randomUUID(),ziel,async(d)=>d)).rejects.toThrow(/unvollstaendig/);expect(geschrieben).toBe(false);
 });
