@@ -36,7 +36,7 @@ Alle sechs zusaetzlichen lokalen Planora-Worktrees vor Bereinigung geprueft: kei
 
 ## M1-Abnahme (Stand 2026-11-11 Mittag)
 
-Technisch abgeschlossen auf `main` (lokal, nicht gepusht): Spur A (Opus) und Spur B (Codex, ab Lizenznachtrag Opus), Reviews PP11a (Codex, nicht OK -> behoben), PP11a-N (Opus, OK mit Auflagen -> behoben), PP11b (Codex, OK mit Auflagen -> behoben). Berichte: [Spur A](2026-11-11-m1-abnahme-spur-a.md), [Spur B](2026-11-11-m1-abnahme-spur-b.md), [Lizenznachtrag](2026-11-11-m1-lizenznachtrag-spur-b.md).
+Technisch abgeschlossen auf `main` (gepusht bei `b13bbba`): Spur A (Opus) und Spur B (Codex, ab Lizenznachtrag Opus), Reviews PP11a (Codex, nicht OK -> behoben), PP11a-N (Opus, OK mit Auflagen -> behoben), PP11b (Codex, OK mit Auflagen -> behoben). Berichte: [Spur A](2026-11-11-m1-abnahme-spur-a.md), [Spur B](2026-11-11-m1-abnahme-spur-b.md), [Lizenznachtrag](2026-11-11-m1-lizenznachtrag-spur-b.md).
 
 Teststand auf main nach Merge: `npm test` 314 bestanden/37 Docker uebersprungen, Typpruefung gruen, `test:docker` 32 bestanden/5 (Suite b) uebersprungen in 440 s, `test:docker:b` 9/9 (Projekt `pr-backup`; alte Testvolumes `planora-b_*` vom 10.11. liegen noch, Guard hat korrekt abgebrochen). WSL-Gesamtabnahme `betrieb/abnahme/abnahme.ps1` auf Spur-B-Stand Exit 0 in 417.6 s (nicht erneut nach Merge von Spur A ausgefuehrt).
 
