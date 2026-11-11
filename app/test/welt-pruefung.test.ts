@@ -27,6 +27,12 @@ describe("verteilerHinweise", () => {
     b.bauteile[2].versorgt = [{ einheitId: G(20) }];
     expect(verteilerHinweise(b)).toEqual([{ code: "verteiler_vorschlag", bezug: G(22) }]);
   });
+  it("Versorgung per Index zaehlt fuer die Einheit mit ID", () => {
+    const b = beschreibungFixture();
+    b.einheiten[2].heizungAusnahme = { fbh: "ja" };
+    b.bauteile[2].versorgt = [{ einheitIndex: 2 }];
+    expect(verteilerHinweise(b)).toEqual([]);
+  });
 });
 
 describe("pruefeBeschreibung", () => {
@@ -74,6 +80,22 @@ describe("pruefeBeschreibung", () => {
     b.einheiten[0].heizungAusnahme = { fbh: "unbekannt" };
     b.bauteile[3].status = "vorgeschlagen";
     expect(codes(b)).toEqual([]);
+  });
+  it("Verteiler ist von bestaetigt bei unbekannt ausgenommen", () => {
+    const b = beschreibungFixture();
+    b.einheiten[1].heizungAusnahme = { hk: "nein", fbh: "nein", tabs: "unbekannt" };
+    expect(codes(b)).toEqual([]);
+  });
+  it("Heizkoerper bestaetigt bei HK nein in der Einheit", () => {
+    const b = beschreibungFixture();
+    b.einheiten[2].heizungAusnahme = { hk: "nein" };
+    b.bauteile.push({ katalogId: "heizung.heizkoerper", standort: { einheitId: G(22) }, menge: 1, status: "bestaetigt", versorgt: [] });
+    expect(codes(b)).toEqual(["bestaetigt_bei_unbekannt"]);
+  });
+  it("TABS-Feld bestaetigt bei TABS nein (Standard) in Einheit A", () => {
+    const b = beschreibungFixture();
+    b.bauteile.push({ katalogId: "heizung.tabs_feld", standort: { einheitId: G(20) }, menge: 1, status: "bestaetigt", versorgt: [] });
+    expect(codes(b)).toEqual(["bestaetigt_bei_unbekannt"]);
   });
   it("Loeschen mit manuellem Layout ist blockiert", () => {
     const b = beschreibungFixture();

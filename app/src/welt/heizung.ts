@@ -8,8 +8,14 @@ export function wirksameHeizung(standard: Heizung, ausnahme?: Partial<Heizung>):
 /** Einheiten mit wirksamer FBH, die kein Verteiler versorgt: Vorschlag, keine Behauptung (ADR 0032 Punkt 5). */
 export function verteilerHinweise(b: Beschreibung): Hinweis[] {
   const versorgt = new Set<string>();
-  for (const t of b.bauteile) if (t.katalogId === "heizung.verteiler") for (const v of t.versorgt) if (v.einheitId) versorgt.add(v.einheitId);
+  for (const t of b.bauteile)
+    if (t.katalogId === "heizung.verteiler")
+      for (const v of t.versorgt) {
+        const ziel = v.einheitId ?? (Number.isInteger(v.einheitIndex) && v.einheitIndex! >= 0 ? b.einheiten[v.einheitIndex!]?.id : undefined);
+        if (ziel) versorgt.add(ziel);
+      }
   const hinweise: Hinweis[] = [];
+  // Einheiten ohne ID bekommen keinen Hinweis: bezug braucht eine ID.
   for (const e of b.einheiten)
     if (e.id && wirksameHeizung(b.heizungStandard, e.heizungAusnahme).fbh === "ja" && !versorgt.has(e.id))
       hinweise.push({ code: "verteiler_vorschlag", bezug: e.id });
