@@ -1,0 +1,9 @@
+Einstieg: powershell.exe -NoProfile -ExecutionPolicy Bypass -File betrieb/abnahme/abnahme.ps1
+Arbeitsverzeichnis: externes neues Verzeichnis planora-abnahme-b-replay
+Ergebnis des automatisierten Gesamtlaufs: Exit 0, 375.9 s
+Linux: 2 Offline-Installationen, 2 Timer-Ausloesungen, 1 lokaler Restore, 1 Totalverlust-Restore mit frischem Cluster
+Freigabe: beide Restores mit echter lokaler PTY, ausdruecklichem ja, Token-Einloesung und Login mit neuem Passwort
+Dossier: 4 Images, 12 SBOMs, 1099 Paketvorkommen, 50 SPDX-Standardtexte, 529 Quellpakete
+Technisch offen: 14 Quellpakete ohne eigene Upstream-Lizenzdatei; siehe OFFENE-TEXTE.md
+Nach normalisierter Textkodierung: 30/30 Dossier-Pruefsummen im Git-Index korrekt
+Worker-Auftrag insgesamt: teilweise erfuellt, outcome failed wegen unvollstaendiger komponentengenauer Lizenztext-/Notice-Abdeckung
