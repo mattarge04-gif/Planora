@@ -1,0 +1,10 @@
+Einstieg: powershell.exe -NoProfile -ExecutionPolicy Bypass -File betrieb/abnahme/abnahme.ps1
+Arbeitsverzeichnis: externes neues Verzeichnis planora-abnahme-b-pp11b-2 (erster Versuch planora-abnahme-b-pp11b scheiterte erwartungsgemaess an isolation.mjs, siehe Bericht)
+Ergebnis des automatisierten Gesamtlaufs: Exit 0, 417.6 s
+PP11b-3: Besitzer/Modi pb-1 und pb-2 assertiert; je Instanz journal 5, proxy 3, api 3, worker 2, db 6 Mounts exakt; Volumes 5/5, Netze 4/4, beschreibbare Binds 1/1, 2 anonyme journal-Volumes, gemeinsam nur 2 read-only Bundle-Dateien, 10 Daemon-Volumes
+PP11b-4: vor Sicherung 1 session 1, verification 1, setup_token 3; nach lokalem Restore 0/0/0; vor Sicherung 2 session 2, verification 1, setup_token 1; nach Totalverlust-Restore 0/0/0
+Totalverlust: Daemon vorher de4d9002-b35d-491a-a38b-bbace6019d65, Ersatz-Daemon cf371f59-596e-48b9-b02c-f91b50e51a52
+PP11b-2: Lizenz-Rootfs aus geladenem Lieferarchiv, je Image signierte ID = Archiv-Index = Blob-Hash = Container-Image (nachweis.json rootfsQuelle); archiv-identitaet.test.mjs 5/5
+PP11b-1: pruefe-dossier.py --erzeugen und anschliessend rein lesend bestanden (839 Lizenzbelege, 781 Image-Lizenzdateien, 31 Dateien); test_pruefe_dossier.py 7/7
+Dossier: 4 Images, 12 SBOMs, 1099 Paketvorkommen, 50 SPDX-Standardtexte, 529 Quellpakete; Nachtrag 12 geschlossen, 2 offen (vor PO-Entscheiden)
+Restzustand: eigene Distribution abgemeldet, nur docker-desktop gelistet

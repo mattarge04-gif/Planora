@@ -1,0 +1,99 @@
+��2026-11-11T11:21:56+01:00
+active
+29.0.0
+PASS: externer Netzzugriff blockiert
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    1    60 REJECT     0    --  *      eth0    0.0.0.0/0            0.0.0.0/0            reject-with icmp-port-unreachable
+active
+active
+enabled
+enabled
+{"ok":true,"db":true,"wartung":false,"release":"pb-abnahme"}
+/etc/planora/pb-1 0:0 700
+/etc/planora/pb-1/secrets 0:0 700
+/etc/planora/pb-1/secrets/db_superuser_passwort 0:0 600
+/etc/planora/pb-1/secrets/db_app_passwort 0:0 600
+/etc/planora/pb-1/secrets/db_migrator_passwort 0:0 600
+/etc/planora/pb-1/secrets/db_backup_passwort 0:0 600
+/etc/planora/pb-1/secrets/db_betrieb_passwort 0:0 600
+/etc/planora/pb-1/secrets/auth_secret 0:0 600
+/etc/planora/pb-1/secrets/db 999:999 700
+/etc/planora/pb-1/secrets/db/db_superuser_passwort 999:999 600
+/etc/planora/pb-1/secrets/db/db_app_passwort 999:999 600
+/etc/planora/pb-1/secrets/db/db_migrator_passwort 999:999 600
+/etc/planora/pb-1/secrets/db/db_backup_passwort 999:999 600
+/etc/planora/pb-1/secrets/db/db_betrieb_passwort 999:999 600
+/etc/planora/pb-1/secrets/app 1000:1000 700
+/etc/planora/pb-1/secrets/app/db_app_passwort 1000:1000 600
+/etc/planora/pb-1/secrets/app/db_migrator_passwort 1000:1000 600
+/etc/planora/pb-1/secrets/app/db_betrieb_passwort 1000:1000 600
+/etc/planora/pb-1/secrets/app/auth_secret 1000:1000 600
+/etc/planora/pb-1/backup 1000:1000 700
+/etc/planora/pb-1/backup/inventar.json 1000:1000 600
+/etc/planora/pb-1/backup/konfiguration.json 1000:1000 600
+/etc/planora/pb-1/backup/restic_passwort 1000:1000 600
+/etc/planora/pb-1/backup/empfaenger 1000:1000 600
+/etc/planora/pb-1/backup/betrieb_db 1000:1000 600
+/etc/planora/pb-1/backup/backup_db 1000:1000 600
+/etc/planora/pb-1/backup/backup.env 0:0 600
+/etc/planora/pb-1/instanz.env 0:0 600
+/srv/pb-ziel-1 1000:1000 700
+PASS: Besitzer/Modi pb-1
+active
+active
+enabled
+enabled
+{"ok":true,"db":true,"wartung":false,"release":"pb-abnahme"}
+/etc/planora/pb-2 0:0 700
+/etc/planora/pb-2/secrets 0:0 700
+/etc/planora/pb-2/secrets/db_superuser_passwort 0:0 600
+/etc/planora/pb-2/secrets/db_app_passwort 0:0 600
+/etc/planora/pb-2/secrets/db_migrator_passwort 0:0 600
+/etc/planora/pb-2/secrets/db_backup_passwort 0:0 600
+/etc/planora/pb-2/secrets/db_betrieb_passwort 0:0 600
+/etc/planora/pb-2/secrets/auth_secret 0:0 600
+/etc/planora/pb-2/secrets/db 999:999 700
+/etc/planora/pb-2/secrets/db/db_superuser_passwort 999:999 600
+/etc/planora/pb-2/secrets/db/db_app_passwort 999:999 600
+/etc/planora/pb-2/secrets/db/db_migrator_passwort 999:999 600
+/etc/planora/pb-2/secrets/db/db_backup_passwort 999:999 600
+/etc/planora/pb-2/secrets/db/db_betrieb_passwort 999:999 600
+/etc/planora/pb-2/secrets/app 1000:1000 700
+/etc/planora/pb-2/secrets/app/db_app_passwort 1000:1000 600
+/etc/planora/pb-2/secrets/app/db_migrator_passwort 1000:1000 600
+/etc/planora/pb-2/secrets/app/db_betrieb_passwort 1000:1000 600
+/etc/planora/pb-2/secrets/app/auth_secret 1000:1000 600
+/etc/planora/pb-2/backup 1000:1000 700
+/etc/planora/pb-2/backup/inventar.json 1000:1000 600
+/etc/planora/pb-2/backup/konfiguration.json 1000:1000 600
+/etc/planora/pb-2/backup/restic_passwort 1000:1000 600
+/etc/planora/pb-2/backup/empfaenger 1000:1000 600
+/etc/planora/pb-2/backup/betrieb_db 1000:1000 600
+/etc/planora/pb-2/backup/backup_db 1000:1000 600
+/etc/planora/pb-2/backup/backup.env 0:0 600
+/etc/planora/pb-2/instanz.env 0:0 600
+/srv/pb-ziel-2 1000:1000 700
+PASS: Besitzer/Modi pb-2
+planora-pb-1/journal: 5 Mounts wie erwartet
+planora-pb-1/proxy: 3 Mounts wie erwartet
+planora-pb-1/api: 3 Mounts wie erwartet
+planora-pb-1/worker: 2 Mounts wie erwartet
+planora-pb-1/db: 6 Mounts wie erwartet
+planora-pb-2/journal: 5 Mounts wie erwartet
+planora-pb-2/proxy: 3 Mounts wie erwartet
+planora-pb-2/api: 3 Mounts wie erwartet
+planora-pb-2/worker: 2 Mounts wie erwartet
+planora-pb-2/db: 6 Mounts wie erwartet
+{"volumes":[5,5],"netze":[4,4],"rwBinds":[1,1],"anonymeVolumes":2,"gemeinsamReadOnly":2,"daemonVolumes":10}
+PASS: Dienste/Mount-Anzahl und -Ziele exakt; worker, journal und Backup-Ressourcen getrennt; keine gemeinsamen Volumes/Netze/beschreibbaren Binds
+PASS: zwei parallele Instanzen, echte Linux-Bind-Mounts, systemd-Dienste und ausgeloeste Sicherungsdienste
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    1    60 REJECT     0    --  *      eth0    0.0.0.0/0            0.0.0.0/0            reject-with icmp-port-unreachable
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 REJECT     0    --  *      eth0    0.0.0.0/0            0.0.0.0/0            reject-with icmp-port-unreachable
+ 1868 1947K DOCKER-USER  0    --  *      *       0.0.0.0/0            0.0.0.0/0
+ 1868 1947K DOCKER-FORWARD  0    --  *      *       0.0.0.0/0            0.0.0.0/0
+2026-11-11T11:23:26+01:00

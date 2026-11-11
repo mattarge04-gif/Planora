@@ -1,0 +1,12 @@
+��NextElapseUSecRealtime=
+LastTriggerUSec=Wed 2026-11-11 11:23:28 CET
+Result=success
+ExecMainStatus=0
+active
+PASS: Timer pb-1 hat den echten Backup-Dienst erfolgreich ausgeloest
+NextElapseUSecRealtime=
+LastTriggerUSec=Wed 2026-11-11 11:23:34 CET
+Result=success
+ExecMainStatus=0
+active
+PASS: Timer pb-2 hat den echten Backup-Dienst erfolgreich ausgeloest

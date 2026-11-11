@@ -1,13 +1,13 @@
 [
   {
     "datei": "app.cdx.json.gz",
-    "bytes": 321701,
-    "sha256": "597a048391dcc744eadd89947d3b5bd3a00a863624644ee4c4e37b6ad991777e"
+    "bytes": 321704,
+    "sha256": "fdf9025124b034b785f86cc7b9486aad6fcbefa3d9539809c0a196c9431125a7"
   },
   {
     "datei": "app.lizenzen.tar.gz",
     "bytes": 288352,
-    "sha256": "0ceab9a220303abbe6d7e25e33d3a201b6ef1fb46014aaf3cd209561c6d3a065"
+    "sha256": "6f7e65585a0fe40e12e0feb07f2f1ccef9a0502f004025fb278b06497490b5ce"
   },
   {
     "datei": "app.lizenzen.tar.json",
@@ -17,7 +17,7 @@
   {
     "datei": "app.spdx.json.gz",
     "bytes": 425738,
-    "sha256": "e5ee651683f17563fd570d1a193328c4e0cab544bf523d1cc4abde6eaa05f913"
+    "sha256": "06a1b8f30bf391ede44dee4dff2ecfd8febc252a50828dde5482d53a4ecf44ff"
   },
   {
     "datei": "app.syft.json.gz",
@@ -27,12 +27,12 @@
   {
     "datei": "backup.cdx.json.gz",
     "bytes": 722414,
-    "sha256": "cf9ce3ffc91fa8f00834d5a5307a20c833b4d53ca2a94ffe11b822ce775e5e5b"
+    "sha256": "52d364bb1fbe0b73609af90cc26eaba752684a6e51331b83fa3d1435f41d980d"
   },
   {
     "datei": "backup.lizenzen.tar.gz",
     "bytes": 440786,
-    "sha256": "3daf8b6edc8aae3718db35f994a09331ac38d25f7c283730a44b3e176ca776a6"
+    "sha256": "f41a95256a7dd566aad84428408c3537a2feb185c32fad3a35d662e3c6d63829"
   },
   {
     "datei": "backup.lizenzen.tar.json",
@@ -42,7 +42,7 @@
   {
     "datei": "backup.spdx.json.gz",
     "bytes": 963852,
-    "sha256": "655ab797ccce07175a9b9c915ef6da2818d9cbb1c9443dee45a7cfd59475129f"
+    "sha256": "2caa86140428b5027447857e4a98696e9cc4f53be4bcb3aa3b9f4ef8398b929d"
   },
   {
     "datei": "backup.syft.json.gz",
@@ -51,13 +51,13 @@
   },
   {
     "datei": "db.cdx.json.gz",
-    "bytes": 651318,
-    "sha256": "ef5ce4ba61eaad0a1d3f665a7c4ef5ae72de406eb8e08eb02432af101f9a10aa"
+    "bytes": 651317,
+    "sha256": "e64963d8887cc487f62cc8f19b147e84731722829af1a6fe9b4567c4d3b01b35"
   },
   {
     "datei": "db.lizenzen.tar.gz",
     "bytes": 382278,
-    "sha256": "d4f29894b08d78b78cac6439424ae6fc296c2a08b0efb9cc1758085126ff6158"
+    "sha256": "574ddb4562c39198f267116e61ab677375dc6e98f27a14d9b8d8075e8510edde"
   },
   {
     "datei": "db.lizenzen.tar.json",
@@ -66,8 +66,8 @@
   },
   {
     "datei": "db.spdx.json.gz",
-    "bytes": 870907,
-    "sha256": "dba927bd24cab403fff26aa28245ebbca5aee575246fe7005748f6c5d19c8641"
+    "bytes": 870914,
+    "sha256": "bd26717df52ad80bf81fc428afd8f93ea03b642f79aab5201814976c5a4a6f2d"
   },
   {
     "datei": "db.syft.json.gz",
@@ -82,7 +82,7 @@
   {
     "datei": "komponenten.json",
     "bytes": 139143,
-    "sha256": "cb52fc6bfdd492180dfe24d52d639923f003865443362c226168389d134d3def"
+    "sha256": "0ab7a48c795a470bf7010cd3aa38d951b06edba111e6b62cec9c0b54fe530ff7"
   },
   {
     "datei": "lizenz-zuordnung.json",
@@ -91,8 +91,8 @@
   },
   {
     "datei": "nachweis.json",
-    "bytes": 45110,
-    "sha256": "c348b93a74d61cc47c2e4f0433e80251ac764c3cdcdbfbe7c0a77e21cb86fd47"
+    "bytes": 46154,
+    "sha256": "f8043beb5b8a8e00c2ce2301d2d84c2617abb053c9f45d32c66cb8f462d682b0"
   },
   {
     "datei": "OFFENE-TEXTE.md",
@@ -106,13 +106,13 @@
   },
   {
     "datei": "proxy.cdx.json.gz",
-    "bytes": 47318,
-    "sha256": "dc2991f82d280b4496ab3d913e8e513eb0b75c26e6b48656d711db3d1997de9f"
+    "bytes": 47315,
+    "sha256": "d4a99ea27c6f08285916a2fe923a9a2e245a9726f0f4b9d244f0b6120639bc58"
   },
   {
     "datei": "proxy.lizenzen.tar.gz",
     "bytes": 64,
-    "sha256": "e39d866736ee0cdcf6e505be9a596daf4f67a2d0dbfebaa278d4c22b0af73339"
+    "sha256": "44611e81c320197d1089fce937b1c6be9abcbcfae0c723ddc0afcd06f465c816"
   },
   {
     "datei": "proxy.lizenzen.tar.json",
@@ -121,8 +121,8 @@
   },
   {
     "datei": "proxy.spdx.json.gz",
-    "bytes": 58183,
-    "sha256": "daa73d8d9ee76a0480222c205cc2032ca1bd8e3f43389df7d251b3febdf36cd6"
+    "bytes": 58181,
+    "sha256": "28d35d25dc3a1cbce6bbec9ce0a28e252f1f7b90f73a91b7b3ffef241e10eae7"
   },
   {
     "datei": "proxy.syft.json.gz",
@@ -132,17 +132,17 @@
   {
     "datei": "release.json",
     "bytes": 3662,
-    "sha256": "eae756d552cf06350609c05109963b6de64689a35a3f34284725ff7b67eabda7"
+    "sha256": "b63d4ca742fad974668f7c2feaf605b8ad76122c56add9900e03e912b7993f41"
   },
   {
     "datei": "release.pub",
     "bytes": 113,
-    "sha256": "160c00f61dc3a85e099cfafdb005a10ecbf079be76ac20a1a6b985cf05b43719"
+    "sha256": "1ff5c763c1a4fb83dfe3d70a8881470acee830572a704e2809cece38c4581b2e"
   },
   {
     "datei": "upstream-lizenzen.tar.gz",
-    "bytes": 389142,
-    "sha256": "abdfcff75e75e449e87f36ab9a36d4984a61ad4ba2652784d9e108fef246eb62"
+    "bytes": 388620,
+    "sha256": "a6397a47cdcc6d49212937fcb2991bfab0bd03346c579313532abcf94dcaacf7"
   },
   {
     "datei": "upstream-nachweis.json",

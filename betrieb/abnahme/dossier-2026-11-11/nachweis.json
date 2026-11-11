@@ -5,8 +5,13 @@
   "images": [
     {
       "dienst": "app",
-      "imageId": "sha256:cb969750ea3e2b088cd95d9907ee18dbc359981548790071e6a5fdee9bad71bd",
-      "archivSha256": "670366be3209e09323b096f73f6349ccadc89ebdd186e0c9a8c2010bea533186",
+      "imageId": "sha256:0e6150fdbd319f67ceab4aa00ce915eae6db45f3b082a40647ada64134cc79f3",
+      "rootfsQuelle": {
+        "archivIndex": "sha256:0e6150fdbd319f67ceab4aa00ce915eae6db45f3b082a40647ada64134cc79f3",
+        "blobGeprueft": true,
+        "containerImage": "sha256:0e6150fdbd319f67ceab4aa00ce915eae6db45f3b082a40647ada64134cc79f3"
+      },
+      "archivSha256": "6a6bc6ec39e656b0ddfa3ef8c2e90ed5786db723410a1e4343ceb15148c36770",
       "pakete": 354,
       "lizenzUngeklaert": [
         {
@@ -117,18 +122,23 @@
         },
         {
           "datei": "app.spdx.json.gz",
-          "sha256": "e5ee651683f17563fd570d1a193328c4e0cab544bf523d1cc4abde6eaa05f913"
+          "sha256": "06a1b8f30bf391ede44dee4dff2ecfd8febc252a50828dde5482d53a4ecf44ff"
         },
         {
           "datei": "app.cdx.json.gz",
-          "sha256": "597a048391dcc744eadd89947d3b5bd3a00a863624644ee4c4e37b6ad991777e"
+          "sha256": "fdf9025124b034b785f86cc7b9486aad6fcbefa3d9539809c0a196c9431125a7"
         }
       ]
     },
     {
       "dienst": "backup",
-      "imageId": "sha256:ea910ef46e20ed8bc7e952d92d0cc65363eb0f4f25c6c4324aa9bc8bb51440b6",
-      "archivSha256": "fa0ea435c3c40ab4b720f813ef5e2a4bff759ea741ac2ee01e88c80f8d18c530",
+      "imageId": "sha256:b252344b2850ea298bd49ca447de2d7b30a1dee24f65cad6848f9ab49ae9253e",
+      "rootfsQuelle": {
+        "archivIndex": "sha256:b252344b2850ea298bd49ca447de2d7b30a1dee24f65cad6848f9ab49ae9253e",
+        "blobGeprueft": true,
+        "containerImage": "sha256:b252344b2850ea298bd49ca447de2d7b30a1dee24f65cad6848f9ab49ae9253e"
+      },
+      "archivSha256": "f9f29df822f6ec915386c4461bdc207ace5a0a0dfd2a39442a1bd6be41803f7b",
       "pakete": 413,
       "lizenzUngeklaert": [
         {
@@ -769,17 +779,22 @@
         },
         {
           "datei": "backup.spdx.json.gz",
-          "sha256": "655ab797ccce07175a9b9c915ef6da2818d9cbb1c9443dee45a7cfd59475129f"
+          "sha256": "2caa86140428b5027447857e4a98696e9cc4f53be4bcb3aa3b9f4ef8398b929d"
         },
         {
           "datei": "backup.cdx.json.gz",
-          "sha256": "cf9ce3ffc91fa8f00834d5a5307a20c833b4d53ca2a94ffe11b822ce775e5e5b"
+          "sha256": "52d364bb1fbe0b73609af90cc26eaba752684a6e51331b83fa3d1435f41d980d"
         }
       ]
     },
     {
       "dienst": "db",
       "imageId": "sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5",
+      "rootfsQuelle": {
+        "archivIndex": "sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5",
+        "blobGeprueft": true,
+        "containerImage": "sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5"
+      },
       "archivSha256": "d3fee25f38b90fc3b4b267a72e59e01919978fec315fc185b2a30c4c637465dd",
       "pakete": 151,
       "lizenzUngeklaert": [
@@ -931,17 +946,22 @@
         },
         {
           "datei": "db.spdx.json.gz",
-          "sha256": "dba927bd24cab403fff26aa28245ebbca5aee575246fe7005748f6c5d19c8641"
+          "sha256": "bd26717df52ad80bf81fc428afd8f93ea03b642f79aab5201814976c5a4a6f2d"
         },
         {
           "datei": "db.cdx.json.gz",
-          "sha256": "ef5ce4ba61eaad0a1d3f665a7c4ef5ae72de406eb8e08eb02432af101f9a10aa"
+          "sha256": "e64963d8887cc487f62cc8f19b147e84731722829af1a6fe9b4567c4d3b01b35"
         }
       ]
     },
     {
       "dienst": "proxy",
       "imageId": "sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9",
+      "rootfsQuelle": {
+        "archivIndex": "sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9",
+        "blobGeprueft": true,
+        "containerImage": "sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9"
+      },
       "archivSha256": "4f564cade144a9ef1055f2e933dfe094a1d734977149dd9e04ea43d588eeed86",
       "pakete": 181,
       "lizenzUngeklaert": [
@@ -1698,11 +1718,11 @@
         },
         {
           "datei": "proxy.spdx.json.gz",
-          "sha256": "daa73d8d9ee76a0480222c205cc2032ca1bd8e3f43389df7d251b3febdf36cd6"
+          "sha256": "28d35d25dc3a1cbce6bbec9ce0a28e252f1f7b90f73a91b7b3ffef241e10eae7"
         },
         {
           "datei": "proxy.cdx.json.gz",
-          "sha256": "dc2991f82d280b4496ab3d913e8e513eb0b75c26e6b48656d711db3d1997de9f"
+          "sha256": "d4a99ea27c6f08285916a2fe923a9a2e245a9726f0f4b9d244f0b6120639bc58"
         }
       ]
     }

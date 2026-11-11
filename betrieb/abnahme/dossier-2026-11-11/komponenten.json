@@ -2,21 +2,21 @@
   "release": {
     "format": 1,
     "version": "pb-abnahme",
-    "erzeugt": "2026-11-11T09:41:07.433Z",
+    "erzeugt": "2026-11-11T10:21:42.935Z",
     "architektur": "amd64",
     "images": [
       {
         "dienst": "app",
-        "referenz": "pb-app:abnahme@sha256:cb969750ea3e2b088cd95d9907ee18dbc359981548790071e6a5fdee9bad71bd",
-        "imageId": "sha256:cb969750ea3e2b088cd95d9907ee18dbc359981548790071e6a5fdee9bad71bd",
+        "referenz": "pb-app:abnahme@sha256:0e6150fdbd319f67ceab4aa00ce915eae6db45f3b082a40647ada64134cc79f3",
+        "imageId": "sha256:0e6150fdbd319f67ceab4aa00ce915eae6db45f3b082a40647ada64134cc79f3",
         "digest": null,
         "architektur": "amd64",
         "archiv": "images/app.tar"
       },
       {
         "dienst": "backup",
-        "referenz": "pb-backup:abnahme@sha256:ea910ef46e20ed8bc7e952d92d0cc65363eb0f4f25c6c4324aa9bc8bb51440b6",
-        "imageId": "sha256:ea910ef46e20ed8bc7e952d92d0cc65363eb0f4f25c6c4324aa9bc8bb51440b6",
+        "referenz": "pb-backup:abnahme@sha256:b252344b2850ea298bd49ca447de2d7b30a1dee24f65cad6848f9ab49ae9253e",
+        "imageId": "sha256:b252344b2850ea298bd49ca447de2d7b30a1dee24f65cad6848f9ab49ae9253e",
         "digest": null,
         "architektur": "amd64",
         "archiv": "images/backup.tar"
