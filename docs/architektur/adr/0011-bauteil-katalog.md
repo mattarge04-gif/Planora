@@ -1,5 +1,7 @@
 # 0011 – Bauteil-Katalog: global, versioniert; ETIM und eBKP-H nur als Mappings
 
+> **Nachtrag 2026-11-11, M2a:** Katalog v1 (10 Heizungs-IDs) liegt als TypeScript-Modul `app/src/welt/katalog.v1.ts` vor, nicht als Tabelle `katalog_*`. Die DB speichert `katalog_id` als Text, die Pruefung erfolgt im Code. Tabellen folgen mit M7 (Lebensdauer). Spec: `docs/superpowers/specs/2026-11-11-m2a-welt-kern-design.md` §3.
+
 > **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
 > [A] Versionierter Produktkatalog wird mit jeder Instanz ausgeliefert; lokale Kunden-Overrides bleiben bei Katalog-Updates erhalten, keine gemeinsame Laufzeitdatenbank.
 > [A] Demo nur DE, Preis-/Kostenbezug entfaellt (E24); stabile IDs, GLB-Hashes und optionale Mappings bleiben.

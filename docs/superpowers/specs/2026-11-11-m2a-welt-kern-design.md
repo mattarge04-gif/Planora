@@ -29,10 +29,7 @@ Erfolgskriterium: Die Beispielliegenschaft des ersten Schnitts (§9) laesst sich
 
 ## 3. Katalog v1 und Welt-Regelwerk v1
 
-Beide als versionierte JSON-Dateien im Repo, im Code geladen:
-
-- `app/src/welt/katalog.v1.json`
-- `app/src/welt/welt-regelwerk.v1.json`
+Beide als versionierte **TypeScript-Module** im Repo (`app/src/welt/katalog.v1.ts`, `app/src/welt/regelwerk.v1.ts`). Grund: Der Docker-Build kopiert ausser Migrationen nur kompiliertes TypeScript; JSON-Dateien fehlten im Image.
 
 **Abweichung von ADR 0011 [A]:** ADR 0011 sieht das Laden des Katalogs per Migration in `katalog_*`-Tabellen vor. Fuer vier Eintraege ohne Lebensdauerdaten ist das ohne Nutzen. Die DB speichert `katalog_id` als Text; die fachliche Validierung prueft gegen die Datei. Tabellen werden mit M7 (Lebensdauer) nachgezogen. Die Abweichung wird bei Umsetzung als Nachtrag in ADR 0011 vermerkt.
 
@@ -84,7 +81,7 @@ Die Regelwerk-Datei traegt `version: 1`; `gebaeude.regelwerk_version` haelt fest
 | `einheit` | `id`, `liegenschaft_id`, `geschoss_id`, `bezeichnung`, `art`, `flaeche_m2` null, `reihenfolge`, `layout_manuell` jsonb null (`{x, z, breite, tiefe}`) |
 | `gebaeude_heizung_standard` | `gebaeude_id`, `liegenschaft_id`, `art` (`hk`/`fbh`/`tabs`), `vorhanden` (`ja`/`nein`/`unbekannt`); PK (`gebaeude_id`, `art`) |
 | `einheit_heizung` | `einheit_id`, `liegenschaft_id`, `art`, `vorhanden`; PK (`einheit_id`, `art`) – **nur Ausnahmen** vom Standard |
-| `bauteil` | `id`, `liegenschaft_id`, `katalog_id`, `einheit_id` null, `geschoss_id` null, `menge` int null, `status`, `hersteller`/`typ` text null, `baujahr` int null, `reihenfolge`, `position_manuell` jsonb null |
+| `bauteil` | `id`, `liegenschaft_id`, `gebaeude_id`, `katalog_id`, `einheit_id` null, `geschoss_id` null, `menge` int null, `status`, `hersteller`/`typ` text null, `baujahr` int null, `reihenfolge`, `position_manuell` jsonb null |
 | `versorgung` | `bauteil_id`, `einheit_id`, `liegenschaft_id`; PK (`bauteil_id`, `einheit_id`) |
 
 Regeln in der DB:
@@ -140,6 +137,8 @@ interface Huelle { name: string; grundform: "quader" | "l_form" | "u_form"; brei
    - `standort_fehlt` / `standort_doppelt`
    - `bestaetigt_bei_unbekannt`: ein `bestaetigt`-Bauteil in einer Einheit, deren **wirksame** passende Heizungsart (Ausnahme, sonst Standard) `nein` oder `unbekannt` ist. Zuordnung: `heizung.heizkoerper` → `hk`, `heizung.fbh_kreis` → `fbh`, `heizung.tabs_feld` → `tabs`; `heizung.verteiler` ist keiner Art zugeordnet und von dieser Regel ausgenommen
    - `loeschen_blockiert`: zu loeschende Einheit/Bauteil hat `layout_manuell`/`position_manuell`
+   - `id_doppelt`: dieselbe ID kommt in der Beschreibung mehrfach vor
+   - Huelle: `mass_ungueltig`, `geschoss_fehlt`, `geschoss_code_ungueltig`, `geschoss_doppelt`, `hoehe_ungueltig`, `geschoss_belegt`
 4. **Schreiben:** update / insert / delete je Tabelle; Versorgung und Einheit-Heizung je Objekt komplett ersetzen.
 5. `stand + 1`; Audit-Ereignis `gebaeude.beschreibung` mit Zaehlern (angelegt/geaendert/geloescht) ueber `auditEreignis` (`src/audit/audit.ts`), keine Inhalte.
 6. Antwort: neue Beschreibung mit vergebenen IDs.
@@ -152,7 +151,7 @@ interface Huelle { name: string; grundform: "quader" | "l_form" | "u_form"; brei
 
 1. **Grundriss:** Teilrechtecke je Grundform aus Breite/Tiefe und Schenkelanteil.
 2. **Geschosse:** nach `reihenfolge` gestapelt; EG-Oberkante Boden auf y = 0, UG darunter.
-3. **Einheiten:** Einheiten mit `layoutManuell` behalten ihr Rechteck. Die uebrigen werden als Streifen entlang der Laengsachse ueber die Teilrechtecke verteilt, Breite proportional zur Flaeche (unbekannt → Default der Art). Ueberlappungen werden als `hinweise[]` ausgegeben, nicht abgelehnt.
+3. **Einheiten:** Einheiten mit `layoutManuell` behalten ihr Rechteck. Die uebrigen werden als Streifen entlang der Laengsachse ueber die Teilrechtecke verteilt, Breite proportional zur Flaeche (unbekannt → Default der Art). Ueberlappungen werden als `hinweise[]` ausgegeben, nicht abgelehnt. Hinweise `ueberlappung` entstehen bei automatisch-gegen-manuell und manuell-gegen-manuell; `position_widerspruch` entsteht, wenn sich manuelle Positionen innerhalb einer Symbolgruppe unterscheiden.
 4. **Bauteile, symbolisch (PO 2026-11-11):** Je Standort und Gruppe (`katalogId`, `hersteller`, `typ`) **genau ein Symbol**, unabhaengig von der Menge (1 oder 100 Heizkoerper = ein Symbol). Verschiedene Typen in derselben Einheit (z.B. Zehnder und Prolux) ergeben je ein eigenes Symbol. Ein Symbol fasst alle Bauteil-Zeilen der Gruppe zusammen (`bauteilIds`, Summe der Mengen; `mengeUnbekannt`, wenn eine Zeile `null` hat). Symbole im Raster der Standort-Einheit; Standort Geschoss → Geschossmitte. `positionManuell` einer Zeile hat Vorrang fuer ihr Symbol; widersprechen sich manuelle Positionen innerhalb einer Gruppe, gilt die Zeile mit kleinster `reihenfolge` und ein Hinweis wird ausgegeben. Ein Symbol gilt als `vorgeschlagen`, sobald eine Zeile der Gruppe vorgeschlagen ist.
 5. **Versorgung:** als Verweisliste (Bauteil → Einheiten), keine Leitungsgeometrie.
 
@@ -176,15 +175,16 @@ interface Welt {
 
 | Methode | Pfad | Recht | Zweck |
 |---|---|---|---|
-| POST | `/api/liegenschaften/:lid/gebaeude` | neu `huelle.verwalten` (`betreiber`) | Huelle anlegen |
-| PUT | `/api/gebaeude/:id/huelle` | `huelle.verwalten` | Huelle aendern; Geschoss loeschen nur ohne Einheiten/Bauteile, sonst 422 |
-| GET | `/api/gebaeude/:id/beschreibung` | `fach.lesen` + Liegenschaft | Beschreibung mit IDs und Hinweisen |
-| PUT | `/api/gebaeude/:id/beschreibung` | `fach.aendern` + Liegenschaft | Abgleich (§6) |
-| GET | `/api/gebaeude/:id/welt` | `fach.lesen` + Liegenschaft | Generator-Ergebnis |
+| POST | `/api/struktur/liegenschaften/:lid/gebaeude` | `huelle.verwalten` (`betreiber`) | Huelle anlegen |
+| GET | `/api/struktur/gebaeude/:id/huelle` | `huelle.verwalten` | Huelle lesen |
+| PUT | `/api/struktur/gebaeude/:id/huelle` | `huelle.verwalten` | Huelle aendern; Geschoss loeschen nur ohne Einheiten/Bauteile, sonst 422 |
+| GET | `/api/struktur/gebaeude/:id/beschreibung` | `fach.lesen` + Liegenschaft | Beschreibung mit IDs und Hinweisen |
+| PUT | `/api/struktur/gebaeude/:id/beschreibung` | `fach.aendern` + Liegenschaft | Abgleich (§6) |
+| GET | `/api/szene/gebaeude/:id/welt` | `fach.lesen` + Liegenschaft | Generator-Ergebnis |
 
 - Neues Recht `huelle.verwalten: ["betreiber"]` in `MATRIX` (`src/rechte/rechte.ts`). Der Betreiber hat bewusst **kein** Lese-/Schreibrecht auf Einheiten und Technik.
 - Ohne Recht auf die Liegenschaft → 404 (keine Existenz-Auskunft).
-- Routen haengen am bestehenden Auth-/Sitzungsmechanismus (`src/auth/fastify.ts`) und am Modulschalter-Muster (`src/module/`), Modulname `welt` [A].
+- Routen haengen am bestehenden Auth-/Sitzungsmechanismus (`src/auth/fastify.ts`) und am Modulschalter-Muster (`src/module/`). Routen gehoeren den bestehenden Kern-Modulen `struktur` (Huelle, Beschreibung) und `szene` (Welt); jede `/api`-Route muss einem Modul gehoeren (`src/module/manifest.ts`).
 
 ## 9. Beispieldaten
 
@@ -222,5 +222,4 @@ Zusaetzlich: Standard + Ausnahme (neue Einheit erbt Standard; Standardaenderung 
 - [A] Aufwand Standard + Ausnahmen ca. +0.5 PT; M2a gesamt damit ca. 2.5–3.5 PT.
 - [?] Verhalten bestehender Gebaeude bei Regelwerk v2.
 - [A] Liegenschaften werden in M2a per Beispielskript bzw. SQL angelegt; eine Verwaltungs-API folgt spaeter.
-- [A] Modulname `welt` und Zuordnung zum Modulschalter.
 - [A] Aufwand: Gespraechsschaetzung, nicht gemessen.
