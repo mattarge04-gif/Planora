@@ -50,6 +50,7 @@ try {
     Run wsl @('--import','planora-abnahme',(Join-Path $ziel 'wsl'),(Join-Path $ziel 'rootfs.tar'),'--version','2')
     Linux 'totalverlust.sh' 'totalverlust-host.log'
     Run wsl @('--unregister','planora-abnahme')
+    Run node @('--test','betrieb/abnahme/archiv-identitaet.test.mjs')
     Run node @('betrieb/abnahme/dossier.mjs',$ziel,(Join-Path $ziel 'dossier'))
     Run python @('betrieb/abnahme/upstream-lizenzen.py',(Join-Path $ziel 'dossier'))
     Run python @('betrieb/abnahme/lizenz-luecken.py',(Join-Path $ziel 'dossier'))
