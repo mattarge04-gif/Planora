@@ -2,7 +2,8 @@
 // Caddy liest Zertifikat und Schluessel beim Start aus /zertifikat (Bind-Mount, read-only); die Admin-API ist aus,
 // deshalb wird nach einer Rotation der Proxy neu gestartet.
 import { X509Certificate, createPrivateKey } from "node:crypto";
-import { chmodSync, chownSync, copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { chmodSync, chownSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { dateiSperre } from "../update/zustand.js";
 import { join } from "node:path";
 import { schreibeAtomar } from "./plan.js";
 /** Wert fuer PLANORA_TLS: Pfade im Proxy-Container (siehe compose.yaml, Volume /zertifikat). */
@@ -52,20 +53,25 @@ function lesbarFuerProxy(pfad: string, modus: number) {
   if (process.getuid?.() === 0) chownSync(pfad, PROXY_UID, PROXY_UID);
 }
 
-/** Legt cert.pem/key.pem geprueft und atomar im Instanzverzeichnis ab (tls/, 0700, Eigentuemer Proxy-UID). */
+/** Zertifikatskette und Schluessel liegen als EIN Paar in paar.pem: ein Wechsel ist ein einziges atomares rename und
+ *  kann nie ein gemischtes Paar hinterlassen (PP11a-5). Caddy liest Kette und Schluessel aus derselben Datei. */
+export const PAAR = "paar.pem";
+const paarInhalt = (cert: string, key: string) => [key.trim(), cert.trim(), ""].join("\n");
+function schreibePaar(datei: string, inhalt: string) { schreibeAtomar(datei, inhalt, 0o600); lesbarFuerProxy(datei, 0o600); }
+
+/** Legt das geprueft zusammengefuehrte Paar atomar im Instanzverzeichnis ab (tls/, 0700, Eigentuemer Proxy-UID). */
 export function legeKundenzertifikatAb(verzeichnis: string, zertifikatDatei: string, schluesselDatei: string, domain: string, jetzt = new Date()) {
   const cert = readFileSync(zertifikatDatei, "utf8"), key = readFileSync(schluesselDatei, "utf8");
   const info = pruefeKundenzertifikat(cert, key, domain, jetzt);
   if (!existsSync(verzeichnis)) mkdirSync(verzeichnis, { recursive: true, mode: 0o700 });
   lesbarFuerProxy(verzeichnis, 0o700);
-  schreibeAtomar(join(verzeichnis, "key.pem"), key, 0o600); lesbarFuerProxy(join(verzeichnis, "key.pem"), 0o600);
-  schreibeAtomar(join(verzeichnis, "cert.pem"), cert, 0o644); lesbarFuerProxy(join(verzeichnis, "cert.pem"), 0o644);
+  schreibePaar(join(verzeichnis, PAAR), paarInhalt(cert, key));
   return info;
 }
 
 export type RotationsOptionen = {
   verzeichnis: string; domain: string; zertifikatDatei: string; schluesselDatei: string;
-  /** Proxy neu starten (Caddy liest die Dateien nur beim Start). */
+  /** Proxy neu starten (Caddy liest die Datei nur beim Start). */
   neustart: () => Promise<void>;
   /** Prueft nach dem Neustart, ob der Proxy gesund ist und das erwartete Zertifikat ausliefert. */
   pruefe: (fingerprint256: string) => Promise<boolean>;
@@ -73,23 +79,31 @@ export type RotationsOptionen = {
 };
 
 /**
- * Rotation: neues Paar pruefen, bisheriges als *.vorher sichern, ersetzen, Proxy neu starten. Liefert der Proxy danach
- * nicht das neue Zertifikat, wird das bisherige Paar zurueckgelegt und der Proxy erneut gestartet.
+ * Rotation: neues Paar pruefen, Wechsel per Dateisperre serialisieren, bisheriges Paar als paar.pem.vorher sichern,
+ * atomar ersetzen, Proxy neu starten, Auslieferung pruefen. JEDER Fehler nach der Sicherung (Ersatz, Neustart,
+ * Pruefung) legt das bisherige Paar atomar zurueck und startet den Proxy erneut (PP11a-5).
  */
 export async function rotiereKundenzertifikat(o: RotationsOptionen) {
-  const cert = join(o.verzeichnis, "cert.pem"), key = join(o.verzeichnis, "key.pem");
-  if (!existsSync(cert) || !existsSync(key)) throw new Error("Kein Kunden-Zertifikat installiert (Instanz verwendet internal/ACME)");
+  const paar = join(o.verzeichnis, PAAR), vorher = `${paar}.vorher`;
+  if (!existsSync(paar)) throw new Error("Kein Kunden-Zertifikat installiert (Instanz verwendet internal/ACME)");
   // Vor jeder Aenderung pruefen: ungueltige Eingaben lassen den laufenden Stand unberuehrt.
-  const info = pruefeKundenzertifikat(readFileSync(o.zertifikatDatei, "utf8"), readFileSync(o.schluesselDatei, "utf8"), o.domain, o.jetzt);
-  copyFileSync(cert, `${cert}.vorher`); copyFileSync(key, `${key}.vorher`);
-  lesbarFuerProxy(`${key}.vorher`, 0o600);
-  legeKundenzertifikatAb(o.verzeichnis, o.zertifikatDatei, o.schluesselDatei, o.domain, o.jetzt);
-  await o.neustart();
-  if (await o.pruefe(info.fingerprint256).catch(() => false)) return { ...info, zurueckgerollt: false };
-  schreibeAtomar(key, readFileSync(`${key}.vorher`, "utf8"), 0o600); lesbarFuerProxy(key, 0o600);
-  schreibeAtomar(cert, readFileSync(`${cert}.vorher`, "utf8"), 0o644); lesbarFuerProxy(cert, 0o644);
-  await o.neustart();
-  throw new Error("Proxy lieferte das neue Zertifikat nicht aus; bisheriges Zertifikat wiederhergestellt");
+  const cert = readFileSync(o.zertifikatDatei, "utf8"), key = readFileSync(o.schluesselDatei, "utf8");
+  const info = pruefeKundenzertifikat(cert, key, o.domain, o.jetzt);
+  const frei = dateiSperre(join(o.verzeichnis, "wechsel.lock"), true, "Zertifikatswechsel");
+  try {
+    const bisher = readFileSync(paar, "utf8");
+    schreibePaar(vorher, bisher);
+    try {
+      schreibePaar(paar, paarInhalt(cert, key));
+      await o.neustart();
+      if (!(await o.pruefe(info.fingerprint256).catch(() => false))) throw new Error("Proxy lieferte das neue Zertifikat nicht aus");
+      return { ...info, zurueckgerollt: false };
+    } catch (e) {
+      schreibePaar(paar, bisher);
+      try { await o.neustart(); } catch (x) { throw new Error(`${(e as Error).message}; bisheriges Zertifikat zurueckgelegt, Proxy-Neustart fehlgeschlagen: ${(x as Error).message}`); }
+      throw new Error(`${(e as Error).message}; bisheriges Zertifikat wiederhergestellt`);
+    }
+  } finally { frei(true); }
 }
 
 /** Fingerprint des Zertifikats, das der Proxy fuer servername ausliefert (ohne Vertrauenspruefung, nur Vergleich). */

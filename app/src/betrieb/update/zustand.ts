@@ -37,21 +37,21 @@ export function leseZustand(datei: string): Zustand | null {
 
 const gehalten = new Set<string>();
 /** Ein liegengebliebener Lock wird nur bei --fortsetzen/--rueckweg UND nachgewiesen totem lokalen PID uebernommen. */
-export function dateiSperre(datei: string, uebernehmen: boolean) {
-  if (gehalten.has(datei)) throw new Error("Update laeuft bereits (Dateisperre)");
+export function dateiSperre(datei: string, uebernehmen: boolean, zweck = "update") {
+  if (gehalten.has(datei)) throw new Error(`${zweck === "update" ? "Update" : zweck} laeuft bereits (Dateisperre)`);
   mkdirSync(dirname(datei), { recursive: true, mode: 0o700 });
   if (existsSync(datei)) {
-    if (!uebernehmen) throw new Error("Update-Lock vorhanden; --fortsetzen oder --rueckweg verwenden");
-    const alt = JSON.parse(readFileSync(datei, "utf8")) as { pid: number; host: string };
+    const alt = JSON.parse(readFileSync(datei, "utf8")) as { pid: number; host: string; zweck?: string };
+    if (!uebernehmen) throw new Error(alt.zweck && alt.zweck !== "update" ? `Sperre durch laufende ${alt.zweck} (PID ${alt.pid}); spaeter erneut versuchen` : "Update-Lock vorhanden; --fortsetzen oder --rueckweg verwenden");
     if (alt.host !== hostname() || !Number.isInteger(alt.pid) || alt.pid <= 0) throw new Error("Lock-Eigentuemer unbekannt; keine automatische Uebernahme");
     let lebt = true;
     try { process.kill(alt.pid, 0); } catch (e) { if ((e as NodeJS.ErrnoException).code === "ESRCH") lebt = false; else throw e; }
     // Derselbe Prozess darf nach einem fehlgeschlagenen Aufruf erneut starten (keine aktive lokale Sperre).
-    if (lebt && alt.pid !== process.pid) throw new Error("Update-Prozess lebt noch");
+    if (lebt && alt.pid !== process.pid) throw new Error(`${alt.zweck && alt.zweck !== "update" ? `Prozess der ${alt.zweck}` : "Update-Prozess"} lebt noch`);
     unlinkSync(datei);
   }
   const fd = openSync(datei, "wx", 0o600);
-  try { writeFileSync(fd, JSON.stringify({ pid: process.pid, host: hostname() })); fsyncSync(fd); } finally { closeSync(fd); }
+  try { writeFileSync(fd, JSON.stringify({ pid: process.pid, host: hostname(), zweck })); fsyncSync(fd); } finally { closeSync(fd); }
   gehalten.add(datei);
   return (erfolgreich: boolean) => { gehalten.delete(datei); if (erfolgreich) unlinkSync(datei); };
 }

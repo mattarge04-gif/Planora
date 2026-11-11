@@ -5,7 +5,8 @@ import { chmodSync, chownSync, closeSync, existsSync, fsyncSync, mkdirSync, open
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 /** PLANORA_TLS fuer Kunden-Zertifikate: Pfade im Proxy-Container (Volume /zertifikat, compose.yaml). */
-export const KUNDENZERTIFIKAT_TLS = "/zertifikat/cert.pem /zertifikat/key.pem";
+// Kette und Schluessel in EINER Datei (paar.pem): atomarer Wechsel ohne gemischtes Paar (PP11a-5).
+export const KUNDENZERTIFIKAT_TLS = "/zertifikat/paar.pem /zertifikat/paar.pem";
 
 export type TlsModus = "acme" | "internal" | "kundenzertifikat";
 export type InstallEingabe = {

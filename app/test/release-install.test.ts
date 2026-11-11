@@ -188,10 +188,10 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
       const meldungen: string[] = [];
       await installiere(optionen({ ...kunde, tlsZertifikat: gut.certDatei, tlsSchluessel: gut.keyDatei, melde: (t: string) => meldungen.push(t) }), fake().u);
       const etc = join(dir, "etc", "kunde-a"), env = leseEnv(join(etc, "instanz.env"));
-      expect(env.PLANORA_TLS).toBe("/zertifikat/cert.pem /zertifikat/key.pem");
+      expect(env.PLANORA_TLS).toBe("/zertifikat/paar.pem /zertifikat/paar.pem");
       expect(env.PLANORA_TLS_VERZEICHNIS).toBe(join(etc, "tls").replace(/\\/g, "/"));
-      expect(readFileSync(join(etc, "tls", "cert.pem"), "utf8")).toBe(gut.certPem);
-      expect(readFileSync(join(etc, "tls", "key.pem"), "utf8")).toBe(gut.keyPem);
+      expect(readFileSync(join(etc, "tls", "paar.pem"), "utf8")).toContain(gut.certPem.trim());
+      expect(readFileSync(join(etc, "tls", "paar.pem"), "utf8")).toContain(gut.keyPem.trim());
       expect(meldungen.some((m) => /Kunden-Zertifikat geprueft: CN=planora.kunde.test/.test(m))).toBe(true);
       expect(readFileSync(join(etc, "instanz.env"), "utf8")).not.toContain("PRIVATE KEY");
     } finally { ca.aufraeumen(); }
