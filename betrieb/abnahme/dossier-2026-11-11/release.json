@@ -1,0 +1,105 @@
+{
+  "release": {
+    "format": 1,
+    "version": "pb-abnahme",
+    "erzeugt": "2026-11-11T09:41:07.433Z",
+    "architektur": "amd64",
+    "images": [
+      {
+        "dienst": "app",
+        "referenz": "pb-app:abnahme@sha256:cb969750ea3e2b088cd95d9907ee18dbc359981548790071e6a5fdee9bad71bd",
+        "imageId": "sha256:cb969750ea3e2b088cd95d9907ee18dbc359981548790071e6a5fdee9bad71bd",
+        "digest": null,
+        "architektur": "amd64",
+        "archiv": "images/app.tar"
+      },
+      {
+        "dienst": "backup",
+        "referenz": "pb-backup:abnahme@sha256:ea910ef46e20ed8bc7e952d92d0cc65363eb0f4f25c6c4324aa9bc8bb51440b6",
+        "imageId": "sha256:ea910ef46e20ed8bc7e952d92d0cc65363eb0f4f25c6c4324aa9bc8bb51440b6",
+        "digest": null,
+        "architektur": "amd64",
+        "archiv": "images/backup.tar"
+      },
+      {
+        "dienst": "db",
+        "referenz": "pb-db:abnahme@sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5",
+        "imageId": "sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5",
+        "digest": null,
+        "architektur": "amd64",
+        "archiv": "images/db.tar"
+      },
+      {
+        "dienst": "proxy",
+        "referenz": "pb-proxy:abnahme@sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9",
+        "imageId": "sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9",
+        "digest": null,
+        "architektur": "amd64",
+        "archiv": "images/proxy.tar"
+      }
+    ],
+    "schemaVersion": "011_freigabe_widerruf.sql",
+    "migrationen": [
+      {
+        "name": "001_basis.sql",
+        "sha256": "a70984268136f3e32c229cf2f5e8fe0094d6657acc7849148c2be5d8ec88d07b"
+      },
+      {
+        "name": "002_audit.sql",
+        "sha256": "3e9be56738a11ddc0e74ba2026f7009a4ef26053ee804f23458847456d6ceea7"
+      },
+      {
+        "name": "003_module.sql",
+        "sha256": "feb80e341e738dbeaa43c15024ea211971b27bb02438ac0bd9fc1e53d915e059"
+      },
+      {
+        "name": "004_auth.sql",
+        "sha256": "2456c707353d7cc23dbd9265b6cb9e0473ced7c9ee86bdaef55febe7be8fe8b6"
+      },
+      {
+        "name": "005_sitzung.sql",
+        "sha256": "9a0e22f800cc87bfd9a6a8c10c5dc74d73517cd235201877682f8e7f943fa988"
+      },
+      {
+        "name": "006_rechte.sql",
+        "sha256": "089ca4bb937eb58dfb32f3dcf60be767fb08b209467828ba10c112bb736b6443"
+      },
+      {
+        "name": "007_ablage.sql",
+        "sha256": "900eb50a729f7251f19088b83ad168afd7f1440813dc132bda3c1f3613ce00e0"
+      },
+      {
+        "name": "008_wartung.sql",
+        "sha256": "3645bc4a7f0df3e89428a571afe02d746f2a5ba0fb3827562ff7162017c4f840"
+      },
+      {
+        "name": "009_backup.sql",
+        "sha256": "5167a0d482af756d9e3ddc81cc7901e196e5ff55c316561bed8088c55bb15c42"
+      },
+      {
+        "name": "010_admin_restore.sql",
+        "sha256": "febcaefc7f1376508ea91e08713783c449fdae8d5af9e97de224097ea008230a"
+      },
+      {
+        "name": "011_freigabe_widerruf.sql",
+        "sha256": "7a1e97b9eb156411712384ea713cbc06a61efd40dd2b32191f02f15ff2a933ea"
+      }
+    ],
+    "pgBossSchema": null,
+    "jobPayloadVersionen": {},
+    "modulmanifestVersion": "1",
+    "katalogVersion": null,
+    "mindestvorgaenger": null,
+    "matrix": {
+      "vonVersionen": [],
+      "schemaVorher": [],
+      "schemaNachher": "011_freigabe_widerruf.sql",
+      "pgBossSchema": null,
+      "jobPayloadVersionen": {},
+      "nichttransaktionaleSchritte": [],
+      "rueckwegAltesImage": []
+    }
+  },
+  "schluesselId": "712eae0a6c0eb372",
+  "signatur": "xCuCQ/LcnrVpEjKPg+YLRUE4RHMDzv8SQCsf4XvLEZnB9l1V0GYd/fKM2ULquxEpfEvV8+dqC8Vf11RzmnrPDg=="
+}
