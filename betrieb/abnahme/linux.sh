@@ -31,27 +31,43 @@ if [[ ! -f /root/pb-offline/recovery.key ]]; then
   docker run --rm --name pb-age --user 0 --network none --entrypoint age-keygen -v /root/pb-offline:/ausgabe pb-backup:abnahme -o /ausgabe/recovery.key 2>/root/pb-offline/keygen.log
 fi
 empfaenger=$(docker run --rm --name pb-age --user 0 --network none --entrypoint age-keygen -v /root/pb-offline:/ausgabe:ro pb-backup:abnahme -y /ausgabe/recovery.key)
+# Erwartete Besitzer/Modi werden assertiert, nicht nur protokolliert.
+pruefe_stat() { # pfad uid:gid modus
+  local ist; ist=$(stat -c '%u:%g %a' "$1")
+  echo "$1 $ist"
+  [[ $ist == "$2 $3" ]] || { echo "FEHLER: $1 ist $ist, erwartet $2 $3"; return 1; }
+}
+pruefe_rechte() {
+  local e="/etc/planora/pb-$1" s="/etc/planora/pb-$1/secrets" f
+  pruefe_stat "$e" 0:0 700
+  pruefe_stat "$s" 0:0 700
+  for f in db_superuser_passwort db_app_passwort db_migrator_passwort db_backup_passwort db_betrieb_passwort auth_secret; do pruefe_stat "$s/$f" 0:0 600; done
+  pruefe_stat "$s/db" 999:999 700
+  for f in db_superuser_passwort db_app_passwort db_migrator_passwort db_backup_passwort db_betrieb_passwort; do pruefe_stat "$s/db/$f" 999:999 600; done
+  pruefe_stat "$s/app" 1000:1000 700
+  for f in db_app_passwort db_migrator_passwort db_betrieb_passwort auth_secret; do pruefe_stat "$s/app/$f" 1000:1000 600; done
+  [[ $(find "$s" -mindepth 1 | wc -l) == 17 ]] || { echo "FEHLER: unerwartete Secret-Dateien"; find "$s"; return 1; }
+  pruefe_stat "$e/backup" 1000:1000 700
+  for f in inventar.json konfiguration.json restic_passwort empfaenger betrieb_db backup_db; do pruefe_stat "$e/backup/$f" 1000:1000 600; done
+  pruefe_stat "$e/backup/backup.env" 0:0 600
+  [[ $(find "$e/backup" -mindepth 1 | wc -l) == 7 ]] || { echo "FEHLER: unerwartete Backup-Dateien"; find "$e/backup"; return 1; }
+  pruefe_stat "$e/instanz.env" 0:0 600
+  pruefe_stat "/srv/pb-ziel-$1" 1000:1000 700
+  # Gesamtes Sicherungsziel: nur UID 1000, nichts fuer Gruppe/andere zugreifbar.
+  [[ -z $(find "/srv/pb-ziel-$1" \( ! -uid 1000 -o -perm /077 \) -print -quit) ]] || { echo "FEHLER: Sicherungsziel pb-$1 mit fremdem Besitzer oder offenen Rechten"; return 1; }
+  [[ -d /srv/pb-ziel-$1/restic ]]
+  echo "PASS: Besitzer/Modi pb-$1"
+}
 for n in 1 2; do
   ./planora install --instanz "pb-$n" --domain localhost --tls internal --schluessel /opt/pb/release.pub --http-port "$((18600+n*2))" --https-port "$((18601+n*2))" --backup-ziel "/srv/pb-ziel-$n" --recovery-empfaenger "$empfaenger" >"/root/pb-offline/install-$n.log" 2>&1 || { sed -E '/Token/,$d' "/root/pb-offline/install-$n.log"; exit 1; }
   systemctl is-active "planora-betrieb@pb-$n.service" "planora-sicherung@pb-$n.timer"
   systemctl is-enabled "planora-betrieb@pb-$n.service" "planora-sicherung@pb-$n.timer"
   systemctl start "planora-sicherung@pb-$n.service"
   [[ $(systemctl show -p Result --value "planora-sicherung@pb-$n.service") == success ]]
-  curl --noproxy '*' -kfsS "https://localhost:$((18601+n*2))/api/health"
-  stat -c '%n %u:%g %a' "/srv/pb-ziel-$n" "/etc/planora/pb-$n/backup" "/etc/planora/pb-$n/backup/inventar.json" "/etc/planora/pb-$n/secrets/db/db_app_passwort" "/etc/planora/pb-$n/secrets/app/db_app_passwort"
+  curl --noproxy '*' -kfsS "https://localhost:$((18601+n*2))/api/health"; echo
+  pruefe_rechte "$n"
 done
-node --input-type=module <<'JS'
-import {execFileSync} from 'node:child_process';
-import assert from 'node:assert/strict';
-const instanz=n=>JSON.parse(execFileSync('docker',['inspect',...['db','api','proxy'].map(d=>`planora-pb-${n}-${d}-1`)],{encoding:'utf8'}));
-const a=instanz(1),b=instanz(2);
-const volumes=xs=>xs.flatMap(x=>x.Mounts.filter(m=>m.Type==='volume').map(m=>m.Source));
-const netze=xs=>xs.flatMap(x=>Object.keys(x.NetworkSettings.Networks));
-assert(!volumes(a).some(v=>volumes(b).includes(v)));
-assert(!netze(a).some(v=>netze(b).includes(v)));
-for(const [n,xs] of [[1,a],[2,b]]) for(const x of xs) for(const m of x.Mounts.filter(m=>m.Destination.startsWith('/run/secrets'))) assert(m.Type==='bind'&&m.Source.startsWith(`/etc/planora/pb-${n}/secrets/`)&&!m.RW);
-console.log('PASS: keine gemeinsamen Datenvolumes/Netze; Secret-Bind-Mounts getrennt und read-only');
-JS
+node "$(dirname "$0")/isolation.mjs"
 echo 'PASS: zwei parallele Instanzen, echte Linux-Bind-Mounts, systemd-Dienste und ausgeloeste Sicherungsdienste'
 iptables -nvL OUTPUT
 iptables -nvL FORWARD
