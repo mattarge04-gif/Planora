@@ -1,27 +1,24 @@
-import { join } from "node:path";
 import { leseArgumente } from "./install/argumente.js";
 import { instanzPfade, leseEnv } from "./install/plan.js";
 import { composeDateien } from "./install/install.js";
 import { composeArgs, dockerAusfuehrer, mussGelingen } from "./update/docker.js";
-import { reconcileMitAlarm, sicherungHost } from "./host.js";
+import { betriebsDienst, reconcileMitAlarm, sicherungHost } from "./host.js";
 import { restoreHost } from "./restore/host.js";
 import { sql } from "./update/docker.js";
 import { dateiSperre, leseZustand } from "./update/zustand.js";
 import { dbSperre } from "./update/sperre.js";
 import { ausgeliefertesZertifikat, rotiereKundenzertifikat } from "./install/zertifikat.js";
-import { alarmSpool, ladeAlarmKonfiguration, mitAlarm } from "./alarm/alarm.js";
+import { instanzAlarm, kurz, mitAlarm } from "./alarm/alarm.js";
 
-const BEFEHLE = ["start", "reconcile", "dienst", "restore", "zertifikat", "sichern", "alarm"];
+const BEFEHLE = ["start", "reconcile", "dienst", "restore", "zertifikat", "sichern", "aufbewahren", "alarm"];
 
 async function haupt() {
   const { werte, positionen } = leseArgumente(process.argv.slice(2), ["instanz", "tls-zertifikat", "tls-schluessel", "anlass"], ["test", "wiederholen"]);
-  if (!/^[a-z][a-z0-9-]{1,31}$/.test(werte.instanz ?? "") || !BEFEHLE.includes(positionen[0]) || positionen.length !== (positionen[0] === "restore" ? 2 : 1)) throw new Error("Aufruf: start|reconcile|dienst|sichern|restore [backup-id]|zertifikat|alarm --instanz <name>");
+  if (!/^[a-z][a-z0-9-]{1,31}$/.test(werte.instanz ?? "") || !BEFEHLE.includes(positionen[0]) || positionen.length !== (positionen[0] === "restore" ? 2 : 1)) throw new Error("Aufruf: start|reconcile|dienst|sichern|aufbewahren|restore [backup-id]|zertifikat|alarm --instanz <name>");
   const p = instanzPfade(werte.instanz), w = leseEnv(p.envDatei), docker = dockerAusfuehrer();
   const i = { projekt: `planora-${werte.instanz}`, envDatei: p.envDatei, composeDateien: composeDateien(w.PLANORA_BUNDLE_DIR) };
-  // Alarmkanal (M1-Abnahme Punkt 4). Eine fehlerhafte alarm.json verhindert keinen Betriebsbefehl, wird aber gemeldet.
-  let kanal: ReturnType<typeof ladeAlarmKonfiguration> = { secrets: {} };
-  try { kanal = ladeAlarmKonfiguration(p.etc); } catch (e) { console.error(`Alarmkonfiguration ungueltig, nur lokales Alarm-Journal: ${(e as Error).message}`); }
-  const alarm = alarmSpool({ instanz: werte.instanz, spool: join(p.var, "alarm"), ...kanal });
+  // Alarmkanal (M1-Abnahme Punkt 4). Eine ungueltige alarm.json haelt die Zustellung an, verhindert aber keinen Befehl.
+  const alarm = instanzAlarm(werte.instanz, p.etc, p.var);
   // Offene Alarme bei jedem Host-Befehl erneut versuchen (Wartezeit beachten).
   await alarm.zustellen().catch(() => {});
 
@@ -31,8 +28,11 @@ async function haupt() {
     console.log(JSON.stringify(werte.test ? await alarm.zustellen() : await alarm.zustellen(true)));
     return;
   }
-  if (positionen[0] === "sichern") {
-    console.log(JSON.stringify(await sicherungHost(docker, i, werte.anlass ?? "nacht", alarm)));
+  if (positionen[0] === "sichern" || positionen[0] === "aufbewahren") {
+    // Auch manuelle Aufrufe laufen ueber Sperre, Update-Koordination und Alarm (PP11a-3, PP11a-6).
+    const r = await sicherungHost(docker, i, alarm, { zustandDatei: p.zustand, sperrDatei: p.sperre, anlass: werte.anlass, nurRetention: positionen[0] === "aufbewahren" });
+    console.log(JSON.stringify(r));
+    if (r.ausgesetzt) process.exitCode = 75; // EX_TEMPFAIL: spaeter erneut
     return;
   }
   if (positionen[0] === "zertifikat") {
@@ -63,20 +63,18 @@ async function haupt() {
     });
     return;
   }
-  if (positionen[0] === "start") await mitAlarm(alarm, "start", "Start der Instanz fehlgeschlagen", () => mussGelingen(docker, [...composeArgs(i), "up", "-d", "--pull", "never", "--wait"]));
-  await reconcileMitAlarm(docker, i, alarm);
-  await mussGelingen(docker, [...composeArgs(i), "up", "-d", "--no-deps", "--pull", "never", "journal"]);
+  const journalStarten = () => mussGelingen(docker, [...composeArgs(i), "up", "-d", "--no-deps", "--pull", "never", "journal"]);
   if (positionen[0] === "dienst") {
+    // PP11a-8: Start- und Reconcile-Fehler beenden den Dienst nicht (kein systemd-Neustart im Minutentakt).
     const ende = new AbortController();
     for (const s of ["SIGINT", "SIGTERM"] as const) process.once(s, () => ende.abort());
     const { setTimeout } = await import("node:timers/promises");
-    // Alle 5 Minuten offene Alarme, jede Stunde Reconcile. Ein Reconcile-Fehler alarmiert und beendet den Dienst nicht.
-    for (let runde = 1; !ende.signal.aborted; runde++) {
-      await setTimeout(300_000, undefined, { signal: ende.signal }).catch(() => {});
-      if (ende.signal.aborted) break;
-      await alarm.zustellen().catch(() => {});
-      if (runde % 12 === 0) await reconcileMitAlarm(docker, i, alarm).catch(() => {});
-    }
+    await betriebsDienst({ reconcile: () => reconcileMitAlarm(docker, i, alarm, "reconcile"), journalStarten, alarm,
+      warte: (ms) => setTimeout(ms, undefined, { signal: ende.signal }).catch(() => {}), beendet: () => ende.signal.aborted });
+    return;
   }
+  if (positionen[0] === "start") await mitAlarm(alarm, "start", "Start der Instanz fehlgeschlagen", () => mussGelingen(docker, [...composeArgs(i), "up", "-d", "--pull", "never", "--wait"]));
+  await reconcileMitAlarm(docker, i, alarm, "reconcile");
+  await journalStarten();
 }
-haupt().catch((e) => { console.error(`Betriebsbefehl fehlgeschlagen: ${String((e as Error)?.message ?? e).split("\n")[0].slice(0, 300)}`); process.exitCode = 1; });
+haupt().catch((e) => { console.error(`Betriebsbefehl fehlgeschlagen: ${kurz(e)}`); process.exitCode = 1; });

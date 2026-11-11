@@ -15,7 +15,8 @@ export type WebhookKonfiguration = { url: string; ca?: string; timeoutMs?: numbe
 export type AlarmKonfiguration = { webhook?: WebhookKonfiguration; smtp?: SmtpKonfiguration };
 export type AlarmSecrets = { hmac?: string; smtpPasswort?: string };
 type Kanal = "webhook" | "smtp";
-type SpoolEintrag = { ereignis: Ereignis; zugestellt: Kanal[]; versuche: number; naechsterVersuch: string; letzterFehler?: string };
+/** kanaele: beim Erzeugen festgelegte, erforderliche Kanaele (leer = noch offen wegen ungueltiger Konfiguration). */
+type SpoolEintrag = { ereignis: Ereignis; kanaele: Kanal[]; zugestellt: Kanal[]; versuche: number; naechsterVersuch: string; letzterFehler?: string };
 
 const ARTEN: AlarmArt[] = ["backup", "retention", "update", "start", "reconcile", "restore", "zertifikat", "journal", "test"];
 /** [A] Wiederholungsabstand: 1, 2, 4 ... Minuten, hoechstens 60 Minuten. */
@@ -78,6 +79,8 @@ export type AlarmOptionen = {
   /** Fuer Tests austauschbar. */
   sender?: { webhook?: typeof webhookSenden; smtp?: typeof smtpSenden };
   jetzt?: () => number; protokoll?: (text: string) => void;
+  /** Gesetzt, wenn alarm.json/Secrets ungueltig sind: dann wird nichts zugestellt oder geloescht (PP11a-4). */
+  konfigurationFehler?: string;
 };
 
 /** Kanal-Konfiguration einer Instanz: /etc/planora/<instanz>/alarm.json und Secrets unter secrets/. */
@@ -92,29 +95,49 @@ export function ladeAlarmKonfiguration(etc: string): { konfiguration?: AlarmKonf
   return { konfiguration, secrets };
 }
 
+/** [A] Hoechstens so viele offene Alarme im Spool; aeltere werden verworfen und journalisiert (PP11a-8). */
+export const MAX_OFFEN = 200;
+/** [A] Eine andauernde gleiche Stoerung wird hoechstens einmal je 24 h erneut gemeldet (PP11a-8). */
+export const ERINNERUNG_MS = 24 * 3_600_000;
+type Stoerungen = Record<string, { seit: string; gemeldet: string; anzahl: number; art: AlarmArt }>;
+
 export function alarmSpool(o: AlarmOptionen) {
-  const offen = join(o.spool, "offen"), journalDatei = join(o.spool, "journal.jsonl");
+  const offen = join(o.spool, "offen"), journalDatei = join(o.spool, "journal.jsonl"), stoerungDatei = join(o.spool, "stoerungen.json");
   const jetzt = o.jetzt ?? Date.now, protokoll = o.protokoll ?? ((t: string) => console.error(t));
-  const kanaele = (): Kanal[] => [...(o.konfiguration?.webhook ? ["webhook" as const] : []), ...(o.konfiguration?.smtp ? ["smtp" as const] : [])];
+  const konfiguriert = (): Kanal[] => [...(o.konfiguration?.webhook ? ["webhook" as const] : []), ...(o.konfiguration?.smtp ? ["smtp" as const] : [])];
   const journal = (eintrag: object) => { mkdirSync(o.spool, { recursive: true, mode: 0o700 }); appendFileSync(journalDatei, JSON.stringify({ zeit: new Date(jetzt()).toISOString(), ...eintrag }) + "\n", { mode: 0o600 }); };
-  const schreibe = (datei: string, e: SpoolEintrag) => { const t = `${datei}.${randomUUID()}.tmp`; writeFileSync(t, JSON.stringify(e), { mode: 0o600, flag: "wx" }); renameSync(t, datei); };
+  const schreibe = (datei: string, e: unknown) => { mkdirSync(join(datei, ".."), { recursive: true, mode: 0o700 }); const t = `${datei}.${randomUUID()}.tmp`; writeFileSync(t, JSON.stringify(e), { mode: 0o600, flag: "wx" }); renameSync(t, datei); };
   const sende = async (k: Kanal, e: Ereignis) => {
     if (k === "webhook") await (o.sender?.webhook ?? webhookSenden)(o.konfiguration!.webhook!, o.secrets.hmac!, e, jetzt());
     else await (o.sender?.smtp ?? smtpSenden)(o.konfiguration!.smtp!, o.secrets.smtpPasswort, `[Planora ${e.instanz}] ${e.schwere}: ${e.art}`,
-      `${e.text}\n\nInstanz: ${e.instanz}\nHost: ${e.host}\nZeit: ${e.zeit}\nEreignis: ${e.id}\n`);
+      [e.text, "", `Instanz: ${e.instanz}`, `Host: ${e.host}`, `Zeit: ${e.zeit}`, `Ereignis: ${e.id}`, ""].join("\n"));
   };
+  const leseStoerungen = (): Stoerungen => { try { return JSON.parse(readFileSync(stoerungDatei, "utf8")); } catch { return {}; } };
 
-  /** Offene Alarme zustellen, deren Wartezeit abgelaufen ist (oder alle mit sofort=true). */
+  /**
+   * Offene Alarme zustellen, deren Wartezeit abgelaufen ist (oder alle mit sofort=true).
+   * PP11a-4: Ohne gueltige Konfiguration wird nichts zugestellt, quittiert oder geloescht. Jeder Eintrag traegt die
+   * erforderlichen Kanaele; ein nicht mehr konfigurierter Kanal gilt als Zustellfehler, nicht als erledigt.
+   */
   async function zustellen(sofort = false) {
     if (!existsSync(offen)) return { zugestellt: 0, offen: 0 };
+    const namen = readdirSync(offen).filter((n) => n.endsWith(".json")).sort();
+    if (o.konfigurationFehler) {
+      if (namen.length) journal({ art: "zustellung_ausgesetzt", grund: o.konfigurationFehler.slice(0, 300), offen: namen.length });
+      return { zugestellt: 0, offen: namen.length };
+    }
     let zugestellt = 0, offenAnzahl = 0;
-    for (const name of readdirSync(offen).filter((n) => n.endsWith(".json")).sort()) {
+    for (const name of namen) {
       const datei = join(offen, name);
       let e: SpoolEintrag;
-      try { e = JSON.parse(readFileSync(datei, "utf8")); } catch { journal({ art: "spool_defekt", datei: name }); continue; }
+      try { e = JSON.parse(readFileSync(datei, "utf8")); } catch { journal({ art: "spool_defekt", datei: name }); offenAnzahl++; continue; }
       if (!sofort && Date.parse(e.naechsterVersuch) > jetzt()) { offenAnzahl++; continue; }
+      // Eintraege aus der Zeit einer ungueltigen Konfiguration erhalten jetzt ihre Kanaele; danach bleiben sie fest.
+      if (!e.kanaele?.length) e.kanaele = konfiguriert();
       const fehler: string[] = [];
-      for (const k of kanaele().filter((x) => !e.zugestellt.includes(x))) {
+      if (!e.kanaele.length) fehler.push("kein Alarmkanal konfiguriert");
+      for (const k of e.kanaele.filter((x) => !e.zugestellt.includes(x))) {
+        if (!konfiguriert().includes(k)) { fehler.push(`${k}: Kanal nicht mehr konfiguriert`); continue; }
         try { await sende(k, e.ereignis); e.zugestellt.push(k); journal({ art: "zugestellt", ereignis: e.ereignis.id, kanal: k, versuch: e.versuche + 1 }); }
         catch (x) { fehler.push(`${k}: ${(x as Error).message}`); }
       }
@@ -129,30 +152,82 @@ export function alarmSpool(o: AlarmOptionen) {
     return { zugestellt, offen: offenAnzahl };
   }
 
-  /** Alarm erzeugen: Spool + Journal zuerst, dann sofortiger Zustellversuch. Wirft nie (Alarm darf Fehler nicht verdecken). */
-  async function alarmieren(art: AlarmArt, text: string, schwere: Ereignis["schwere"] = "fehler") {
+  /** Spool begrenzen: aelteste offene Eintraege verwerfen (journalisiert). */
+  function begrenzen() {
+    const namen = readdirSync(offen).filter((n) => n.endsWith(".json")).sort();
+    for (const name of namen.slice(0, Math.max(0, namen.length - MAX_OFFEN + 1))) {
+      rmSync(join(offen, name), { force: true });
+      journal({ art: "verworfen", datei: name, grund: `mehr als ${MAX_OFFEN} offene Alarme` });
+    }
+  }
+
+  /**
+   * Alarm erzeugen: Spool + Journal zuerst, dann sofortiger Zustellversuch. Wirft nie (Alarm darf Fehler nicht verdecken).
+   * Mit `stoerung` werden Wiederholungen derselben andauernden Stoerung zusammengefasst (Erinnerung nach 24 h).
+   */
+  async function alarmieren(art: AlarmArt, text: string, schwere: Ereignis["schwere"] = "fehler", stoerung?: string) {
     if (!ARTEN.includes(art)) throw new Error("Unbekannte Alarmart");
     const ereignis: Ereignis = { format: 1, id: randomUUID(), instanz: o.instanz, host: hostname(), art, schwere, text: text.slice(0, 1000), zeit: new Date(jetzt()).toISOString() };
-    protokoll(`Betriebsalarm ${art} (${schwere}): ${ereignis.text}`);
     try {
-      journal({ art: "erzeugt", ereignis });
-      if (!kanaele().length) { journal({ art: "kein_kanal", ereignis: ereignis.id }); return ereignis; }
+      if (stoerung) {
+        const s = leseStoerungen(), alt = s[stoerung];
+        if (alt && jetzt() - Date.parse(alt.gemeldet) < ERINNERUNG_MS) {
+          alt.anzahl++; schreibe(stoerungDatei, s);
+          journal({ art: "aggregiert", stoerung, anzahl: alt.anzahl, text: ereignis.text.slice(0, 200) });
+          protokoll(`Betriebsalarm ${art} (${schwere}, wiederholt ${alt.anzahl}x seit ${alt.seit}): ${ereignis.text}`);
+          return ereignis;
+        }
+        if (alt) ereignis.text = `${ereignis.text} (andauernd seit ${alt.seit}, ${alt.anzahl + 1} Vorkommen)`.slice(0, 1000);
+        s[stoerung] = { seit: alt?.seit ?? ereignis.zeit, gemeldet: ereignis.zeit, anzahl: (alt?.anzahl ?? 0) + 1, art };
+        schreibe(stoerungDatei, s);
+      }
+      protokoll(`Betriebsalarm ${art} (${schwere}): ${ereignis.text}`);
+      journal({ art: "erzeugt", ereignis, ...(stoerung ? { stoerung } : {}) });
+      if (!konfiguriert().length && !o.konfigurationFehler) { journal({ art: "kein_kanal", ereignis: ereignis.id }); return ereignis; }
       mkdirSync(offen, { recursive: true, mode: 0o700 });
-      schreibe(join(offen, `${ereignis.zeit.replace(/[:.]/g, "-")}-${ereignis.id}.json`), { ereignis, zugestellt: [], versuche: 0, naechsterVersuch: ereignis.zeit });
+      begrenzen();
+      // Bei ungueltiger Konfiguration bleiben die Kanaele offen und werden bei der ersten gueltigen Zustellung festgelegt.
+      schreibe(join(offen, `${ereignis.zeit.replace(/[:.]/g, "-")}-${ereignis.id}.json`), { ereignis, kanaele: o.konfigurationFehler ? [] : konfiguriert(), zugestellt: [], versuche: 0, naechsterVersuch: ereignis.zeit } satisfies SpoolEintrag);
       await zustellen();
     } catch (e) { protokoll(`Alarm-Spool fehlerhaft: ${(e as Error).message}`); }
     return ereignis;
   }
-  return { alarmieren, zustellen };
+
+  /** Stoerung beendet: Zustand loeschen und einmalig als behoben melden, falls sie gemeldet war. */
+  async function behoben(stoerung: string, text: string) {
+    const s = leseStoerungen(), alt = s[stoerung];
+    if (!alt) return;
+    delete s[stoerung];
+    try { schreibe(stoerungDatei, s); } catch (e) { protokoll(`Alarm-Spool fehlerhaft: ${(e as Error).message}`); }
+    await alarmieren(alt.art, `Behoben: ${text} (gestoert seit ${alt.seit}, ${alt.anzahl} Vorkommen)`, "warnung");
+  }
+  return { alarmieren, zustellen, behoben };
 }
 
-/** Fuehrt arbeit aus; bei Fehler wird alarmiert und der Fehler weitergereicht. Erfolg erzeugt keinen Alarm. */
+/** Alarm einer Instanz laden. Eine ungueltige alarm.json verhindert keinen Betriebsbefehl, haelt aber die Zustellung an. */
+export function instanzAlarm(instanz: string, etc: string, varVerzeichnis: string, protokoll?: (t: string) => void) {
+  let kanal: ReturnType<typeof ladeAlarmKonfiguration> = { secrets: {} }, konfigurationFehler: string | undefined;
+  try { kanal = ladeAlarmKonfiguration(etc); } catch (e) {
+    konfigurationFehler = (e as Error).message;
+    (protokoll ?? console.error)(`Alarmkonfiguration ungueltig; Alarme bleiben im Spool, bis sie korrigiert ist: ${konfigurationFehler}`);
+  }
+  return alarmSpool({ instanz, spool: join(varVerzeichnis, "alarm"), ...kanal, konfigurationFehler, protokoll });
+}
+
 /** Minimale Alarm-Schnittstelle (alarmSpool oder Test-Fake). */
-export type Alarmierer = { alarmieren(art: AlarmArt, text: string, schwere?: Ereignis["schwere"]): Promise<unknown> };
-export async function mitAlarm<T>(alarm: Alarmierer, art: AlarmArt, beschreibung: string, arbeit: () => Promise<T>): Promise<T> {
-  try { return await arbeit(); } catch (e) {
-    // Nur die erste Zeile der Fehlermeldung, gekuerzt: Docker-/Werkzeugmeldungen enthalten keine Secrets, aber Ausgaben bleiben kurz.
-    await alarm.alarmieren(art, `${beschreibung}: ${String((e as Error)?.message ?? e).split("\n")[0].slice(0, 300)}`);
+export type Alarmierer = { alarmieren(art: AlarmArt, text: string, schwere?: Ereignis["schwere"], stoerung?: string): Promise<unknown>; behoben?(stoerung: string, text: string): Promise<void> };
+
+/** Erste Zeile der Fehlermeldung, gekuerzt: Docker-/Werkzeugmeldungen enthalten keine Secrets, Ausgaben bleiben kurz. */
+export const kurz = (e: unknown) => String((e as Error)?.message ?? e).split("\n")[0].slice(0, 300);
+
+/** Fuehrt arbeit aus; bei Fehler wird alarmiert und der Fehler weitergereicht. Erfolg erzeugt keinen Alarm. */
+export async function mitAlarm<T>(alarm: Alarmierer, art: AlarmArt, beschreibung: string, arbeit: () => Promise<T>, stoerung?: string): Promise<T> {
+  try {
+    const r = await arbeit();
+    if (stoerung) await alarm.behoben?.(stoerung, beschreibung);
+    return r;
+  } catch (e) {
+    await alarm.alarmieren(art, `${beschreibung}: ${kurz(e)}`, "fehler", stoerung);
     throw e;
   }
 }

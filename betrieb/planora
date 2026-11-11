@@ -73,11 +73,13 @@ case "$befehl" in
     echo "Setup-Token fuer den Erstadmin (15 Minuten gueltig, nur einmal verwendbar):" >&2
     compose --profile konsole run --pull never --rm -T konsole setup-token
     ;;
-  start|reconcile|dienst|restore|zertifikat|alarm)
+  # sichern/aufbewahren laufen ueber das Host-Werkzeug: Sperre mit Update/Restore, Reservierung offener
+  # Update-Saetze und Betriebsalarm gelten auch fuer manuelle Aufrufe (PP11a-3, PP11a-6).
+  start|reconcile|dienst|restore|zertifikat|alarm|sichern|aufbewahren)
     brauche_node host-cli.js
     exec node "$WERKZEUG/betrieb/host-cli.js" "$befehl" "$@"
     ;;
-  sichern|journal|freigabe|aufbewahren)
+  journal|freigabe)
     instanz_aus "$@"
     # Nur --instanz entfernen; alle anderen Argumente unveraendert weitergeben.
     [ "${1:-}" = --instanz ] || fehler "Aufruf: planora $befehl --instanz <name> ..."

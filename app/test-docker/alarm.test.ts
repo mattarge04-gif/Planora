@@ -74,15 +74,15 @@ describe.runIf(aktiv)("Alarmkanal gegen Mock-Empfaenger (Docker)", () => {
   });
 
   it("Erfolgreiche Sicherung (inkl. Retention) loest keinen Alarm aus", async () => {
-    const r = await sicherungHost(dockerAusfuehrer(), i, "alarmtest", alarm);
-    expect(r.sicherung.zustand).toBe("geprueft");
+    const r = await sicherungHost(dockerAusfuehrer(), i, alarm, { anlass: "alarmtest", zustandDatei: join(arbeit, "update.json"), sperrDatei: join(arbeit, "update.lock") });
+    expect(r.sicherung?.zustand).toBe("geprueft");
     expect(r.retention.entfernt).toEqual([]);
     expect(await empfangen()).toEqual([]);
     expect(journal()).toEqual([]);
   });
   it("Fehlgeschlagene Sicherung loest einen signierten, pruefbaren Alarm aus", async () => {
     await u.compose("stop", "db");
-    await expect(sicherungHost(dockerAusfuehrer(), i, "alarmtest", alarm)).rejects.toThrow(/Exit 1/);
+    await expect(sicherungHost(dockerAusfuehrer(), i, alarm, { anlass: "alarmtest", zustandDatei: join(arbeit, "update.json"), sperrDatei: join(arbeit, "update.lock") })).rejects.toThrow(/Exit 1/);
     const e = await empfangen();
     expect(e).toHaveLength(1);
     expect(e[0]).toMatchObject({ gueltig: true, status: 204, body: { format: 1, instanz: projekt, art: "backup", schwere: "fehler" } });
@@ -100,9 +100,16 @@ describe.runIf(aktiv)("Alarmkanal gegen Mock-Empfaenger (Docker)", () => {
     expect(status).toBe(401);
     expect((await empfangen()).at(-1)).toMatchObject({ gueltig: false, status: 401, ereignis: "gefaelscht" });
   });
+  it("PP11a-8: dieselbe andauernde Stoerung wird nicht erneut gesendet, sondern aggregiert", async () => {
+    const vorher = (await empfangen()).length;
+    await expect(sicherungHost(dockerAusfuehrer(), i, alarm, { anlass: "alarmtest", zustandDatei: join(arbeit, "update.json"), sperrDatei: join(arbeit, "update.lock") })).rejects.toThrow(/Exit 1/);
+    expect((await empfangen()).length).toBe(vorher);
+    expect(journal().at(-1)).toMatchObject({ art: "aggregiert", stoerung: "sicherung", anzahl: 2 });
+  });
   it("Zustellfehler wird journalisiert und wiederholt, bis der Empfaenger annimmt", async () => {
     setzeFehler(1);
-    await expect(sicherungHost(dockerAusfuehrer(), i, "alarmtest", alarm)).rejects.toThrow();
+    // Manueller Retention-Aufruf (planora aufbewahren) bei gestoppter DB: eigene Stoerung, eigener Alarm.
+    await expect(sicherungHost(dockerAusfuehrer(), i, alarm, { nurRetention: true, zustandDatei: join(arbeit, "update.json"), sperrDatei: join(arbeit, "update.lock") })).rejects.toThrow();
     expect(offen()).toHaveLength(1);
     const fehler = journal().filter((j) => j.art === "zustellfehler");
     expect(fehler).toHaveLength(1);
@@ -111,7 +118,7 @@ describe.runIf(aktiv)("Alarmkanal gegen Mock-Empfaenger (Docker)", () => {
     expect(await alarm.zustellen(true)).toEqual({ zugestellt: 0, offen: 1 }); // Empfaenger weiterhin 503
     setzeFehler(0);
     expect(await alarm.zustellen(true)).toEqual({ zugestellt: 1, offen: 0 });
-    const e = (await empfangen()).filter((x) => x.gueltig && x.body?.art === "backup").slice(-3);
+    const e = (await empfangen()).filter((x) => x.gueltig && x.body?.art === "retention").slice(-3);
     expect(e.map((x) => x.status)).toEqual([503, 503, 204]);
     expect(new Set(e.map((x) => x.ereignis)).size).toBe(1);
     expect(journal().slice(-4).map((j) => j.art)).toEqual(["erzeugt", "zustellfehler", "zustellfehler", "zugestellt"]);

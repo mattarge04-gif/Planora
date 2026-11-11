@@ -6,9 +6,11 @@ import { TLSSocket } from "node:tls";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { alarmSpool, ladeAlarmKonfiguration, mitAlarm, pruefeAlarmKonfiguration, pruefeSignatur, signiere, webhookSenden, type Ereignis } from "../src/betrieb/alarm/alarm.js";
+import { MAX_OFFEN, alarmSpool, instanzAlarm, ladeAlarmKonfiguration, mitAlarm, pruefeAlarmKonfiguration, pruefeSignatur, signiere, webhookSenden, type Ereignis } from "../src/betrieb/alarm/alarm.js";
 import { smtpSenden } from "../src/betrieb/alarm/smtp.js";
-import { reconcileMitAlarm, sicherungHost } from "../src/betrieb/host.js";
+import { betriebsDienst, reconcileMitAlarm, sicherungHost } from "../src/betrieb/host.js";
+import { dateiSperre } from "../src/betrieb/update/zustand.js";
+import { hostname } from "node:os";
 import type { Ausfuehrer } from "../src/betrieb/update/docker.js";
 import { findeOpenssl, testCa, type TestCa } from "./hilfe/test-ca.js";
 
@@ -86,6 +88,54 @@ describe("Spool, Journal und Wiederholung", () => {
     expect(journal(spool).map((j) => j.art)).toEqual(["erzeugt", "kein_kanal"]);
     expect(existsSync(join(spool, "offen"))).toBe(false);
   });
+  it("PP11a-4: ungueltige Konfiguration: offene Alarme werden weder zugestellt noch geloescht; nach Korrektur zugestellt", async () => {
+    const etc = join(dir, "etc-pp4"), varDir = join(dir, "var-pp4"); mkdirSync(join(etc, "secrets"), { recursive: true });
+    writeFileSync(join(etc, "alarm.json"), JSON.stringify(WEBHOOK)); writeFileSync(join(etc, "secrets", "alarm_hmac"), SCHLUESSEL);
+    let gesendet = 0, ok = false;
+    const sender = { webhook: async () => { if (!ok) throw new Error("Webhook antwortet 503"); gesendet++; } };
+    const mit = () => { const a = instanzAlarm("kunde-a", etc, varDir, () => {}); return a; };
+    // gueltig, Zustellung scheitert: bleibt offen
+    const erst = alarmSpool({ instanz: "kunde-a", spool: join(varDir, "alarm"), ...ladeAlarmKonfiguration(etc), sender, protokoll: () => {} });
+    await erst.alarmieren("backup", "Sicherung fehlgeschlagen");
+    const offen = () => readdirSync(join(varDir, "alarm", "offen")).filter((n) => n.endsWith(".json"));
+    expect(offen()).toHaveLength(1);
+    expect(JSON.parse(readFileSync(join(varDir, "alarm", "offen", offen()[0]), "utf8")).kanaele).toEqual(["webhook"]);
+    // Konfiguration wird ungueltig: nichts zustellen, nichts loeschen; neuer Alarm wird trotzdem gespoolt
+    writeFileSync(join(etc, "alarm.json"), "{kaputt");
+    ok = true;
+    expect(await mit().zustellen(true)).toEqual({ zugestellt: 0, offen: 1 });
+    await mit().alarmieren("reconcile", "Reconcile fehlgeschlagen");
+    expect(offen()).toHaveLength(2);
+    expect(gesendet).toBe(0);
+    // Kanalwechsel auf nur SMTP: der webhook-pflichtige Alarm bleibt offen (kein stilles Quittieren)
+    writeFileSync(join(etc, "alarm.json"), JSON.stringify({ smtp: { host: "m", port: 25, absender: "a@b", empfaenger: ["c@d"], starttls: false } }));
+    const nurSmtp = alarmSpool({ instanz: "kunde-a", spool: join(varDir, "alarm"), ...ladeAlarmKonfiguration(etc), sender: { smtp: async () => { gesendet++; } }, protokoll: () => {} });
+    expect(await nurSmtp.zustellen(true)).toEqual({ zugestellt: 1, offen: 1 }); // der waehrend ungueltiger Konfig erzeugte geht ueber SMTP
+    expect(readFileSync(join(varDir, "alarm", "journal.jsonl"), "utf8")).toContain("Kanal nicht mehr konfiguriert");
+    // Konfiguration wieder mit Webhook: Rest wird zugestellt
+    writeFileSync(join(etc, "alarm.json"), JSON.stringify(WEBHOOK));
+    const wieder = alarmSpool({ instanz: "kunde-a", spool: join(varDir, "alarm"), ...ladeAlarmKonfiguration(etc), sender, protokoll: () => {} });
+    expect(await wieder.zustellen(true)).toEqual({ zugestellt: 1, offen: 0 });
+    expect(gesendet).toBe(2);
+  });
+  it("PP11a-8: gleiche Stoerung wird aggregiert (Erinnerung nach 24 h), Spool ist begrenzt", async () => {
+    const spool = join(dir, "spool-agg"); let jetzt = Date.parse("2026-11-11T02:00:00Z"); const gesendet: string[] = [];
+    const a = alarmSpool({ instanz: "kunde-a", spool, konfiguration: WEBHOOK, secrets: { hmac: SCHLUESSEL }, jetzt: () => jetzt, protokoll: () => {}, sender: { webhook: async (_w, _k, e) => { gesendet.push(e.text); } } });
+    for (let n = 0; n < 5; n++) { await a.alarmieren("reconcile", "Reconcile fehlgeschlagen", "fehler", "reconcile"); jetzt += 60_000; }
+    expect(gesendet).toEqual(["Reconcile fehlgeschlagen"]);
+    jetzt += 24 * 3_600_000;
+    await a.alarmieren("reconcile", "Reconcile fehlgeschlagen", "fehler", "reconcile");
+    expect(gesendet[1]).toMatch(/andauernd seit 2026-11-11T02:00:00.000Z, 6 Vorkommen/);
+    await a.behoben("reconcile", "Reconcile");
+    expect(gesendet[2]).toMatch(/^Behoben: Reconcile/);
+    await a.behoben("reconcile", "Reconcile"); // ohne Stoerung keine weitere Meldung
+    expect(gesendet).toHaveLength(3);
+    // Begrenzung: Empfaenger dauerhaft weg, mehr als MAX_OFFEN Alarme
+    const voll = alarmSpool({ instanz: "kunde-a", spool: join(dir, "spool-voll"), konfiguration: WEBHOOK, secrets: { hmac: SCHLUESSEL }, protokoll: () => {}, sender: { webhook: async () => { throw new Error("weg"); } } });
+    for (let n = 0; n < MAX_OFFEN + 5; n++) await voll.alarmieren("backup", `Fehler ${n}`);
+    expect(readdirSync(join(dir, "spool-voll", "offen")).filter((x) => x.endsWith(".json"))).toHaveLength(MAX_OFFEN);
+    expect(readFileSync(join(dir, "spool-voll", "journal.jsonl"), "utf8").match(/"art":"verworfen"/g)).toHaveLength(5);
+  }, 60_000);
   it("mitAlarm: Erfolg loest keinen Alarm aus, Fehler alarmiert und wird weitergereicht", async () => {
     const alarme: string[] = [];
     const a = { alarmieren: async (art: string, text: string) => { alarme.push(`${art}|${text}`); } };
@@ -99,33 +149,64 @@ describe("Spool, Journal und Wiederholung", () => {
 describe("Host-Anbindung", () => {
   const i = { projekt: "planora-kunde-a", envDatei: "instanz.env", composeDateien: ["compose.yaml", "compose.backup.yaml"] };
   const fake = (fehler: Record<string, boolean>) => {
-    const aufrufe: string[] = [];
+    const aufrufe: string[] = [], argumente: string[][] = [];
     const docker: Ausfuehrer = async (args) => {
       const befehl = args.includes("sichern") ? "sichern" : args.includes("aufbewahren") ? "aufbewahren" : args.includes("reconcile") ? "reconcile" : args[0];
-      aufrufe.push(befehl);
+      aufrufe.push(befehl); argumente.push(args);
       if (fehler[befehl]) return { code: 1, stdout: "", stderr: "Betriebsbefehl fehlgeschlagen" };
       return { code: 0, stdout: befehl === "ps" ? "" : befehl === "reconcile" ? JSON.stringify({ fehlgeschlagen: fehler.abgebrochen ? 2 : 0 }) : JSON.stringify({ ok: befehl }), stderr: "" };
     };
     const alarme: string[] = [];
-    return { docker, aufrufe, alarme, alarm: { alarmieren: async (art: string, text: string, schwere = "fehler") => { alarme.push(`${art}|${schwere}|${text}`); } } };
+    return { docker, aufrufe, argumente, alarme, fehler, alarm: { alarmieren: async (art: string, text: string, schwere = "fehler") => { alarme.push(`${art}|${schwere}|${text}`); } } };
   };
-  it("Sicherung erfolgreich: Retention laeuft, kein Alarm", async () => {
-    const f = fake({});
-    expect(await sicherungHost(f.docker, i, "nacht", f.alarm)).toEqual({ sicherung: { ok: "sichern" }, retention: { ok: "aufbewahren" } });
+  const koordination = () => { const d = mkdtempSync(join(dir, "host-")); return { zustandDatei: join(d, "update.json"), sperrDatei: join(d, "update.lock") }; };
+  it("Sicherung erfolgreich: Retention laeuft, kein Alarm, Sperre wieder frei", async () => {
+    const f = fake({}), k = koordination();
+    expect(await sicherungHost(f.docker, i, f.alarm, k)).toEqual({ ausgesetzt: null, sicherung: { ok: "sichern" }, retention: { ok: "aufbewahren" }, reserviert: [] });
     expect(f.aufrufe).toEqual(["sichern", "aufbewahren"]);
     expect(f.alarme).toEqual([]);
+    expect(existsSync(k.sperrDatei)).toBe(false);
   });
   it("Sicherung fehlgeschlagen: Alarm backup, keine Retention", async () => {
-    const f = fake({ sichern: true });
-    await expect(sicherungHost(f.docker, i, "nacht", f.alarm)).rejects.toThrow();
+    const f = fake({ sichern: true }), k = koordination();
+    await expect(sicherungHost(f.docker, i, f.alarm, k)).rejects.toThrow();
     expect(f.aufrufe).toEqual(["sichern"]);
     expect(f.alarme).toHaveLength(1);
     expect(f.alarme[0]).toMatch(/^backup\|fehler\|Sicherung fehlgeschlagen: docker compose .* Exit 1: Betriebsbefehl fehlgeschlagen$/);
+    expect(existsSync(k.sperrDatei)).toBe(false);
   });
   it("Retention fehlgeschlagen: Alarm retention", async () => {
     const f = fake({ aufbewahren: true });
-    await expect(sicherungHost(f.docker, i, "nacht", f.alarm)).rejects.toThrow();
+    await expect(sicherungHost(f.docker, i, f.alarm, koordination())).rejects.toThrow();
     expect(f.alarme.map((x) => x.split("|")[0])).toEqual(["retention"]);
+  });
+  it("PP11a-3: offenes Update: keine neue Sicherung, Retention reserviert dessen Satz", async () => {
+    const f = fake({}), k = koordination(), backupId = "11111111-2222-4333-8444-555555555555";
+    writeFileSync(k.zustandDatei, JSON.stringify({ format: 1, id: "u1", bestaetigt: 5, begonnen: 6, status: "abgebrochen", backupId }));
+    const r = await sicherungHost(f.docker, i, f.alarm, k);
+    expect(f.aufrufe).toEqual(["aufbewahren"]);
+    expect(f.argumente[0].slice(-3)).toEqual(["aufbewahren", "--reserviert", backupId]);
+    expect(r).toMatchObject({ sicherung: null, reserviert: [backupId] });
+    expect(f.alarme).toEqual([`backup|warnung|Sicherung ausgesetzt: Update u1 ist abgebrochen; zuerst --fortsetzen oder --rueckweg`]);
+    // abgeschlossenes Update reserviert nichts
+    writeFileSync(k.zustandDatei, JSON.stringify({ format: 1, id: "u1", bestaetigt: 7, begonnen: null, status: "fertig", backupId }));
+    const g = fake({});
+    expect((await sicherungHost(g.docker, i, g.alarm, k)).reserviert).toEqual([]);
+    expect(g.aufrufe).toEqual(["sichern", "aufbewahren"]);
+  });
+  it("PP11a-3: laufendes Update/Restore (lebende Sperre) setzt Sicherung und Retention aus", async () => {
+    const f = fake({}), k = koordination();
+    const frei = dateiSperre(k.sperrDatei, false); // dieser Prozess haelt die Update-Sperre
+    try {
+      const r = await sicherungHost(f.docker, i, f.alarm, k);
+      expect(r.ausgesetzt).toMatch(/laeuft bereits/);
+      expect(f.aufrufe).toEqual([]);
+      expect(f.alarme[0]).toMatch(/^backup\|warnung\|Sicherung\/Retention ausgesetzt/);
+    } finally { frei(true); }
+    // Umgekehrt: waehrend einer Sicherung erhaelt ein Update eine klare Meldung.
+    writeFileSync(k.sperrDatei, JSON.stringify({ pid: process.pid, host: hostname(), zweck: "Sicherung" }));
+    expect(() => dateiSperre(k.sperrDatei, false)).toThrow(/Sperre durch laufende Sicherung/);
+    rmSync(k.sperrDatei);
   });
   it("Reconcile: Fehler alarmiert; bereinigte abgebrochene Sicherungen melden eine Warnung", async () => {
     const f = fake({ reconcile: true });
@@ -137,6 +218,26 @@ describe("Host-Anbindung", () => {
     const h = fake({});
     expect(await reconcileMitAlarm(h.docker, i, h.alarm)).toBe(0);
     expect(h.alarme).toEqual([]);
+  });
+  it("PP11a-8: Betriebsdienst ueberlebt Start-/Reconcile-Fehler, wiederholt alle 5 min und meldet die Stoerung einmal", async () => {
+    const spool = join(dir, "dienst"), gesendet: Ereignis[] = [];
+    let jetzt = Date.parse("2026-11-11T02:00:00Z");
+    const a = alarmSpool({ instanz: "kunde-a", spool, konfiguration: WEBHOOK, secrets: { hmac: SCHLUESSEL }, jetzt: () => jetzt, protokoll: () => {}, sender: { webhook: async (_w, _k, e) => { gesendet.push(e); } } });
+    const f = fake({ reconcile: true }), wartezeiten: number[] = [];
+    let runden = 0, journalStarts = 0;
+    await betriebsDienst({
+      reconcile: () => reconcileMitAlarm(f.docker, i, a, "reconcile"), journalStarten: async () => { journalStarts++; }, alarm: a,
+      warte: async (ms) => { wartezeiten.push(ms); jetzt += ms; if (++runden === 4) f.fehler.reconcile = false; },
+      beendet: () => runden >= 30,
+    });
+    // 4 Fehlversuche, dann (nach Behebung) Erfolg; danach nur noch stuendlich
+    expect(wartezeiten.every((w) => w === 300_000)).toBe(true);
+    expect(gesendet.filter((e) => e.art === "reconcile" && e.schwere === "fehler")).toHaveLength(1);
+    expect(journalStarts).toBe(1);
+    expect(gesendet.filter((e) => e.text.startsWith("Behoben:"))).toHaveLength(1);
+    expect(f.aufrufe.filter((x) => x === "reconcile").length).toBeLessThan(10);
+    const journal = readFileSync(join(spool, "journal.jsonl"), "utf8");
+    expect(journal).toContain('"art":"aggregiert"');
   });
 });
 

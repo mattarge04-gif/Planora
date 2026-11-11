@@ -6,7 +6,7 @@ import { pruefeRelease } from "../release.js";
 import { dockerAusfuehrer } from "./docker.js";
 import { aktualisiere, leseZustand } from "./zustand.js";
 import { dockerBetriebsumgebung } from "./umgebung.js";
-import { alarmSpool, ladeAlarmKonfiguration } from "../alarm/alarm.js";
+import { instanzAlarm } from "../alarm/alarm.js";
 
 let alarmInstanz: string | undefined;
 
@@ -40,7 +40,7 @@ haupt().catch(async (e) => {
   if (!alarmInstanz) return;
   try {
     const p = instanzPfade(alarmInstanz);
-    await alarmSpool({ instanz: alarmInstanz, spool: join(p.var, "alarm"), ...ladeAlarmKonfiguration(p.etc) })
+    await instanzAlarm(alarmInstanz, p.etc, p.var)
       .alarmieren("update", `Update abgebrochen: ${meldung.split("\n")[0].slice(0, 300)}`);
   } catch (x) { console.error(`Alarm nicht moeglich: ${(x as Error).message}`); }
 });

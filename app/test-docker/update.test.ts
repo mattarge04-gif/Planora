@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { spawn } from "node:child_process";
 import { APP, BETRIEB, DOCKER_TESTS, TEST, baueImage, docker, https } from "./paket-hilfe.js";
 import { dockerAusfuehrer, dockerBinary } from "../src/betrieb/update/docker.js";
-import { reconcileHost } from "../src/betrieb/host.js";
+import { reconcileHost, sicherungHost } from "../src/betrieb/host.js";
 import { dockerInstallUmgebung, installiere } from "../src/betrieb/install/install.js";
 import { instanzPfade, leseEnv } from "../src/betrieb/install/plan.js";
 import { MANIFEST_VERSION } from "../src/module/manifest.js";
@@ -148,6 +148,20 @@ describe.skipIf(!DOCKER_TESTS)("Host-Update (Docker)", () => {
     const u = dockerBetriebsumgebung(aus,instanz,altBundle), start = u.startenUndPruefen;
     u.startenUndPruefen = async(z) => { await start(z); throw new Error("Restore-Testabbruch"); };
     await expect(aktualisiere(o,u)).rejects.toThrow(/Restore-Testabbruch/);
+    // PP11a-3: Naechtlicher Lauf waehrend des abgebrochenen Updates: keine neue Sicherung, Retention (Politik 1/0/0)
+    // laeuft mit reserviertem Rueckweg-Satz; der anschliessende Rueckweg muss gelingen.
+    const backupEnv = leseEnv(instanzPfade(instanz).envDatei).PLANORA_BACKUP_ENV, envVorher = readFileSync(backupEnv,"utf8");
+    const rueckwegSatz = leseZustand(o.datei)!.backupId!;
+    const alarme: string[] = [];
+    try {
+      writeFileSync(backupEnv, envVorher + ["PLANORA_RETENTION_TAEGLICH=1","PLANORA_RETENTION_WOECHENTLICH=0","PLANORA_RETENTION_MONATLICH=0",""].join(String.fromCharCode(10)));
+      const nacht = await sicherungHost(aus, i, { alarmieren: async (art: string, text: string, schwere = "fehler") => { alarme.push(`${art}|${schwere}|${text}`); } }, { zustandDatei: o.datei, sperrDatei: o.sperre });
+      expect(nacht.sicherung).toBeNull();
+      expect(nacht.reserviert).toEqual([rueckwegSatz]);
+      expect(nacht.retention.behalten).toContain(rueckwegSatz);
+      expect(nacht.retention.entfernt.length).toBeGreaterThan(0);
+      expect(alarme).toEqual([expect.stringMatching(/^backup\|warnung\|Sicherung ausgesetzt: Update .* ist abgebrochen/)]);
+    } finally { writeFileSync(backupEnv, envVorher); }
     const rollback = {datei:o.datei,sperre:o.sperre,modus:"rueckweg" as const};
     await expect(aktualisiere(rollback,umgebung())).rejects.toThrow(/Offline-Recovery-Key/);
     process.env.PLANORA_RECOVERY_DATEI = recoveryKey;
