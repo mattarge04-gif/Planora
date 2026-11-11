@@ -44,12 +44,16 @@ export function kalender(zeit: Date, zeitzone: string) {
  * - Vertreter eines Bereichs ist der juengste 'geprueft'-Satz; nur ohne solchen der juengste 'fehlgeschlagen'-Satz [A]
  *   (z.B. der eigene Satz nach einem Restore, den restore_sperren als fehlgeschlagen markiert).
  * - Laufende, gesicherte (noch ungepruefte) und in der DB unbekannte Saetze werden nie entfernt (konservativ).
+ * - Der juengste gepruefte Satz bleibt immer erhalten, unabhaengig von der Politik (PP11a-2).
+ * - Reservierte Saetze (offene Update-/Restore-Vorgaenge) werden nie entfernt (PP11a-3).
  */
-export function waehleBehalten(kandidaten: Kandidat[], p: Politik, zeitzone: string) {
-  const geschuetzt = kandidaten.filter((k) => !k.zustand || !["geprueft", "fehlgeschlagen", "entfernt"].includes(k.zustand));
+export function waehleBehalten(kandidaten: Kandidat[], p: Politik, zeitzone: string, reserviert: ReadonlySet<string> = new Set()) {
+  const geschuetzt = kandidaten.filter((k) => !k.zustand || !["geprueft", "fehlgeschlagen", "entfernt"].includes(k.zustand) || (k.backupId && reserviert.has(k.backupId)));
   const waehlbar = kandidaten.filter((k) => k.zustand === "geprueft" || k.zustand === "fehlgeschlagen" || k.zustand === "entfernt")
     .sort((a, b) => b.zeit.getTime() - a.zeit.getTime() || a.snapshotId.localeCompare(b.snapshotId));
   const behalten = new Set(geschuetzt.map((k) => k.snapshotId));
+  const juengsterGeprueft = waehlbar.find((k) => k.zustand === "geprueft");
+  if (juengsterGeprueft) behalten.add(juengsterGeprueft.snapshotId);
   const regeln: [keyof ReturnType<typeof kalender>, number][] = [["tag", p.taeglich], ["woche", p.woechentlich], ["monat", p.monatlich]];
   for (const [art, anzahl] of regeln) {
     const bereiche = new Map<string, Kandidat[]>();
@@ -67,6 +71,8 @@ export function waehleBehalten(kandidaten: Kandidat[], p: Politik, zeitzone: str
 export type RetentionDb = {
   /** Alle Zeilen aus backup_lauf. */
   zustaende(): Promise<Map<string, Zustand>>;
+  /** Aktueller Journal-Zaehler (journal_zaehler.seq); wird VOR zustaende() gelesen (PP11a-1). */
+  journalZaehler(): Promise<bigint>;
   entfernt(backupId: string): Promise<void>;
   protokoll(daten: object): Promise<void>;
   /** Exklusiv gegen parallele Retention (Advisory Lock). */
@@ -74,6 +80,8 @@ export type RetentionDb = {
 };
 export type RetentionOptionen = {
   db: RetentionDb; ziel: Ziel; instanzId: string; resticEnv: NodeJS.ProcessEnv; politik: Politik; zeitzone: string; lauf?: Prozess;
+  /** Satz-IDs offener Update-/Restore-Vorgaenge (vom Host uebergeben); werden nie entfernt. */
+  reserviert?: string[];
 };
 
 type Snapshot = { id: string; time: string; tags?: string[]; paths?: string[] };
@@ -82,8 +90,17 @@ export async function aufbewahren(o: RetentionOptionen) {
   if (!istUuid(o.instanzId)) throw new Error("Ungueltige Instanz-ID");
   const lauf = o.lauf ?? prozess;
   const restic = (args: string[]) => erfolgreich(lauf, { programm: "restic", args, env: o.resticEnv });
+  const reserviert = new Set(o.reserviert ?? []);
+  for (const id of reserviert) if (!istUuid(id)) throw new Error("Ungueltige reservierte Satz-ID");
+  const markierung = `retention/${o.instanzId}/prune-offen`;
   return o.db.exklusiv(async () => {
+    // Reihenfolge wichtig (PP11a-1): Zaehler vor den Zustaenden lesen. Jede danach begonnene Sicherung hat eine
+    // Journal-Sequenz >= diesem Zaehler; jede vorher begonnene ist unten als laufend/gesichert sichtbar.
+    const zaehler = await o.db.journalZaehler();
     const zustaende = await o.db.zustaende();
+    const offeneSaetze = [...zustaende.values()].filter((z) => z === "laufend" || z === "gesichert").length;
+    // Ein abgebrochenes prune wird nachgeholt, auch wenn dieser Lauf nichts vergisst (PP11a-7).
+    const pruneOffen = (await o.ziel.liste(`retention/${o.instanzId}`)).includes(markierung);
     const snapshots = JSON.parse(await restic(["snapshots", "--json"])) as Snapshot[];
     if (!Array.isArray(snapshots)) throw new Error("Unerwartete restic-Ausgabe");
     const kandidaten: Kandidat[] = snapshots.map((s) => {
@@ -96,7 +113,8 @@ export async function aufbewahren(o: RetentionOptionen) {
     // Mehrere Snapshots mit derselben Satz-ID sind kein regulaerer Stand: alle schuetzen.
     const doppelt = new Set(kandidaten.map((k) => k.backupId).filter((id, i, a) => id && a.indexOf(id) !== i));
     for (const k of kandidaten) if (k.backupId && doppelt.has(k.backupId)) k.zustand = undefined;
-    const plan = waehleBehalten(kandidaten, o.politik, o.zeitzone);
+    const plan = waehleBehalten(kandidaten, o.politik, o.zeitzone, reserviert);
+    if (plan.entfernen.length) await o.ziel.schreibe(markierung, Buffer.from(new Date().toISOString()), false);
     // 1. Snapshots vergessen. Erst danach Inventar und DB nachfuehren: ein Abbruch hinterlaesst hoechstens ein
     //    Inventar ohne Snapshot, das der Abgleich in Schritt 2 beim naechsten Lauf entfernt.
     if (plan.entfernen.length) await restic(["forget", ...plan.entfernen.map((k) => k.snapshotId)]);
@@ -112,7 +130,8 @@ export async function aufbewahren(o: RetentionOptionen) {
     }
     // 3. Journal: Objekte bis zur kleinsten Journal-Sequenz aller behaltenen Saetze braucht kein Restore mehr.
     let journalBis: string | undefined, journalGeloescht = 0;
-    if (plan.behalten.length) {
+    // Laufende oder ungepruefte Saetze haben ihre Journal-Untergrenze noch nicht im Repository: nicht kuerzen.
+    if (plan.behalten.length && !offeneSaetze) {
       const seqs: bigint[] = [];
       for (const k of plan.behalten) {
         const pfad = (snapshots.find((s) => s.id === k.snapshotId)?.paths ?? [])[0];
@@ -123,7 +142,7 @@ export async function aufbewahren(o: RetentionOptionen) {
       }
       // Ein Satz ohne lesbares Manifest (z.B. fremder Snapshot) verhindert die Journal-Kuerzung (konservativ).
       if (seqs.length === plan.behalten.length) {
-        const grenze = seqs.reduce((a, b) => (b < a ? b : a));
+        const grenze = seqs.reduce((a, b) => (b < a ? b : a), zaehler);
         journalBis = grenze.toString();
         const prefix = `journal/${o.instanzId}`;
         for (const schluessel of await o.ziel.liste(prefix)) {
@@ -132,11 +151,12 @@ export async function aufbewahren(o: RetentionOptionen) {
         }
       }
     }
-    // 4. Speicher freigeben. Ohne vergessene Snapshots ist prune nicht noetig.
-    if (plan.entfernen.length) await restic(["prune"]);
+    // 4. Speicher freigeben; die Markierung bleibt bis zum erfolgreichen prune bestehen.
+    const prune = plan.entfernen.length > 0 || pruneOffen;
+    if (prune) { await restic(["prune"]); await o.ziel.loesche(markierung); }
     const ergebnis = {
       politik: o.politik, behalten: plan.behalten.map((k) => k.backupId ?? k.snapshotId), entfernt: plan.entfernen.map((k) => k.backupId ?? k.snapshotId),
-      inventarGeloescht, journalBis: journalBis ?? null, journalGeloescht,
+      inventarGeloescht, journalBis: journalBis ?? null, journalGeloescht, prune, offeneSaetze, reserviert: [...reserviert],
     };
     await o.db.protokoll(ergebnis);
     return ergebnis;
@@ -147,6 +167,7 @@ export async function aufbewahren(o: RetentionOptionen) {
 export function pgRetentionDb(pool: import("pg").Pool): RetentionDb {
   const LOCK = 7_310_004;
   return {
+    async journalZaehler() { return BigInt((await pool.query("select seq::text from journal_zaehler where id=1")).rows[0].seq); },
     async zustaende() { return new Map((await pool.query("select id::text,zustand from backup_lauf")).rows.map((r) => [r.id as string, r.zustand as Zustand])); },
     async entfernt(id) { await pool.query("select backup_lauf_entfernt($1)", [id]); },
     async protokoll(d) { await pool.query("select backup_retention_protokoll($1::jsonb)", [JSON.stringify(d)]); },

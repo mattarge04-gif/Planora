@@ -38,13 +38,18 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
 }
 /** Retention (M1-Abnahme Punkt 3): `aufbewahren`. Politik aus PLANORA_RETENTION_* ([A] Standard 14/8/12). */
 export async function aufbewahrenCli(args: string[]) {
-  if (args.length !== 1) throw new Error("Aufruf: aufbewahren");
+  // aufbewahren [--reserviert <backup-id>]... (Host uebergibt Saetze offener Update-/Restore-Vorgaenge)
+  const reserviert: string[] = [];
+  for (let n = 1; n < args.length; n += 2) {
+    if (args[n] !== "--reserviert" || !args[n + 1]) throw new Error("Aufruf: aufbewahren [--reserviert <backup-id>]...");
+    reserviert.push(args[n + 1]);
+  }
   const { aufbewahren, pgRetentionDb, politikAusUmgebung } = await import("./retention.js");
   const politik = politikAusUmgebung();
   const konfiguration = JSON.parse(await geheimnis("PLANORA_KONFIGURATION")); pruefeKonfiguration(konfiguration);
   const pool = new pg.Pool({ connectionString: await geheimnis("PLANORA_BETRIEB_DB") });
   try {
-    console.log(JSON.stringify(await aufbewahren({ db: pgRetentionDb(pool), ziel: await zielAusUmgebung(), instanzId: konfiguration.instanzId, politik, zeitzone: konfiguration.zeitzone,
+    console.log(JSON.stringify(await aufbewahren({ db: pgRetentionDb(pool), ziel: await zielAusUmgebung(), instanzId: konfiguration.instanzId, politik, zeitzone: konfiguration.zeitzone, reserviert,
       resticEnv: { RESTIC_REPOSITORY: await geheimnis("RESTIC_REPOSITORY"), RESTIC_PASSWORD: await geheimnis("RESTIC_PASSWORD") } })));
   } finally { await pool.end(); }
 }

@@ -63,14 +63,15 @@ describe("Auswahl", () => {
 });
 
 /** Fake-Umgebung: restic-Repository als Liste, Ziel als Map, DB als Map. */
-function umgebung(saetze: { n: number; zeit: string; zustand: Zustand; journalSeq: number }[], o: { forgetFehler?: boolean; manifestFehlt?: number } = {}) {
+function umgebung(saetze: { n: number; zeit: string; zustand: Zustand; journalSeq: number }[], o: { forgetFehler?: boolean; manifestFehlt?: number; pruneFehler?: number; zaehler?: bigint; ohneSnapshot?: [string, Zustand][] } = {}) {
   const instanzId = randomUUID();
   const repo = saetze.map((s) => ({ ...s, id: hex(s.n), backupId: k(s.n, s.zeit).backupId! }));
   const objekte = new Map<string, Buffer>();
   for (const s of repo) objekte.set(`inventar/${instanzId}/${s.backupId}.age`, Buffer.from("x"));
   for (let seq = 1; seq <= 10; seq++) objekte.set(`journal/${instanzId}/${seq}.age`, Buffer.from("j"));
   objekte.set(`journal/${instanzId}/stand.age`, Buffer.from("s"));
-  const zustaende = new Map<string, Zustand>(repo.map((s) => [s.backupId, s.zustand]));
+  const zustaende = new Map<string, Zustand>([...repo.map((s) => [s.backupId, s.zustand] as [string, Zustand]), ...(o.ohneSnapshot ?? [])]);
+  let pruneFehler = o.pruneFehler ?? 0;
   const aufrufe: string[] = [], protokolle: object[] = [];
   const lauf = async (a: Aufruf) => {
     aufrufe.push(a.args[0]);
@@ -87,7 +88,7 @@ function umgebung(saetze: { n: number; zeit: string; zustand: Zustand; journalSe
       expect(a.args[2]).toBe(`/staging/${s.backupId}/manifest.json`);
       return { code: 0, stdout: JSON.stringify({ backupId: s.backupId, journalSeq: String(s.journalSeq) }) };
     }
-    if (a.args[0] === "prune") return { code: 0, stdout: "" };
+    if (a.args[0] === "prune") return { code: pruneFehler-- > 0 ? 1 : 0, stdout: "" };
     throw new Error(`unerwartet: ${a.args.join(" ")}`);
   };
   const ziel: Ziel = {
@@ -96,10 +97,10 @@ function umgebung(saetze: { n: number; zeit: string; zustand: Zustand; journalSe
     loesche: async (s) => { objekte.delete(s); },
   };
   const db: RetentionDb = {
-    zustaende: async () => new Map(zustaende), entfernt: async (id) => { zustaende.set(id, "entfernt"); },
+    journalZaehler: async () => o.zaehler ?? 100n, zustaende: async () => new Map(zustaende), entfernt: async (id) => { zustaende.set(id, "entfernt"); },
     protokoll: async (d) => { protokolle.push(d); }, exklusiv: (arbeit) => arbeit(),
   };
-  return { instanzId, repo, objekte, zustaende, aufrufe, protokolle, ausfuehren: (politik = { taeglich: 2, woechentlich: 0, monatlich: 0 }) => aufbewahren({ db, ziel, instanzId, resticEnv: { RESTIC_PASSWORD: "pw" }, politik, zeitzone: TZ, lauf }) };
+  return { instanzId, repo, objekte, zustaende, aufrufe, protokolle, ausfuehren: (politik = { taeglich: 2, woechentlich: 0, monatlich: 0 }, reserviert: string[] = []) => aufbewahren({ db, ziel, instanzId, resticEnv: { RESTIC_PASSWORD: "pw" }, politik, zeitzone: TZ, lauf, reserviert }) };
 }
 
 describe("aufbewahren", () => {
@@ -132,7 +133,7 @@ describe("aufbewahren", () => {
     const u = umgebung(saetze, { forgetFehler: true });
     const vorher = [...u.objekte.keys()].sort();
     await expect(u.ausfuehren()).rejects.toThrow(/restic/);
-    expect([...u.objekte.keys()].sort()).toEqual(vorher);
+    expect([...u.objekte.keys()].filter((x) => !x.startsWith("retention/")).sort()).toEqual(vorher);
     expect([...u.zustaende.values()].every((z) => z === "geprueft")).toBe(true);
   });
   it("Abgleich nach Abbruch: Satz ohne Snapshot (DB noch geprueft) wird nachgefuehrt", async () => {
@@ -149,5 +150,48 @@ describe("aufbewahren", () => {
     expect(r).toMatchObject({ journalBis: null, journalGeloescht: 0, inventarGeloescht: 2 });
     expect(u.aufrufe.at(-1)).toBe("prune");
     expect([...u.objekte.keys()].filter((x) => x.startsWith("journal/"))).toHaveLength(11);
+  });
+  it("PP11a-1: laufender Satz ohne Snapshot (Seq 10) + gepruefter Satz (Seq 20): Journal wird nicht gekuerzt", async () => {
+    const u = umgebung([{ n: 1, zeit: "2026-11-10T01:00:00Z", zustand: "geprueft", journalSeq: 8 }], { ohneSnapshot: [[randomUUID(), "laufend"]] });
+    const r = await u.ausfuehren();
+    expect(r).toMatchObject({ journalBis: null, journalGeloescht: 0, offeneSaetze: 1 });
+    expect([...u.objekte.keys()].filter((x) => x.startsWith("journal/"))).toHaveLength(11);
+    const g = umgebung([{ n: 1, zeit: "2026-11-10T01:00:00Z", zustand: "geprueft", journalSeq: 8 }], { ohneSnapshot: [[randomUUID(), "gesichert"]] });
+    expect(await g.ausfuehren()).toMatchObject({ journalBis: null, journalGeloescht: 0 });
+  });
+  it("PP11a-1: Grenze nie ueber dem vor den Zustaenden gelesenen Journal-Zaehler", async () => {
+    const u = umgebung([{ n: 1, zeit: "2026-11-10T01:00:00Z", zustand: "geprueft", journalSeq: 8 }], { zaehler: 5n });
+    expect(await u.ausfuehren()).toMatchObject({ journalBis: "5", journalGeloescht: 5 });
+  });
+  it("PP11a-2: Politik 1/0/0 mit neuerem fehlgeschlagenem Satz behaelt den einzigen geprueften", async () => {
+    const s = [k(1, "2026-11-11T03:00:00Z", "fehlgeschlagen"), k(2, "2026-11-10T01:00:00Z", "geprueft"), k(3, "2026-11-09T01:00:00Z", "geprueft")];
+    const r = waehleBehalten(s, { taeglich: 1, woechentlich: 0, monatlich: 0 }, TZ);
+    expect(r.behalten.map((x) => x.snapshotId).sort()).toEqual([hex(1), hex(2)].sort());
+    expect(r.entfernen.map((x) => x.snapshotId)).toEqual([hex(3)]);
+    const nur = waehleBehalten([k(1, "2026-11-11T03:00:00Z", "fehlgeschlagen"), k(2, "2026-11-01T01:00:00Z", "geprueft")], { taeglich: 1, woechentlich: 0, monatlich: 0 }, TZ);
+    expect(nur.behalten.map((x) => x.snapshotId)).toContain(hex(2));
+  });
+  it("PP11a-3: reservierter Satz eines offenen Updates wird nie entfernt", async () => {
+    const u = umgebung(saetze);
+    const rueckweg = u.repo[0].backupId;
+    const r = await u.ausfuehren({ taeglich: 1, woechentlich: 0, monatlich: 0 }, [rueckweg]);
+    expect(r.behalten).toContain(rueckweg);
+    expect(u.objekte.has(`inventar/${u.instanzId}/${rueckweg}.age`)).toBe(true);
+    expect(u.zustaende.get(rueckweg)).toBe("geprueft");
+    expect(r.journalBis).toBe("2"); // Journal ab Seq 3 bleibt fuer den reservierten Satz erhalten
+    await expect(u.ausfuehren(undefined, ["kein-uuid"])).rejects.toThrow(/reservierte/);
+  });
+  it("PP11a-7: Abbruch im prune wird beim naechsten Lauf ohne forget nachgeholt", async () => {
+    const u = umgebung(saetze, { pruneFehler: 1 });
+    await expect(u.ausfuehren()).rejects.toThrow(/restic/);
+    expect(u.objekte.has(`retention/${u.instanzId}/prune-offen`)).toBe(true);
+    u.aufrufe.length = 0;
+    const r = await u.ausfuehren();
+    expect(r).toMatchObject({ entfernt: [], prune: true });
+    expect(u.aufrufe).toEqual(["snapshots", "dump", "dump", "prune"]);
+    expect(u.objekte.has(`retention/${u.instanzId}/prune-offen`)).toBe(false);
+    u.aufrufe.length = 0;
+    expect(await u.ausfuehren()).toMatchObject({ prune: false });
+    expect(u.aufrufe).not.toContain("prune");
   });
 });
