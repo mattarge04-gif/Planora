@@ -3,6 +3,42 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-11 – M2a Welt-Kern
+
+### 1. Was gemacht wurde
+
+1. M2 vom PO in drei Teile zerlegt: M2a (Kern ohne UI), M2b (3D-Ansicht), M2c (Erfassung/Heizungsassistent). Spec `docs/superpowers/specs/2026-11-11-m2a-welt-kern-design.md`, Plan `docs/superpowers/plans/2026-11-11-m2a-welt-kern.md`.
+2. Umsetzung per Subagenten (7 Tasks) mit Task-Reviews; Schlussreviews durch Opus und Codex (via Orca), alle Befunde behoben.
+3. PR #1 gemergt (`bd5d7a6`), `main` gepusht, Branch `m2a-welt-kern` lokal und remote geloescht.
+4. Tests auf main: `npm test` 387 ok / 37 Docker uebersprungen, Typpruefung gruen, `test:docker` 32 ok in 503 s.
+
+### 2. Was inhaltlich gelernt wurde
+
+- [F] PO-Entscheide: normalisierte Tabellen sind die Wahrheit, Beschreibung ist Ein-/Ausgabeformat; stabile IDs per optionaler `id` (ohne id = neu/Kopie, fehlend = loeschen, blockiert bei manueller Position); Heizungsstandard am Gebaeude plus Ausnahmen je Einheit; ein Symbol je Typgruppe unabhaengig von der Menge; Zentrale im Katalog; Flaeche je Einheit optional (Breite/Tiefe erfasst Planora); "bestaetigt" bei unbekannter Menge erlaubt; M2c-Ablauf Struktur, Zentrale, Standard, Ausnahmen, Verteiler; Demo nur Heizung.
+- [F] Technische Entscheide: Routen `/api/struktur/...` und `/api/szene/gebaeude/:id/welt`; Katalog/Regelwerk als TS-Module; `bauteil.gebaeude_id`; Recht `huelle.verwalten`; ajv global strikt (`removeAdditional:false`, `coerceTypes:false`); Migration `013_gebaeude.sql`.
+- [F] Es gibt noch kein Frontend (kein Vite-Projekt, keine Login-Seite, Caddy liefert nur die Wartungsseite). M2b muss das Geruest mitbringen.
+- [A] Regelwerk-v1-Werte (Default-Flaechen, Mengenbereiche, Erlaubt-Matrix) sind Annahmen, PO-Freigabe vor M2b.
+
+### 3. Was ueber die Zusammenarbeit gelernt wurde
+
+- Zerlegen in einen UI-freien Kern zuerst gab pruefbare Schritte; der PO hat die Aufteilung selbst entschieden.
+- Doppelte Schlussreview (Opus und Codex) fand weitere Befunde nach den Task-Reviews; lohnt sich vor dem Merge.
+
+### 4. Technisches, das beim naechsten Mal Zeit spart
+
+- Sackgasse: Katalog/Regelwerk als JSON passt nicht zum Docker-Build, der nur `.ts` kopiert. Loesung: TS-Module.
+- Jede `/api`-Route muss einem Modul gehoeren; daher die Pfade `/api/struktur/...` und `/api/szene/...`.
+- Der Update-Test im Docker-Lauf war an eine feste Migrationsnummer gebunden und brach mit der neuen Migration `013`. Er leitet jetzt die letzte Migration ab, die Probe heisst `999_updateprobe.sql`.
+- `test:docker` dauert rund 8.5 min, im Hintergrund starten.
+
+### 5. Wo es weitergeht
+
+1. M2b spezifizieren (Brainstorming, Spec, Plan): Frontend-Geruest (React/Vite, ADR 0004), Login, 3D-Ansicht (ADR 0008/0032): Uebersicht, Geschossauswahl, Explosion, Seitenpanel, Leistungsstufen, Tabellenweg.
+2. [?] Offene M2a-Nachtraege (Spec Abschnitt 11): 400-Fehlerformat vereinheitlichen, Regelwerk-v2-Guard im Generator, `aendereHuelle` ohne Stand-Pruefung u.a., vor M2b.
+3. [A] Regelwerk-v1 vom PO freigeben lassen.
+4. [?] WSL-Gesamtabnahme auf main wiederholen; weiter offen wie im Eintrag darunter (CH-VM, SMTP, Lizenz, Aufraeumen).
+5. Abbruchkriterium [A] bleibt: Datenteil fertig, sichtbarer Teil fehlt.
+
 ## 2026-11-11 – M1-Abnahme mit Opus und Codex
 
 ### 1. Was gemacht wurde

@@ -26,22 +26,26 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 | Backup-Retention | 14 taeglich / 8 woechentlich / 12 monatlich, PO-freigegeben (E39). |
 | Alarm | SMTP an Konto-Adressen des Kunden plus eine Planora-Adresse je Kunde; optional Webhook mit HMAC (E39). Standard-Empfaenger = Admin-Konten, umschaltbar auf alle [A]. |
 | Lizenz | Planora proprietaer, Nutzungsrecht je Instanz, kein Quellcode; Fixture @fastify/deepmerge mit MIT- und ISC-Text beilegen (E39). Menschliche Lizenzfreigabe bewusst offen. |
-| 3D-Erfassung | Planora bereitet Huelle/Geschosse vor, Kunde erfasst Einheiten und Technik (E38, ADR 0032). Noch nicht implementiert. |
+| 3D-Erfassung | Planora bereitet Huelle/Geschosse vor, Kunde erfasst Einheiten und Technik (E38, ADR 0032). Datenkern umgesetzt (M2a), UI fehlt. |
+| M2-Zerlegung | M2a Welt-Kern ohne UI (fertig) -> M2b 3D-Ansicht -> M2c Erfassung/Heizungsassistent. Normalisierte Tabellen sind die Wahrheit, die Beschreibung ist Ein-/Ausgabeformat. Stabile IDs per optionaler `id` (ohne id = neu/Kopie, fehlend = loeschen, blockiert bei manueller Position). |
+| Heizung/Katalog | Standard am Gebaeude, Ausnahmen je Einheit; ein Symbol je Typgruppe (Katalog-ID+Hersteller+Typ), unabhaengig von der Menge; Zentrale (Waermepumpe, Kessel, Fernwaerme, Speicher, Pumpe) im Katalog; Flaeche je Einheit optional; "bestaetigt" bei unbekannter Menge erlaubt. M2c-Ablauf: Struktur, Zentrale, Standard, Ausnahmen, Verteiler. Demo nur Heizung. |
+| M2a-Technik | Routen `/api/struktur/...` und `/api/szene/gebaeude/:id/welt` (jede /api-Route gehoert einem Modul); Katalog/Regelwerk als TS-Module (Docker-Build kopiert nur .ts); `bauteil.gebaeude_id`; neues Recht `huelle.verwalten` (nur Betreiber, ohne Fachdaten); ajv global strikt; Migration `013_gebaeude.sql`. Spec `docs/superpowers/specs/2026-11-11-m2a-welt-kern-design.md`, Plan `docs/superpowers/plans/2026-11-11-m2a-welt-kern.md`. |
+| M2a | Abgeschlossen, Merge-Commit `bd5d7a6` (PR #1) auf `main`, gepusht; Branch `m2a-welt-kern` lokal und remote geloescht. |
 | M1 | Technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM), auf `main` gemergt und auf `origin/main` gepusht (b13bbba). |
 
-### Teststand auf main nach M1-Merge [F]
+### Teststand auf main nach M2a-Merge [F]
 
-- `npm test` 314 ok / 37 Docker uebersprungen; Typpruefung gruen.
-- `test:docker` 32 ok in 440 s; `test:docker:b` 9/9 mit `PLANORA_TEST_PROJEKT=pr-backup`.
-- WSL-Gesamtabnahme `betrieb/abnahme/abnahme.ps1` Exit 0 in 417.6 s – nur auf Spur-B-Stand, **nach Merge von Spur A nicht erneut gelaufen**.
+- `npm test` 387 ok / 37 Docker uebersprungen; Typpruefung gruen.
+- `test:docker` 32 ok in 503 s (nach Korrektur des Update-Tests: leitet letzte Migration ab, Probe `999_updateprobe.sql`). `test:docker:b` zuletzt 9/9 (M1-Stand) mit `PLANORA_TEST_PROJEKT=pr-backup`.
+- WSL-Gesamtabnahme `betrieb/abnahme/abnahme.ps1` Exit 0 (417.6 s) nur auf Spur-B-Stand, **seither nicht wiederholt** (weder nach Spur A noch nach M2a).
 
 ### Das Kernproblem, richtig gefasst [F]
 
-M1 (Betriebsfundament) ist gebaut; der Produktnutzen fehlt noch. Naechster Wert entsteht erst mit dem ersten durchgehenden 3D-Schnitt M2/M6 nach E38/ADR 0032.
+M1 (Betriebsfundament) und M2a (Datenkern) sind gebaut; sichtbar ist noch nichts. Es gibt **kein Frontend** (kein Vite-Projekt, keine Login-Seite; Caddy liefert nur die Wartungsseite). Nutzen entsteht erst mit M2b, das das Frontend-Geruest mitbringen muss.
 
 ### Abbruchkriterium [A]
 
-Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Geschossansicht mit Einheiten) soll innert einer Arbeitswoche lauffaehig auf `main` sein; sonst Umfang des Schnitts mit dem PO verkleinern statt weiterbauen.
+Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Geschossansicht mit Einheiten) soll innert einer Arbeitswoche lauffaehig auf `main` sein; sonst Umfang des Schnitts mit dem PO verkleinern statt weiterbauen. Stand 11.11.: Datenteil fertig, sichtbarer Teil (M2b) fehlt.
 
 ### Weiter offen [?]
 
@@ -53,10 +57,12 @@ Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Ges
 - [?] Braucht das Backup-Image das anonyme `VOLUME /var/lib/postgresql`?
 - Aufraeumen: Orca-Worktrees `m1-abnahme-a`/`-b` und Docker-Volumes `planora-b_*` (vom 10.11.) existieren noch.
 - [?] WSL-Gesamtabnahme auf dem gemergten main-Stand wiederholen?
+- [A] Regelwerk-v1-Werte (Default-Flaechen, Mengenbereiche, Erlaubt-Matrix) sind Annahme; PO-Freigabe vor M2b.
+- [?] Spec M2a Abschnitt 11 "Nachtrag nach Umsetzung": 400-Fehlerformat vor M2b vereinheitlichen, Regelwerk-v2-Guard im Generator, `aendereHuelle` ohne Stand-Pruefung u.a.
 
 ### Naechste Coding-Aufgabe
 
-M2/M6 erster 3D-Schnitt nach E38/ADR 0032; Reihenfolge siehe Fortsetzungsplan, Abschnitt "Naechste Coding-Aufgaben".
+M2b spezifizieren (Brainstorming, Spec, Plan): Frontend-Geruest (React/Vite nach ADR 0004), Login, 3D-Ansicht nach ADR 0008/0032 (Uebersicht, Geschossauswahl, Explosion, Seitenpanel, Leistungsstufen, Tabellenweg). Davor offene M2a-Nachtraege und Regelwerk-Freigabe klaeren.
 
 ## Antworten
 
