@@ -2,10 +2,11 @@ import type pg from "pg";
 import { entzieheSitzungen } from "../auth/sitzung.js";
 import { auditEreignis } from "../audit/audit.js";
 export type Rolle = "betreiber"|"admin"|"bearbeiter"|"leser";
-export type Recht = "module.schalten"|"benutzer.verwalten"|"fach.lesen"|"fach.aendern"|"dokument.loeschen"|"audit.lesen";
+export type Recht = "module.schalten"|"benutzer.verwalten"|"fach.lesen"|"fach.aendern"|"dokument.loeschen"|"audit.lesen"|"huelle.verwalten";
 export const MATRIX: Record<Recht, Rolle[]> = {
   "module.schalten": ["betreiber"], "benutzer.verwalten": ["admin"], "fach.lesen": ["admin", "bearbeiter", "leser"],
   "fach.aendern": ["admin", "bearbeiter"], "dokument.loeschen": ["admin"], "audit.lesen": ["admin", "betreiber"],
+  "huelle.verwalten": ["betreiber"], // Planora bereitet die Huelle vor (ADR 0032), ohne Zugriff auf Fachdaten
 };
 const FACH = new Set<Recht>(["fach.lesen", "fach.aendern", "dokument.loeschen"]);
 export async function pruefe(c: pg.ClientBase, benutzerId: string, recht: Recht, liegenschaftId?: string) {

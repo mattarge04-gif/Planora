@@ -74,10 +74,16 @@ describe("Rechtematrix", () => {
       expect(await pruefe(c, "gibt-es-nicht", r, L1)).toBe(false);
     }
   });
+  it("Huelle verwalten nur Betreiber, ohne Liegenschafts-Scope", async () => {
+    expect(await pruefe(c, betreiber, "huelle.verwalten")).toBe(true);
+    expect(await pruefe(c, admin, "huelle.verwalten")).toBe(false);
+    expect(await pruefe(c, bearb, "huelle.verwalten", L1)).toBe(false);
+  });
   it("Matrix entspricht Spec §5", () => {
     expect(MATRIX).toEqual({
       "module.schalten": ["betreiber"], "benutzer.verwalten": ["admin"], "fach.lesen": ["admin", "bearbeiter", "leser"],
       "fach.aendern": ["admin", "bearbeiter"], "dokument.loeschen": ["admin"], "audit.lesen": ["admin", "betreiber"],
+      "huelle.verwalten": ["betreiber"],
     });
   });
   it("setzeRolle aendert Rolle und Scope, entzieht Sitzungen in derselben Transaktion, auditiert", async () => {

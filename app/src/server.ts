@@ -9,6 +9,7 @@ import { pruefe, type Recht } from "./rechte/rechte.js";
 import { dateiAblage, type Ablage } from "./ablage/ablage.js";
 import { wartungAktiv, wartungsLage } from "./betrieb/wartung.js";
 import { bestaetigeRestoreKonto } from "./betrieb/freigabe.js";
+import { registriereWeltRouten } from "./welt/routen.js";
 
 declare module "fastify" { interface FastifyInstance { ablage: Ablage } }
 
@@ -76,6 +77,7 @@ export async function baueServer(o: ServerOptionen) {
     } catch (e) { return reply.code(409).send({ fehler: (e as Error).message }); }
   });
 
+  registriereWeltRouten(app, o.pool); // M2a: /api/struktur/… (Huelle, Beschreibung), /api/szene/…/welt
   // Platzhalter fuer Fachmodule bis M2–M8: erreichbar nur, wenn Guard und Sitzung sie durchlassen
   for (const m of MANIFEST) for (const r of m.routen) {
     if (r.startsWith("/api/auth") || r.startsWith("/api/admin")) continue;
