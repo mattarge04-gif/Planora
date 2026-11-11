@@ -58,3 +58,30 @@ Die Zahlen stammen aus getrennten Laeufen und werden nicht addiert. Im ersten Al
 - [A] Zertifikatsablauf wird nur bei Installation und Rotation gewarnt, nicht laufend ueberwacht. Ein Wechsel zwischen `internal`/`acme` und Kunden-CA bei bestehender Instanz ist nicht automatisiert.
 - SMTP ist nur gegen einen lokalen Mock geprueft (STARTTLS/AUTH), nicht gegen ein reales Relay. S3-`loesche` ist implementiert, aber wie der gesamte S3-Adapter ohne realen Nachweis.
 - Nicht Teil von Spur A: frische Linux-VM, Lizenz/SBOM, CH-S3, VM-Totalverlust (Punkte 1, 5, 6, 7).
+
+## Nachtrag: Codex-Review PP11a (nicht OK) behoben
+
+Jeder Befund hat einen gezielten Regressionstest. PP11a-9 betraf nur die Testumgebung (`npm.cmd` unter Windows); dort war kein Fix noetig, die Laeufe nutzen `npm.cmd`.
+
+| Befund | Behebung | Regressionstest |
+|---|---|---|
+| PP11a-1 [hoch] Journal-Kuerzung trotz laufender Sicherung | Laufen Saetze (`laufend`/`gesichert`), wird das Journal nicht gekuerzt. Die Grenze liegt hoechstens beim Journal-Zaehler, der vor den Zustaenden gelesen wird; jede spaeter begonnene Sicherung hat eine Sequenz oberhalb davon. | Unit (laufend/gesichert, Zaehlergrenze). Docker `backup-ueberlappung.test.ts`: A angehalten, B gesichert, Retention, A fortgesetzt und samt Journal restauriert. Gegenprobe ohne Fix: Journal 1..3 geloescht, Test rot. |
+| PP11a-2 [hoch] juengster gepruefter Satz nicht geschuetzt | Der juengste gepruefte Satz wird immer behalten. | Unit (Politik 1/0/0, neuerer fehlgeschlagener Satz) |
+| PP11a-3 [hoch] Rueckweg-Satz offener Updates | Sicherung und Retention nehmen dieselbe Dateisperre wie Update/Restore; laeuft eines davon, wird der Lauf ausgesetzt. Bei offenem Update entsteht keine neue Sicherung, und die Retention laeuft mit `--reserviert <backupId>`. Die Sperrmeldung nennt den Zweck. | Unit (offenes/abgeschlossenes Update, lebende Sperre, Reservierung). Docker `update.test.ts`: abgebrochenes inkompatibles Update, naechtlicher Lauf mit Politik 1/0/0, danach erfolgreicher Rueckweg. |
+| PP11a-4 [hoch] ungueltige Alarmkonfiguration quittiert Spool | Ohne gueltige Konfiguration wird nichts zugestellt oder geloescht. Jeder Eintrag speichert seine erforderlichen Kanaele; ein entfernter Kanal haelt den Alarm offen. | Unit (ungueltig, Kanalwechsel, Wiederherstellung) |
+| PP11a-5 [mittel] gemischtes Paar und Rueckrollen | Kette und Schluessel liegen als ein Paar in `paar.pem` und werden mit einem atomaren rename gewechselt. Die Sperre `wechsel.lock` serialisiert Wechsel. Jeder Fehler nach der Sicherung rollt zurueck, auch beim Ersatz und beim Neustart. | Unit (werfender Neustart, auch beim Zurueckrollen; parallele Rotation). Docker Kunden-CA mit `paar.pem` gegen echtes Caddy. |
+| PP11a-6 [mittel] manuelle Befehle ohne Alarm | `planora sichern` und `planora aufbewahren` laufen ueber `host-cli`, mit Sperre, Koordination und Alarm. | Unit `planora-einstieg.test.ts`: echtes Shell-Skript, Platzhalter-Werkzeug protokolliert die Argumente. |
+| PP11a-7 [mittel] prune nach Abbruch nie nachgeholt | Persistente Markierung `retention/<instanz>/prune-offen` im Ziel; der naechste Lauf prunt auch ohne forget. | Unit (Abbruch im prune, Nachholen, danach kein prune mehr) |
+| PP11a-8 [mittel] Dienst endet bei Reconcile-Fehler | Neue Funktion `betriebsDienst`: Fehler bei Start oder Reconcile werden abgefangen und alle 5 Minuten wiederholt, bis der Start gelingt, danach stuendlich. Gleiche Stoerungen werden aggregiert (Erinnerung nach 24 h [A], `Behoben`-Meldung). Der Spool ist auf 200 offene Alarme begrenzt [A]. | Unit (Dienst mit 4 Fehlrunden, Aggregation, Begrenzung). Docker Alarm: wiederholter Sicherungsfehler wird aggregiert, nicht erneut gesendet. |
+
+Validierung nach den Fixes:
+
+| Pruefung | Ergebnis |
+|---|---|
+| `npm.cmd test` | 298 bestanden, 37 Docker-Tests uebersprungen (34 Dateien) |
+| `npm.cmd run pruefe:typen`, `bash -n betrieb/planora`, `git diff --check` | bestanden |
+| Docker `backup-ueberlappung.test.ts` (pa-ueberlapp, 18408) | 1/1 bestanden, 55 s; Gegenprobe ohne Fix rot |
+| Docker Kunden-CA + Alarm + Retention (pa-tls, pa-alarm, pa-backup) | 12/12 bestanden, 141 s |
+| Docker `update.test.ts` + `paket.test.ts` (pa-paket) | 19/19 bestanden, 276 s (inkl. PP11a-3-Szenario) |
+
+Hinweise: Durch PP11a-5 aendert sich der TLS-Wert auf `/zertifikat/paar.pem /zertifikat/paar.pem`. Das ist unkritisch, solange es keine Installation mit dem frueheren Branch-Stand gibt [A]. Haelt eine Sicherung die Update-Sperre, bricht ein gleichzeitig gestartetes Update mit der Meldung „Sperre durch laufende Sicherung“ ab und muss spaeter wiederholt werden.
