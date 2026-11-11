@@ -10,6 +10,8 @@ const LAUFEND = ['api', 'db', 'journal', 'proxy', 'worker'];
 const EINMAL = ['migrator', 'proxy-init'];
 const geheim = (n, unter, namen, alias = {}) => Object.fromEntries(namen.map(name => [`/run/secrets/${name}`, { typ: 'bind', quelle: `/etc/planora/pb-${n}/secrets/${unter}/${alias[name] ?? name}`, rw: false }]));
 const vol = (n, name, rw = true) => ({ typ: 'volume', quelle: `planora-pb-${n}_${name}`, rw });
+// Das Backup-Image erbt VOLUME /var/lib/postgresql; Docker legt dafuer je Container ein anonymes Volume an.
+const ANONYM = 'anonym', anonym = name => /^[0-9a-f]{64}$/.test(name);
 
 // Ziel -> erwartete Quelle; Anzahl und Ziele muessen exakt stimmen.
 function erwartet(n) {
@@ -27,6 +29,7 @@ function erwartet(n) {
       '/staging': vol(n, 'backup-staging'),
       '/ziel': { typ: 'bind', quelle: `/srv/pb-ziel-${n}`, rw: true },
       '/run/backup': { typ: 'bind', quelle: `/etc/planora/pb-${n}/backup`, rw: false },
+      '/var/lib/postgresql': { typ: 'volume', quelle: ANONYM, rw: true },
     },
   };
 }
@@ -45,13 +48,13 @@ function instanz(n) {
   const soll = erwartet(n), ressourcen = { volumes: new Set(), netze: new Set(), rwBinds: new Set(), roBinds: new Set() };
   for (const c of laufend) {
     const d = dienst(c);
-    const ist = Object.fromEntries(c.Mounts.map(m => [m.Destination, { typ: m.Type, quelle: m.Type === 'volume' ? m.Name : m.Source, rw: m.RW }]));
+    const ist = Object.fromEntries(c.Mounts.map(m => [m.Destination, { typ: m.Type, quelle: m.Type === 'volume' ? (anonym(m.Name) ? ANONYM : m.Name) : m.Source, rw: m.RW }]));
     assert.equal(c.Mounts.length, Object.keys(ist).length, `${projekt}/${d}: doppelte Mount-Ziele`);
     assert.deepEqual(ist, soll[d], `${projekt}/${d}: Mounts weichen ab`);
     console.log(`${projekt}/${d}: ${c.Mounts.length} Mounts wie erwartet`);
-    for (const m of Object.values(ist)) {
-      if (m.typ === 'volume') ressourcen.volumes.add(m.quelle);
-      else (m.rw ? ressourcen.rwBinds : ressourcen.roBinds).add(m.quelle);
+    for (const m of c.Mounts) {
+      if (m.Type === 'volume') ressourcen.volumes.add(m.Name);
+      else (m.RW ? ressourcen.rwBinds : ressourcen.roBinds).add(m.Source);
     }
     for (const [name, netz] of Object.entries(c.NetworkSettings.Networks)) {
       assert(name.startsWith(`${projekt}_`), `${projekt}/${d}: fremdes Netz ${name}`);
@@ -70,6 +73,7 @@ assert.deepEqual(schnitt(a.rwBinds, b.rwBinds), [], 'Gemeinsame beschreibbare Bi
 assert.deepEqual(schnitt(a.roBinds, b.roBinds).sort(), [`${bundle}/Caddyfile`, `${bundle}/wartung.html`], 'Gemeinsame read-only Bind-Quellen');
 // Alle Volumes des Daemons gehoeren genau einer der beiden Instanzen.
 const alle = docker('volume', 'ls', '--format', '{{.Name}}').split(/\s+/).filter(Boolean);
-for (const v of alle) assert(/^planora-pb-[12]_/.test(v), `Volume ausserhalb der Instanzen: ${v}`);
-console.log(JSON.stringify({ volumes: [a.volumes.size, b.volumes.size], netze: [a.netze.size, b.netze.size], rwBinds: [a.rwBinds.size, b.rwBinds.size], gemeinsamReadOnly: 2, daemonVolumes: alle.length }));
+// Anonyme Volumes nur, wenn sie an einem geprueften Container einer Instanz haengen.
+for (const v of alle) assert(/^planora-pb-[12]_/.test(v) || a.volumes.has(v) || b.volumes.has(v), `Volume ausserhalb der Instanzen: ${v}`);
+console.log(JSON.stringify({ volumes: [a.volumes.size, b.volumes.size], netze: [a.netze.size, b.netze.size], rwBinds: [a.rwBinds.size, b.rwBinds.size], anonymeVolumes: alle.filter(anonym).length, gemeinsamReadOnly: 2, daemonVolumes: alle.length }));
 console.log('PASS: Dienste/Mount-Anzahl und -Ziele exakt; worker, journal und Backup-Ressourcen getrennt; keine gemeinsamen Volumes/Netze/beschreibbaren Binds');
