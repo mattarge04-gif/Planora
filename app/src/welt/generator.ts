@@ -77,7 +77,8 @@ type Gruppe = { schluessel: string; geschossId: string; katalogId: string; herst
 
 export function weltErzeugen(h: HuelleGespeichert, b: Beschreibung, rw: Regelwerk): Welt {
   const teile = grundriss(h.grundform, h.breiteM, h.tiefeM, rw.schenkelAnteil);
-  const ganz: Rechteck = { x: 0, z: 0, breite: h.breiteM, tiefe: h.tiefeM };
+  // Bauteile direkt am Geschoss: Raster im groessten Teilrechteck (bei Gleichstand das erste, d.h. der Riegel)
+  const geschossFlaeche = teile.reduce((m, r) => (r.breite * r.tiefe > m.breite * m.tiefe ? r : m), teile[0]);
   const rang = (code: string) => {
     const r = geschossRang(code);
     if (r === null) throw new Error(`Geschoss-Code ${code} ungueltig`);
@@ -123,7 +124,7 @@ export function weltErzeugen(h: HuelleGespeichert, b: Beschreibung, rw: Regelwer
     if (!standortId) throw new Error("Generator braucht gespeicherte IDs im Standort");
     const geschossId = t.standort.einheitId ? einheitGeschoss.get(t.standort.einheitId)! : standortId;
     const hersteller = t.hersteller ?? null, typ = t.typ ?? null;
-    const schluessel = [standortId, t.katalogId, hersteller ?? "", typ ?? ""].join("|");
+    const schluessel = JSON.stringify([standortId, t.katalogId, hersteller, typ]);
     let gr = gruppen.get(schluessel);
     if (!gr) {
       gr = { schluessel, geschossId, katalogId: t.katalogId, hersteller, typ, zeilen: [] };
@@ -134,7 +135,7 @@ export function weltErzeugen(h: HuelleGespeichert, b: Beschreibung, rw: Regelwer
   }
   const symbole: WeltSymbol[] = [];
   for (const [standortId, liste] of jeStandort) {
-    const punkte = raster(rechtecke.get(standortId) ?? ganz, liste.length);
+    const punkte = raster(rechtecke.get(standortId) ?? geschossFlaeche, liste.length);
     liste.forEach((gr, k) => {
       const manuelle = gr.zeilen.flatMap((z) => (z.positionManuell ? [z.positionManuell] : []));
       if (manuelle.some((p) => p.x !== manuelle[0].x || p.z !== manuelle[0].z)) hinweise.push({ code: "position_widerspruch", bezug: gr.schluessel });

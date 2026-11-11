@@ -75,6 +75,33 @@ describe("weltErzeugen", () => {
     b.bauteile.push({ id: G(34), katalogId: "heizung.waermepumpe", standort: { geschossId: G(9) }, menge: 1, status: "bestaetigt", versorgt: [] });
     expect(welt(b).symbole.find((s) => s.katalogId === "heizung.waermepumpe")!.position).toEqual({ x: 15, y: -2.5, z: 7.5 });
   });
+  it("Gruppenschluessel ist injektiv: Trennzeichen in Hersteller/Typ verschmelzen keine Gruppen", () => {
+    const b = beschreibungFixture();
+    b.bauteile.push({ id: G(35), katalogId: "heizung.verteiler", standort: { einheitId: G(22) }, menge: 1, status: "bestaetigt", hersteller: "A|B", typ: "C", versorgt: [] });
+    b.bauteile.push({ id: G(36), katalogId: "heizung.verteiler", standort: { einheitId: G(22) }, menge: 1, status: "bestaetigt", hersteller: "A", typ: "B|C", versorgt: [] });
+    const s = welt(b).symbole.filter((x) => x.bauteilIds.includes(G(35)) || x.bauteilIds.includes(G(36)));
+    expect(s.map((x) => x.bauteilIds)).toEqual([[G(35)], [G(36)]]);
+  });
+  it("l_form: Bauteil direkt am Geschoss liegt im groessten Teilrechteck (Riegel)", () => {
+    const b = beschreibungFixture();
+    b.bauteile.push({ id: G(34), katalogId: "heizung.waermepumpe", standort: { geschossId: G(9) }, menge: 1, status: "bestaetigt", versorgt: [] });
+    const w = welt(b, huelleFixture("l_form"));
+    const p = w.symbole.find((s) => s.katalogId === "heizung.waermepumpe")!.position;
+    const r = w.grundriss[0];
+    expect(p.x).toBeGreaterThan(r.x); expect(p.x).toBeLessThan(r.x + r.breite);
+    expect(p.z).toBeGreaterThan(r.z); expect(p.z).toBeLessThan(r.z + r.tiefe);
+  });
+  it("l_form: zwei Bauteile am selben Geschoss erhalten verschiedene Positionen im Riegel", () => {
+    const b = beschreibungFixture();
+    b.bauteile.push({ id: G(34), katalogId: "heizung.waermepumpe", standort: { geschossId: G(9) }, menge: 1, status: "bestaetigt", versorgt: [] });
+    b.bauteile.push({ id: G(37), katalogId: "heizung.verteiler", standort: { geschossId: G(9) }, menge: 1, status: "bestaetigt", versorgt: [] });
+    const w = welt(b, huelleFixture("l_form"));
+    const r = w.grundriss[0];
+    const p = w.symbole.filter((s) => s.position.y === -2.5).map((s) => s.position);
+    expect(p).toHaveLength(2);
+    expect(p[0]).not.toEqual(p[1]);
+    for (const q of p) { expect(q.z).toBeGreaterThan(r.z); expect(q.z).toBeLessThan(r.z + r.tiefe); }
+  });
   it("widersprechende Positionen in einer Gruppe: erste Zeile gewinnt, Hinweis", () => {
     const b = beschreibungFixture();
     b.bauteile[0].positionManuell = { x: 1, z: 2 };
