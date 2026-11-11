@@ -3,7 +3,8 @@ import { join, resolve } from "node:path";
 import { leseArgumente } from "../install/argumente.js";
 import { instanzPfade, leseEnv } from "../install/plan.js";
 import { pruefeRelease } from "../release.js";
-import { dockerAusfuehrer } from "./docker.js";
+import { dockerAusfuehrer, sql } from "./docker.js";
+import { composeDateien } from "../install/install.js";
 import { aktualisiere, leseZustand } from "./zustand.js";
 import { dockerBetriebsumgebung } from "./umgebung.js";
 import { instanzAlarm } from "../alarm/alarm.js";
@@ -39,8 +40,10 @@ haupt().catch(async (e) => {
   // Betriebsalarm (M1-Abnahme Punkt 4); ein Alarmfehler veraendert den Exitcode nicht.
   if (!alarmInstanz) return;
   try {
-    const p = instanzPfade(alarmInstanz);
-    await instanzAlarm(alarmInstanz, p.etc, p.var)
+    const p = instanzPfade(alarmInstanz), w = leseEnv(p.envDatei);
+    const i = { projekt: `planora-${alarmInstanz}`, envDatei: p.envDatei, composeDateien: composeDateien(w.PLANORA_BUNDLE_DIR) };
+    const kontoAdressen = async (alle: boolean) => (await sql(dockerAusfuehrer(), i, "planora_betrieb", `select alarm_empfaenger(${alle})`)).split(/\r?\n/).filter(Boolean);
+    await instanzAlarm(alarmInstanz, p.etc, p.var, undefined, kontoAdressen)
       .alarmieren("update", `Update abgebrochen: ${meldung.split("\n")[0].slice(0, 300)}`);
   } catch (x) { console.error(`Alarm nicht moeglich: ${(x as Error).message}`); }
 });

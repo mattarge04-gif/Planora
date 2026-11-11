@@ -12,7 +12,15 @@ import { smtpSenden, type SmtpKonfiguration } from "./smtp.js";
 export type AlarmArt = "backup" | "retention" | "update" | "start" | "reconcile" | "restore" | "zertifikat" | "journal" | "alarm" | "test";
 export type Ereignis = { format: 1; id: string; instanz: string; host: string; art: AlarmArt; schwere: "fehler" | "warnung"; text: string; zeit: string };
 export type WebhookKonfiguration = { url: string; ca?: string; timeoutMs?: number };
-export type AlarmKonfiguration = { webhook?: WebhookKonfiguration; smtp?: SmtpKonfiguration };
+/**
+ * SMTP-Kanal (PO-Entscheid 2026-11-11: Planora hostet, Versand ueber den Planora-Mailserver). Empfaenger je Alarm:
+ * - planoraAdresse: feste Planora-Kundenadresse dieser Instanz (z.B. <kunde>@<planora-domain>), immer;
+ * - empfaenger: optionale weitere feste Adressen;
+ * - kontoEmpfaenger: E-Mail-Adressen der Kunden-Konten aus der App-DB, "admins" (Standard [A]), "alle" oder "keine".
+ */
+export type AlarmSmtp = Omit<SmtpKonfiguration, "empfaenger"> & { planoraAdresse: string; empfaenger?: string[]; kontoEmpfaenger?: "admins" | "alle" | "keine" };
+export type AlarmKonfiguration = { webhook?: WebhookKonfiguration; smtp?: AlarmSmtp };
+const ADRESSE = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/;
 export type AlarmSecrets = { hmac?: string; smtpPasswort?: string };
 type Kanal = "webhook" | "smtp";
 /** kanaele: beim Erzeugen festgelegte, erforderliche Kanaele (leer = noch offen wegen ungueltiger Konfiguration). */
@@ -38,9 +46,11 @@ export function pruefeAlarmKonfiguration(o: unknown): asserts o is AlarmKonfigur
   }
   if (k.smtp) {
     const s = k.smtp;
-    if (Object.keys(s).some((x) => !["host", "port", "absender", "empfaenger", "starttls", "benutzer", "ca"].includes(x))) throw new Error("alarm.json smtp: unbekanntes Feld (Passwort gehoert in secrets/alarm_smtp_passwort)");
-    if (!s.host || !Number.isInteger(s.port) || s.port < 1 || s.port > 65535 || typeof s.starttls !== "boolean" || !/^[^\s@<>]+@[^\s@<>]+$/.test(s.absender ?? "")
-      || !Array.isArray(s.empfaenger) || !s.empfaenger.length || s.empfaenger.some((e) => !/^[^\s@<>]+@[^\s@<>]+$/.test(e))) throw new Error("alarm.json smtp: host, port, absender, empfaenger[], starttls pruefen");
+    if (Object.keys(s).some((x) => !["host", "port", "absender", "planoraAdresse", "empfaenger", "kontoEmpfaenger", "starttls", "benutzer", "ca"].includes(x))) throw new Error("alarm.json smtp: unbekanntes Feld (Passwort gehoert in secrets/alarm_smtp_passwort)");
+    if (!s.host || !Number.isInteger(s.port) || s.port < 1 || s.port > 65535 || typeof s.starttls !== "boolean" || !ADRESSE.test(s.absender ?? "")) throw new Error("alarm.json smtp: host, port, absender, starttls pruefen");
+    if (!ADRESSE.test(s.planoraAdresse ?? "")) throw new Error("alarm.json smtp.planoraAdresse: feste Planora-Kundenadresse fehlt oder ungueltig");
+    if (s.empfaenger !== undefined && (!Array.isArray(s.empfaenger) || s.empfaenger.some((e) => !ADRESSE.test(e)))) throw new Error("alarm.json smtp.empfaenger: Liste gueltiger Adressen");
+    if (s.kontoEmpfaenger !== undefined && !["admins", "alle", "keine"].includes(s.kontoEmpfaenger)) throw new Error("alarm.json smtp.kontoEmpfaenger: admins, alle oder keine");
   }
 }
 
@@ -81,7 +91,41 @@ export type AlarmOptionen = {
   jetzt?: () => number; protokoll?: (text: string) => void;
   /** Gesetzt, wenn alarm.json/Secrets ungueltig sind: dann wird nichts zugestellt oder geloescht (PP11a-4). */
   konfigurationFehler?: string;
+  /** Liest die Konto-Adressen aus der App-DB (Host: Funktion alarm_empfaenger). Fehlt sie, gilt der Cache. */
+  kontoAdressen?: (alle: boolean) => Promise<string[]>;
 };
+
+/** [A] Zeitlimit fuer die DB-Abfrage der Empfaenger; im Alarmfall ist die DB oft nicht erreichbar. */
+export const EMPFAENGER_TIMEOUT_MS = 15_000;
+export type Empfaenger = { adressen: string[]; quelle: "db" | "cache" | "keine"; fehler?: string };
+
+/**
+ * Empfaenger eines SMTP-Alarms: Planora-Kundenadresse (immer), feste Zusatzadressen und die Konto-Adressen aus der DB.
+ * Ist die DB nicht erreichbar, gilt die zuletzt erfolgreich gelesene Liste aus dem Cache (empfaenger.json im Spool);
+ * ohne Cache geht der Alarm trotzdem an die Planora-Kundenadresse.
+ */
+export async function ermittleEmpfaenger(k: AlarmSmtp, cacheDatei: string, quelle?: (alle: boolean) => Promise<string[]>, jetzt = Date.now()): Promise<Empfaenger> {
+  const modus = k.kontoEmpfaenger ?? "admins";
+  let konten: string[] = [], herkunft: Empfaenger["quelle"] = "keine", fehler: string | undefined;
+  if (modus !== "keine") {
+    try {
+      if (!quelle) throw new Error("keine DB-Anbindung");
+      const gelesen = await Promise.race([quelle(modus === "alle"), new Promise<never>((_, f) => setTimeout(() => f(new Error("Zeitueberschreitung")), EMPFAENGER_TIMEOUT_MS).unref())]);
+      konten = [...new Set(gelesen.map((a) => a.trim().toLowerCase()).filter((a) => ADRESSE.test(a)))];
+      herkunft = "db";
+      const t = `${cacheDatei}.${randomUUID()}.tmp`;
+      writeFileSync(t, JSON.stringify({ zeit: new Date(jetzt).toISOString(), modus, adressen: konten }), { mode: 0o600, flag: "wx" }); renameSync(t, cacheDatei);
+    } catch (e) {
+      fehler = (e as Error).message.split("\n")[0].slice(0, 200);
+      try {
+        const c = JSON.parse(readFileSync(cacheDatei, "utf8")) as { modus: string; adressen: string[] };
+        if (c.modus === modus && Array.isArray(c.adressen)) { konten = c.adressen.filter((a) => ADRESSE.test(a)); herkunft = "cache"; }
+      } catch { /* kein Cache: nur Planora-Adresse und feste Empfaenger */ }
+    }
+  }
+  const adressen = [...new Set([k.planoraAdresse, ...(k.empfaenger ?? []), ...konten].filter(Boolean).map((a) => a.toLowerCase()))];
+  return { adressen, quelle: herkunft, ...(fehler ? { fehler } : {}) };
+}
 
 /** Kanal-Konfiguration einer Instanz: /etc/planora/<instanz>/alarm.json und Secrets unter secrets/. */
 export function ladeAlarmKonfiguration(etc: string): { konfiguration?: AlarmKonfiguration; secrets: AlarmSecrets } {
@@ -131,9 +175,15 @@ export function alarmSpool(o: AlarmOptionen) {
   const schreibe = (datei: string, e: unknown) => { mkdirSync(join(datei, ".."), { recursive: true, mode: 0o700 }); const t = `${datei}.${randomUUID()}.tmp`; writeFileSync(t, JSON.stringify(e), { mode: 0o600, flag: "wx" }); renameSync(t, datei); };
   const sende = async (k: Kanal, e: Ereignis) => {
     if (k === "webhook") await (o.sender?.webhook ?? webhookSenden)(o.konfiguration!.webhook!, o.secrets.hmac!, e, jetzt());
-    else await (o.sender?.smtp ?? smtpSenden)(o.konfiguration!.smtp!, o.secrets.smtpPasswort, `[Planora ${e.instanz}] ${e.schwere}: ${e.art}`,
+    else await (o.sender?.smtp ?? smtpSenden)({ ...o.konfiguration!.smtp!, empfaenger: await empfaenger() }, o.secrets.smtpPasswort, `[Planora ${e.instanz}] ${e.schwere}: ${e.art}`,
       [e.text, "", `Instanz: ${e.instanz}`, `Host: ${e.host}`, `Zeit: ${e.zeit}`, `Ereignis: ${e.id}`, ""].join("\n"));
   };
+  // Empfaenger je Zustellrunde einmal ermitteln (DB, sonst Cache); Fallback wird journalisiert.
+  let empfaengerRunde: Promise<string[]> | undefined;
+  const empfaenger = () => (empfaengerRunde ??= ermittleEmpfaenger(o.konfiguration!.smtp!, join(o.spool, "empfaenger.json"), o.kontoAdressen, jetzt()).then((r) => {
+    if (r.fehler) journal({ art: "empfaenger_ersatz", quelle: r.quelle, fehler: r.fehler, anzahl: r.adressen.length });
+    return r.adressen;
+  }));
   const leseStoerungen = (): Stoerungen => { try { return JSON.parse(readFileSync(stoerungDatei, "utf8")); } catch { return {}; } };
 
   /**
@@ -142,6 +192,7 @@ export function alarmSpool(o: AlarmOptionen) {
    * erforderlichen Kanaele; ein nicht mehr konfigurierter Kanal gilt als Zustellfehler, nicht als erledigt.
    */
   async function zustellen(sofort = false) {
+    empfaengerRunde = undefined;
     if (!existsSync(offen)) return { zugestellt: 0, offen: 0 };
     const namen = readdirSync(offen).filter((n) => n.endsWith(".json")).sort();
     if (o.konfigurationFehler) {
@@ -245,13 +296,13 @@ export function alarmSpool(o: AlarmOptionen) {
 }
 
 /** Alarm einer Instanz laden. Eine ungueltige alarm.json verhindert keinen Betriebsbefehl, haelt aber die Zustellung an. */
-export function instanzAlarm(instanz: string, etc: string, varVerzeichnis: string, protokoll?: (t: string) => void) {
+export function instanzAlarm(instanz: string, etc: string, varVerzeichnis: string, protokoll?: (t: string) => void, kontoAdressen?: (alle: boolean) => Promise<string[]>) {
   let kanal: ReturnType<typeof ladeAlarmKonfiguration> = { secrets: {} }, konfigurationFehler: string | undefined;
   try { kanal = ladeAlarmKonfiguration(etc); } catch (e) {
     konfigurationFehler = (e as Error).message;
     (protokoll ?? console.error)(`Alarmkonfiguration ungueltig; Alarme bleiben im Spool, bis sie korrigiert ist: ${konfigurationFehler}`);
   }
-  return alarmSpool({ instanz, spool: join(varVerzeichnis, "alarm"), ...kanal, konfigurationFehler, protokoll });
+  return alarmSpool({ instanz, spool: join(varVerzeichnis, "alarm"), ...kanal, konfigurationFehler, protokoll, kontoAdressen });
 }
 
 /** Minimale Alarm-Schnittstelle (alarmSpool oder Test-Fake). */

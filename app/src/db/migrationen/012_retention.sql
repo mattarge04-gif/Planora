@@ -42,3 +42,17 @@ begin
   if v_anzahl>0 then perform public.audit_schreiben(null, 'backup.reconcile', jsonb_build_object('anzahl',v_anzahl)); end if;
   return v_anzahl;
 end $$;
+
+-- PO-Entscheid 2026-11-11: Betriebsalarme per E-Mail an die Kunden-Konten. Standard: aktive Konten mit Admin-Rolle
+-- ([A] damit normale Nutzer keine Betriebsalarme erhalten), umschaltbar auf alle aktiven Konten. Gesperrte und noch zu
+-- bestaetigende Konten fallen heraus. Der Host liest die Liste nur ueber diese Funktion (Betriebsrolle ohne Tabellenzugriff).
+create function alarm_empfaenger(p_alle boolean) returns setof text
+language sql stable security definer set search_path = pg_catalog, public as $$
+  select distinct lower(u.email) from public."user" u
+    join public.konto_status k on k.benutzer_id = u.id
+    left join public.rolle_zuordnung r on r.benutzer_id = u.id
+   where k.status = 'aktiv' and (p_alle or r.rolle = 'admin')
+   order by 1
+$$;
+revoke all on function alarm_empfaenger(boolean) from public;
+grant execute on function alarm_empfaenger(boolean) to planora_betrieb;

@@ -21,7 +21,9 @@ export async function hostBefehl(argv: string[], abh: HostAbhaengigkeiten = {}) 
   const p = instanzPfade(werte.instanz), w = leseEnv(p.envDatei), docker = abh.docker ?? dockerAusfuehrer();
   const i = { projekt: `planora-${werte.instanz}`, envDatei: p.envDatei, composeDateien: composeDateien(w.PLANORA_BUNDLE_DIR) };
   // Alarmkanal (M1-Abnahme Punkt 4). Eine ungueltige alarm.json haelt die Zustellung an, verhindert aber keinen Befehl.
-  const alarm = instanzAlarm(werte.instanz, p.etc, p.var);
+  // Konto-Empfaenger der Betriebsalarme aus der App-DB (PO-Entscheid 2026-11-11), nur ueber die Betriebsfunktion.
+  const kontoAdressen = async (alle: boolean) => (await sql(docker, i, "planora_betrieb", `select alarm_empfaenger(${alle})`)).split(/\r?\n/).filter(Boolean);
+  const alarm = instanzAlarm(werte.instanz, p.etc, p.var, undefined, kontoAdressen);
   // Offene Alarme bei jedem Host-Befehl erneut versuchen (Wartezeit beachten).
   await alarm.zustellen().catch(() => {});
 

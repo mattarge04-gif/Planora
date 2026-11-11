@@ -24,7 +24,7 @@ afterAll(() => { rmSync(dir, { recursive: true, force: true }); });
 describe("Konfiguration", () => {
   it("akzeptiert Webhook und SMTP, lehnt HTTP, Zugangsdaten in der URL, unbekannte Felder und leere Konfiguration ab", () => {
     expect(() => pruefeAlarmKonfiguration(WEBHOOK)).not.toThrow();
-    expect(() => pruefeAlarmKonfiguration({ smtp: { host: "mail.kunde.test", port: 587, absender: "planora@kunde.test", empfaenger: ["it@kunde.test"], starttls: true, benutzer: "planora" } })).not.toThrow();
+    expect(() => pruefeAlarmKonfiguration({ smtp: { host: "mail.kunde.test", port: 587, absender: "planora@kunde.test", planoraAdresse: "kunde-a@planora.test", empfaenger: ["it@kunde.test"], starttls: true, benutzer: "planora" } })).not.toThrow();
     expect(() => pruefeAlarmKonfiguration({ webhook: { url: "http://alarm.kunde.test" } })).toThrow(/HTTPS/);
     expect(() => pruefeAlarmKonfiguration({ webhook: { url: "https://u:p@alarm.kunde.test" } })).toThrow(/Zugangsdaten/);
     expect(() => pruefeAlarmKonfiguration({ webhook: { url: "https://a.test", secret: "x" } })).toThrow(/nur url/);
@@ -75,7 +75,7 @@ describe("Spool, Journal und Wiederholung", () => {
   });
   it("Mehrere Kanaele: nur der fehlgeschlagene Kanal wird wiederholt", async () => {
     const spool = join(dir, "spool-2"); let smtpOk = false; const webhook: string[] = [], smtp: string[] = [];
-    const a = alarmSpool({ instanz: "kunde-a", spool, konfiguration: { ...WEBHOOK, smtp: { host: "m", port: 25, absender: "a@b", empfaenger: ["c@d"], starttls: false } }, secrets: { hmac: SCHLUESSEL }, protokoll: () => {},
+    const a = alarmSpool({ instanz: "kunde-a", spool, konfiguration: { ...WEBHOOK, smtp: { host: "m", port: 25, absender: "a@b.test", planoraAdresse: "kunde-a@planora.test", empfaenger: ["c@d.test"], starttls: false } }, secrets: { hmac: SCHLUESSEL }, protokoll: () => {},
       sender: { webhook: async (_w, _k, e) => { webhook.push(e.id); }, smtp: async (_k, _p, betreff) => { if (!smtpOk) throw new Error("SMTP weg"); smtp.push(betreff); } } });
     await a.alarmieren("update", "Update abgebrochen");
     smtpOk = true; await a.zustellen(true);
@@ -108,7 +108,7 @@ describe("Spool, Journal und Wiederholung", () => {
     expect(offen()).toHaveLength(2);
     expect(gesendet).toBe(0);
     // Kanalwechsel auf nur SMTP: der webhook-pflichtige Alarm bleibt offen (kein stilles Quittieren)
-    writeFileSync(join(etc, "alarm.json"), JSON.stringify({ smtp: { host: "m", port: 25, absender: "a@b", empfaenger: ["c@d"], starttls: false } }));
+    writeFileSync(join(etc, "alarm.json"), JSON.stringify({ smtp: { host: "m", port: 25, absender: "a@b.test", planoraAdresse: "kunde-a@planora.test", empfaenger: ["c@d.test"], starttls: false } }));
     const nurSmtp = alarmSpool({ instanz: "kunde-a", spool: join(varDir, "alarm"), ...ladeAlarmKonfiguration(etc), sender: { smtp: async () => { gesendet++; } }, protokoll: () => {} });
     expect(await nurSmtp.zustellen(true)).toEqual({ zugestellt: 1, offen: 1 }); // der waehrend ungueltiger Konfig erzeugte geht ueber SMTP
     expect(readFileSync(join(varDir, "alarm", "journal.jsonl"), "utf8")).toContain("Kanal nicht mehr konfiguriert");
