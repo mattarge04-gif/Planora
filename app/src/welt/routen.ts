@@ -37,12 +37,13 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
       const k = req.kontext!;
       if (!(await darfHuelle(k.benutzerId))) return verweigert(reply, 403);
       try {
-        return await inTransaktion(async (c) => {
-          if (!(await c.query("select 1 from liegenschaft where id=$1", [req.params.lid])).rowCount) return verweigert(reply, 404);
-          const id = await legeGebaeudeAn(c, req.params.lid, req.body, REGELWERK_V1);
-          await auditEreignis(c, k.auditId, "gebaeude.angelegt", { gebaeudeId: id, geschosse: req.body.geschosse.length });
-          return reply.code(201).send({ id });
+        const id = await inTransaktion(async (c) => {
+          if (!(await c.query("select 1 from liegenschaft where id=$1", [req.params.lid])).rowCount) return null;
+          const neu = await legeGebaeudeAn(c, req.params.lid, req.body, REGELWERK_V1);
+          await auditEreignis(c, k.auditId, "gebaeude.angelegt", { gebaeudeId: neu, geschosse: req.body.geschosse.length });
+          return neu;
         });
+        return id === null ? verweigert(reply, 404) : reply.code(201).send({ id });
       } catch (e) { return fachAntwort(reply, e); }
     });
 
@@ -57,12 +58,13 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
       const k = req.kontext!;
       if (!(await darfHuelle(k.benutzerId))) return verweigert(reply, 403);
       try {
-        return await inTransaktion(async (c) => {
-          if (!(await ladeHuelle(c, req.params.id))) return verweigert(reply, 404);
+        const h = await inTransaktion(async (c) => {
+          if (!(await ladeHuelle(c, req.params.id))) return null;
           await aendereHuelle(c, req.params.id, req.body, REGELWERK_V1);
           await auditEreignis(c, k.auditId, "gebaeude.huelle", { gebaeudeId: req.params.id, geschosse: req.body.geschosse.length });
           return ladeHuelle(c, req.params.id);
         });
+        return h ?? verweigert(reply, 404);
       } catch (e) { return fachAntwort(reply, e); }
     });
 

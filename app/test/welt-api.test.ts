@@ -125,4 +125,16 @@ describe("Welt-API", () => {
     expect(r.statusCode).toBe(422);
     expect(r.json().fehler.map((f: any) => f.code)).toEqual(["loeschen_blockiert"]);
   });
+  it("Strukturfehler werden nicht stillschweigend bereinigt; Huelle nur durch Betreiber", async () => {
+    const b = (await anfrage("GET", urlB(), kBearb)).json();
+    const mitTippfehler = { ...b, einheiten: [{ ...b.einheiten[0], heizungAusname: { fbh: "ja" } }, ...b.einheiten.slice(1)] };
+    expect((await anfrage("PUT", urlB(), kBearb, mitTippfehler)).statusCode).toBe(400);
+    expect((await anfrage("PUT", urlB(), kBearb, { ...b, stand: String(b.stand) })).statusCode).toBe(400);
+    const h = (await anfrage("GET", `/api/struktur/gebaeude/${G}/huelle`, kBetr)).json();
+    const neu = { ...h, geschosse: [...h.geschosse, { code: "OG2" }] };
+    expect((await anfrage("PUT", `/api/struktur/gebaeude/${G}/huelle`, kBearb, neu)).statusCode).toBe(403);
+    const ok = await anfrage("PUT", `/api/struktur/gebaeude/${G}/huelle`, kBetr, neu);
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json().geschosse).toHaveLength(3);
+  });
 });

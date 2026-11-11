@@ -140,7 +140,7 @@ interface Huelle { name: string; grundform: "quader" | "l_form" | "u_form"; brei
    - `id_doppelt`: dieselbe ID kommt in der Beschreibung mehrfach vor
    - Huelle: `mass_ungueltig`, `geschoss_fehlt`, `geschoss_code_ungueltig`, `geschoss_doppelt`, `hoehe_ungueltig`, `geschoss_belegt`
 4. **Schreiben:** update / insert / delete je Tabelle; Versorgung und Einheit-Heizung je Objekt komplett ersetzen.
-5. `stand + 1`; Audit-Ereignis `gebaeude.beschreibung` mit Zaehlern (angelegt/geaendert/geloescht) ueber `auditEreignis` (`src/audit/audit.ts`), keine Inhalte.
+5. `stand + 1`; Audit-Ereignis `gebaeude.beschreibung` mit Zaehlern (angelegt/aktualisiert/geloescht) ueber `auditEreignis` (`src/audit/audit.ts`), keine Inhalte.
 6. Antwort: neue Beschreibung mit vergebenen IDs.
 
 **FBH-Vorschlag:** Hat eine Einheit `fbh = ja` und versorgt sie kein Verteiler, liefert `GET /beschreibung` einen Hinweis `verteiler_vorschlag` (kein gespeichertes Bauteil). Das Anlegen als `vorgeschlagen` bzw. das Bestaetigen ist Sache von M2c.

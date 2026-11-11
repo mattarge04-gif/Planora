@@ -16,6 +16,7 @@ export const LID_PARAMS = { type: "object", required: ["lid"], properties: { lid
 export const HUELLE_SCHEMA = {
   type: "object", additionalProperties: false, required: ["name", "grundform", "breiteM", "tiefeM", "geschosse"],
   properties: {
+    gebaeudeId: { type: "string" }, liegenschaftId: { type: "string" }, regelwerkVersion: { type: "integer" }, stand: { type: "integer" }, // Rueckgabefelder von GET, beim Schreiben ignoriert
     name: { type: "string", minLength: 1, maxLength: 200 },
     grundform: { type: "string", enum: ["quader", "l_form", "u_form"] },
     breiteM: { type: "number" }, tiefeM: { type: "number" },
