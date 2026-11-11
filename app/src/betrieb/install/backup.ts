@@ -45,7 +45,9 @@ export function backupKonfigurieren(instanz: string, instanzId: string, release?
   };
   for (const [name, inhalt] of Object.entries(dateien)) { schreibeAtomar(join(d, name), inhalt); lesbarFuerBackup(join(d, name)); }
   lesbarFuerBackup(join(d, "restic_passwort")); lesbarFuerBackup(join(d, "empfaenger"));
-  schreibeEnv(w.PLANORA_BACKUP_ENV, {
+  // Vom Betreiber gesetzte Betriebswerte (Retention, M1-Abnahme Punkt 3) bei jeder Neukonfiguration erhalten.
+  const betreiber = existsSync(w.PLANORA_BACKUP_ENV) ? Object.fromEntries(Object.entries(leseEnv(w.PLANORA_BACKUP_ENV)).filter(([k]) => k.startsWith("PLANORA_RETENTION_"))) : {};
+  schreibeEnv(w.PLANORA_BACKUP_ENV, { ...betreiber,
     PLANORA_BETRIEB_DB_FILE: "/run/backup/betrieb_db", PLANORA_BACKUP_DB_FILE: "/run/backup/backup_db",
     PLANORA_KONFIGURATION_FILE: "/run/backup/konfiguration.json", PLANORA_INVENTAR_FILE: "/run/backup/inventar.json",
     PLANORA_RECOVERY_EMPFAENGER_FILE: "/run/backup/empfaenger", RESTIC_PASSWORD_FILE: "/run/backup/restic_passwort",

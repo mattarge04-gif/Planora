@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
@@ -20,7 +20,10 @@ it("verbindet externe Konfiguration und Inventar mit den tatsaechlich verwendete
     expect(inventar.appSecrets.auth).toBe(readFileSync(join(p.secrets, "app/auth_secret"), "utf8"));
     expect(inventar.dbRollen.planora_backup).toBe(readFileSync(join(p.secrets, "db/db_backup_passwort"), "utf8"));
     expect(leseEnv(env.PLANORA_BACKUP_ENV).RESTIC_PASSWORD_FILE).toBe("/run/backup/restic_passwort");
+    // Retention-Einstellung des Betreibers bleibt bei Neukonfiguration (Update/Restore) erhalten.
+    writeFileSync(env.PLANORA_BACKUP_ENV, readFileSync(env.PLANORA_BACKUP_ENV, "utf8") + "PLANORA_RETENTION_TAEGLICH=21\n");
     backupKonfigurieren("test-kunde", id, "test-2", "planora_restore_probe");
+    expect(leseEnv(env.PLANORA_BACKUP_ENV).PLANORA_RETENTION_TAEGLICH).toBe("21");
     expect(readFileSync(join(p.etc, "backup/backup_db"), "utf8")).toContain("/planora_restore_probe");
     expect(JSON.parse(readFileSync(join(p.etc, "backup/konfiguration.json"), "utf8")).release).toBe("test-2");
     expect(readFileSync(env.PLANORA_BACKUP_ENV, "utf8")).not.toContain(inventar.appSecrets.auth);

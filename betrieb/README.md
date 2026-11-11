@@ -26,6 +26,26 @@ Auf Linux aktiviert Installation als root die systemd-Instanz `planora-betrieb@k
 ./planora update --instanz kunde-a --fortsetzen
 ```
 
+## Aufbewahrung der Sicherungssaetze (Retention)
+
+Nach jeder erfolgreichen naechtlichen Sicherung laeuft `planora aufbewahren --instanz <name>` (auch manuell aufrufbar). Standardpolitik **[A] 14 taeglich / 8 woechentlich / 12 monatlich**: Das ist der Vorschlag aus der M1-Abnahme. Er gilt bis zur PO-Freigabe. Anpassung in `/etc/planora/<instanz>/backup/backup.env`:
+
+```sh
+PLANORA_RETENTION_TAEGLICH=14     # mindestens 1
+PLANORA_RETENTION_WOECHENTLICH=8  # 0 = keine Wochenstaende
+PLANORA_RETENTION_MONATLICH=12    # 0 = keine Monatsstaende
+```
+
+Diese Zeilen bleiben bei Update und Restore erhalten. Regeln:
+
+- Je Regel werden die juengsten N Kalendertage, ISO-Wochen und Monate mit mindestens einem Satz belegt. Massgebend ist die Zeitzone der Instanzkonfiguration (Europe/Zurich). Wie bei restic zaehlt ein Satz, der mehrere Regeln erfuellt, nur einmal.
+- Vertreter eines Bereichs ist der juengste gepruefte Satz. Ein fehlgeschlagener Satz vertritt einen Bereich nur, wenn dieser keinen geprueften Satz hat [A]. Laufende, ungepruefte und in der DB unbekannte Saetze werden nie entfernt.
+- Reihenfolge: `restic forget <ids>`, danach Inventar `inventar/<instanz>/<backup-id>.age` loeschen und `backup_lauf.zustand='entfernt'` setzen. Dann Journal-Objekte bis zur kleinsten Journal-Sequenz aller behaltenen Saetze loeschen und zuletzt `restic prune`. Jeder Lauf gleicht abgeschlossene Saetze ohne Snapshot nach. Ein Abbruch hinterlaesst deshalb hoechstens ein Inventar, das der naechste Lauf entfernt.
+- Ist ein Manifest eines behaltenen Satzes nicht lesbar, kuerzt der Lauf das Journal nicht. Ein `forget`-Fehler aendert weder Inventar noch Journal noch DB.
+- Audit: `backup.entfernt` je Satz und `backup.retention` mit der Zusammenfassung je Lauf. Die DB-Tabelle `loesch_journal` wird nicht gekuerzt.
+
+Nachweis: `app/test/backup-retention.test.ts` (Auswahl, Kalender, Abbruch- und Fehlerfaelle) und `app/test-docker/backup-retention.test.ts`. Der Docker-Test erzeugt fuenf echte Saetze und setzt ihre Zeitstempel mit `restic rewrite --new-time`. Mit Politik 2/1/2 prueft er Snapshots, Inventar, DB-Zustand, Journal und `restic check`. Ein entfernter Satz ist nicht mehr restaurierbar. Der aelteste behaltene Satz wird samt nachfolgendem Journal in eine frische DB restauriert.
+
 ## TLS mit Kunden-Zertifikat (Kunden-CA)
 
 Neben `--tls acme` und `--tls internal` kann die Instanz ein Zertifikat der Kunden-PKI verwenden. Die Kunden-IT stellt aus:
@@ -79,4 +99,4 @@ Die erhaltene alte Datenbank und deaktivierte Recovery-Rollen nach einem Fehler 
 
 `node werkzeug/betrieb/dossier.js --bundle <bundle> --schluessel <pub> --lockfile <package-lock.json> --ausgabe <neuer-ordner>` erzeugt verifizierte Release-/npm-Metadaten und eine Freigabe-Checkliste. Dies ist ein Geruest, kein vollstaendiger Image-SBOM und keine juristische Freigabe. Ein exakter Lockfile des Builds gehoert zur Lieferdokumentation.
 
-Offen bleiben frische Linux-VM samt Bind-Mount-/systemd-Pruefung, reale CH-S3-Konfiguration und Abnahme, gemeinsame Retention der Saetze/Inventare, menschliche Lizenzfreigabe und organisatorische Host-Freigabe im On-Premise-Fall. Das lokal verdrahtete Installationsprofil verwendet ein Dateisystemziel; der vorhandene S3-Adapter erfordert separate externe Konfiguration und reale Zielnachweise.
+Offen bleiben frische Linux-VM samt Bind-Mount-/systemd-Pruefung, reale CH-S3-Konfiguration und Abnahme, PO-Freigabe der Retention-Politik ([A] 14/8/12 umgesetzt), menschliche Lizenzfreigabe und organisatorische Host-Freigabe im On-Premise-Fall. Das lokal verdrahtete Installationsprofil verwendet ein Dateisystemziel; der vorhandene S3-Adapter erfordert separate externe Konfiguration und reale Zielnachweise.

@@ -76,7 +76,7 @@ case "$befehl" in
     brauche_node host-cli.js
     exec node "$WERKZEUG/betrieb/host-cli.js" "$befehl" "$@"
     ;;
-  sichern|journal|freigabe)
+  sichern|journal|freigabe|aufbewahren)
     instanz_aus "$@"
     # Nur --instanz entfernen; alle anderen Argumente unveraendert weitergeben.
     [ "${1:-}" = --instanz ] || fehler "Aufruf: planora $befehl --instanz <name> ..."
@@ -92,6 +92,6 @@ case "$befehl" in
     compose ps -a
     ;;
   *)
-    fehler "Aufruf: planora install|update|setup|status|start|dienst|sichern|journal|reconcile|restore|freigabe|zertifikat ..."
+    fehler "Aufruf: planora install|update|setup|status|start|dienst|sichern|aufbewahren|journal|reconcile|restore|freigabe|zertifikat ..."
     ;;
 esac
