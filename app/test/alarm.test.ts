@@ -6,7 +6,7 @@ import { TLSSocket } from "node:tls";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { MAX_OFFEN, alarmSpool, instanzAlarm, ladeAlarmKonfiguration, mitAlarm, pruefeAlarmKonfiguration, pruefeSignatur, signiere, webhookSenden, type Ereignis } from "../src/betrieb/alarm/alarm.js";
+import { JOURNAL_MAX_BYTES, MAX_OFFEN, alarmSpool, instanzAlarm, ladeAlarmKonfiguration, mitAlarm, pruefeAlarmKonfiguration, pruefeSignatur, signiere, webhookSenden, type Ereignis } from "../src/betrieb/alarm/alarm.js";
 import { smtpSenden } from "../src/betrieb/alarm/smtp.js";
 import { betriebsDienst, reconcileMitAlarm, sicherungHost } from "../src/betrieb/host.js";
 import { dateiSperre } from "../src/betrieb/update/zustand.js";
@@ -136,6 +136,34 @@ describe("Spool, Journal und Wiederholung", () => {
     expect(readdirSync(join(dir, "spool-voll", "offen")).filter((x) => x.endsWith(".json"))).toHaveLength(MAX_OFFEN);
     expect(readFileSync(join(dir, "spool-voll", "journal.jsonl"), "utf8").match(/"art":"verworfen"/g)).toHaveLength(5);
   }, 60_000);
+  it("PP11a-N-5: Erinnerung schon nach 20 h; geaenderte Fehlermeldung wird sofort neu gemeldet", async () => {
+    const spool = join(dir, "spool-n5"); let jetzt = Date.parse("2026-11-11T02:00:00Z"); const gesendet: string[] = [];
+    const a = alarmSpool({ instanz: "kunde-a", spool, konfiguration: WEBHOOK, secrets: { hmac: SCHLUESSEL }, jetzt: () => jetzt, protokoll: () => {}, sender: { webhook: async (_w, _k, e) => { gesendet.push(e.text); } } });
+    await a.alarmieren("backup", "Sicherung fehlgeschlagen: Exit 1", "fehler", "sicherung");
+    jetzt += 21 * 3_600_000; // Folgenacht, Timer 3 h frueher gestartet: trotzdem melden
+    await a.alarmieren("backup", "Sicherung fehlgeschlagen: Exit 1", "fehler", "sicherung");
+    expect(gesendet).toHaveLength(2);
+    jetzt += 60_000;
+    await a.alarmieren("backup", "Sicherung fehlgeschlagen: Exit 1", "fehler", "sicherung");
+    expect(gesendet).toHaveLength(2);
+    await a.alarmieren("backup", "Sicherung fehlgeschlagen: Speicher voll", "fehler", "sicherung");
+    expect(gesendet).toHaveLength(3);
+    expect(gesendet[2]).toMatch(/^Sicherung fehlgeschlagen: Speicher voll \(andauernd seit/);
+    expect(existsSync(join(spool, "stoerungen.json.lock"))).toBe(false);
+  });
+  it("PP11a-N-6: verworfene Alarme werden nach Wiederherstellung als Sammelmeldung nachgereicht; Journal rotiert", async () => {
+    const spool = join(dir, "spool-n6"); let erreichbar = false; const gesendet: string[] = [];
+    const a = alarmSpool({ instanz: "kunde-a", spool, konfiguration: WEBHOOK, secrets: { hmac: SCHLUESSEL }, protokoll: () => {}, sender: { webhook: async (_w, _k, e) => { if (!erreichbar) throw new Error("weg"); gesendet.push(e.text); } } });
+    for (let n = 0; n < MAX_OFFEN + 3; n++) await a.alarmieren("backup", `Fehler ${n}`);
+    erreichbar = true;
+    await a.zustellen(true);
+    expect(gesendet.filter((t) => /3 Alarme wurden wegen Spool-Ueberlauf/.test(t))).toHaveLength(1);
+    expect(existsSync(join(spool, "verworfen.json"))).toBe(false);
+    writeFileSync(join(spool, "journal.jsonl"), "x".repeat(JOURNAL_MAX_BYTES + 1));
+    await a.alarmieren("test", "nach Rotation", "warnung");
+    expect(existsSync(join(spool, "journal.1.jsonl"))).toBe(true);
+    expect(readFileSync(join(spool, "journal.jsonl"), "utf8").length).toBeLessThan(10_000);
+  }, 60_000);
   it("mitAlarm: Erfolg loest keinen Alarm aus, Fehler alarmiert und wird weitergereicht", async () => {
     const alarme: string[] = [];
     const a = { alarmieren: async (art: string, text: string) => { alarme.push(`${art}|${text}`); } };
@@ -151,18 +179,20 @@ describe("Host-Anbindung", () => {
   const fake = (fehler: Record<string, boolean>) => {
     const aufrufe: string[] = [], argumente: string[][] = [];
     const docker: Ausfuehrer = async (args) => {
-      const befehl = args.includes("sichern") ? "sichern" : args.includes("aufbewahren") ? "aufbewahren" : args.includes("reconcile") ? "reconcile" : args[0];
-      aufrufe.push(befehl); argumente.push(args);
+      const befehl = args.includes("sichern") ? "sichern" : args.includes("aufbewahren") ? "aufbewahren" : args.includes("reconcile") ? "reconcile" : args.includes("psql") ? "wartung" : args[0];
+      if (befehl !== "wartung") { aufrufe.push(befehl); argumente.push(args); }
       if (fehler[befehl]) return { code: 1, stdout: "", stderr: "Betriebsbefehl fehlgeschlagen" };
+      if (befehl === "wartung") return { code: 0, stdout: fehler.inWartung ? "true" : "false", stderr: "" };
+      if (befehl === "aufbewahren") return { code: 0, stdout: JSON.stringify({ ok: befehl, offeneSaetze: fehler.offen ? 1 : 0 }), stderr: "" };
       return { code: 0, stdout: befehl === "ps" ? "" : befehl === "reconcile" ? JSON.stringify({ fehlgeschlagen: fehler.abgebrochen ? 2 : 0 }) : JSON.stringify({ ok: befehl }), stderr: "" };
     };
-    const alarme: string[] = [];
-    return { docker, aufrufe, argumente, alarme, fehler, alarm: { alarmieren: async (art: string, text: string, schwere = "fehler") => { alarme.push(`${art}|${schwere}|${text}`); } } };
+    const alarme: string[] = [], behoben: string[] = [];
+    return { docker, aufrufe, argumente, alarme, behoben, fehler, alarm: { alarmieren: async (art: string, text: string, schwere = "fehler") => { alarme.push(`${art}|${schwere}|${text}`); }, behoben: async (k: string) => { behoben.push(k); } } };
   };
   const koordination = () => { const d = mkdtempSync(join(dir, "host-")); return { zustandDatei: join(d, "update.json"), sperrDatei: join(d, "update.lock") }; };
   it("Sicherung erfolgreich: Retention laeuft, kein Alarm, Sperre wieder frei", async () => {
     const f = fake({}), k = koordination();
-    expect(await sicherungHost(f.docker, i, f.alarm, k)).toEqual({ ausgesetzt: null, sicherung: { ok: "sichern" }, retention: { ok: "aufbewahren" }, reserviert: [] });
+    expect(await sicherungHost(f.docker, i, f.alarm, k)).toEqual({ ausgesetzt: null, sicherung: { ok: "sichern" }, retention: { ok: "aufbewahren", offeneSaetze: 0 }, reserviert: [] });
     expect(f.aufrufe).toEqual(["sichern", "aufbewahren"]);
     expect(f.alarme).toEqual([]);
     expect(existsSync(k.sperrDatei)).toBe(false);
@@ -187,12 +217,83 @@ describe("Host-Anbindung", () => {
     expect(f.aufrufe).toEqual(["aufbewahren"]);
     expect(f.argumente[0].slice(-3)).toEqual(["aufbewahren", "--reserviert", backupId]);
     expect(r).toMatchObject({ sicherung: null, reserviert: [backupId] });
-    expect(f.alarme).toEqual([`backup|warnung|Sicherung ausgesetzt: Update u1 ist abgebrochen; zuerst --fortsetzen oder --rueckweg`]);
+    expect(f.alarme).toEqual([`backup|fehler|Sicherung ausgesetzt: Update u1 ist abgebrochen (Schritt 6); zuerst --fortsetzen oder --rueckweg`]);
     // abgeschlossenes Update reserviert nichts
     writeFileSync(k.zustandDatei, JSON.stringify({ format: 1, id: "u1", bestaetigt: 7, begonnen: null, status: "fertig", backupId }));
     const g = fake({});
     expect((await sicherungHost(g.docker, i, g.alarm, k)).reserviert).toEqual([]);
     expect(g.aufrufe).toEqual(["sichern", "aufbewahren"]);
+  });
+  it("PP11a-N-4: Update-Abbruch vor der Wartung (Schritt 0) blockiert die Sicherung nicht", async () => {
+    const f = fake({}), k = koordination();
+    writeFileSync(k.zustandDatei, JSON.stringify({ format: 1, id: "u0", bestaetigt: -1, begonnen: 0, status: "abgebrochen" }));
+    const r = await sicherungHost(f.docker, i, f.alarm, k);
+    expect(f.aufrufe).toEqual(["sichern", "aufbewahren"]);
+    expect(r.sicherung).toEqual({ ok: "sichern" });
+    expect(f.alarme).toEqual([]);
+    expect(f.behoben).toContain("update-offen");
+    // ab Schritt 1 (Wartung begonnen) blockiert es mit Alarm 'fehler'
+    writeFileSync(k.zustandDatei, JSON.stringify({ format: 1, id: "u0", bestaetigt: 0, begonnen: 1, status: "abgebrochen" }));
+    const g = fake({});
+    await sicherungHost(g.docker, i, g.alarm, k);
+    expect(g.aufrufe).toEqual(["aufbewahren"]);
+    expect(g.alarme[0]).toMatch(/^backup\|fehler\|Sicherung ausgesetzt: Update u0/);
+  });
+  it("PP11a-N-1: Wartung (z.B. abgestuerzter Restore) verhindert die Sicherung; verwaiste Restore-Sperre wird nicht uebernommen", async () => {
+    const f = fake({ inWartung: true }), k = koordination();
+    const r = await sicherungHost(f.docker, i, f.alarm, k);
+    expect(r.sicherung).toBeNull();
+    expect(f.aufrufe).toEqual(["aufbewahren"]);
+    expect(f.alarme[0]).toMatch(/^backup\|fehler\|Sicherung ausgesetzt: Instanz steht in Wartung/);
+    // Sperre eines abgestuerzten Restores (toter PID): Sicherung uebernimmt sie nicht
+    writeFileSync(k.sperrDatei, JSON.stringify({ pid: 2 ** 22 + 12345, host: hostname(), zweck: "Restore" }));
+    const g = fake({});
+    expect((await sicherungHost(g.docker, i, g.alarm, k)).ausgesetzt).toMatch(/Sperre durch Restore .* keine automatische Uebernahme/);
+    expect(g.aufrufe).toEqual([]);
+    // ebenso eine alte Update-Sperre ohne Zweck
+    writeFileSync(k.sperrDatei, JSON.stringify({ pid: 2 ** 22 + 12345, host: hostname() }));
+    expect((await sicherungHost(fake({}).docker, i, g.alarm, k)).ausgesetzt).toMatch(/Update-Lock vorhanden/);
+    // geordnet abgebrochenes Update (update.json 'abgebrochen', PID tot): Sperre uebernehmen, Retention mit Reservierung
+    const backupId = "11111111-2222-4333-8444-555555555555";
+    writeFileSync(k.zustandDatei, JSON.stringify({ format: 1, id: "u2", bestaetigt: 5, begonnen: 6, status: "abgebrochen", backupId }));
+    const h = fake({});
+    expect((await sicherungHost(h.docker, i, h.alarm, k)).reserviert).toEqual([backupId]);
+    expect(h.aufrufe).toEqual(["aufbewahren"]);
+    // Absturz mitten im Update (Status 'aktiv'): nicht uebernehmen, Alarm 'fehler'
+    writeFileSync(k.zustandDatei, JSON.stringify({ format: 1, id: "u3", bestaetigt: 5, begonnen: 6, status: "aktiv", backupId }));
+    writeFileSync(k.sperrDatei, JSON.stringify({ pid: 2 ** 22 + 12345, host: hostname(), zweck: "update" }));
+    const x = fake({});
+    expect((await sicherungHost(x.docker, i, x.alarm, k)).ausgesetzt).toMatch(/Update-Lock vorhanden/);
+    expect(x.alarme[0]).toMatch(/^backup\|fehler\|Sicherung\/Retention ausgesetzt/);
+    rmSync(k.sperrDatei);
+  });
+  it("PP11a-N-2: SIGTERM gibt die Sicherungssperre frei; verwaiste Sicherungssperre blockiert Update/Restore nicht", async () => {
+    const { EventEmitter } = await import("node:events");
+    const k = koordination(), signale = new EventEmitter(), codes: number[] = [];
+    let weiter!: () => void;
+    const f = fake({});
+    const docker: Ausfuehrer = async (args) => { if (args.includes("sichern")) await new Promise<void>((ok) => { weiter = ok; }); return f.docker(args); };
+    const lauf = sicherungHost(docker, i, f.alarm, { ...k, signale: signale as unknown as NodeJS.Process, beenden: (c) => { codes.push(c); } });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(existsSync(k.sperrDatei)).toBe(true);
+    signale.emit("SIGTERM");
+    expect(codes).toEqual([143]);
+    expect(existsSync(k.sperrDatei)).toBe(false);
+    weiter(); await lauf;
+    expect(signale.listenerCount("SIGTERM")).toBe(0);
+    // Ohne Handler (kill -9): Restore uebernimmt eine Sicherungssperre mit totem PID, eine lebende nicht
+    writeFileSync(k.sperrDatei, JSON.stringify({ pid: 2 ** 22 + 12345, host: hostname(), zweck: "Sicherung" }));
+    const frei = dateiSperre(k.sperrDatei, false, "Restore");
+    expect(JSON.parse(readFileSync(k.sperrDatei, "utf8")).zweck).toBe("Restore");
+    frei(true);
+  });
+  it("PP11a-N-3: dauerhaft offene Saetze blockieren die Journal-Kuerzung -> Warnung, danach behoben", async () => {
+    const f = fake({ offen: true });
+    await sicherungHost(f.docker, i, f.alarm, koordination());
+    expect(f.alarme).toEqual(["retention|warnung|Journal-Kuerzung ausgesetzt: 1 laufende/ungepruefte Sicherungssaetze (Reconcile pruefen)"]);
+    const g = fake({});
+    await sicherungHost(g.docker, i, g.alarm, koordination());
+    expect(g.behoben).toContain("journal-kuerzung");
   });
   it("PP11a-3: laufendes Update/Restore (lebende Sperre) setzt Sicherung und Retention aus", async () => {
     const f = fake({}), k = koordination();
@@ -204,7 +305,7 @@ describe("Host-Anbindung", () => {
       expect(f.alarme[0]).toMatch(/^backup\|warnung\|Sicherung\/Retention ausgesetzt/);
     } finally { frei(true); }
     // Umgekehrt: waehrend einer Sicherung erhaelt ein Update eine klare Meldung.
-    writeFileSync(k.sperrDatei, JSON.stringify({ pid: process.pid, host: hostname(), zweck: "Sicherung" }));
+    writeFileSync(k.sperrDatei, JSON.stringify({ pid: process.ppid, host: hostname(), zweck: "Sicherung" }));
     expect(() => dateiSperre(k.sperrDatei, false)).toThrow(/Sperre durch laufende Sicherung/);
     rmSync(k.sperrDatei);
   });

@@ -41,6 +41,15 @@ it("reconciliert nur alte Heartbeats bei nachweislich gestopptem Container", asy
   expect((await als("planora_betrieb", "select backup_reconcile(false) n")).rows[0].n).toBe(1);
   expect((await db.pool.query("select zustand from backup_lauf where id=$1", [frisch])).rows[0].zustand).toBe("laufend");
 });
+it("PP11a-N-3: reconciliert auch einen haengenden 'gesichert'-Satz, nicht aber einen mit frischem Heartbeat", async () => {
+  const haengt = randomUUID(), prueft = randomUUID();
+  for (const id of [haengt, prueft]) { await als("planora_betrieb", "select backup_lauf_start($1)", [id]); await als("planora_betrieb", "select backup_lauf_setze($1,'gesichert')", [id]); }
+  await db.pool.query("update backup_lauf set heartbeat=now()-interval '11 minutes' where id=$1", [haengt]);
+  expect((await als("planora_betrieb", "select backup_reconcile(true) n")).rows[0].n).toBe(0);
+  expect((await als("planora_betrieb", "select backup_reconcile(false) n")).rows[0].n).toBe(1);
+  const z = Object.fromEntries((await db.pool.query("select id::text,zustand from backup_lauf")).rows.map((r) => [r.id, r.zustand]));
+  expect([z[haengt], z[prueft]]).toEqual(["fehlgeschlagen", "gesichert"]);
+});
 it("laesst nach Crash und Wiederanlauf GC wieder zu und frische Laeufe weiterlaufen",async()=>{
   const id=randomUUID();await als("planora_betrieb","select backup_lauf_start($1)",[id]);
   await db.pool.query("update backup_lauf set heartbeat=now()-interval '11 minutes' where id=$1",[id]);

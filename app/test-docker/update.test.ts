@@ -160,7 +160,7 @@ describe.skipIf(!DOCKER_TESTS)("Host-Update (Docker)", () => {
       expect(nacht.reserviert).toEqual([rueckwegSatz]);
       expect(nacht.retention.behalten).toContain(rueckwegSatz);
       expect(nacht.retention.entfernt.length).toBeGreaterThan(0);
-      expect(alarme).toEqual([expect.stringMatching(/^backup\|warnung\|Sicherung ausgesetzt: Update .* ist abgebrochen/)]);
+      expect(alarme).toEqual([expect.stringMatching(/^backup\|fehler\|Sicherung ausgesetzt: Update .* ist abgebrochen \(Schritt 6\)/)]);
     } finally { writeFileSync(backupEnv, envVorher); }
     const rollback = {datei:o.datei,sperre:o.sperre,modus:"rueckweg" as const};
     await expect(aktualisiere(rollback,umgebung())).rejects.toThrow(/Offline-Recovery-Key/);

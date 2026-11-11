@@ -29,3 +29,18 @@ it("verbindet externe Konfiguration und Inventar mit den tatsaechlich verwendete
     expect(readFileSync(env.PLANORA_BACKUP_ENV, "utf8")).not.toContain(inventar.appSecrets.auth);
   } finally { if (alt === undefined) delete process.env.PLANORA_ETC; else process.env.PLANORA_ETC = alt; rmSync(dir, { recursive: true, force: true }); }
 });
+
+it("PP11a-N-8: alter Kunden-CA-Wert (cert.pem/key.pem) wird weiterhin als kundenzertifikat gesichert", () => {
+  const dir = mkdtempSync(join(tmpdir(), "backup-install-alt-")), alt = process.env.PLANORA_ETC;
+  process.env.PLANORA_ETC = dir;
+  try {
+    const p = instanzPfade("test-kunde"); mkdirSync(p.etc); erzeugeSecrets(p.secrets);
+    const env = backupVorbereiten("test-kunde", join(dir, "ziel"), "age1" + "q".repeat(58));
+    for (const tls of ["/zertifikat/cert.pem /zertifikat/key.pem", "/zertifikat/paar.pem /zertifikat/paar.pem"]) {
+      schreibeEnv(p.envDatei, { ...env, PLANORA_RELEASE: "test-1", PLANORA_DOMAIN: "planora.test", PLANORA_TLS: tls });
+      rmSync(join(p.etc, "backup/konfiguration.json"), { force: true });
+      backupKonfigurieren("test-kunde", randomUUID());
+      expect(JSON.parse(readFileSync(join(p.etc, "backup/konfiguration.json"), "utf8")).tls).toBe("kundenzertifikat");
+    }
+  } finally { if (alt === undefined) delete process.env.PLANORA_ETC; else process.env.PLANORA_ETC = alt; rmSync(dir, { recursive: true, force: true }); }
+});

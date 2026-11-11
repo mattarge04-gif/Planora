@@ -25,3 +25,20 @@ end $$;
 
 revoke all on function backup_lauf_entfernt(uuid), backup_retention_protokoll(jsonb) from public;
 grant execute on function backup_lauf_entfernt(uuid), backup_retention_protokoll(jsonb) to planora_betrieb;
+
+-- PP11a-N-3: Ein zwischen 'gesichert' und 'geprueft' hart beendeter Lauf (OOM, kill) blieb fuer immer 'gesichert' und
+-- blockierte die Journal-Kuerzung. Der Heartbeat laeuft auch in 'gesichert' weiter (backup_lauf_heartbeat), also gilt
+-- dieselbe Regel wie fuer 'laufend': nur bei nachweislich gestopptem Container und Heartbeat aelter als 10 Minuten.
+create or replace function backup_reconcile(p_container_laeuft boolean) returns integer
+language plpgsql security definer set search_path = pg_catalog, public as $$
+declare v_anzahl integer;
+begin
+  -- Unbekannt (NULL) ist kein Nachweis fuer einen gestoppten Container.
+  if p_container_laeuft is distinct from false then return 0; end if;
+  with geaendert as (
+    update public.backup_lauf set zustand='fehlgeschlagen'
+     where zustand in ('laufend','gesichert') and heartbeat < clock_timestamp()-interval '10 minutes' returning id
+  ) select count(*)::integer into v_anzahl from geaendert;
+  if v_anzahl>0 then perform public.audit_schreiben(null, 'backup.reconcile', jsonb_build_object('anzahl',v_anzahl)); end if;
+  return v_anzahl;
+end $$;

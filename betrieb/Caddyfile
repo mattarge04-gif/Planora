@@ -10,7 +10,7 @@ http://127.0.0.1:2019 {
 }
 
 {$PLANORA_DOMAIN} {
-	# internal | ACME-Kontaktadresse | "<cert.pem> <key.pem>" (Kunden-CA)
+	# internal | ACME-Kontaktadresse | "/zertifikat/paar.pem /zertifikat/paar.pem" (Kunden-CA: Kette und Schluessel in einer Datei)
 	tls {$PLANORA_TLS}
 
 	encode zstd gzip

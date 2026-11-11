@@ -4,12 +4,12 @@
 // offen und werden mit wachsendem Abstand wiederholt (Betriebsdienst alle 5 Minuten und jeder Host-Befehl).
 // Der produktive Kanal (Zieladresse, Empfaenger) ist ein PO-/Kundenentscheid und liegt nur in externer Konfiguration.
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { hostname } from "node:os";
 import { join } from "node:path";
 import { smtpSenden, type SmtpKonfiguration } from "./smtp.js";
 
-export type AlarmArt = "backup" | "retention" | "update" | "start" | "reconcile" | "restore" | "zertifikat" | "journal" | "test";
+export type AlarmArt = "backup" | "retention" | "update" | "start" | "reconcile" | "restore" | "zertifikat" | "journal" | "alarm" | "test";
 export type Ereignis = { format: 1; id: string; instanz: string; host: string; art: AlarmArt; schwere: "fehler" | "warnung"; text: string; zeit: string };
 export type WebhookKonfiguration = { url: string; ca?: string; timeoutMs?: number };
 export type AlarmKonfiguration = { webhook?: WebhookKonfiguration; smtp?: SmtpKonfiguration };
@@ -18,7 +18,7 @@ type Kanal = "webhook" | "smtp";
 /** kanaele: beim Erzeugen festgelegte, erforderliche Kanaele (leer = noch offen wegen ungueltiger Konfiguration). */
 type SpoolEintrag = { ereignis: Ereignis; kanaele: Kanal[]; zugestellt: Kanal[]; versuche: number; naechsterVersuch: string; letzterFehler?: string };
 
-const ARTEN: AlarmArt[] = ["backup", "retention", "update", "start", "reconcile", "restore", "zertifikat", "journal", "test"];
+const ARTEN: AlarmArt[] = ["backup", "retention", "update", "start", "reconcile", "restore", "zertifikat", "journal", "alarm", "test"];
 /** [A] Wiederholungsabstand: 1, 2, 4 ... Minuten, hoechstens 60 Minuten. */
 export const abstandMs = (versuche: number) => Math.min(2 ** Math.max(0, versuche - 1) * 60_000, 3_600_000);
 
@@ -97,15 +97,37 @@ export function ladeAlarmKonfiguration(etc: string): { konfiguration?: AlarmKonf
 
 /** [A] Hoechstens so viele offene Alarme im Spool; aeltere werden verworfen und journalisiert (PP11a-8). */
 export const MAX_OFFEN = 200;
-/** [A] Eine andauernde gleiche Stoerung wird hoechstens einmal je 24 h erneut gemeldet (PP11a-8). */
-export const ERINNERUNG_MS = 24 * 3_600_000;
-type Stoerungen = Record<string, { seit: string; gemeldet: string; anzahl: number; art: AlarmArt }>;
+/** [A] Eine andauernde gleiche Stoerung wird hoechstens einmal je 20 h erneut gemeldet (PP11a-8). 20 statt 24 h, damit
+ *  ein naechtlicher Fehler trotz RandomizedDelaySec des Timers in der Folgenacht wieder gemeldet wird (PP11a-N-5). */
+export const ERINNERUNG_MS = 20 * 3_600_000;
+/** [A] Ab dieser Groesse wird journal.jsonl nach journal.1.jsonl rotiert (eine Generation, PP11a-N-6). */
+export const JOURNAL_MAX_BYTES = 5 * 1024 * 1024;
+type Stoerungen = Record<string, { seit: string; gemeldet: string; anzahl: number; art: AlarmArt; text?: string }>;
+
+/** Kurze Dateisperre fuer stoerungen.json (mehrere Host-Prozesse, PP11a-N-7). Verwaist nach 30 s. */
+function mitDateisperre<T>(datei: string, arbeit: () => T): T {
+  const sperre = `${datei}.lock`, warte = new Int32Array(new SharedArrayBuffer(4));
+  for (let n = 0; ; n++) {
+    try { closeSync(openSync(sperre, "wx", 0o600)); break; } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+      try { if (Date.now() - statSync(sperre).mtimeMs > 30_000) { rmSync(sperre, { force: true }); continue; } } catch { continue; }
+      if (n > 250) throw new Error("stoerungen.json gesperrt");
+      Atomics.wait(warte, 0, 0, 20);
+    }
+  }
+  try { return arbeit(); } finally { rmSync(sperre, { force: true }); }
+}
 
 export function alarmSpool(o: AlarmOptionen) {
   const offen = join(o.spool, "offen"), journalDatei = join(o.spool, "journal.jsonl"), stoerungDatei = join(o.spool, "stoerungen.json");
   const jetzt = o.jetzt ?? Date.now, protokoll = o.protokoll ?? ((t: string) => console.error(t));
   const konfiguriert = (): Kanal[] => [...(o.konfiguration?.webhook ? ["webhook" as const] : []), ...(o.konfiguration?.smtp ? ["smtp" as const] : [])];
-  const journal = (eintrag: object) => { mkdirSync(o.spool, { recursive: true, mode: 0o700 }); appendFileSync(journalDatei, JSON.stringify({ zeit: new Date(jetzt()).toISOString(), ...eintrag }) + "\n", { mode: 0o600 }); };
+  const journal = (eintrag: object) => {
+    mkdirSync(o.spool, { recursive: true, mode: 0o700 });
+    try { if (statSync(journalDatei).size > JOURNAL_MAX_BYTES) renameSync(journalDatei, join(o.spool, "journal.1.jsonl")); } catch { /* noch kein Journal */ }
+    appendFileSync(journalDatei, JSON.stringify({ zeit: new Date(jetzt()).toISOString(), ...eintrag }) + "\n", { mode: 0o600 });
+  };
+  const verworfenDatei = join(o.spool, "verworfen.json");
   const schreibe = (datei: string, e: unknown) => { mkdirSync(join(datei, ".."), { recursive: true, mode: 0o700 }); const t = `${datei}.${randomUUID()}.tmp`; writeFileSync(t, JSON.stringify(e), { mode: 0o600, flag: "wx" }); renameSync(t, datei); };
   const sende = async (k: Kanal, e: Ereignis) => {
     if (k === "webhook") await (o.sender?.webhook ?? webhookSenden)(o.konfiguration!.webhook!, o.secrets.hmac!, e, jetzt());
@@ -149,6 +171,13 @@ export function alarmSpool(o: AlarmOptionen) {
       journal({ art: "zustellfehler", ereignis: e.ereignis.id, versuch: e.versuche, fehler: e.letzterFehler, naechsterVersuch: e.naechsterVersuch });
       protokoll(`Alarm ${e.ereignis.id} nicht zugestellt (Versuch ${e.versuche}): ${e.letzterFehler}`);
     }
+    // PP11a-N-6: nach Ueberlauf verworfene Alarme beim ersten erfolgreichen Versand als Sammelmeldung nachreichen.
+    if (zugestellt > 0 && existsSync(verworfenDatei)) {
+      let v: { anzahl: number; seit: string } | undefined;
+      try { v = JSON.parse(readFileSync(verworfenDatei, "utf8")); } catch { /* defekt: trotzdem melden */ }
+      rmSync(verworfenDatei, { force: true });
+      await alarmieren("alarm", `${v?.anzahl ?? "Unbekannt viele"} Alarme wurden wegen Spool-Ueberlauf (> ${MAX_OFFEN}) verworfen${v ? ` seit ${v.seit}` : ""}; Details in alarm/journal.jsonl`, "warnung");
+    }
     return { zugestellt, offen: offenAnzahl };
   }
 
@@ -158,6 +187,9 @@ export function alarmSpool(o: AlarmOptionen) {
     for (const name of namen.slice(0, Math.max(0, namen.length - MAX_OFFEN + 1))) {
       rmSync(join(offen, name), { force: true });
       journal({ art: "verworfen", datei: name, grund: `mehr als ${MAX_OFFEN} offene Alarme` });
+      let v = { anzahl: 0, seit: new Date(jetzt()).toISOString() };
+      try { v = JSON.parse(readFileSync(verworfenDatei, "utf8")); } catch { /* erster Ueberlauf */ }
+      v.anzahl++; schreibe(verworfenDatei, v);
     }
   }
 
@@ -170,16 +202,22 @@ export function alarmSpool(o: AlarmOptionen) {
     const ereignis: Ereignis = { format: 1, id: randomUUID(), instanz: o.instanz, host: hostname(), art, schwere, text: text.slice(0, 1000), zeit: new Date(jetzt()).toISOString() };
     try {
       if (stoerung) {
-        const s = leseStoerungen(), alt = s[stoerung];
-        if (alt && jetzt() - Date.parse(alt.gemeldet) < ERINNERUNG_MS) {
-          alt.anzahl++; schreibe(stoerungDatei, s);
-          journal({ art: "aggregiert", stoerung, anzahl: alt.anzahl, text: ereignis.text.slice(0, 200) });
-          protokoll(`Betriebsalarm ${art} (${schwere}, wiederholt ${alt.anzahl}x seit ${alt.seit}): ${ereignis.text}`);
-          return ereignis;
-        }
-        if (alt) ereignis.text = `${ereignis.text} (andauernd seit ${alt.seit}, ${alt.anzahl + 1} Vorkommen)`.slice(0, 1000);
-        s[stoerung] = { seit: alt?.seit ?? ereignis.zeit, gemeldet: ereignis.zeit, anzahl: (alt?.anzahl ?? 0) + 1, art };
-        schreibe(stoerungDatei, s);
+        mkdirSync(o.spool, { recursive: true, mode: 0o700 });
+        const aggregiert = mitDateisperre(stoerungDatei, () => {
+          const s = leseStoerungen(), alt = s[stoerung], kern = ereignis.text.slice(0, 200);
+          // Gleiche Meldung innerhalb der Erinnerungsfrist: nur zaehlen. Eine geaenderte Meldung wird neu gemeldet (PP11a-N-5).
+          if (alt && jetzt() - Date.parse(alt.gemeldet) < ERINNERUNG_MS && (alt.text === undefined || alt.text === kern)) {
+            alt.anzahl++; schreibe(stoerungDatei, s);
+            journal({ art: "aggregiert", stoerung, anzahl: alt.anzahl, text: kern });
+            protokoll(`Betriebsalarm ${art} (${schwere}, wiederholt ${alt.anzahl}x seit ${alt.seit}): ${ereignis.text}`);
+            return true;
+          }
+          if (alt) ereignis.text = `${ereignis.text} (andauernd seit ${alt.seit}, ${alt.anzahl + 1} Vorkommen)`.slice(0, 1000);
+          s[stoerung] = { seit: alt?.seit ?? ereignis.zeit, gemeldet: ereignis.zeit, anzahl: (alt?.anzahl ?? 0) + 1, art, text: kern };
+          schreibe(stoerungDatei, s);
+          return false;
+        });
+        if (aggregiert) return ereignis;
       }
       protokoll(`Betriebsalarm ${art} (${schwere}): ${ereignis.text}`);
       journal({ art: "erzeugt", ereignis, ...(stoerung ? { stoerung } : {}) });
@@ -195,10 +233,12 @@ export function alarmSpool(o: AlarmOptionen) {
 
   /** Stoerung beendet: Zustand loeschen und einmalig als behoben melden, falls sie gemeldet war. */
   async function behoben(stoerung: string, text: string) {
-    const s = leseStoerungen(), alt = s[stoerung];
+    if (!existsSync(stoerungDatei)) return;
+    let alt: Stoerungen[string] | undefined;
+    try {
+      alt = mitDateisperre(stoerungDatei, () => { const s = leseStoerungen(), a = s[stoerung]; if (a) { delete s[stoerung]; schreibe(stoerungDatei, s); } return a; });
+    } catch (e) { protokoll(`Alarm-Spool fehlerhaft: ${(e as Error).message}`); return; }
     if (!alt) return;
-    delete s[stoerung];
-    try { schreibe(stoerungDatei, s); } catch (e) { protokoll(`Alarm-Spool fehlerhaft: ${(e as Error).message}`); }
     await alarmieren(alt.art, `Behoben: ${text} (gestoert seit ${alt.seit}, ${alt.anzahl} Vorkommen)`, "warnung");
   }
   return { alarmieren, zustellen, behoben };

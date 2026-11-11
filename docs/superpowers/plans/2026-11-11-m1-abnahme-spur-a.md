@@ -13,7 +13,7 @@ Branch `mattarge04-gif/m1-abnahme-a`, Basis `main` (`ae3f5b5`). Kein Push, kein 
 ### Punkt 2: Kunden-CA
 
 - `planora install --tls kundenzertifikat --tls-zertifikat <kette.pem> --tls-schluessel <key.pem>` prueft vor jeder Aenderung: Schluesselpaar, Domain (subjectAltName), Gueltigkeit, Kettenreihenfolge und unverschluesselten Schluessel. Unter 30 Tagen Restlaufzeit gibt es eine Warnung [A].
-- Ablage unter `/etc/planora/<instanz>/tls/`, mit `PLANORA_TLS=/zertifikat/cert.pem /zertifikat/key.pem` und `PLANORA_TLS_VERZEICHNIS`. `compose.yaml` bindet das Verzeichnis nur lesend nach `/zertifikat`. Ohne Kunden-CA bleibt dort ein leeres benanntes Volume; die Compose-Dateiliste bleibt unveraendert.
+- Ablage als ein Paar unter `/etc/planora/<instanz>/tls/paar.pem` (seit PP11a-5; vorher getrennt `cert.pem`/`key.pem`), mit `PLANORA_TLS=/zertifikat/paar.pem /zertifikat/paar.pem` und `PLANORA_TLS_VERZEICHNIS`. `compose.yaml` bindet das Verzeichnis nur lesend nach `/zertifikat`. Ohne Kunden-CA bleibt dort ein leeres benanntes Volume; die Compose-Dateiliste bleibt unveraendert.
 - Rotation mit `planora zertifikat`: Pruefung zuerst, dann Sicherung `*.vorher`, atomarer Ersatz und Proxy-Neustart. Danach vergleicht der Befehl das ausgelieferte Zertifikat; bei Abweichung rollt er zurueck.
 - Test-CA, fremde CA und Serverzertifikate erzeugt openssl zur Laufzeit in Temp-Verzeichnissen. Im Repo liegen keine Schluessel.
 
