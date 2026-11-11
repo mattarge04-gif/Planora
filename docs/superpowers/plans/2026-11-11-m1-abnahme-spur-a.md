@@ -7,8 +7,8 @@ Branch `mattarge04-gif/m1-abnahme-a`, Basis `main` (`ae3f5b5`). Kein Push, kein 
 | Punkt | Stand | Commit |
 |---|---|---|
 | 2 Kunden-CA | umgesetzt und lokal nachgewiesen (positiv/negativ, Rotation) | `b277121` |
-| 3 Retention | umgesetzt und lokal nachgewiesen; Politik 14/8/12 bleibt **[A] bis PO-Freigabe** | `7a27d60` |
-| 4 Alarmkanal | Mechanismus umgesetzt und gegen Mock nachgewiesen; **produktiver Kanal ist PO-Entscheid** | `f4b0499` |
+| 3 Retention | umgesetzt und lokal nachgewiesen; Politik 14/8/12 **vom PO am 2026-11-11 freigegeben** | `7a27d60` |
+| 4 Alarmkanal | umgesetzt; PO-Entscheid 2026-11-11: SMTP ueber den Planora-Mailserver an Planora-Kundenadresse + Konto-Adressen aus der DB | `f4b0499` |
 
 ### Punkt 2: Kunden-CA
 
@@ -51,8 +51,8 @@ Die Zahlen stammen aus getrennten Laeufen und werden nicht addiert. Im ersten Al
 
 ## Offen und Annahmen
 
-- [A] Retention 14/8/12 bis PO-Freigabe. Die Zeitzone ist die der Instanzkonfiguration. Fehlgeschlagene Saetze dienen nur als Ersatzvertreter.
-- [?] PO-Entscheid zum produktiven Alarmkanal: Webhook-Ziel oder SMTP-Relay, Empfaenger, Eskalation/Pikett. Bisher sind nur Mechanismus und Mock nachgewiesen.
+- Retention 14/8/12: PO-Entscheid 2026-11-11. Die Zeitzone ist die der Instanzkonfiguration. Fehlgeschlagene Saetze dienen nur als Ersatzvertreter.
+- Alarmkanal: PO-Entscheid 2026-11-11 umgesetzt (siehe Nachtrag PO-Entscheide). Frueher: Webhook-Ziel oder SMTP-Relay offen; bisher waren nur Mechanismus und Mock nachgewiesen.
 - [A] Wiederholungsabstand 1 bis 60 Minuten, kein Verfall offener Alarme. Logs des Journal-Containers und systemd-Logs sind nicht an den Alarm angebunden.
 - Bestehende Installationen brauchen die neue Unit `planora-sicherung@.service`. Das Update-Werkzeug aktualisiert systemd-Units nicht; die Installation ersetzt abweichende Units nicht.
 - [A] Zertifikatsablauf wird nur bei Installation und Rotation gewarnt, nicht laufend ueberwacht. Ein Wechsel zwischen `internal`/`acme` und Kunden-CA bei bestehender Instanz ist nicht automatisiert.
@@ -85,3 +85,41 @@ Validierung nach den Fixes:
 | Docker `update.test.ts` + `paket.test.ts` (pa-paket) | 19/19 bestanden, 276 s (inkl. PP11a-3-Szenario) |
 
 Hinweise: Durch PP11a-5 aendert sich der TLS-Wert auf `/zertifikat/paar.pem /zertifikat/paar.pem`. Das ist unkritisch, solange es keine Installation mit dem frueheren Branch-Stand gibt [A]. Haelt eine Sicherung die Update-Sperre, bricht ein gleichzeitig gestartetes Update mit der Meldung „Sperre durch laufende Sicherung“ ab und muss spaeter wiederholt werden.
+
+## Nachtrag: Nachpruefung PP11a-N (OK mit Auflagen) behoben
+
+| Befund | Behebung | Regressionstest |
+|---|---|---|
+| N-1 [mittel] Sicherung uebernimmt verwaiste Restore-Sperre | Der Restore setzt den Sperrzweck `Restore`. Die Sicherung uebernimmt nur verwaiste Sicherungssperren und die Sperre eines geordnet abgebrochenen Updates (Status `abgebrochen`/`migration_abgebrochen` in `update.json`). Bei aktiver Wartung wird nicht gesichert (Alarm `fehler`). Eine verwaiste fremde Sperre meldet `fehler`, ein laufender Vorgang nur `warnung`. | Unit: Wartung, tote Restore-Sperre, alte Update-Sperre ohne Zweck, geordnet abgebrochenes Update, Absturz mit Status `aktiv`. Docker: Alarm mit Wartungspruefung, Update/Rueckweg. |
+| N-2 [mittel] verwaiste Sicherungssperre nach SIGTERM | SIGTERM/SIGINT geben die Sperre frei (Exitcode 143/130). Eine Sicherungssperre mit totem PID uebernehmen Update und Restore immer. | Unit: SIGTERM waehrend laufender Sicherung; Restore uebernimmt tote Sicherungssperre. |
+| N-3 [mittel] haengender `gesichert`-Satz | `backup_reconcile` erfasst jetzt auch `gesichert` bei gestopptem Container und Heartbeat aelter als 10 Minuten (in Migration 012, nur auf diesem Branch). Bleibt die Journal-Kuerzung wegen offener Saetze aus, folgt eine Warnung (aggregiert, danach `Behoben`). | Unit gegen echtes Postgres: haengend vs. frischer Heartbeat. Unit Host: Warnung und Behoben. |
+| N-4 [mittel] jedes offene Update stoppt die Sicherung | Ein Abbruch vor der Wartung (Schritt 0) blockiert nicht. Ab Schritt 1 wird die Sicherung ausgesetzt, mit Alarm `fehler` statt `warnung`. | Unit: Schritt 0 sichert, Schritt 1 blockiert. Docker `update.test.ts`: Schritt 6, Alarm `fehler`. |
+| N-5 [niedrig] Erinnerung kollidiert mit Timer-Streuung | Erinnerung nach 20 h [A]. Eine geaenderte Fehlermeldung wird sofort neu gemeldet. | Unit |
+| N-6 [niedrig] Ueberlauf unbemerkt, Journal waechst | Verworfene Alarme werden gezaehlt und bei der ersten erfolgreichen Zustellung als Sammelmeldung nachgereicht. `journal.jsonl` rotiert ab 5 MiB in eine Generation [A]. | Unit |
+| N-7 [niedrig] Stoerungen ohne `behoben`, Datei ohne Sperre | `behoben` gilt auch fuer `update-offen`, `sicherung-gesperrt`, `wartung` und `journal-kuerzung`. `stoerungen.json` wird unter einer kurzen Dateisperre gelesen und geschrieben. | Unit (Behoben-Aufrufe, keine Sperrdatei zurueck) |
+| N-8 [niedrig] `paar.pem`-Kompatibilitaet und Kommentare | Kommentare in Caddyfile, compose.yaml und Bericht nachgezogen. Der alte TLS-Wert wird im Backup weiterhin als `kundenzertifikat` erkannt. Die Rotation verlangt weiterhin `paar.pem` [A, keine Installation mit altem Layout]. | Unit `install-backup.test.ts` |
+| Befund 8, Verdrahtung | `host-cli.ts` ist in `host-befehle.ts` (`hostBefehl`, Abhaengigkeiten injizierbar) und einen duennen Einstieg geteilt. | Unit `host-befehle.test.ts`: Dienst mit initialem Reconcile-Fehler, Sicherung/Retention ueber die Instanzpfade, Exitcode 75. |
+
+## Nachtrag: PO-Entscheide 2026-11-11
+
+1. **Retention 14 taeglich / 8 woechentlich / 12 monatlich ist freigegeben.** Die [A]-Markierung ist in Code, Test, Betriebsanleitung und Bericht entfernt.
+2. **Alarmkanal:** Planora hostet Server, Domain und Mailserver; der Kunde hat keine IT. Kanal ist SMTP ueber den Planora-Mailserver; die Zugangsdaten liegen als Secret `alarm_smtp_passwort`. Der Webhook bleibt optional. Empfaenger je Alarm:
+   - immer die feste Planora-Kundenadresse `smtp.planoraAdresse` der Instanz,
+   - die E-Mail-Adressen der Kunden-Konten. Der Host liest sie bei jeder Zustellung ueber die neue DB-Funktion `alarm_empfaenger(p_alle)` (Migration 012, SECURITY DEFINER, nur Betriebsrolle). Standard `kontoEmpfaenger: "admins"` nimmt aktive Konten mit Admin-Rolle [A]; `"alle"` nimmt alle aktiven Konten. Gesperrte und zu bestaetigende Konten fallen heraus.
+   - optional weitere feste Adressen in `smtp.empfaenger`.
+   - DB-Ausfall (Zeitlimit 15 s [A]): Der Alarm geht an die zuletzt bekannte Liste aus `alarm/empfaenger.json` (nur bei gleichem Modus) und an die Planora-Kundenadresse; der Ersatz wird journalisiert. Ohne Cache geht er nur an die Planora-Kundenadresse.
+
+   Tests: `alarm-empfaenger.test.ts` (Empfaengerermittlung, Modi, DB-Ausfall-Fallback mit und ohne Cache, Spool-Versand). `backup-migration.test.ts` gegen echtes Postgres: deaktiviertes und zu bestaetigendes Konto fallen heraus, Leser nur bei `alle`, kein Tabellenzugriff der Betriebsrolle.
+
+Validierung nach N-Fixes und PO-Entscheiden:
+
+| Pruefung | Ergebnis |
+|---|---|
+| `npm.cmd test` | 314 bestanden, 37 Docker-Tests uebersprungen (36 Dateien) |
+| `npm.cmd run pruefe:typen`, `bash -n betrieb/planora`, `git diff --check` | bestanden |
+| Docker Alarm (nach N-Fixes) | 5/5 |
+| Docker `update.test.ts` (nach N-Fixes) | 6/6, 196 s |
+| Docker Kunden-CA + Alarm + Retention + Ueberlappung (Endstand) | 13/13, 179 s |
+| Docker `update.test.ts` + `paket.test.ts` (Endstand) | 19/19, 274 s; alle `pa-`-Ressourcen entfernt |
+
+Offen: konkrete SMTP-Werte je Instanz (Mailserver, Absender, Planora-Kundenadresse); ein echter SMTP-Versand gegen den Planora-Mailserver ist noch nicht geprueft. Neue Annahmen [A]: Admin-Rolle als Standard-Empfaenger, Zeitlimit 15 s, Erinnerung 20 h, Journal-Rotation 5 MiB. Bewusst nicht umgesetzt: `restore_gesperrt` blockiert die Sicherung nicht, nur Wartung tut das. Nach einem Restore bis zur Freigabe ist die DB vollstaendig und soll gesichert werden.

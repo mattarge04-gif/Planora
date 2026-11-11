@@ -1,12 +1,12 @@
 // M1-Abnahme Punkt 3: Aufbewahrung der Sicherungssaetze (restic forget/prune) mit konsistentem Inventar und Journal.
-// [A] Standardpolitik 14 taeglich / 8 woechentlich / 12 monatlich ist der Vorschlag aus der M1-Abnahme und gilt bis
-// zur PO-Freigabe. Konfigurierbar ueber PLANORA_RETENTION_TAEGLICH / _WOECHENTLICH / _MONATLICH (backup.env).
+// Standardpolitik 14 taeglich / 8 woechentlich / 12 monatlich: PO-Entscheid 2026-11-11 (vorher Vorschlag M1-Abnahme).
+// Konfigurierbar ueber PLANORA_RETENTION_TAEGLICH / _WOECHENTLICH / _MONATLICH (backup.env).
 import { istUuid } from "./inventar.js";
 import { erfolgreich, prozess, type Prozess } from "./prozess.js";
 import type { Ziel } from "./ziel.js";
 
 export type Politik = { taeglich: number; woechentlich: number; monatlich: number };
-/** [A] Vorschlag bis PO-Freigabe. */
+/** PO-Entscheid 2026-11-11. */
 export const STANDARD_POLITIK: Politik = { taeglich: 14, woechentlich: 8, monatlich: 12 };
 
 export function politikAusUmgebung(env: NodeJS.ProcessEnv = process.env): Politik {

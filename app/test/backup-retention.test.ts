@@ -10,7 +10,7 @@ const hex = (n: number) => n.toString(16).padStart(64, "0");
 const k = (n: number, iso: string, zustand?: Zustand): Kandidat => ({ snapshotId: hex(n), backupId: `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`, zeit: new Date(iso), zustand });
 
 describe("Politik", () => {
-  it("Standard ist der Vorschlag 14/8/12 [A]; Umgebung ueberschreibt einzeln", () => {
+  it("Standard ist die PO-freigegebene Politik 14/8/12; Umgebung ueberschreibt einzeln", () => {
     expect(politikAusUmgebung({})).toEqual({ taeglich: 14, woechentlich: 8, monatlich: 12 });
     expect(STANDARD_POLITIK).toEqual({ taeglich: 14, woechentlich: 8, monatlich: 12 });
     expect(politikAusUmgebung({ PLANORA_RETENTION_TAEGLICH: "7", PLANORA_RETENTION_MONATLICH: "0" })).toEqual({ taeglich: 7, woechentlich: 8, monatlich: 0 });

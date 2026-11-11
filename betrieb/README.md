@@ -33,8 +33,8 @@ Der Host meldet Fehler der naechtlichen Sicherung, der Retention und des Backup-
 ```json
 {
   "webhook": { "url": "https://alarm.kunde.ch/planora", "ca": "/etc/planora/<instanz>/alarm-ca.pem", "timeoutMs": 10000 },
-  "smtp": { "host": "mail.kunde.ch", "port": 587, "starttls": true, "absender": "planora@kunde.ch",
-            "empfaenger": ["it-betrieb@kunde.ch"], "benutzer": "planora" }
+  "smtp": { "host": "mail.planora.ch", "port": 587, "starttls": true, "absender": "alarm@planora.ch",
+            "planoraAdresse": "kunde-a@planora.ch", "kontoEmpfaenger": "admins", "benutzer": "alarm" }
 }
 ```
 
@@ -42,6 +42,12 @@ Der Host meldet Fehler der naechtlichen Sicherung, der Retention und des Backup-
 - Secrets als Dateien: `secrets/alarm_hmac` ist fuer den Webhook Pflicht und hat mindestens 32 Zeichen, z.B. `openssl rand -hex 32`. `secrets/alarm_smtp_passwort` ist nur mit `benutzer` noetig. Beide mit Modus 0600 anlegen. Unbekannte Felder in `alarm.json` werden abgelehnt.
 - Webhook: `POST` mit JSON `{format, id, instanz, host, art, schwere, text, zeit}`. Header `X-Planora-Ereignis`, `X-Planora-Zeit` (Unix-Sekunden) und `X-Planora-Signatur: v1=<hex>` mit `HMAC-SHA256(alarm_hmac, "<zeit>.<body>")`. Der Empfaenger prueft die Signatur zeitkonstant und lehnt Zeitstempel ausserhalb von +/-300 s ab. Nur HTTPS; nur 2xx gilt als zugestellt; keine Umleitungen. `id` ist bei Wiederholungen gleich und dient der Deduplizierung.
 - SMTP: STARTTLS (587) oder implizites TLS (465). AUTH PLAIN nur ueber TLS. Ein unverschluesseltes Relay nur mit `starttls: false` auf einem anderen Port [A].
+- SMTP-Empfaenger (PO-Entscheid 2026-11-11, Planora hostet Server, Domain und Mailserver):
+  - Immer erhaelt die feste Planora-Kundenadresse `planoraAdresse` den Alarm. Sie ist je Instanz frei waehlbar, z.B. `<kunde>@<planora-domain>`, und dient zum Filtern nach Kunde.
+  - Die E-Mail-Adressen der Kunden-Konten liest der Host bei jeder Zustellung ueber die DB-Funktion `alarm_empfaenger` (Betriebsrolle, kein Tabellenzugriff). Standard `kontoEmpfaenger: "admins"`: aktive Konten mit Admin-Rolle [A, damit normale Nutzer keine Betriebsalarme erhalten]. `"alle"` nimmt alle aktiven Konten, `"keine"` nur die festen Adressen. Gesperrte und noch zu bestaetigende Konten fallen heraus.
+  - Optional kommen weitere feste Adressen in `empfaenger` dazu.
+  - Ist die DB nicht erreichbar (Zeitlimit 15 s [A]), geht der Alarm an die zuletzt erfolgreich gelesene Liste in `alarm/empfaenger.json` und an die Planora-Kundenadresse. Ohne Cache geht er nur an die Planora-Kundenadresse. Der Ersatz steht als `empfaenger_ersatz` im Journal.
+  - Zugangsdaten des Planora-Mailservers liegen in `secrets/alarm_smtp_passwort`. Der Webhook bleibt optional.
 - Zustellung: Jeder Alarm wird zuerst unter `/var/lib/planora/<instanz>/alarm/offen/` abgelegt und in `alarm/journal.jsonl` protokolliert (`erzeugt`, `zugestellt`, `zustellfehler`). Ein Zustellfehler bleibt offen. Wiederholt wird mit 1, 2, 4 ... hoechstens 60 Minuten Abstand [A]: vom Betriebsdienst alle 5 Minuten und bei jedem Host-Befehl. Nur der fehlgeschlagene Kanal wird wiederholt. Es gibt kein Verfallsdatum [A].
 - Jeder Eintrag speichert die beim Erzeugen konfigurierten Kanaele. Ist `alarm.json` oder ein Secret ungueltig, wird nichts zugestellt, quittiert oder geloescht (`zustellung_ausgesetzt` im Journal). Neue Alarme werden trotzdem gespoolt und erhalten ihre Kanaele bei der ersten gueltigen Zustellung. Wird ein erforderlicher Kanal aus der Konfiguration entfernt, bleibt der Alarm offen.
 - Andauernde gleiche Stoerungen wie Reconcile, Sicherung, Retention oder Journal-Start werden zusammengefasst: Gemeldet wird einmal, danach je 24 Stunden eine Erinnerung [A]. Im Journal stehen sie als `aggregiert`. Nach Behebung folgt eine Warnung `Behoben: ...`. Der Spool haelt hoechstens 200 offene Alarme [A]; aeltere werden als `verworfen` journalisiert.
@@ -53,13 +59,13 @@ Der Host meldet Fehler der naechtlichen Sicherung, der Retention und des Backup-
 ./planora alarm --instanz kunde-a --wiederholen   # offene Alarme sofort zustellen
 ```
 
-**PO-Entscheid offen:** Der produktive Kanal (Webhook-Ziel des Kunden-Monitorings bzw. Ticketsystems, SMTP-Relay, Empfaenger, Eskalation/Pikett) ist nicht festgelegt. Bis dahin ist nur der Mechanismus geprueft. Bestehende Installationen brauchen die neue `planora-sicherung@.service`. Die Installation ersetzt eine abweichende Unit nicht; sie manuell nach `/etc/systemd/system/` kopieren und `systemctl daemon-reload` ausfuehren.
+**PO-Entscheid 2026-11-11:** Der produktive Kanal ist SMTP ueber den Planora-Mailserver mit den oben beschriebenen Empfaengern. Offen sind nur die konkreten Werte je Instanz: Mailserver, Absender, Planora-Kundenadresse und Zugangsdaten. Bestehende Installationen brauchen die neue `planora-sicherung@.service`. Die Installation ersetzt eine abweichende Unit nicht; sie manuell nach `/etc/systemd/system/` kopieren und `systemctl daemon-reload` ausfuehren.
 
 Nachweis: `app/test/alarm.test.ts` deckt Konfiguration, Signatur, Spool, Wiederholung und Mehrkanal ab, ebenso Webhook mit Test-CA, SMTP mit STARTTLS/AUTH und die Host-Anbindung. `app/test-docker/alarm.test.ts` nutzt einen Mock-Empfaenger im Container mit eigener HMAC-Pruefung und echte Sicherungen. Eine erfolgreiche Sicherung samt Retention erzeugt keinen Alarm. Eine Sicherung mit gestoppter DB erzeugt genau einen gueltig signierten Alarm. Eine gefaelschte Signatur wird abgewiesen. Zwei 503-Antworten werden journalisiert und wiederholt, bis die Zustellung gelingt.
 
 ## Aufbewahrung der Sicherungssaetze (Retention)
 
-Nach jeder erfolgreichen naechtlichen Sicherung laeuft die Retention (systemd: `host-cli.js sichern`; manuell `planora aufbewahren --instanz <name>`). Standardpolitik **[A] 14 taeglich / 8 woechentlich / 12 monatlich**: Das ist der Vorschlag aus der M1-Abnahme. Er gilt bis zur PO-Freigabe. Anpassung in `/etc/planora/<instanz>/backup/backup.env`:
+Nach jeder erfolgreichen naechtlichen Sicherung laeuft die Retention (systemd: `host-cli.js sichern`; manuell `planora aufbewahren --instanz <name>`). Standardpolitik **14 taeglich / 8 woechentlich / 12 monatlich**, vom PO am 2026-11-11 freigegeben. Anpassung in `/etc/planora/<instanz>/backup/backup.env`:
 
 ```sh
 PLANORA_RETENTION_TAEGLICH=14     # mindestens 1
@@ -133,4 +139,4 @@ Die erhaltene alte Datenbank und deaktivierte Recovery-Rollen nach einem Fehler 
 
 `node werkzeug/betrieb/dossier.js --bundle <bundle> --schluessel <pub> --lockfile <package-lock.json> --ausgabe <neuer-ordner>` erzeugt verifizierte Release-/npm-Metadaten und eine Freigabe-Checkliste. Dies ist ein Geruest, kein vollstaendiger Image-SBOM und keine juristische Freigabe. Ein exakter Lockfile des Builds gehoert zur Lieferdokumentation.
 
-Offen bleiben frische Linux-VM samt Bind-Mount-/systemd-Pruefung, reale CH-S3-Konfiguration und Abnahme, PO-Freigabe der Retention-Politik ([A] 14/8/12 umgesetzt), PO-Entscheid zum produktiven Alarmkanal (Mechanismus umgesetzt), menschliche Lizenzfreigabe und organisatorische Host-Freigabe im On-Premise-Fall. Das lokal verdrahtete Installationsprofil verwendet ein Dateisystemziel; der vorhandene S3-Adapter erfordert separate externe Konfiguration und reale Zielnachweise.
+Offen bleiben frische Linux-VM samt Bind-Mount-/systemd-Pruefung, reale CH-S3-Konfiguration und Abnahme, konkrete SMTP-Werte je Instanz (Alarmkanal entschieden), menschliche Lizenzfreigabe und organisatorische Host-Freigabe im On-Premise-Fall. Das lokal verdrahtete Installationsprofil verwendet ein Dateisystemziel; der vorhandene S3-Adapter erfordert separate externe Konfiguration und reale Zielnachweise.
