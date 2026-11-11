@@ -11,6 +11,7 @@ create table gebaeude(
   stand int not null default 0,
   unique (id, liegenschaft_id)
 );
+create index gebaeude_liegenschaft on gebaeude(liegenschaft_id);
 create table geschoss(
   id uuid primary key default gen_random_uuid(),
   liegenschaft_id uuid not null,
@@ -73,6 +74,8 @@ create table bauteil(
   foreign key (geschoss_id, liegenschaft_id) references geschoss(id, liegenschaft_id)
 );
 create index bauteil_gebaeude on bauteil(gebaeude_id);
+create index bauteil_einheit on bauteil(einheit_id);
+create index bauteil_geschoss on bauteil(geschoss_id);
 create table versorgung(
   bauteil_id uuid not null,
   einheit_id uuid not null,
@@ -81,4 +84,5 @@ create table versorgung(
   foreign key (bauteil_id, liegenschaft_id) references bauteil(id, liegenschaft_id) on delete cascade,
   foreign key (einheit_id, liegenschaft_id) references einheit(id, liegenschaft_id) on delete cascade
 );
+create index versorgung_einheit on versorgung(einheit_id);
 grant select, insert, update, delete on gebaeude, geschoss, einheit, gebaeude_heizung_standard, einheit_heizung, bauteil, versorgung to planora_app;

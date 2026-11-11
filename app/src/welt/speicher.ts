@@ -48,8 +48,12 @@ export async function aendereHuelle(c: pg.ClientBase, gebaeudeId: string, h: Hue
   const g = (await c.query("select liegenschaft_id from gebaeude where id=$1 for update", [gebaeudeId])).rows[0];
   if (!g) throw new Error("Gebaeude unbekannt");
   const bestehend: string[] = (await c.query("select id from geschoss where gebaeude_id=$1", [gebaeudeId])).rows.map((r) => r.id);
+  const gesehen = new Set<string>();
   h.geschosse.forEach((x, i) => {
-    if (x.id && !bestehend.includes(x.id)) f.push({ pfad: `geschosse[${i}].id`, code: "id_unbekannt", meldung: "Geschoss gehoert nicht zu diesem Gebaeude" });
+    if (!x.id) return;
+    if (!bestehend.includes(x.id)) f.push({ pfad: `geschosse[${i}].id`, code: "id_unbekannt", meldung: "Geschoss gehoert nicht zu diesem Gebaeude" });
+    else if (gesehen.has(x.id)) f.push({ pfad: `geschosse[${i}].id`, code: "id_doppelt", meldung: "Geschoss mehrfach angegeben" });
+    gesehen.add(x.id);
   });
   const behalten = new Set(h.geschosse.flatMap((x) => (x.id ? [x.id] : [])));
   const weg = bestehend.filter((id) => !behalten.has(id));

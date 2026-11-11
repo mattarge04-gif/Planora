@@ -7,7 +7,25 @@ import { KATALOG_V1 } from "./katalog.v1.js";
 import { weltErzeugen } from "./generator.js";
 import { FachFehler, aendereHuelle, ladeBeschreibung, ladeHuelle, legeGebaeudeAn, schreibeBeschreibung } from "./speicher.js";
 import { BESCHREIBUNG_SCHEMA, HUELLE_SCHEMA, ID_PARAMS, LID_PARAMS } from "./schema.js";
-import type { Beschreibung, Huelle } from "./typen.js";
+import type { Beschreibung, EinheitVerweis, Huelle } from "./typen.js";
+
+/** UUIDs kanonisch klein: Postgres liefert IDs klein, der Abgleich vergleicht Texte. */
+const klein = (id: string | undefined) => id?.toLowerCase();
+function kanonischeHuelle(h: Huelle): Huelle {
+  return { ...h, geschosse: h.geschosse.map((g) => (g.id === undefined ? g : { ...g, id: klein(g.id) })) };
+}
+function kanonischeBeschreibung(b: Beschreibung): Beschreibung {
+  const verweis = <T extends EinheitVerweis>(v: T): T => (v.einheitId === undefined ? v : { ...v, einheitId: klein(v.einheitId) });
+  return {
+    ...b,
+    einheiten: b.einheiten.map((e) => ({ ...e, ...(e.id !== undefined && { id: klein(e.id) }), geschossId: klein(e.geschossId)! })),
+    bauteile: b.bauteile.map((t) => ({
+      ...t, ...(t.id !== undefined && { id: klein(t.id) }),
+      standort: { ...verweis(t.standort), ...(t.standort.geschossId !== undefined && { geschossId: klein(t.standort.geschossId) }) },
+      versorgt: t.versorgt.map(verweis),
+    })),
+  };
+}
 
 export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
   async function mitClient<T>(f: (c: pg.PoolClient) => Promise<T>): Promise<T> {
@@ -16,6 +34,11 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
   }
   const inTransaktion = <T>(f: (c: pg.PoolClient) => Promise<T>) => mitClient(async (c) => {
     await c.query("begin");
+    try { const r = await f(c); await c.query("commit"); return r; } catch (e) { await c.query("rollback"); throw e; }
+  });
+  /** Mehrere Lese-Statements auf einem Stand (kein gemischtes Bild bei parallelem Schreiben). */
+  const inSnapshot = <T>(f: (c: pg.PoolClient) => Promise<T>) => mitClient(async (c) => {
+    await c.query("begin isolation level repeatable read read only");
     try { const r = await f(c); await c.query("commit"); return r; } catch (e) { await c.query("rollback"); throw e; }
   });
   /** 404 ohne Leserecht (keine Existenz-Auskunft), 403 mit Leserecht aber ohne Schreibrecht. */
@@ -60,7 +83,7 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
       try {
         const h = await inTransaktion(async (c) => {
           if (!(await ladeHuelle(c, req.params.id))) return null;
-          await aendereHuelle(c, req.params.id, req.body, REGELWERK_V1);
+          await aendereHuelle(c, req.params.id, kanonischeHuelle(req.body), REGELWERK_V1);
           await auditEreignis(c, k.auditId, "gebaeude.huelle", { gebaeudeId: req.params.id, geschosse: req.body.geschosse.length });
           return ladeHuelle(c, req.params.id);
         });
@@ -69,7 +92,7 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
     });
 
   app.get<{ Params: { id: string } }>("/api/struktur/gebaeude/:id/beschreibung", { schema: { params: ID_PARAMS } }, async (req, reply) => {
-    return mitClient(async (c) => {
+    return inSnapshot(async (c) => {
       const z = await zugriff(c, req.kontext!.benutzerId, req.params.id, false);
       if (z !== 200) return verweigert(reply, z);
       return ladeBeschreibung(c, req.params.id);
@@ -83,7 +106,7 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
       if (z !== 200) return verweigert(reply, z);
       try {
         return await inTransaktion(async (c) => {
-          const zaehler = await schreibeBeschreibung(c, req.params.id, req.body, REGELWERK_V1, KATALOG_V1);
+          const zaehler = await schreibeBeschreibung(c, req.params.id, kanonischeBeschreibung(req.body), REGELWERK_V1, KATALOG_V1);
           await auditEreignis(c, k.auditId, "gebaeude.beschreibung", { gebaeudeId: req.params.id, ...zaehler });
           return ladeBeschreibung(c, req.params.id);
         });
@@ -91,7 +114,7 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
     });
 
   app.get<{ Params: { id: string } }>("/api/szene/gebaeude/:id/welt", { schema: { params: ID_PARAMS } }, async (req, reply) => {
-    return mitClient(async (c) => {
+    return inSnapshot(async (c) => {
       const z = await zugriff(c, req.kontext!.benutzerId, req.params.id, false);
       if (z !== 200) return verweigert(reply, z);
       const h = (await ladeHuelle(c, req.params.id))!;

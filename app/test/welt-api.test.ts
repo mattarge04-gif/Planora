@@ -98,6 +98,29 @@ describe("Welt-API", () => {
     const b = (await anfrage("GET", urlB(), kBearb)).json();
     expect((await anfrage("PUT", urlB(), kBearb, { ...b, stand: b.stand - 1 })).statusCode).toBe(409);
   });
+  it("grossgeschriebene bestehende UUIDs werden akzeptiert; IDs bleiben unveraendert", async () => {
+    const b = (await anfrage("GET", urlB(), kBearb)).json();
+    const gross = (x: string) => x.toUpperCase();
+    const verweis = (v: any) => (v.einheitId ? { einheitId: gross(v.einheitId) } : v);
+    const eingabe = {
+      ...b,
+      einheiten: b.einheiten.map((e: any) => ({ ...e, id: gross(e.id), geschossId: gross(e.geschossId) })),
+      bauteile: b.bauteile.map((t: any) => ({ ...t, id: gross(t.id),
+        standort: t.standort.geschossId ? { geschossId: gross(t.standort.geschossId) } : verweis(t.standort), versorgt: t.versorgt.map(verweis) })),
+    };
+    const r = await anfrage("PUT", urlB(), kBearb, eingabe);
+    expect(r.statusCode).toBe(200);
+    expect(r.json().einheiten.map((e: any) => e.id)).toEqual(b.einheiten.map((e: any) => e.id));
+    expect(r.json().bauteile.map((t: any) => t.id)).toEqual(b.bauteile.map((t: any) => t.id));
+    const h = (await anfrage("GET", `/api/struktur/gebaeude/${G}/huelle`, kBetr)).json();
+    const rh = await anfrage("PUT", `/api/struktur/gebaeude/${G}/huelle`, kBetr, { ...h, geschosse: h.geschosse.map((g: any) => ({ ...g, id: gross(g.id) })) });
+    expect(rh.statusCode).toBe(200);
+    expect(rh.json().geschosse.map((g: any) => g.id)).toEqual(h.geschosse.map((g: any) => g.id));
+  });
+  it("unbeschraenkte Zahlen werden als Strukturfehler abgelehnt", async () => {
+    const b = (await anfrage("GET", urlB(), kBearb)).json();
+    expect((await anfrage("PUT", urlB(), kBearb, { ...b, einheiten: [{ ...b.einheiten[0], flaecheM2: 1e308 }, ...b.einheiten.slice(1)] })).statusCode).toBe(400);
+  });
   it("fachliche Fehler → 422 mit Codes; Strukturfehler → 400", async () => {
     const b = (await anfrage("GET", urlB(), kBearb)).json();
     const fbhInA = { katalogId: "heizung.fbh_kreis", standort: { einheitId: b.einheiten[0].id }, menge: 2, status: "bestaetigt", versorgt: [] };

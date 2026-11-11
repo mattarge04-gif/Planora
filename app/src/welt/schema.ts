@@ -3,9 +3,10 @@ const UUID = { type: "string", pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA
 const DREI = { type: "string", enum: ["ja", "nein", "unbekannt"] };
 const HEIZ = { hk: DREI, fbh: DREI, tabs: DREI };
 const INDEX = { type: "integer", minimum: 0 };
+const KOORD = { type: "number", minimum: -1000, maximum: 1000 }; // Meter
 const RECHTECK = {
   type: ["object", "null"], additionalProperties: false, required: ["x", "z", "breite", "tiefe"],
-  properties: { x: { type: "number" }, z: { type: "number" }, breite: { type: "number", exclusiveMinimum: 0 }, tiefe: { type: "number", exclusiveMinimum: 0 } },
+  properties: { x: KOORD, z: KOORD, breite: { type: "number", exclusiveMinimum: 0, maximum: 1000 }, tiefe: { type: "number", exclusiveMinimum: 0, maximum: 1000 } },
 };
 const VERWEIS = { type: "object", additionalProperties: false, minProperties: 1, maxProperties: 1, properties: { einheitId: UUID, einheitIndex: INDEX } };
 const TEXT = { type: ["string", "null"], maxLength: 200 };
@@ -36,7 +37,7 @@ export const BESCHREIBUNG_SCHEMA = {
       type: "object", additionalProperties: false, required: ["geschossId", "bezeichnung", "art", "flaecheM2"],
       properties: {
         id: UUID, geschossId: UUID, bezeichnung: { type: "string", minLength: 1, maxLength: 200 }, art: { type: "string", maxLength: 50 },
-        flaecheM2: { type: ["number", "null"], exclusiveMinimum: 0 }, layoutManuell: RECHTECK,
+        flaecheM2: { type: ["number", "null"], exclusiveMinimum: 0, maximum: 100000 }, layoutManuell: RECHTECK,
         heizungAusnahme: { type: "object", additionalProperties: false, properties: HEIZ },
         heizungWirksam: { type: "object" },
       } } },
@@ -45,10 +46,10 @@ export const BESCHREIBUNG_SCHEMA = {
       properties: {
         id: UUID, katalogId: { type: "string", maxLength: 100 },
         standort: { type: "object", additionalProperties: false, properties: { einheitId: UUID, einheitIndex: INDEX, geschossId: UUID } },
-        menge: { type: ["number", "null"] }, // Ganzzahl und Bereich prueft pruefung.ts (422 menge_ungueltig)
+        menge: { type: ["number", "null"], maximum: 100000 }, // Ganzzahl und mengeMax prueft pruefung.ts (422 menge_ungueltig)
         status: { type: "string", enum: ["vorgeschlagen", "bestaetigt"] },
         hersteller: TEXT, typ: TEXT, baujahr: { type: ["integer", "null"], minimum: 1800, maximum: 2100 },
-        positionManuell: { type: ["object", "null"], additionalProperties: false, required: ["x", "z"], properties: { x: { type: "number" }, z: { type: "number" } } },
+        positionManuell: { type: ["object", "null"], additionalProperties: false, required: ["x", "z"], properties: { x: KOORD, z: KOORD } },
         versorgt: { type: "array", maxItems: 2000, items: VERWEIS },
       } } },
   },

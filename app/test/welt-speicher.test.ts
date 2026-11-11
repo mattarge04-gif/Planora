@@ -67,6 +67,12 @@ describe("Huelle", () => {
     expect(neu.geschosse[2].id).toBe(og1.id);
     expect(neu.stand).toBe(2);
   });
+  it("aendereHuelle: dieselbe Geschoss-ID zweimal → id_doppelt", async () => {
+    const { g, h } = await neuesGebaeude();
+    const [eg] = h.geschosse;
+    const e = await fehlerVon(tx((c) => aendereHuelle(c, g, { ...HUELLE, geschosse: [{ id: eg.id, code: "EG" }, { id: eg.id, code: "OG1" }] }, REGELWERK_V1)));
+    expect([e.status, e.fehler.map((f) => [f.pfad, f.code])]).toEqual([422, [["geschosse[1].id", "id_doppelt"]]]);
+  });
 });
 
 describe("Beschreibung", () => {
@@ -127,6 +133,34 @@ describe("Beschreibung", () => {
     const z = await schreibe(g, b);
     expect([z.einheiten.geloescht, z.bauteile.geloescht]).toEqual([1, 1]);
     expect((await lade(g)).einheiten.map((e) => e.bezeichnung)).toEqual(["Technik", "Buero C"]);
+  });
+  it("IDs aus einem anderen Gebaeude derselben Liegenschaft werden abgelehnt", async () => {
+    const eins = await neuesGebaeude(), zwei = await neuesGebaeude();
+    await schreibe(eins.g, basis(eins.h));
+    await schreibe(zwei.g, basis(zwei.h));
+    const b1 = await lade(eins.g), b2 = await lade(zwei.g);
+    const mitFremderEinheit = { ...b1, einheiten: [{ ...b1.einheiten[0], id: b2.einheiten[0].id }, ...b1.einheiten.slice(1)] };
+    const e1 = await fehlerVon(schreibe(eins.g, mitFremderEinheit));
+    expect(e1.status).toBe(422);
+    expect(e1.fehler.map((f) => f.code)).toContain("id_unbekannt");
+    const mitFremdemGeschoss = { ...b1, einheiten: [{ ...b1.einheiten[0], geschossId: zwei.h.geschosse[0].id }, ...b1.einheiten.slice(1)] };
+    const e2 = await fehlerVon(schreibe(eins.g, mitFremdemGeschoss));
+    expect([e2.status, e2.fehler.map((f) => [f.pfad, f.code])]).toEqual([422, [["einheiten[0].geschossId", "verweis_ungueltig"]]]);
+  });
+  it("Bauteil wechselt aus einer geloeschten Einheit in eine andere: ID bleibt, Standort neu", async () => {
+    const { g, h } = await neuesGebaeude();
+    await schreibe(g, basis(h));
+    const b = await lade(g);
+    const fbh = b.bauteile[1];                     // FBH-Kreis im Restaurant
+    const ziel = b.einheiten[2];                   // Buero C
+    ziel.heizungAusnahme = { fbh: "ja" };
+    fbh.standort = { einheitId: ziel.id! };
+    b.bauteile[0].versorgt = [{ einheitId: ziel.id! }];
+    b.einheiten.splice(0, 1);                      // Restaurant geloescht
+    const z = await schreibe(g, b);
+    expect([z.einheiten.geloescht, z.bauteile.geloescht]).toEqual([1, 0]);
+    const n = await lade(g);
+    expect(n.bauteile.find((t) => t.id === fbh.id)!.standort).toEqual({ einheitId: ziel.id });
   });
   it("manuelle Position bleibt erhalten; Loeschen ist dann blockiert", async () => {
     const { g, h } = await neuesGebaeude();
