@@ -1,0 +1,15 @@
+��2026-11-11T11:24:43+01:00
+active
+PASS: Ersatzumgebung hat keine Container und keine Volumes
+Ersatz-Daemon: cf371f59-596e-48b9-b02c-f91b50e51a52
+PASS: Bootstrap nur aus verschluesseltem Inventar, separatem Key und oeffentlichen Metadaten
+{"datenbank":"planora_restore_50a55f767f8bab8dca7a","vorherDatenbank":"planora","zustand":"gesperrt"}
+{"phase":"gesperrt","liegenschaften":1,"dateiHash":"cd03aef0712b048597f3fd4a88151ec92eb710f72e197cb386824aeed66140f7","vorSicherung":{"session":2,"verification":1,"setup_token":1},"nachRestore":{"session":0,"verification":0,"setup_token":0}}
+PASS: lokale PTY, ausdrueckliches ja, Token-Einloesung und neues Passwort
+{"phase":"freigegeben","liegenschaften":1,"dateiHash":"cd03aef0712b048597f3fd4a88151ec92eb710f72e197cb386824aeed66140f7","vorSicherung":{"session":2,"verification":1,"setup_token":1}}
+Created symlink /etc/systemd/system/multi-user.target.wants/planora-betrieb@pb-1.service �! /etc/systemd/system/planora-betrieb@.service.
+Created symlink /etc/systemd/system/timers.target.wants/planora-sicherung@pb-1.timer �! /etc/systemd/system/planora-sicherung@.timer.
+active
+active
+PASS: Totalverlust der Distribution, frischer Cluster, Datenpruefung, Host-Freigabe und Wiederanlauf
+2026-11-11T11:25:51+01:00

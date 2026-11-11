@@ -1,0 +1,586 @@
+[
+  {
+    "typ": "npm",
+    "name": "@aws-sdk/credential-provider-http",
+    "version": "3.972.86",
+    "quelle": "https://registry.npmjs.org/@aws-sdk/credential-provider-http/-/credential-provider-http-3.972.86.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/0bcffa67adb16fdf6942/0-package.json",
+        "sha256": "eeb379f6d195b0b6a3f809b0801c4009b12ef5ece882f978e7a8856f83f59b9c",
+        "quelle": "https://registry.npmjs.org/@aws-sdk/credential-provider-http/-/credential-provider-http-3.972.86.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "739a39264af7286bfb3ead359b5e0b6247886234ad8c143c59e5dcb2104808c2"
+      },
+      {
+        "pfad": "nachtrag/0bcffa67adb16fdf6942/1-registry.json",
+        "sha256": "4b11c721aa9f7d567466543d90a75bb7bce7c6129a1a3b24ef74047a840e450a",
+        "quelle": "https://registry.npmjs.org/@aws-sdk/credential-provider-http/3.972.86"
+      },
+      {
+        "pfad": "nachtrag/0bcffa67adb16fdf6942/2-upstream-package.json",
+        "sha256": "9fd4903e74c73bf08b1bbe8362ea1bd6ec4e1216604349cfcf4f5146643b4550",
+        "quelle": "https://raw.githubusercontent.com/aws/aws-sdk-js-v3/dee2abd898e7d1c69dd5ca5d74ecdce92e47d19d/packages-internal/credential-provider-http/package.json"
+      },
+      {
+        "pfad": "nachtrag/0bcffa67adb16fdf6942/3-upstream-LICENSE",
+        "sha256": "edea91454b811f127fbdea3d86f378f6719bd372ed440abf82b232f6fca06c3d",
+        "quelle": "https://raw.githubusercontent.com/aws/aws-sdk-js-v3/dee2abd898e7d1c69dd5ca5d74ecdce92e47d19d/LICENSE"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Exakte Paketversion und Apache-2.0 am AWS-Release-Commit dee2abd898e7d1c69dd5ca5d74ecdce92e47d19d geprueft; paketuebergreifender LICENSE-Text einschliesslich Amazon-Copyright beigefuegt",
+    "regelVersion": 2
+  },
+  {
+    "typ": "npm",
+    "name": "@aws-sdk/credential-provider-login",
+    "version": "3.972.91",
+    "quelle": "https://registry.npmjs.org/@aws-sdk/credential-provider-login/-/credential-provider-login-3.972.91.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/5449fb23f57e4ad43b23/0-package.json",
+        "sha256": "efb873629c190ad247989da7cb56b4e2795f9221ebb211f775198daa2ec1ba7a",
+        "quelle": "https://registry.npmjs.org/@aws-sdk/credential-provider-login/-/credential-provider-login-3.972.91.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "bc561506c3a19af0b4ed7c881d497655197cb15148a9ab907acd40f1f16d8f45"
+      },
+      {
+        "pfad": "nachtrag/5449fb23f57e4ad43b23/1-registry.json",
+        "sha256": "4f890c3c20955baa80471c757fbb18737ec6ed7e1439af360a84f25f7f801d68",
+        "quelle": "https://registry.npmjs.org/@aws-sdk/credential-provider-login/3.972.91"
+      },
+      {
+        "pfad": "nachtrag/5449fb23f57e4ad43b23/2-upstream-package.json",
+        "sha256": "088118fb9fcfd41a9e1b43101401a6258a9bc233585320a3b5cc1f37c9a83fc6",
+        "quelle": "https://raw.githubusercontent.com/aws/aws-sdk-js-v3/dee2abd898e7d1c69dd5ca5d74ecdce92e47d19d/packages-internal/credential-provider-login/package.json"
+      },
+      {
+        "pfad": "nachtrag/5449fb23f57e4ad43b23/3-upstream-LICENSE",
+        "sha256": "edea91454b811f127fbdea3d86f378f6719bd372ed440abf82b232f6fca06c3d",
+        "quelle": "https://raw.githubusercontent.com/aws/aws-sdk-js-v3/dee2abd898e7d1c69dd5ca5d74ecdce92e47d19d/LICENSE"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Exakte Paketversion und Apache-2.0 am AWS-Release-Commit dee2abd898e7d1c69dd5ca5d74ecdce92e47d19d geprueft; paketuebergreifender LICENSE-Text einschliesslich Amazon-Copyright beigefuegt",
+    "regelVersion": 2
+  },
+  {
+    "typ": "npm",
+    "name": "@aws-sdk/nested-clients",
+    "version": "3.998.3",
+    "quelle": "https://registry.npmjs.org/@aws-sdk/nested-clients/-/nested-clients-3.998.3.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/d2166d7a8b737f09ff95/0-package.json",
+        "sha256": "756480d422c005e6a3f22f5ba573c58d4f81579ae709767e9f8fccbdbad67d7c",
+        "quelle": "https://registry.npmjs.org/@aws-sdk/nested-clients/-/nested-clients-3.998.3.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "30b5f1ff913a8b8ecabfbcd650beb4581d77cffe4fee3621d65949137ae1aad1"
+      },
+      {
+        "pfad": "nachtrag/d2166d7a8b737f09ff95/1-registry.json",
+        "sha256": "6220dc71c358d58388c56679aa4bec600e8bd1f68f91bb9a84c17cdf78e85331",
+        "quelle": "https://registry.npmjs.org/@aws-sdk/nested-clients/3.998.3"
+      },
+      {
+        "pfad": "nachtrag/d2166d7a8b737f09ff95/2-upstream-package.json",
+        "sha256": "4cf2466cf2c4b6ae49022622474ef56d57031f9fc08c4f1fdc9d4ec1d1a2895d",
+        "quelle": "https://raw.githubusercontent.com/aws/aws-sdk-js-v3/dee2abd898e7d1c69dd5ca5d74ecdce92e47d19d/packages-internal/nested-clients/package.json"
+      },
+      {
+        "pfad": "nachtrag/d2166d7a8b737f09ff95/3-upstream-LICENSE",
+        "sha256": "edea91454b811f127fbdea3d86f378f6719bd372ed440abf82b232f6fca06c3d",
+        "quelle": "https://raw.githubusercontent.com/aws/aws-sdk-js-v3/dee2abd898e7d1c69dd5ca5d74ecdce92e47d19d/LICENSE"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Exakte Paketversion und Apache-2.0 am AWS-Release-Commit dee2abd898e7d1c69dd5ca5d74ecdce92e47d19d geprueft; paketuebergreifender LICENSE-Text einschliesslich Amazon-Copyright beigefuegt",
+    "regelVersion": 2
+  },
+  {
+    "typ": "npm",
+    "name": "@node-rs/argon2-linux-x64-gnu",
+    "version": "2.2.2",
+    "quelle": "https://registry.npmjs.org/@node-rs/argon2-linux-x64-gnu/-/argon2-linux-x64-gnu-2.2.2.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/3ed59e8a64abf8e4b97e/0-package.json",
+        "sha256": "d318e5435428e74f69aae54e728a1da0c5b213f6e80cab66e662dcde6cf35f32",
+        "quelle": "https://registry.npmjs.org/@node-rs/argon2-linux-x64-gnu/-/argon2-linux-x64-gnu-2.2.2.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "4f0f8d6e3713c455a95444775ae55b62fdde8c2f8364495a6dfd6d702e4f7876"
+      },
+      {
+        "pfad": "nachtrag/3ed59e8a64abf8e4b97e/1-registry.json",
+        "sha256": "1f7048be53d6c730b7034cb3a32f7fe5312618ff09cb295935a609ef750af5ae",
+        "quelle": "https://registry.npmjs.org/@node-rs/argon2-linux-x64-gnu/2.2.2"
+      },
+      {
+        "pfad": "nachtrag/3ed59e8a64abf8e4b97e/2-binaerpaket-README.md",
+        "sha256": "bd10d577951630db56a9cd08237b6d47ee72daa63d76666db969b642d3f8ed4d",
+        "quelle": "https://registry.npmjs.org/@node-rs/argon2-linux-x64-gnu/-/argon2-linux-x64-gnu-2.2.2.tgz",
+        "archivMitglied": "package/README.md",
+        "archivSha256": "4f0f8d6e3713c455a95444775ae55b62fdde8c2f8364495a6dfd6d702e4f7876"
+      },
+      {
+        "pfad": "nachtrag/3ed59e8a64abf8e4b97e/3-eltern-package.json",
+        "sha256": "e85a1a6729f9fe1f5a40eaaf344e238334fa4c45ad9780a5f6a87b1238f3b8d5",
+        "quelle": "https://registry.npmjs.org/@node-rs/argon2/-/argon2-2.2.2.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "79cf5e485ba6e47c6b1d094984d867a5ae7f114327aa5be5fa6e82f14eee2a46"
+      },
+      {
+        "pfad": "nachtrag/3ed59e8a64abf8e4b97e/4-eltern-LICENSE",
+        "sha256": "c748f2e7f93fadae76fcb1ccf6b4199e2a4013611871b5fa61000d11a50011c7",
+        "quelle": "https://registry.npmjs.org/@node-rs/argon2/-/argon2-2.2.2.tgz",
+        "archivMitglied": "package/LICENSE",
+        "archivSha256": "79cf5e485ba6e47c6b1d094984d867a5ae7f114327aa5be5fa6e82f14eee2a46"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Plattformspezifisches Binaerpaket: README-Zugehoerigkeit, identische Version/Lizenz und exakte optionalDependency des Elternpakets samt dessen MIT-Text belegt",
+    "regelVersion": 2
+  },
+  {
+    "typ": "npm",
+    "name": "@npmcli/agent",
+    "version": "4.0.2",
+    "quelle": "https://registry.npmjs.org/@npmcli/agent/-/agent-4.0.2.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/f045b8aa9505c098f5a5/0-package.json",
+        "sha256": "3612c09c2741e44541faddecee97c4618794909ecf0e3555e56ebabf38a379a8",
+        "quelle": "https://registry.npmjs.org/@npmcli/agent/-/agent-4.0.2.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "88dcd3e47fbb0ab7b9160014531c0e99a7ab478656d465a7985c25c759701b9a"
+      },
+      {
+        "pfad": "nachtrag/f045b8aa9505c098f5a5/1-registry.json",
+        "sha256": "545fdb39333f6acd133d736c2f3fe4202149ebf78be7a2e72e32b7db7d0165a0",
+        "quelle": "https://registry.npmjs.org/@npmcli/agent/4.0.2"
+      },
+      {
+        "pfad": "nachtrag/f045b8aa9505c098f5a5/2-debian-agent-package.json",
+        "sha256": "3612c09c2741e44541faddecee97c4618794909ecf0e3555e56ebabf38a379a8",
+        "quelle": "https://snapshot.debian.org/file/1d708e9c826d617662c650cdbe682072e7597a7d",
+        "archivMitglied": "npm-cli-bfacd33/node_modules/@npmcli/agent/package.json",
+        "archivSha256": "75b6f18b0835f9fbeba9da35fe9045a95bb4eb1b315838200529421a52c23879"
+      },
+      {
+        "pfad": "nachtrag/f045b8aa9505c098f5a5/3-debian-copyright",
+        "sha256": "73e6257441e553a5988604dc689ec18d53502be08df0fa4ccba8396b20f76e69",
+        "quelle": "https://snapshot.debian.org/file/a956152df2cc8bc74eee782be835d2e8b3bf31b2",
+        "archivMitglied": "debian/copyright",
+        "archivSha256": "ec93def2d3a5d3ec88278a4615407207a77108f67097fa6e43f1cabd8296f57f"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Debian-Snapshot npm 11.19.0+ds1-1 enthaelt exakt @npmcli/agent 4.0.2; dessen node_modules-Copyright-/ISC-Text beigefuegt, zusaetzlich abweichende Autorenangabe GitHub Inc. aus dem exakten npm-Paket erhalten",
+    "regelVersion": 2
+  },
+  {
+    "typ": "npm",
+    "name": "@rolldown/binding-linux-x64-gnu",
+    "version": "1.2.18",
+    "quelle": "https://registry.npmjs.org/@rolldown/binding-linux-x64-gnu/-/binding-linux-x64-gnu-1.2.18.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/47a03a2b5a18612ede75/0-package.json",
+        "sha256": "6bd1594c61db98e84721eefc05aa5bd2810e6e617f028caa33cb9dfc386fd22c",
+        "quelle": "https://registry.npmjs.org/@rolldown/binding-linux-x64-gnu/-/binding-linux-x64-gnu-1.2.18.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "b701286d57748c957331922925291e182ea997f18658226170881288efa93e4d"
+      },
+      {
+        "pfad": "nachtrag/47a03a2b5a18612ede75/1-registry.json",
+        "sha256": "4b07306d71f4252f3c51023b9661e9d191bd24382771d6ffe2bfb011b133b937",
+        "quelle": "https://registry.npmjs.org/@rolldown/binding-linux-x64-gnu/1.2.18"
+      },
+      {
+        "pfad": "nachtrag/47a03a2b5a18612ede75/2-binaerpaket-README.md",
+        "sha256": "8424466220cb244a154dc80cf19b4252ee20aef8f13a04a50eeac672cd0aaed7",
+        "quelle": "https://registry.npmjs.org/@rolldown/binding-linux-x64-gnu/-/binding-linux-x64-gnu-1.2.18.tgz",
+        "archivMitglied": "package/README.md",
+        "archivSha256": "b701286d57748c957331922925291e182ea997f18658226170881288efa93e4d"
+      },
+      {
+        "pfad": "nachtrag/47a03a2b5a18612ede75/3-eltern-package.json",
+        "sha256": "1d7799877e2d13f861a3ed99f62f0df459115e391fc800001803571ea54b45b3",
+        "quelle": "https://registry.npmjs.org/rolldown/-/rolldown-1.2.18.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "249e637c26d5e996adb05b643e8008f1ceef511b56d2d48f6c42714566d2e24a"
+      },
+      {
+        "pfad": "nachtrag/47a03a2b5a18612ede75/4-eltern-LICENSE",
+        "sha256": "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734",
+        "quelle": "https://registry.npmjs.org/rolldown/-/rolldown-1.2.18.tgz",
+        "archivMitglied": "package/LICENSE",
+        "archivSha256": "249e637c26d5e996adb05b643e8008f1ceef511b56d2d48f6c42714566d2e24a"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Plattformspezifisches Binaerpaket: README-Zugehoerigkeit, identische Version/Lizenz und exakte optionalDependency des Elternpakets samt dessen MIT-Text belegt",
+    "regelVersion": 2
+  },
+  {
+    "typ": "npm",
+    "name": "abstract-logging",
+    "version": "2.0.1",
+    "quelle": "https://registry.npmjs.org/abstract-logging/-/abstract-logging-2.0.1.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/83a6155844b9f694513f/0-package.json",
+        "sha256": "33f6c3a8ec869b76fba4173cd688d1865ae74d746cc3f3b5d85abf9f40ab4038",
+        "quelle": "https://registry.npmjs.org/abstract-logging/-/abstract-logging-2.0.1.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "9a2ab6159e9d3b04e10f1536fab762d18e09d353941a298171e57b6e25640994"
+      },
+      {
+        "pfad": "nachtrag/83a6155844b9f694513f/1-registry.json",
+        "sha256": "6308e5d41044b560d23eef682a32976c87e89c4cfecb07f9b766c0c9c64fd813",
+        "quelle": "https://registry.npmjs.org/abstract-logging/2.0.1"
+      },
+      {
+        "pfad": "nachtrag/83a6155844b9f694513f/2-Readme.md",
+        "sha256": "e1a86711fb5055c0e66901276b7d2c843554bf5f1dab218c069c8b9d17148e81",
+        "quelle": "https://registry.npmjs.org/abstract-logging/-/abstract-logging-2.0.1.tgz",
+        "archivMitglied": "package/Readme.md",
+        "archivSha256": "9a2ab6159e9d3b04e10f1536fab762d18e09d353941a298171e57b6e25640994"
+      },
+      {
+        "pfad": "nachtrag/83a6155844b9f694513f/3-lizenzgeber.json",
+        "sha256": "15932b5c544d31afb72ca38c331ea0f11b24f5eb12c850923392c18dd8641b75",
+        "quelle": "https://raw.githubusercontent.com/remy/mit-license/21ac30f351903ff23b399289cb4fdda05fb45f15/users/jsumners.json"
+      },
+      {
+        "pfad": "nachtrag/83a6155844b9f694513f/4-MIT-Vorlage.ejs",
+        "sha256": "703f73c91226ba2d938885b2f80f43dada1a03439dea0024b69e4b82c302d6c4",
+        "quelle": "https://raw.githubusercontent.com/remy/mit-license/21ac30f351903ff23b399289cb4fdda05fb45f15/licenses/MIT.ejs"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Exaktes Paket verweist auf die Autorenlizenz jsumners.mit-license.org; dessen versionierter Hosting-Quellcode belegt James Sumners als Copyright-Inhaber und enthaelt den vollen MIT-Text als Vorlage, ohne erfundene Jahreszahl",
+    "regelVersion": 2
+  },
+  {
+    "typ": "npm",
+    "name": "benchmarks",
+    "version": "1.0.0",
+    "quelle": "",
+    "dateien": [
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/0-fixture-package.json",
+        "sha256": "f7f0e10fc7b9317c9c1898d50255463bd35dd42f6f00eb3d4cdfc60b97298f66",
+        "quelle": "https://registry.npmjs.org/@fastify/deepmerge/-/deepmerge-3.2.4.tgz",
+        "archivMitglied": "package/benchmark/package.json",
+        "archivSha256": "adf38f7ca0e728fbce7db57989aabf92eda7aaf3dbc461d71f1c793fbf5cc42e"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/1-eltern-package.json",
+        "sha256": "fa027a5223da5b2d7fe1ccfe2de29507c4efda832845562acf0ca94f921cf861",
+        "quelle": "https://registry.npmjs.org/@fastify/deepmerge/-/deepmerge-3.2.4.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "adf38f7ca0e728fbce7db57989aabf92eda7aaf3dbc461d71f1c793fbf5cc42e"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/2-eltern-LICENSE",
+        "sha256": "e2d09f74a77005e85e9f9bd501e3b7599ccae19d918538461196dde42f7f1b97",
+        "quelle": "https://registry.npmjs.org/@fastify/deepmerge/-/deepmerge-3.2.4.tgz",
+        "archivMitglied": "package/LICENSE",
+        "archivSha256": "adf38f7ca0e728fbce7db57989aabf92eda7aaf3dbc461d71f1c793fbf5cc42e"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/3-fixture-ISC.txt",
+        "sha256": "f2ec607f67bb0dd3053b49835b02110d5cd0f8eb6da3aac4dc0b142a6b299be9",
+        "quelle": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/ISC.txt"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/4-fixture-package.json",
+        "sha256": "cd487821c798e6504f03d7d082eb011af7c9bf62097caf6dcd642e57e7360e9d",
+        "quelle": "https://registry.npmjs.org/secure-json-parse/-/secure-json-parse-4.1.1.tgz",
+        "archivMitglied": "package/benchmarks/package.json",
+        "archivSha256": "35022a4c0b31a2d423f36b36462a2a394d55b12d85fcb6b129b20612abcb10c0"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/5-eltern-package.json",
+        "sha256": "b8809570084bc71755124a8acdb7882b4a41649f408767b851c49d0556e91897",
+        "quelle": "https://registry.npmjs.org/secure-json-parse/-/secure-json-parse-4.1.1.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "35022a4c0b31a2d423f36b36462a2a394d55b12d85fcb6b129b20612abcb10c0"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/6-eltern-LICENSE",
+        "sha256": "354dacd69de5070d69b2e4c5598bd1f51d980775422c3ee663160f9da88ebf63",
+        "quelle": "https://registry.npmjs.org/secure-json-parse/-/secure-json-parse-4.1.1.tgz",
+        "archivMitglied": "package/LICENSE",
+        "archivSha256": "35022a4c0b31a2d423f36b36462a2a394d55b12d85fcb6b129b20612abcb10c0"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/7-fixture-package.json",
+        "sha256": "f7f0e10fc7b9317c9c1898d50255463bd35dd42f6f00eb3d4cdfc60b97298f66",
+        "quelle": "https://registry.npmjs.org/@fastify/deepmerge/-/deepmerge-3.2.4.tgz",
+        "archivMitglied": "package/benchmark/package.json",
+        "archivSha256": "adf38f7ca0e728fbce7db57989aabf92eda7aaf3dbc461d71f1c793fbf5cc42e"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/8-eltern-package.json",
+        "sha256": "fa027a5223da5b2d7fe1ccfe2de29507c4efda832845562acf0ca94f921cf861",
+        "quelle": "https://registry.npmjs.org/@fastify/deepmerge/-/deepmerge-3.2.4.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "adf38f7ca0e728fbce7db57989aabf92eda7aaf3dbc461d71f1c793fbf5cc42e"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/9-eltern-LICENSE",
+        "sha256": "e2d09f74a77005e85e9f9bd501e3b7599ccae19d918538461196dde42f7f1b97",
+        "quelle": "https://registry.npmjs.org/@fastify/deepmerge/-/deepmerge-3.2.4.tgz",
+        "archivMitglied": "package/LICENSE",
+        "archivSha256": "adf38f7ca0e728fbce7db57989aabf92eda7aaf3dbc461d71f1c793fbf5cc42e"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/10-fixture-ISC.txt",
+        "sha256": "f2ec607f67bb0dd3053b49835b02110d5cd0f8eb6da3aac4dc0b142a6b299be9",
+        "quelle": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/ISC.txt"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/11-fixture-package.json",
+        "sha256": "cd487821c798e6504f03d7d082eb011af7c9bf62097caf6dcd642e57e7360e9d",
+        "quelle": "https://registry.npmjs.org/secure-json-parse/-/secure-json-parse-4.1.1.tgz",
+        "archivMitglied": "package/benchmarks/package.json",
+        "archivSha256": "35022a4c0b31a2d423f36b36462a2a394d55b12d85fcb6b129b20612abcb10c0"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/12-eltern-package.json",
+        "sha256": "b8809570084bc71755124a8acdb7882b4a41649f408767b851c49d0556e91897",
+        "quelle": "https://registry.npmjs.org/secure-json-parse/-/secure-json-parse-4.1.1.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "35022a4c0b31a2d423f36b36462a2a394d55b12d85fcb6b129b20612abcb10c0"
+      },
+      {
+        "pfad": "nachtrag/5943eea331df6e7631d5/13-eltern-LICENSE",
+        "sha256": "354dacd69de5070d69b2e4c5598bd1f51d980775422c3ee663160f9da88ebf63",
+        "quelle": "https://registry.npmjs.org/secure-json-parse/-/secure-json-parse-4.1.1.tgz",
+        "archivMitglied": "package/LICENSE",
+        "archivSha256": "35022a4c0b31a2d423f36b36462a2a394d55b12d85fcb6b129b20612abcb10c0"
+      }
+    ],
+    "offen": null,
+    "fundstellen": [
+      {
+        "image": "app.syft.json.gz",
+        "pfad": "/app/node_modules/@fastify/deepmerge/benchmark/package.json",
+        "elternpaket": "@fastify/deepmerge",
+        "version": "3.2.4",
+        "lizenzElternpaket": "MIT",
+        "lizenzFixture": "ISC"
+      },
+      {
+        "image": "app.syft.json.gz",
+        "pfad": "/app/node_modules/secure-json-parse/benchmarks/package.json",
+        "elternpaket": "secure-json-parse",
+        "version": "4.1.1",
+        "lizenzElternpaket": "BSD-3-Clause",
+        "lizenzFixture": null
+      },
+      {
+        "image": "backup.syft.json.gz",
+        "pfad": "/app/node_modules/@fastify/deepmerge/benchmark/package.json",
+        "elternpaket": "@fastify/deepmerge",
+        "version": "3.2.4",
+        "lizenzElternpaket": "MIT",
+        "lizenzFixture": "ISC"
+      },
+      {
+        "image": "backup.syft.json.gz",
+        "pfad": "/app/node_modules/secure-json-parse/benchmarks/package.json",
+        "elternpaket": "secure-json-parse",
+        "version": "4.1.1",
+        "lizenzElternpaket": "BSD-3-Clause",
+        "lizenzFixture": null
+      }
+    ],
+    "regelVersion": 3,
+    "poEntscheid": "PO-Entscheid 2026-11-11",
+    "ergaenzung": "PO-Entscheid 2026-11-11: Deepmerge-Fixture (benchmark/package.json ISC, Eltern-LICENSE @fastify/deepmerge 3.2.4 MIT) technisch geschlossen, weil beide permissiv und beide Texte beigelegt sind; keine juristische Auswahl zwischen beiden. secure-json-parse-Fixture ueber BSD-3-Clause-Elterntext belegt."
+  },
+  {
+    "typ": "npm",
+    "name": "drizzle-orm",
+    "version": "0.45.4",
+    "quelle": "https://registry.npmjs.org/drizzle-orm/-/drizzle-orm-0.45.4.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/6559ab52444965e11747/0-package.json",
+        "sha256": "0053890bb51fa62e886e4c0ef549611249da665e23c8642586bdcf910de5da64",
+        "quelle": "https://registry.npmjs.org/drizzle-orm/-/drizzle-orm-0.45.4.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "9d28e78c15fbd781001ad2da3f1dfe41561791cba0304b801a5bc5e73b5f4464"
+      },
+      {
+        "pfad": "nachtrag/6559ab52444965e11747/1-registry.json",
+        "sha256": "54b563f8b07b4f25515a11f2a275bef078d9f855d38c8037b1393f4018b3de86",
+        "quelle": "https://registry.npmjs.org/drizzle-orm/0.45.4"
+      },
+      {
+        "pfad": "nachtrag/6559ab52444965e11747/2-npm-provenance.json",
+        "sha256": "3606b20dc32243c4e741a3bc1ba1a4b43a2650ba245c9ae2d2969f209c971175",
+        "quelle": "https://registry.npmjs.org/-/npm/v1/attestations/drizzle-orm@0.45.4"
+      },
+      {
+        "pfad": "nachtrag/6559ab52444965e11747/3-upstream-LICENSE",
+        "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+        "quelle": "https://raw.githubusercontent.com/drizzle-team/drizzle-orm/eab8bedbb65d5429c54e612ddbd88aa23091d398/LICENSE"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Exaktes npm-Archiv per SHA512 mit Registry-Provenance-Subjekt abgeglichen; LICENSE am darin genannten Quellcommit eab8bedbb65d5429c54e612ddbd88aa23091d398; keine Sigstore-Signaturpruefung behauptet",
+    "regelVersion": 2
+  },
+  {
+    "typ": "npm",
+    "name": "pg-types",
+    "version": "2.2.0",
+    "quelle": "https://registry.npmjs.org/pg-types/-/pg-types-2.2.0.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/5efaaf39887636e97846/0-package.json",
+        "sha256": "3ec0293cb38cc8d9475e3eb32ac5f19d195bf9fccc8b19a0714e6ecd6e7c2cf0",
+        "quelle": "https://registry.npmjs.org/pg-types/-/pg-types-2.2.0.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "c4804fd058140c32f8fda78883ad45dee3eaa4fd9e9127b6eb659fefe51981bd"
+      },
+      {
+        "pfad": "nachtrag/5efaaf39887636e97846/1-registry.json",
+        "sha256": "d1254b8e8b6a18d8b5ccf5ee0bbfcf74460c639fa41a51a3b7cdd2508f7f9a04",
+        "quelle": "https://registry.npmjs.org/pg-types/2.2.0"
+      },
+      {
+        "pfad": "nachtrag/5efaaf39887636e97846/2-README.md",
+        "sha256": "ecda9bca71d3f0cee4e600d1dd2bef336213f39ef2e8fca6a1a1c1c8723f643a",
+        "quelle": "https://registry.npmjs.org/pg-types/-/pg-types-2.2.0.tgz",
+        "archivMitglied": "package/README.md",
+        "archivSha256": "c4804fd058140c32f8fda78883ad45dee3eaa4fd9e9127b6eb659fefe51981bd"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Vollstaendiger MIT-Text mit Copyright direkt in der README des integritaetsgeprueften exakten npm-Pakets",
+    "regelVersion": 2
+  },
+  {
+    "typ": "npm",
+    "name": "pgpass",
+    "version": "1.0.5",
+    "quelle": "https://registry.npmjs.org/pgpass/-/pgpass-1.0.5.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/6945acf53206fbeb8342/0-package.json",
+        "sha256": "d75240eb4fe759c10db9f903838275348676a8bdc1f329e20a833713cd7c99bd",
+        "quelle": "https://registry.npmjs.org/pgpass/-/pgpass-1.0.5.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "ff794c956186430afd600b5bc4500f3f0faf34b62be6ff98494f4c7f4a6d8597"
+      },
+      {
+        "pfad": "nachtrag/6945acf53206fbeb8342/1-registry.json",
+        "sha256": "c9431209e3e3a3c6fcc22a9582b06f2370a93b08f454410e1b313664c7307e70",
+        "quelle": "https://registry.npmjs.org/pgpass/1.0.5"
+      },
+      {
+        "pfad": "nachtrag/6945acf53206fbeb8342/2-README.md",
+        "sha256": "62549909404b5a0dcb2b4b74c9a930baf8095dbcfa1543c4ffc79378acd22b57",
+        "quelle": "https://registry.npmjs.org/pgpass/-/pgpass-1.0.5.tgz",
+        "archivMitglied": "package/README.md",
+        "archivSha256": "ff794c956186430afd600b5bc4500f3f0faf34b62be6ff98494f4c7f4a6d8597"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Vollstaendiger MIT-Text mit Copyright direkt in der README des integritaetsgeprueften exakten npm-Pakets",
+    "regelVersion": 2
+  },
+  {
+    "typ": "npm",
+    "name": "planora-app",
+    "version": "1.0.0",
+    "quelle": "PO-Entscheid 2026-11-11",
+    "dateien": [
+      {
+        "pfad": "nachtrag/a251d0ca8e2632dc46b4/0-po-liefermodell.md",
+        "sha256": "3e0473f347bf14b1eca14fc66349c5c880e0396fc7bed97cf66a607b61a3af1e",
+        "quelle": "PO-Entscheid 2026-11-11"
+      }
+    ],
+    "offen": "[?] Liefermodell per PO-Entscheid dokumentiert; schriftliche Rechtekette Entwickler -> Firma und Vertragstext (juristisch) offen",
+    "regelVersion": 3,
+    "poEntscheid": "PO-Entscheid 2026-11-11",
+    "ergaenzung": "PO-Entscheid 2026-11-11: proprietaer, alle Rechte beim Anbieter; nicht-exklusives, nicht uebertragbares Nutzungsrecht des Kunden fuer seine Instanz waehrend der Vertragsdauer; Lieferung/Betrieb als signierte Images ohne Quellcode; Drittkomponenten unter eigenen Lizenzen gemaess Dossier."
+  },
+  {
+    "typ": "npm",
+    "name": "spdx-exceptions",
+    "version": "2.5.0",
+    "quelle": "https://registry.npmjs.org/spdx-exceptions/-/spdx-exceptions-2.5.0.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/6ae428af34575445db4b/0-package.json",
+        "sha256": "0af9bd4b68c9e3d1bc7a9208881cbde84da140d564a3bb42cf53184c6e83f2e3",
+        "quelle": "https://registry.npmjs.org/spdx-exceptions/-/spdx-exceptions-2.5.0.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "c5295dd22415e8b60a5af2560e7461954f660bcb591be7c5622e463956d33256"
+      },
+      {
+        "pfad": "nachtrag/6ae428af34575445db4b/1-registry.json",
+        "sha256": "1f746a1c42ad55743b6208bd0b1d7be203e3830e34a9a05a633ff61b5ce06650",
+        "quelle": "https://registry.npmjs.org/spdx-exceptions/2.5.0"
+      },
+      {
+        "pfad": "nachtrag/6ae428af34575445db4b/2-README.md",
+        "sha256": "554b19eee11d2964e9f7b244e47944c08d52ca75539260a04f3227e6c0144513",
+        "quelle": "https://registry.npmjs.org/spdx-exceptions/-/spdx-exceptions-2.5.0.tgz",
+        "archivMitglied": "package/README.md",
+        "archivSha256": "c5295dd22415e8b60a5af2560e7461954f660bcb591be7c5622e463956d33256"
+      },
+      {
+        "pfad": "nachtrag/6ae428af34575445db4b/3-Lizenztext.txt",
+        "sha256": "e6bc9e9c474700b708f568bac9e5a8a9bcb2b1dad53442f5ba449fcb848b8e76",
+        "quelle": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/CC-BY-3.0.txt"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Paket-README dokumentiert Copyright/Attribution beziehungsweise ausdrueckliche CC0-Zuordnung; voller zugehoeriger Creative-Commons-Text beigefuegt",
+    "regelVersion": 2
+  },
+  {
+    "typ": "npm",
+    "name": "spdx-license-ids",
+    "version": "3.0.23",
+    "quelle": "https://registry.npmjs.org/spdx-license-ids/-/spdx-license-ids-3.0.23.tgz",
+    "dateien": [
+      {
+        "pfad": "nachtrag/a5903cf857880fcf91ba/0-package.json",
+        "sha256": "669d0ba75505d331031cf79b0d208393601307f41cd4ae4355ce99e6eaef4c8c",
+        "quelle": "https://registry.npmjs.org/spdx-license-ids/-/spdx-license-ids-3.0.23.tgz",
+        "archivMitglied": "package/package.json",
+        "archivSha256": "fea7d95340e83a403c73463ea683cdde960029d956a86a023af6e283fd1e82fe"
+      },
+      {
+        "pfad": "nachtrag/a5903cf857880fcf91ba/1-registry.json",
+        "sha256": "15067283eebcf6c7e72946100c9077256c289f0759a318a880bc9460dfbf66dc",
+        "quelle": "https://registry.npmjs.org/spdx-license-ids/3.0.23"
+      },
+      {
+        "pfad": "nachtrag/a5903cf857880fcf91ba/2-README.md",
+        "sha256": "b4807793db6058c819f76c023362b7d522b3d19c9b41563fcc01c2b2c5b1ccd3",
+        "quelle": "https://registry.npmjs.org/spdx-license-ids/-/spdx-license-ids-3.0.23.tgz",
+        "archivMitglied": "package/README.md",
+        "archivSha256": "fea7d95340e83a403c73463ea683cdde960029d956a86a023af6e283fd1e82fe"
+      },
+      {
+        "pfad": "nachtrag/a5903cf857880fcf91ba/3-Lizenztext.txt",
+        "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+        "quelle": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/CC0-1.0.txt"
+      }
+    ],
+    "offen": null,
+    "ergaenzung": "Paket-README dokumentiert Copyright/Attribution beziehungsweise ausdrueckliche CC0-Zuordnung; voller zugehoeriger Creative-Commons-Text beigefuegt",
+    "regelVersion": 2
+  }
+]
