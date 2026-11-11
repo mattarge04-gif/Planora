@@ -36,25 +36,42 @@ Beide als versionierte JSON-Dateien im Repo, im Code geladen:
 
 **Abweichung von ADR 0011 [A]:** ADR 0011 sieht das Laden des Katalogs per Migration in `katalog_*`-Tabellen vor. Fuer vier Eintraege ohne Lebensdauerdaten ist das ohne Nutzen. Die DB speichert `katalog_id` als Text; die fachliche Validierung prueft gegen die Datei. Tabellen werden mit M7 (Lebensdauer) nachgezogen. Die Abweichung wird bei Umsetzung als Nachtrag in ADR 0011 vermerkt.
 
-Katalog v1 (IDs nach ADR 0011, nie umbenennen):
+Katalog v1 (IDs nach ADR 0011, nie umbenennen). Demo-Umfang nur Heizung (PO 2026-11-11):
 
-| katalog_id | Gruppe | Standort typisch |
+| katalog_id | Bereich | Erlaubte Menge je Zeile [A] |
 |---|---|---|
-| `heizung.heizkoerper` | heizung | Einheit |
-| `heizung.fbh_kreis` | heizung | Einheit |
-| `heizung.tabs_feld` | heizung | Einheit |
-| `heizung.verteiler` | heizung | Einheit oder Geschoss |
+| `heizung.waermepumpe` | Zentrale | 0–10 |
+| `heizung.gaskessel` | Zentrale | 0–10 |
+| `heizung.oelkessel` | Zentrale | 0–10 |
+| `heizung.fernwaerme_uebergabe` | Zentrale | 0–10 |
+| `heizung.speicher` | Zentrale | 0–10 |
+| `heizung.umwaelzpumpe` | Zentrale | 0–50 |
+| `heizung.verteiler` | Verteilung | 0–20 |
+| `heizung.heizkoerper` | Einheit | 0–500 |
+| `heizung.fbh_kreis` | Einheit | 0–200 |
+| `heizung.tabs_feld` | Einheit | 0–200 |
 
-Regelwerk v1, alle Werte **[A]** bis PO-Freigabe (Werte aus ADR 0026):
+Menge ausserhalb des Bereichs → `menge_ungueltig` (Ablehnung, PO 2026-11-11). Die Menge wird gespeichert (spaeter M7), beeinflusst die Darstellung aber nicht (§7).
+
+Regelwerk v1, Werte **[A]** bis PO-Freigabe (Herkunft ADR 0026, sonst Vorschlag 2026-11-11):
 
 | Bereich | Werte |
 |---|---|
-| Grundformen | `quader` (1 Rechteck), `l_form` (2), `u_form` (3); Schenkelanteil Default 0.4 der Tiefe |
-| Masse | Breite/Tiefe 5–200 m |
+| Grundformen | `quader` (1 Rechteck), `l_form` (2), `u_form` (3); Schenkelanteil 0.4 der Tiefe |
+| Masse | Breite/Tiefe 5–200 m, Default 30 × 15 m; erfasst durch Planora, nicht durch den Kunden |
 | Geschoss-Codes | `UG3..UG1`, `EG`, `OG1..OG40`, `DG`, `DACH`; Hoehe 2.4–6.0 m, Default 3.2 m |
-| Einheit-Arten | `buero`, `wohnung`, `technik`, `kern`, `allgemein`; je Art Default-Flaeche (m²) |
-| Mengen | Deckel fuer dargestellte Positionen je Bauteil: 30 |
-| Erlaubt | je Einheit-Art erlaubte Katalog-IDs (z.B. `heizung.verteiler` nicht in `kern`) |
+| Einheit-Arten, Default-Flaeche | `buero` 120 m², `wohnung` 90, `gastro` 150, `technik` 30, `kern` 25, `allgemein` 40 |
+
+Flaeche je Einheit ist **optional**; sie bestimmt nur die relative Streifenbreite im Schema (PO 2026-11-11: kein Pflichtfeld, im Formular unter "weitere Angaben").
+
+Erlaubt-Matrix (Bauteil je Einheit-Art; "Geschoss" = Standort direkt am Geschoss):
+
+| | buero | wohnung | gastro | technik | kern | allgemein | Geschoss |
+|---|---|---|---|---|---|---|---|
+| Zentrale (6 IDs) | – | – | – | ✓ | – | – | ✓ |
+| Verteiler | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ |
+| Heizkoerper | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | – |
+| FBH-Kreis, TABS-Feld | ✓ | ✓ | ✓ | – | – | ✓ | – |
 
 Die Regelwerk-Datei traegt `version: 1`; `gebaeude.regelwerk_version` haelt fest, mit welcher Version ein Gebaeude erzeugt wurde. Verhalten bei Regelwerk-Updates ist ausserhalb M2a [?].
 
@@ -65,7 +82,8 @@ Die Regelwerk-Datei traegt `version: 1`; `gebaeude.regelwerk_version` haelt fest
 | `gebaeude` | `id`, `liegenschaft_id`, `name`, `grundform`, `breite_m`, `tiefe_m`, `regelwerk_version`, `stand` (int, Optimistic Locking) |
 | `geschoss` | `id`, `liegenschaft_id`, `gebaeude_id`, `code`, `reihenfolge`, `hoehe_m`; unique (`gebaeude_id`, `code`) |
 | `einheit` | `id`, `liegenschaft_id`, `geschoss_id`, `bezeichnung`, `art`, `flaeche_m2` null, `reihenfolge`, `layout_manuell` jsonb null (`{x, z, breite, tiefe}`) |
-| `einheit_heizung` | `einheit_id`, `liegenschaft_id`, `art` (`hk`/`fbh`/`tabs`), `vorhanden` (`ja`/`nein`/`unbekannt`); PK (`einheit_id`, `art`) |
+| `gebaeude_heizung_standard` | `gebaeude_id`, `liegenschaft_id`, `art` (`hk`/`fbh`/`tabs`), `vorhanden` (`ja`/`nein`/`unbekannt`); PK (`gebaeude_id`, `art`) |
+| `einheit_heizung` | `einheit_id`, `liegenschaft_id`, `art`, `vorhanden`; PK (`einheit_id`, `art`) – **nur Ausnahmen** vom Standard |
 | `bauteil` | `id`, `liegenschaft_id`, `katalog_id`, `einheit_id` null, `geschoss_id` null, `menge` int null, `status`, `hersteller`/`typ` text null, `baujahr` int null, `reihenfolge`, `position_manuell` jsonb null |
 | `versorgung` | `bauteil_id`, `einheit_id`, `liegenschaft_id`; PK (`bauteil_id`, `einheit_id`) |
 
@@ -75,6 +93,7 @@ Regeln in der DB:
 - **Checks:** genau einer von `einheit_id`/`geschoss_id` gesetzt; `menge >= 0`; Enums per `check`; `baujahr` 1800–2100.
 - **Loeschen:** `on delete cascade` von Gebaeude abwaerts; das Blockieren bei manuellen Positionen geschieht im Abgleich (§6), nicht in der DB.
 - **Grants:** `select, insert, update, delete` fuer `planora_app`, analog `006_rechte.sql`.
+- **Standard + Ausnahmen (PO 2026-11-11):** Wirksamer Wert je Einheit und Art = Ausnahme in `einheit_heizung`, sonst `gebaeude_heizung_standard`, sonst `unbekannt`. Beispiel: Standard HK = ja; Einheit "Restaurant" Ausnahme HK = nein, FBH = ja. Neue Einheiten erben den Standard; Standardaenderung wirkt auf alle Einheiten ohne Ausnahme.
 - **Typ / Menge / Exemplar:** Eine Zeile mit `menge = 8` = acht gleichartige Bauteile; ein individuell gepflegtes Exemplar ist eine eigene Zeile mit `menge = 1`.
 
 ## 5. Beschreibungsschema
@@ -86,10 +105,12 @@ type Dreiwertig = "ja" | "nein" | "unbekannt";
 interface Beschreibung {
   gebaeudeId: string; stand: number;
   geschosse: { id: string; code: string }[];          // nur lesend, Huelle aendert der Betreiber
+  heizungStandard: { hk: Dreiwertig; fbh: Dreiwertig; tabs: Dreiwertig };
   einheiten: {
     id?: string; geschossId: string; bezeichnung: string; art: string;
     flaecheM2: number | null; layoutManuell?: Rechteck | null;
-    heizung: { hk: Dreiwertig; fbh: Dreiwertig; tabs: Dreiwertig };
+    heizungAusnahme?: Partial<{ hk: Dreiwertig; fbh: Dreiwertig; tabs: Dreiwertig }>; // nur Abweichungen
+    heizungWirksam?: { hk: Dreiwertig; fbh: Dreiwertig; tabs: Dreiwertig };         // nur in Antworten, beim PUT ignoriert
   }[];
   bauteile: {
     id?: string; katalogId: string; standort: { einheitIndex?: number; einheitId?: string; geschossId?: string };
@@ -117,7 +138,7 @@ interface Huelle { name: string; grundform: "quader" | "l_form" | "u_form"; brei
    - `id_unbekannt` (ID nicht in diesem Gebaeude, deckt fremde Liegenschaft ab)
    - `verweis_ungueltig` (Geschoss/Einheit nicht in diesem Gebaeude, `einheitIndex` ausserhalb)
    - `standort_fehlt` / `standort_doppelt`
-   - `bestaetigt_bei_unbekannt`: ein `bestaetigt`-Bauteil in einer Einheit, deren passende Heizungsart `nein` oder `unbekannt` ist. Zuordnung: `heizung.heizkoerper` → `hk`, `heizung.fbh_kreis` → `fbh`, `heizung.tabs_feld` → `tabs`; `heizung.verteiler` ist keiner Art zugeordnet und von dieser Regel ausgenommen
+   - `bestaetigt_bei_unbekannt`: ein `bestaetigt`-Bauteil in einer Einheit, deren **wirksame** passende Heizungsart (Ausnahme, sonst Standard) `nein` oder `unbekannt` ist. Zuordnung: `heizung.heizkoerper` → `hk`, `heizung.fbh_kreis` → `fbh`, `heizung.tabs_feld` → `tabs`; `heizung.verteiler` ist keiner Art zugeordnet und von dieser Regel ausgenommen
    - `loeschen_blockiert`: zu loeschende Einheit/Bauteil hat `layout_manuell`/`position_manuell`
 4. **Schreiben:** update / insert / delete je Tabelle; Versorgung und Einheit-Heizung je Objekt komplett ersetzen.
 5. `stand + 1`; Audit-Ereignis `gebaeude.beschreibung` mit Zaehlern (angelegt/geaendert/geloescht) ueber `auditEreignis` (`src/audit/audit.ts`), keine Inhalte.
@@ -132,7 +153,7 @@ interface Huelle { name: string; grundform: "quader" | "l_form" | "u_form"; brei
 1. **Grundriss:** Teilrechtecke je Grundform aus Breite/Tiefe und Schenkelanteil.
 2. **Geschosse:** nach `reihenfolge` gestapelt; EG-Oberkante Boden auf y = 0, UG darunter.
 3. **Einheiten:** Einheiten mit `layoutManuell` behalten ihr Rechteck. Die uebrigen werden als Streifen entlang der Laengsachse ueber die Teilrechtecke verteilt, Breite proportional zur Flaeche (unbekannt → Default der Art). Ueberlappungen werden als `hinweise[]` ausgegeben, nicht abgelehnt.
-4. **Bauteile:** Positionen im Raster der Standort-Einheit; Standort Geschoss → Geschossmitte. `menge` ergibt so viele Positionen, gedeckelt (Regelwerk); `menge = null` → eine Position mit Kennzeichen `menge_unbekannt`. `positionManuell` hat Vorrang. `status` wird durchgereicht.
+4. **Bauteile, symbolisch (PO 2026-11-11):** Je Standort und Gruppe (`katalogId`, `hersteller`, `typ`) **genau ein Symbol**, unabhaengig von der Menge (1 oder 100 Heizkoerper = ein Symbol). Verschiedene Typen in derselben Einheit (z.B. Zehnder und Prolux) ergeben je ein eigenes Symbol. Ein Symbol fasst alle Bauteil-Zeilen der Gruppe zusammen (`bauteilIds`, Summe der Mengen; `mengeUnbekannt`, wenn eine Zeile `null` hat). Symbole im Raster der Standort-Einheit; Standort Geschoss → Geschossmitte. `positionManuell` einer Zeile hat Vorrang fuer ihr Symbol; widersprechen sich manuelle Positionen innerhalb einer Gruppe, gilt die Zeile mit kleinster `reihenfolge` und ein Hinweis wird ausgegeben. Ein Symbol gilt als `vorgeschlagen`, sobald eine Zeile der Gruppe vorgeschlagen ist.
 5. **Versorgung:** als Verweisliste (Bauteil → Einheiten), keine Leitungsgeometrie.
 
 Determinismus: Sortierung nur nach `reihenfolge` und Array-Position, nie nach UUID. Ausgabe enthaelt `regelwerkVersion` und `hash` (SHA-256 ueber kanonisches JSON, Schluessel sortiert, Zahlen auf mm gerundet). Koordinaten in Metern, y nach oben (Three.js).
@@ -143,8 +164,10 @@ interface Welt {
   grundriss: Rechteck[];
   geschosse: { id: string; code: string; yUnten: number; hoehe: number }[];
   einheiten: { id: string; geschossId: string; rechteck: Rechteck; quelle: "schematisch" | "manuell" }[];
-  bauteile: { id: string; katalogId: string; status: string; positionen: { x: number; y: number; z: number }[];
-              mengeUnbekannt: boolean; versorgt: string[] }[];
+  symbole: { schluessel: string; katalogId: string; hersteller: string | null; typ: string | null;
+             bauteilIds: string[]; mengeSumme: number | null; mengeUnbekannt: boolean;
+             status: "vorgeschlagen" | "bestaetigt"; position: { x: number; y: number; z: number };
+             versorgt: string[] }[];   // schluessel = Standort-ID + Gruppe, stabil fuer die Auswahl in M2b
   hinweise: { code: string; bezug: string }[];
 }
 ```
@@ -167,10 +190,12 @@ interface Welt {
 
 Skript `npm run welt:beispiel` legt die Liegenschaft des ersten Schnitts (ADR 0032) an:
 
-- Gebaeude `quader` 30 × 15 m, Geschosse `EG`, `OG1`.
-- EG: Buero A (HK), Buero B (HK + FBH), Technik.
-- OG1: Buero C (FBH), Buero D (FBH).
-- Ein Verteiler, Standort Technik im EG, versorgt Buero B (EG) und Buero C (OG1). Buero D bleibt ohne Verteiler → Hinweis `verteiler_vorschlag`.
+- Gebaeude `quader` 30 × 15 m, Geschosse `EG`, `OG1`; Heizungsstandard HK = ja, FBH = nein, TABS = nein.
+- EG: Buero A, Restaurant (`gastro`, Ausnahme HK = nein, FBH = ja), Technik.
+- OG1: Buero C (Ausnahme FBH = ja), Buero D (Ausnahme FBH = ja).
+- Zentrale in Technik EG: Waermepumpe, Speicher.
+- Buero A: 12 Heizkoerper Zehnder und 3 Heizkoerper Prolux → zwei Symbole.
+- Ein Verteiler, Standort Technik im EG, versorgt Restaurant (EG) und Buero C (OG1). Buero D bleibt ohne Verteiler → Hinweis `verteiler_vorschlag`.
 
 Dieselben Daten dienen als Test-Fixture.
 
@@ -188,12 +213,14 @@ Alle in `npm test` (Vitest, embedded-postgres via `test/globalSetup.ts` [F]); ke
 | Neugenerierung verliert keine manuellen Positionen | `position_manuell` bleibt nach PUT; Loeschen → `loeschen_blockiert` |
 | (Dokumente) | ausgeklammert bis M4/M5 |
 
-Zusaetzlich: Generator-Einheitstests (drei Grundformen, Mengendeckel, `menge_unbekannt`, Ueberlappungshinweis), Rechte (Leser darf nicht schreiben, Betreiber sieht keine Beschreibung, fremde Liegenschaft → 404), 409 bei veraltetem Stand.
+Zusaetzlich: Standard + Ausnahme (neue Einheit erbt Standard; Standardaenderung wirkt nicht auf Einheiten mit Ausnahme), Generator-Einheitstests (drei Grundformen, ein Symbol bei Menge 1 und 100, zwei Symbole bei zwei Herstellern, `mengeUnbekannt`, Ueberlappungshinweis), Rechte (Leser darf nicht schreiben, Betreiber sieht keine Beschreibung, fremde Liegenschaft → 404), 409 bei veraltetem Stand.
 
 ## 11. Offene Punkte
 
-- [?] Regelwerk-Werte v1 (Default-Flaechen, Schenkelanteil, Mengendeckel, Erlaubt-Matrix): PO-Freigabe vor M2b.
+- [?] Regelwerk-Werte v1 (Default-Flaechen, Schenkelanteil, Mengenbereiche, Erlaubt-Matrix): PO-Freigabe vor M2b.
+- Fuer M2c festgehalten (PO 2026-11-11): Assistent fragt zuerst Gebaeude/Geschosse/Einheiten, dann die Zentrale, dann den Heizungsstandard, dann Ausnahmen je Einheit, dann Verteiler/Versorgung. Demo nur Heizung.
+- [A] Aufwand Standard + Ausnahmen ca. +0.5 PT; M2a gesamt damit ca. 2.5–3.5 PT.
 - [?] Verhalten bestehender Gebaeude bei Regelwerk v2.
 - [A] Liegenschaften werden in M2a per Beispielskript bzw. SQL angelegt; eine Verwaltungs-API folgt spaeter.
 - [A] Modulname `welt` und Zuordnung zum Modulschalter.
-- [A] Aufwand M2a ca. 2–3 PT (Gespraechsschaetzung, nicht gemessen).
+- [A] Aufwand: Gespraechsschaetzung, nicht gemessen.
