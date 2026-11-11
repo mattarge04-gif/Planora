@@ -95,7 +95,7 @@ Regeln in der DB:
 
 ## 5. Beschreibungsschema
 
-TypeScript-Typen in `app/src/welt/beschreibung.ts` plus JSON-Schema fuer ajv (bereits Abhaengigkeit von Fastify [F, `node_modules/ajv`]; keine neue Abhaengigkeit).
+TypeScript-Typen in `app/src/welt/typen.ts` plus JSON-Schema (`app/src/welt/schema.ts`) fuer ajv (bereits Abhaengigkeit von Fastify [F, `node_modules/ajv`]; keine neue Abhaengigkeit).
 
 ```ts
 type Dreiwertig = "ja" | "nein" | "unbekannt";
@@ -123,9 +123,9 @@ interface Huelle { name: string; grundform: "quader" | "l_form" | "u_form"; brei
 
 `einheitIndex` erlaubt Verweise auf Einheiten, die im selben Request neu angelegt werden (noch ohne ID). Die Reihenfolge der Arrays bestimmt `reihenfolge`.
 
-## 6. Abgleich (`app/src/welt/abgleich.ts`)
+## 6. Abgleich (`app/src/welt/pruefung.ts` fachliche Pruefung, `app/src/welt/speicher.ts` Schreiben)
 
-`PUT /api/gebaeude/:id/beschreibung` in einer Transaktion:
+`PUT /api/struktur/gebaeude/:id/beschreibung` in einer Transaktion:
 
 1. **Struktur** per ajv. Fehler → 400.
 2. **Stand:** `stand` ungleich DB → 409 `stand_veraltet`.
@@ -152,7 +152,7 @@ interface Huelle { name: string; grundform: "quader" | "l_form" | "u_form"; brei
 1. **Grundriss:** Teilrechtecke je Grundform aus Breite/Tiefe und Schenkelanteil.
 2. **Geschosse:** nach `reihenfolge` gestapelt; EG-Oberkante Boden auf y = 0, UG darunter.
 3. **Einheiten:** Einheiten mit `layoutManuell` behalten ihr Rechteck. Die uebrigen werden als Streifen entlang der Laengsachse ueber die Teilrechtecke verteilt, Breite proportional zur Flaeche (unbekannt → Default der Art). Ueberlappungen werden als `hinweise[]` ausgegeben, nicht abgelehnt. Hinweise `ueberlappung` entstehen bei automatisch-gegen-manuell und manuell-gegen-manuell; `position_widerspruch` entsteht, wenn sich manuelle Positionen innerhalb einer Symbolgruppe unterscheiden.
-4. **Bauteile, symbolisch (PO 2026-11-11):** Je Standort und Gruppe (`katalogId`, `hersteller`, `typ`) **genau ein Symbol**, unabhaengig von der Menge (1 oder 100 Heizkoerper = ein Symbol). Verschiedene Typen in derselben Einheit (z.B. Zehnder und Prolux) ergeben je ein eigenes Symbol. Ein Symbol fasst alle Bauteil-Zeilen der Gruppe zusammen (`bauteilIds`, Summe der Mengen; `mengeUnbekannt`, wenn eine Zeile `null` hat). Symbole im Raster der Standort-Einheit; Standort Geschoss → Geschossmitte. `positionManuell` einer Zeile hat Vorrang fuer ihr Symbol; widersprechen sich manuelle Positionen innerhalb einer Gruppe, gilt die Zeile mit kleinster `reihenfolge` und ein Hinweis wird ausgegeben. Ein Symbol gilt als `vorgeschlagen`, sobald eine Zeile der Gruppe vorgeschlagen ist.
+4. **Bauteile, symbolisch (PO 2026-11-11):** Je Standort und Gruppe (`katalogId`, `hersteller`, `typ`) **genau ein Symbol**, unabhaengig von der Menge (1 oder 100 Heizkoerper = ein Symbol). Verschiedene Typen in derselben Einheit (z.B. Zehnder und Prolux) ergeben je ein eigenes Symbol. Ein Symbol fasst alle Bauteil-Zeilen der Gruppe zusammen (`bauteilIds`, Summe der Mengen; `mengeUnbekannt`, wenn eine Zeile `null` hat). Symbole im Raster der Standort-Einheit; Standort Geschoss → Raster im groessten Teilrechteck des Grundrisses (bei Quader: ganzes Rechteck; bei Gleichstand das erste, d.h. der Riegel). `positionManuell` einer Zeile hat Vorrang fuer ihr Symbol; widersprechen sich manuelle Positionen innerhalb einer Gruppe, gilt die Zeile mit kleinster `reihenfolge` und ein Hinweis wird ausgegeben. Ein Symbol gilt als `vorgeschlagen`, sobald eine Zeile der Gruppe vorgeschlagen ist.
 5. **Versorgung:** als Verweisliste (Bauteil → Einheiten), keine Leitungsgeometrie.
 
 Determinismus: Sortierung nur nach `reihenfolge` und Array-Position, nie nach UUID. Ausgabe enthaelt `regelwerkVersion` und `hash` (SHA-256 ueber kanonisches JSON, Schluessel sortiert, Zahlen auf mm gerundet). Koordinaten in Metern, y nach oben (Three.js).
@@ -162,11 +162,11 @@ interface Welt {
   regelwerkVersion: number; hash: string;
   grundriss: Rechteck[];
   geschosse: { id: string; code: string; yUnten: number; hoehe: number }[];
-  einheiten: { id: string; geschossId: string; rechteck: Rechteck; quelle: "schematisch" | "manuell" }[];
+  einheiten: { id: string; geschossId: string; bezeichnung: string; art: string; rechteck: Rechteck; quelle: "schematisch" | "manuell" }[];
   symbole: { schluessel: string; katalogId: string; hersteller: string | null; typ: string | null;
-             bauteilIds: string[]; mengeSumme: number | null; mengeUnbekannt: boolean;
+             bauteilIds: string[]; mengeSumme: number; mengeUnbekannt: boolean; // mengeSumme = Summe der bekannten Mengen
              status: "vorgeschlagen" | "bestaetigt"; position: { x: number; y: number; z: number };
-             versorgt: string[] }[];   // schluessel = Standort-ID + Gruppe, stabil fuer die Auswahl in M2b
+             versorgt: string[] }[];   // schluessel = JSON [Standort-ID, katalogId, hersteller, typ], stabil fuer die Auswahl in M2b; Referenz: app/src/welt/typen.ts
   hinweise: { code: string; bezug: string }[];
 }
 ```

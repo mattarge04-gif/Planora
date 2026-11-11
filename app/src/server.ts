@@ -19,8 +19,10 @@ export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; sec
 const MUTIEREND = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export async function baueServer(o: ServerOptionen) {
+  // ajv strikt (kein removeAdditional, kein coerceTypes): Strukturfehler → 400, nichts stillschweigend entfernen oder umwandeln.
+  // Kuenftige Querystring-/Params-Schemas muessen daher Strings erwarten oder eine eigene Konvertierung haben.
   const app = Fastify({ logger: false, trustProxy: o.vertrauteProxies?.length ? o.vertrauteProxies : false,
-    ajv: { customOptions: { removeAdditional: false, coerceTypes: false } } }); // Strukturfehler → 400, nichts stillschweigend entfernen oder umwandeln
+    ajv: { customOptions: { removeAdditional: false, coerceTypes: false } } });
   const auth = baueAuth(o.pool, { baseURL: o.baseURL, secret: o.secret });
   app.decorate("ablage", dateiAblage(o.ablageWurzel, { pool: o.pool }));
   // Erster onRequest-Hook, vor Modul-Guard und Sitzungsregeln.
