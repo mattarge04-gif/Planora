@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { holeJson, sendeJson } from "./api";
 import { Login } from "./seiten/Login";
 import { Liste } from "./seiten/Liste";
@@ -11,6 +11,7 @@ export function App() {
   useEffect(() => {
     holeJson("/api/ich").then(() => setZustand({ art: "liste" }), () => setZustand({ art: "login" }));
   }, []);
+  const abgelaufen = useCallback(() => setZustand({ art: "login" }), []);
   const abmelden = async () => {
     try { await sendeJson("/api/auth/sign-out", {}); } finally { setZustand({ art: "login" }); }
   };
@@ -25,8 +26,8 @@ export function App() {
         <button className="link" onClick={abmelden}>Abmelden</button>
       </header>
       {zustand.art === "liste"
-        ? <Liste onWahl={(g) => setZustand({ art: "ansicht", gebaeudeId: g.id, name: g.name })} />
-        : <Ansicht gebaeudeId={zustand.gebaeudeId} />}
+        ? <Liste onWahl={(g) => setZustand({ art: "ansicht", gebaeudeId: g.id, name: g.name })} onAbgelaufen={abgelaufen} />
+        : <Ansicht gebaeudeId={zustand.gebaeudeId} onAbgelaufen={abgelaufen} />}
     </div>
   );
 }

@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
-import { holeJson } from "../api";
+import { ApiFehler, holeJson } from "../api";
 import type { GebaeudeEintrag } from "../typen";
 
-export function Liste({ onWahl }: { onWahl: (g: GebaeudeEintrag) => void }) {
+/** onAbgelaufen: wird bei 401 (Sitzung abgelaufen) statt einer Fehlermeldung aufgerufen. */
+export function Liste({ onWahl, onAbgelaufen }: { onWahl: (g: GebaeudeEintrag) => void; onAbgelaufen?: () => void }) {
   const [liste, setListe] = useState<GebaeudeEintrag[] | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
-  useEffect(() => { holeJson<GebaeudeEintrag[]>("/api/struktur/gebaeude").then(setListe, (e: Error) => setFehler(e.message)); }, []);
+  useEffect(() => {
+    holeJson<GebaeudeEintrag[]>("/api/struktur/gebaeude").then(setListe, (e: Error) => {
+      if (e instanceof ApiFehler && e.status === 401 && onAbgelaufen) onAbgelaufen();
+      else setFehler(e.message);
+    });
+  }, [onAbgelaufen]);
   if (fehler) return <p className="fehler" role="alert">{fehler}</p>;
   if (!liste) return <p className="status">Laden …</p>;
   if (liste.length === 0) return <p className="status">Noch keine Gebaeude erfasst.</p>;

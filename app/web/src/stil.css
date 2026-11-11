@@ -17,3 +17,14 @@ label { display: grid; gap: 0.3rem; font-size: 0.9rem; }
 .liste { padding: 1.5rem; }
 .liste table { border-collapse: collapse; background: #fff; min-width: 480px; }
 .liste th, .liste td { text-align: left; padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--linie); }
+.ansicht { display: grid; grid-template-columns: 1fr 340px; min-height: 0; }
+.szene { width: 100%; height: 100%; }
+.panel { background: #fff; border-left: 1px solid var(--linie); padding: 1rem 1.2rem; overflow: auto; }
+.panel h2 { margin: 0 0 0.4rem; font-size: 1.15rem; }
+.panel h3 { margin: 1rem 0 0.3rem; font-size: 0.85rem; text-transform: uppercase; color: #6b7280; }
+.panel table { border-collapse: collapse; width: 100%; }
+.panel th, .panel td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--linie); }
+.panel ul { margin: 0; padding-left: 1.1rem; }
+.leise { color: #6b7280; font-size: 0.85rem; margin-top: 1.2rem; }
+.marke { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; background: #e5e7eb; font-size: 0.8rem; margin-right: 0.5rem; }
+.marke.vorschlag { background: #fff; border: 1px dashed #6b7280; }
