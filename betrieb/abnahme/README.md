@@ -1,0 +1,44 @@
+# Lokale M1-Abnahme B
+
+Die Skripte pruefen Punkt 1 und 7 mit einer neu importierten WSL2-Distribution `planora-abnahme` und erzeugen das Image-/Lizenzdossier fuer Punkt 5. Sie sind ausschliesslich fuer Wegwerf-Abnahmen vorgesehen. Anwendung und bestehende Betriebswerkzeuge werden unveraendert verwendet.
+
+## Ausfuehrung
+
+Voraussetzungen: Windows mit WSL2 und Docker Desktop, Node.js ab 24, Python 3, freier Platz fuer zwei Rootfs-/Image-Saetze und freie Ports 18602 bis 18605. Das Arbeitsverzeichnis muss neu sein und ausserhalb des Repos liegen. Download/Bau erfolgt vor der Netzsperre; fuer die Lizenzsammlung ist danach wieder Internet noetig.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File betrieb/abnahme/abnahme.ps1 `
+  -Arbeitsordner "$env:LOCALAPPDATA/Temp/planora-abnahme-neuer-lauf"
+```
+
+Die Ausfuehrungsrichtlinie gilt nur fuer diesen gestarteten Prozess. Das Skript verweigert eine bereits vorhandene Distribution namens `planora-abnahme`. Es meldet ausschliesslich seine selbst angelegte Distribution beim simulierten Totalverlust und nach erfolgreichem Restore ab; bei Fehlern bleibt der Stand zur Untersuchung erhalten. Andere Distributionen und vorhandene Docker-Projekte werden nicht verwaltet. Aeussere Docker-Container und Image-Tags beginnen mit `pb-`; die unveraenderten Betriebswerkzeuge erzeugen innerhalb der eigenen Distribution `planora-pb-1` und `planora-pb-2`.
+
+Der erzeugte Wegwerf-Recovery-Key liegt separat vom verschluesselten Sicherungsziel im externen Arbeitsverzeichnis. Das ist eine automatisierte Probe, kein echtes versiegeltes Offline-Medium. Arbeitsverzeichnis und Key niemals ins Repo oder in die Lieferung uebernehmen.
+
+## Nachweise und Teilskripte
+
+| Skript | Nachweis |
+|---|---|
+| `Dockerfile.linux` | Debian, systemd PID 1, Node 24, eigener Docker 29.0.0 mit containerd-Image-Speicher, Compose 5.7.0 |
+| `bundle.mjs` | Vier selbst archivierte Pflichtimages, signiertes Wegwerf-Manifest und oeffentlicher Vertrauensanker |
+| `linux.sh` | Blockierter externer Netzwerkzugriff, zwei Offline-Installationen, HTTPS-Health, UID/Rechte, getrennte Volumes/Netze und read-only Secret-Bind-Mounts |
+| `timer.sh` | Temporaeres Timer-Drop-in, echte Timer-Ausloesung, erfolgreicher Backup-Service; anschliessend wieder naechtlicher Lieferplan |
+| `probe.mjs`, `restore-probe.sh`, `freigabe.exp` | Admin, Session, Liegenschaft und referenzierte Datei; echter Snapshot/Restore, Hash, leere Token-/Session-Tabellen, Konten-/Worker-Sperre, TTY-Freigabe und Login mit neuem Passwort |
+| `totalverlust.sh`, `bootstrap.mjs` | Leere Ersatzumgebung, Inventar entschluesseln, Host-Secrets neu materialisieren, Cluster separat provisionieren, bestehender Host-Restore, Datenpruefung/Freigabe und systemd-Wiederanlauf |
+| `dossier.mjs`, `lizenzen.py` | Netzlose Syft-Scans des gelieferten Dateisystems als Syft/SPDX/CycloneDX, vorhandene Lizenzdateien und Notices |
+| `upstream-lizenzen.py` | Lizenzdateien exakter npm-/Go-Quellpakete, Git-Commit-Fallback und SPDX-Standardtexte; Fehlstellen bleiben explizit gelistet |
+| `pruefe-dossier.py` | Vier Pflichtimages, zwoelf lesbare SBOMs, Paketanzahlen, Pruefsummen, Lizenzarchive und Standardtext-Zuordnung |
+
+Die Probe erhaelt nur Bundle, oeffentliche Bootstrap-Metadaten, verschluesseltes externes Sicherungsziel und separaten Offline-Key ueber den Totalverlust hinweg. Kein altes pgdata-, Dokumente- oder Staging-Volume und keine unverschluesselten Host-Secrets werden uebernommen. Der Ersatzcluster startet zunaechst mit den minimalen Planora-Rollen und frisch angewendeten Basismigrationen, bevor der vorhandene Host-Restore eine frische Zieldatenbank anlegt.
+
+## Grenzen
+
+- [A] WSL ist der vereinbarte lokale Ersatz: gemeinsamer WSL-Kernel und Windows-/WSL-Lebenszyklus statt unabhaengiger VM, kein Hypervisor-/Storage-/VM-Netzwerktest. Eine echte VM-/On-Premise-Abnahme wird dadurch nicht behauptet.
+- [A] systemd meldet im importierten Rootfs `kmod-static-nodes.service` als fehlgeschlagen; die Planora-Dienste und Docker sind davon unabhaengig aktiv. Ein vollstaendig fehlerfreier allgemeiner VM-Boot wird nicht behauptet.
+- [A] Die Netzsperre prueft den ausgehenden IPv4-Verkehr am WSL-Interface; die Skripte verweigern eine vorhandene IPv6-Default-Route. Diese Rootfs-Probe verwendet IPv4-Netze. Kein allgemeiner Nachweis fuer produktive Firewall-Regeln oder IPv6.
+- [A] containerd-Image-Speicher und Compose 5.7.0 sind Voraussetzungen dieses nachgewiesenen Profils. Der klassische Image-Speicher und Compose 2.40.3 wurden nach ihren jeweiligen Fehlversuchen geparkt. Keine Freigabe aller laut allgemeiner Mindestversion denkbaren Kombinationen.
+- [A] Timer werden fuer die Probe mit `OnActiveSec=2s` und ohne Zufallsverzoegerung ausgeloest; die reale Nachtzeit wird nicht abgewartet. Der originale Timerplan wird anschliessend wiederhergestellt.
+- [A] Die lokale TTY-Freigabe wird mit Expect und einem Wegwerf-Admin automatisiert. Betreiberidentitaet, organisatorische Host-Freigabe und menschliche Liefer-/Lizenzfreigabe bleiben menschliche Aufgaben.
+- SBOM-Vollstaendigkeit entspricht dem Scannerumfang des ausgelieferten Dateisystems, nicht einem mathematischen Beweis fuer unerkannte eingebettete Komponenten. Lizenztexte ersetzen keine komponentenbezogene Notice-/Copyright-Pruefung; siehe `FREIGABE.md` im Dossier.
+
+Der [Kurzbericht](../../docs/superpowers/plans/2026-11-11-m1-abnahme-spur-b.md) nennt die tatsaechlich ausgefuehrten Laeufe, Fehler und Ergebnisse.

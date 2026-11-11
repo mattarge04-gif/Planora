@@ -2,6 +2,8 @@
 
 Zielhost: Linux mit systemd, Docker/Compose und Node.js ab 24. Die Windows-Docker-Tests ersetzen die Abnahme auf einer frischen Linux-VM nicht.
 
+Fuer die lokale M1-Abnahme gibt es eine wiederholbare [WSL2-Probe mit eigenem Docker und systemd](abnahme/README.md), einschliesslich Offline-Installation, Timer-Ausloesung, separatem Ersatzhost nach Totalverlust und Image-/Lizenzdossier. [A] WSL2 ist ein lokaler Ersatz fuer die fehlende VM; die dort dokumentierten Grenzen und die menschlichen Freigaben bleiben bestehen.
+
 ## Bundle und Installation
 
 Ein signiertes Offline-Bundle enthaelt `planora`, beide Compose-Dateien, `Caddyfile`, `wartung.html`, die drei `planora-*@`-systemd-Vorlagen, `release.json`, die Image-Archive und den kompilierten Baum `werkzeug/` aus `app/src`. Die Host-Einstiege verwenden nur Node-Standardmodule. Alle gelieferten Images, auch Backup, muessen im signierten Manifest stehen und vor Installation lokal geladen sein oder als Archiv mitgeliefert werden.

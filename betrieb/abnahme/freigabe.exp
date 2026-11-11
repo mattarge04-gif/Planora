@@ -1,0 +1,41 @@
+#!/usr/bin/expect -f
+# Wegwerf-Admin wird ueber eine echte lokale PTY bestaetigt; keine Secrets im Protokoll.
+set timeout 90
+log_user 0
+set f [open /root/pb-offline/passwort r]
+set passwort [string trim [read $f]]
+close $f
+spawn /opt/pb/bundle/planora freigabe --instanz pb-1
+expect {
+  -re {ja/NEIN: } { send -- "ja\r" }
+  timeout { exit 2 }
+  eof { exit 3 }
+}
+expect {
+  -re {"token":"([^"]+)"} { set token $expect_out(1,string) }
+  timeout { exit 4 }
+  eof { exit 5 }
+}
+expect eof
+set status [wait]
+if {[lindex $status 3] != 0} { exit 6 }
+spawn /opt/pb/bundle/planora freigabe --instanz pb-1 --einloesen
+expect {
+  "Einmal-Token: " { send -- "$token\r" }
+  timeout { exit 7 }
+  eof { exit 8 }
+}
+expect {
+  "Neues Passwort (mindestens 12 Zeichen): " { send -- "$passwort\r" }
+  timeout { exit 9 }
+  eof { exit 10 }
+}
+expect {
+  "Admin freigegeben" {}
+  timeout { exit 11 }
+  eof { exit 12 }
+}
+expect eof
+set status [wait]
+if {[lindex $status 3] != 0} { exit 13 }
+puts "PASS: lokale PTY, ausdrueckliches ja, Token-Einloesung und neues Passwort"

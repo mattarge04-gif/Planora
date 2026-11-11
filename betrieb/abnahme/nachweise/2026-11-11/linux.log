@@ -1,0 +1,36 @@
+2026-11-11T10:41:24+01:00
+active
+29.0.0
+PASS: externer Netzzugriff blockiert
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    1    60 REJECT     0    --  *      eth0    0.0.0.0/0            0.0.0.0/0            reject-with icmp-port-unreachable
+active
+active
+enabled
+enabled
+{"ok":true,"db":true,"wartung":false,"release":"pb-abnahme"}/srv/pb-ziel-1 1000:1000 700
+/etc/planora/pb-1/backup 1000:1000 700
+/etc/planora/pb-1/backup/inventar.json 1000:1000 600
+/etc/planora/pb-1/secrets/db/db_app_passwort 999:999 600
+/etc/planora/pb-1/secrets/app/db_app_passwort 1000:1000 600
+active
+active
+enabled
+enabled
+{"ok":true,"db":true,"wartung":false,"release":"pb-abnahme"}/srv/pb-ziel-2 1000:1000 700
+/etc/planora/pb-2/backup 1000:1000 700
+/etc/planora/pb-2/backup/inventar.json 1000:1000 600
+/etc/planora/pb-2/secrets/db/db_app_passwort 999:999 600
+/etc/planora/pb-2/secrets/app/db_app_passwort 1000:1000 600
+PASS: keine gemeinsamen Datenvolumes/Netze; Secret-Bind-Mounts getrennt und read-only
+PASS: zwei parallele Instanzen, echte Linux-Bind-Mounts, systemd-Dienste und ausgeloeste Sicherungsdienste
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    4   240 REJECT     0    --  *      eth0    0.0.0.0/0            0.0.0.0/0            reject-with icmp-port-unreachable
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 REJECT     0    --  *      eth0    0.0.0.0/0            0.0.0.0/0            reject-with icmp-port-unreachable
+ 1886 1949K DOCKER-USER  0    --  *      *       0.0.0.0/0            0.0.0.0/0
+ 1886 1949K DOCKER-FORWARD  0    --  *      *       0.0.0.0/0            0.0.0.0/0
+2026-11-11T10:42:57+01:00

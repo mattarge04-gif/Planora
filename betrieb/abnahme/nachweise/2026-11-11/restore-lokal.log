@@ -1,0 +1,12 @@
+2026-11-11T10:43:20+01:00
+{"datenbank":"planora_restore_0f4657651298535ddd8f","vorherDatenbank":"planora","zustand":"gesperrt"}
+{"phase":"gesperrt","liegenschaften":1,"dateiHash":"cd03aef0712b048597f3fd4a88151ec92eb710f72e197cb386824aeed66140f7","sessions":0,"verifications":0,"setupTokens":0}
+PASS: lokale PTY, ausdrueckliches ja, Token-Einloesung und neues Passwort
+{"phase":"freigegeben","liegenschaften":1,"dateiHash":"cd03aef0712b048597f3fd4a88151ec92eb710f72e197cb386824aeed66140f7","sessions":0,"verifications":0,"setupTokens":0}
+PASS: eigenstaendiger Restore, Datenhash, Konten-/Worker-Sperre und Host-Freigabe
+ Container planora-pb-1-backup-run-b73801cdc47a Creating
+ Container planora-pb-1-backup-run-b73801cdc47a Created
+ Container planora-pb-1-backup-run-fa07e62753f8 Creating
+ Container planora-pb-1-backup-run-fa07e62753f8 Created
+{"totalverlustBackup":"dbc86e7d-315a-451f-98f1-98d6b669e01f"}
+2026-11-11T10:43:57+01:00
