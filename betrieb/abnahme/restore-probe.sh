@@ -15,6 +15,7 @@ expect "$skripte/freigabe.exp"
 node "$skripte/probe.mjs" freigegeben "$extern"
 echo 'PASS: eigenstaendiger Restore, Datenhash, Konten-/Worker-Sperre und Host-Freigabe'
 # Neue Sicherung fuer Totalverlust, getrennt vom ersten Restore-Auftrag.
+node "$skripte/probe.mjs" tokens "$extern"
 /opt/pb/bundle/planora journal --instanz pb-1 --einmal >/root/pb-offline/journal.log
 /opt/pb/bundle/planora sichern --instanz pb-1 --anlass totalverlust-final >/root/pb-offline/backup-final.json
 node --input-type=module - "$extern" <<'JS'

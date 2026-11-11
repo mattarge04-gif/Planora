@@ -10,7 +10,24 @@ const c = (...args) => execFileSync('docker',['compose','-p','planora-pb-1','--e
 const db = sql => c('exec','-T','db','psql','-X','-v','ON_ERROR_STOP=1','-U','postgres','-d',leseEnv('/etc/planora/pb-1/instanz.env').PLANORA_DB_NAME ?? 'planora','-At','-c',sql).trim();
 const hash = createHash('sha256').update('Planora Totalverlust Abnahme B\n').digest('hex');
 const schluessel = `sha256/${hash.slice(0,2)}/${hash.slice(2,4)}/${hash}`;
-if (modus === 'vorbereiten') {
+// Legt vor einer Sicherung je mindestens eine Session, Verification und offenes Setup-Token an und belegt die Ausgangszahl.
+const zaehle = () => Object.fromEntries(['session','verification','setup_token'].map(t=>[t,Number(db(`select count(*) from ${t}`))]));
+function tokensAnlegen() {
+  db('insert into session(id,user_id,token,created_at,updated_at,expires_at) select gen_random_uuid(),id,gen_random_uuid(),now(),now(),now()+interval \'1 hour\' from "user" limit 1');
+  db("insert into verification(id,identifier,value,expires_at,created_at,updated_at) values(gen_random_uuid()::text,'abnahme-b@planora.invalid',gen_random_uuid()::text,now()+interval '1 hour',now(),now())");
+  c('--profile','konsole','run','--pull','never','--rm','-T','konsole','setup-token');
+  assert(Number(db('select count(*) from setup_token where not eingeloest and gueltig_bis > now()')) >= 1, 'Kein offenes Setup-Token vor der Sicherung');
+  const z = zaehle();
+  for (const [t,n] of Object.entries(z)) assert(n > 0, `Keine ${t}-Zeile vor der Sicherung`);
+  return z;
+}
+if (modus === 'tokens') {
+  // Vor der zweiten (Totalverlust-)Sicherung: frische Tokens, damit auch der zweite Restore ihre Entfernung belegt.
+  const b = JSON.parse(readFileSync(`${extern}/bootstrap.json`,'utf8'));
+  b.vorSicherung = tokensAnlegen();
+  writeFileSync(`${extern}/bootstrap.json`, JSON.stringify(b));
+  console.log(JSON.stringify({phase:modus,vorSicherung:b.vorSicherung}));
+} else if (modus === 'vorbereiten') {
   const token = c('--profile','konsole','run','--pull','never','--rm','-T','konsole','setup-token').trim().split('\n').at(-1);
   const passwort = randomBytes(24).toString('hex');
   writeFileSync('/root/pb-offline/passwort', passwort, {mode:0o600});
@@ -18,20 +35,21 @@ if (modus === 'vorbereiten') {
   db("insert into liegenschaft(id,name) values('33333333-3333-4333-8333-333333333333','Totalverlust B')");
   c('exec','-T','api','node','--input-type=module','-e',`import{mkdirSync,writeFileSync}from'node:fs';import{dirname}from'node:path';const p='/daten/dokumente/${schluessel}';mkdirSync(dirname(p),{recursive:true});writeFileSync(p,${JSON.stringify('Planora Totalverlust Abnahme B\n')});`);
   db(`insert into datei(schluessel,sha256,groesse) values('${schluessel}','${hash}',${Buffer.byteLength('Planora Totalverlust Abnahme B\n')}); insert into datei_referenz values('${schluessel}','abnahme-b')`);
-  // Vorhandene Sessions werden mitgesichert und muessen beim Restore verschwinden.
-  db('insert into session(id,user_id,token,created_at,updated_at,expires_at) select gen_random_uuid(),id,gen_random_uuid(),now(),now(),now()+interval \'1 hour\' from "user" limit 1');
+  // Vorhandene Sessions, Verifications und Setup-Tokens werden mitgesichert und muessen beim Restore verschwinden.
+  const vorSicherung = tokensAnlegen();
   execFileSync(`${bundle}/planora`,['journal','--instanz','pb-1','--einmal'],{stdio:'pipe'});
   const r = JSON.parse(execFileSync(`${bundle}/planora`,['sichern','--instanz','pb-1','--anlass','totalverlust'],{encoding:'utf8',timeout:600000}).trim().split('\n').at(-1));
   assert.equal(r.zustand, 'geprueft');
   const env = leseEnv('/etc/planora/pb-1/instanz.env');
   const konfiguration = JSON.parse(readFileSync('/etc/planora/pb-1/backup/konfiguration.json'));
-  writeFileSync(`${extern}/bootstrap.json`, JSON.stringify({env,konfiguration,backupId:r.backupId,schluessel,hash}));
-  console.log(JSON.stringify({phase:modus,backupId:r.backupId,liegenschaften:1,dateien:1,admin:1,sessions:Number(db('select count(*) from session'))}));
+  writeFileSync(`${extern}/bootstrap.json`, JSON.stringify({env,konfiguration,backupId:r.backupId,schluessel,hash,vorSicherung}));
+  console.log(JSON.stringify({phase:modus,backupId:r.backupId,liegenschaften:1,dateien:1,admin:1,vorSicherung}));
 } else {
   assert.equal(db("select name from liegenschaft where id='33333333-3333-4333-8333-333333333333'"),'Totalverlust B');
-  assert.equal(db('select count(*) from session'),'0');
-  assert.equal(db('select count(*) from verification'),'0');
-  assert.equal(db('select count(*) from setup_token'),'0');
+  // Die gesicherte Ausgangszahl muss positiv gewesen sein, sonst belegt die Leere nach dem Restore nichts.
+  const {vorSicherung} = JSON.parse(readFileSync(`${extern}/bootstrap.json`,'utf8'));
+  for (const t of ['session','verification','setup_token']) assert(vorSicherung?.[t] > 0, `Ausgangszahl ${t} fehlt oder ist 0`);
+  if (modus === 'gesperrt') assert.deepEqual(zaehle(), {session:0,verification:0,setup_token:0});
   assert.equal(db(`select sha256 from datei where schluessel='${schluessel}'`),hash);
   const inhalt = c('exec','-T','api','node','-e',`process.stdout.write(require('fs').readFileSync('/daten/dokumente/${schluessel}'))`);
   assert.equal(createHash('sha256').update(inhalt).digest('hex'),hash);
@@ -49,5 +67,5 @@ if (modus === 'vorbereiten') {
     });
     assert.equal(response,200);
   }
-  console.log(JSON.stringify({phase:modus,liegenschaften:1,dateiHash:hash,sessions:0,verifications:0,setupTokens:0}));
+  console.log(JSON.stringify({phase:modus,liegenschaften:1,dateiHash:hash,vorSicherung,...(modus==='gesperrt'?{nachRestore:{session:0,verification:0,setup_token:0}}:{})}));
 }
