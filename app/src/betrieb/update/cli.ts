@@ -6,12 +6,16 @@ import { pruefeRelease } from "../release.js";
 import { dockerAusfuehrer } from "./docker.js";
 import { aktualisiere, leseZustand } from "./zustand.js";
 import { dockerBetriebsumgebung } from "./umgebung.js";
+import { alarmSpool, ladeAlarmKonfiguration } from "../alarm/alarm.js";
+
+let alarmInstanz: string | undefined;
 
 async function haupt() {
   const { werte: w, positionen } = leseArgumente(process.argv.slice(2), ["instanz"], ["fortsetzen", "rueckweg", "status"]);
   if (!/^[a-z][a-z0-9-]{1,31}$/.test(w.instanz ?? "")) throw new Error("--instanz <name> fehlt oder ist ungueltig");
   if ([w.fortsetzen, w.rueckweg, w.status].filter(Boolean).length > 1 || positionen.length > 1 || (positionen.length && (w.fortsetzen || w.rueckweg || w.status))) throw new Error("Genau Bundle oder --fortsetzen oder --rueckweg oder --status angeben");
   const pfade = instanzPfade(w.instanz);
+  if (!w.status) alarmInstanz = w.instanz;
   if (w.status) { console.log(JSON.stringify(leseZustand(pfade.zustand), null, 2)); return; }
   if (!existsSync(pfade.envDatei)) throw new Error("Instanz nicht installiert");
   const altEnv = leseEnv(pfade.envDatei);
@@ -29,4 +33,14 @@ async function haupt() {
   const z = await aktualisiere({ datei: pfade.zustand, sperre: pfade.sperre, modus, neu }, dockerBetriebsumgebung(dockerAusfuehrer(), w.instanz, resolve(altesBundle)));
   console.log(JSON.stringify({ updateId: z.id, status: z.status, bestaetigt: z.bestaetigt, release: z.release.version, backupId: z.backupId }));
 }
-haupt().catch((e) => { console.error(`Update abgebrochen: ${(e as Error).message}`); process.exitCode = 1; });
+haupt().catch(async (e) => {
+  const meldung = String((e as Error)?.message ?? e);
+  console.error(`Update abgebrochen: ${meldung}`); process.exitCode = 1;
+  // Betriebsalarm (M1-Abnahme Punkt 4); ein Alarmfehler veraendert den Exitcode nicht.
+  if (!alarmInstanz) return;
+  try {
+    const p = instanzPfade(alarmInstanz);
+    await alarmSpool({ instanz: alarmInstanz, spool: join(p.var, "alarm"), ...ladeAlarmKonfiguration(p.etc) })
+      .alarmieren("update", `Update abgebrochen: ${meldung.split("\n")[0].slice(0, 300)}`);
+  } catch (x) { console.error(`Alarm nicht moeglich: ${(x as Error).message}`); }
+});

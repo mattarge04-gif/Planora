@@ -6,6 +6,5 @@ After=docker.service
 [Service]
 Type=oneshot
 EnvironmentFile=/etc/planora/%i/instanz.env
-ExecStart=/bin/sh ${PLANORA_BUNDLE_DIR}/planora sichern --instanz %i --anlass nacht
-# Retention nur nach erfolgreicher Sicherung (ExecStartPost laeuft nicht nach fehlgeschlagenem ExecStart).
-ExecStartPost=/bin/sh ${PLANORA_BUNDLE_DIR}/planora aufbewahren --instanz %i
+# Sicherung, danach Retention nur bei Erfolg; jeder Fehler loest den Betriebsalarm aus (alarm.json).
+ExecStart=/usr/bin/env node ${PLANORA_BUNDLE_DIR}/werkzeug/betrieb/host-cli.js sichern --instanz %i --anlass nacht
