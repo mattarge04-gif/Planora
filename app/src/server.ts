@@ -10,11 +10,12 @@ import { dateiAblage, type Ablage } from "./ablage/ablage.js";
 import { wartungAktiv, wartungsLage } from "./betrieb/wartung.js";
 import { bestaetigeRestoreKonto } from "./betrieb/freigabe.js";
 import { registriereWeltRouten } from "./welt/routen.js";
+import { registriereWeb } from "./web.js";
 
 declare module "fastify" { interface FastifyInstance { ablage: Ablage } }
 
 // vertrauteProxies: nur Adressen des eigenen Reverse Proxy (Caddy im Compose-Netz); leer = Client-IP nur aus dem Socket (PP7-5)
-export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; secret: string; ablageWurzel: string; vertrauteProxies?: string[]; release?: string };
+export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; secret: string; ablageWurzel: string; vertrauteProxies?: string[]; release?: string; /** gebautes Frontend; fehlt das Verzeichnis, wird nichts ausgeliefert */ webWurzel?: string };
 
 const MUTIEREND = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -95,5 +96,6 @@ export async function baueServer(o: ServerOptionen) {
     if (r.startsWith("/api/auth") || r.startsWith("/api/admin")) continue;
     app.all(`${r.replace(/\/$/, "")}/*`, async (_req, reply) => reply.code(501).send({ fehler: "noch nicht umgesetzt" }));
   }
+  if (o.webWurzel) await registriereWeb(app, o.webWurzel);
   return app;
 }
