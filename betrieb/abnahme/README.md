@@ -28,7 +28,8 @@ Der erzeugte Wegwerf-Recovery-Key liegt separat vom verschluesselten Sicherungsz
 | `dossier.mjs`, `lizenzen.py` | Netzlose Syft-Scans des gelieferten Dateisystems als Syft/SPDX/CycloneDX, vorhandene Lizenzdateien und Notices |
 | `upstream-lizenzen.py` | Lizenzdateien exakter npm-/Go-Quellpakete, Git-Commit-Fallback und SPDX-Standardtexte; Fehlstellen bleiben explizit gelistet |
 | `lizenz-luecken.py` | Nachweisbare README-, Elternpaket-, Quellcommit- und Debian-copyright-Zuordnungen fuer die 14 bekannten Fehlstellen; nicht belegbare Restpunkte als `[?]` |
-| `pruefe-dossier.py` | Vier Pflichtimages, zwoelf lesbare SBOMs, Paketanzahlen, Pruefsummen, Lizenzarchive und Standardtext-Zuordnung |
+| `pruefe-dossier.py` | Ohne Option rein lesend: Gesamtpruefsummen ohne fehlende/zusaetzliche Dateien, SBOM-Hashes, jedes referenzierte Mitglied von `upstream-lizenzen.tar.gz` und der vier `*.lizenzen.tar.gz` gegen den gespeicherten Hash, abgeleitete Dateien gegen Neuberechnung. `--erzeugen` schreibt Zuordnung, `OFFENE-TEXTE.md`, `FREIGABE.md` und `SHA256SUMS.json` neu und prueft danach lesend |
+| `test_pruefe_dossier.py` | Negativtests an einer Kopie: manipulierte Archivmitglieder (auch nach neu erzeugten Summen), veraenderte, zusaetzliche und abgeleitete Dateien werden erkannt |
 
 Die Probe erhaelt nur Bundle, oeffentliche Bootstrap-Metadaten, verschluesseltes externes Sicherungsziel und separaten Offline-Key ueber den Totalverlust hinweg. Kein altes pgdata-, Dokumente- oder Staging-Volume und keine unverschluesselten Host-Secrets werden uebernommen. Der Ersatzcluster startet zunaechst mit den minimalen Planora-Rollen und frisch angewendeten Basismigrationen, bevor der vorhandene Host-Restore eine frische Zieldatenbank anlegt.
 
@@ -48,5 +49,12 @@ Der [Lizenznachtrag](../../docs/superpowers/plans/2026-11-11-m1-lizenznachtrag-s
 
 ```powershell
 python betrieb/abnahme/lizenz-luecken.py betrieb/abnahme/dossier-2026-11-11
+python betrieb/abnahme/pruefe-dossier.py --erzeugen betrieb/abnahme/dossier-2026-11-11
+```
+
+Nur pruefen, ohne etwas zu schreiben, und Negativtests:
+
+```powershell
 python betrieb/abnahme/pruefe-dossier.py betrieb/abnahme/dossier-2026-11-11
+python -I betrieb/abnahme/test_pruefe_dossier.py
 ```
