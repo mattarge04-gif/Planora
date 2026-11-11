@@ -223,3 +223,15 @@ Zusaetzlich: Standard + Ausnahme (neue Einheit erbt Standard; Standardaenderung 
 - [?] Verhalten bestehender Gebaeude bei Regelwerk v2.
 - [A] Liegenschaften werden in M2a per Beispielskript bzw. SQL angelegt; eine Verwaltungs-API folgt spaeter.
 - [A] Aufwand: Gespraechsschaetzung, nicht gemessen.
+
+### Nachtrag nach Umsetzung (2026-11-11): bewusst offen gelassene Punkte
+
+Aus den Task- und Schlussreviews (Opus, Codex), nicht mergeblockierend:
+
+- 400-Antworten haben das Fastify-Format `{statusCode, error, message}`, fachliche Fehler `{fehler}` – vor M2b vereinheitlichen.
+- Regelwerk v2: Der Generator greift ohne Schutz auf `einheitArten[art]` zu; faellt eine Art weg, bricht `/welt` fuer bestehende Daten (siehe offener Punkt oben).
+- `aendereHuelle` ohne Stand-Pruefung (letzter Schreiber gewinnt unter Betreibern).
+- `bauteil`/`versorgung` sind in der DB nur an die Liegenschaft gebunden, nicht an das Gebaeude; Schutz liegt im Abgleich (Bestand, getestet).
+- Schema-Pruefung (400) laeuft vor der Sitzungspruefung (401); Zugriffspruefung und Schreiben auf zwei DB-Verbindungen.
+- Doppelte Versorgungseintraege werden still zusammengefasst; nach `id_unbekannt` folgen teils `verweis_ungueltig`-Folgefehler.
+- Testluecken: Grant-Test nutzt ODER-Semantik von `has_table_privilege`; "beide Standorte gesetzt" und Liegenschaftsgrenze nur fuer `einheit` getestet; Regelwerk-Test deckt nicht die ganze Erlaubt-Matrix.
