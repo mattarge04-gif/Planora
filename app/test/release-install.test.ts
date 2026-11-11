@@ -8,6 +8,8 @@ import { erzeugeRelease, signiereRelease, type Release } from "../src/betrieb/re
 import { SECRETS, erzeugeSecrets, leseEnv, planeInstanz, planeVorneNetz, ueberlappt, pruefeKollision, pruefePlattform, schreibeEnv, type Bestand, type PlattformIst } from "../src/betrieb/install/plan.js";
 import { installiere, type InstallUmgebung } from "../src/betrieb/install/install.js";
 import { leseArgumente } from "../src/betrieb/install/argumente.js";
+import { findeOpenssl, testCa } from "./hilfe/test-ca.js";
+const openssl = findeOpenssl();
 
 const MIGRATIONEN = fileURLToPath(new URL("../src/db/migrationen", import.meta.url));
 const GIB = 2 ** 30;
@@ -171,6 +173,28 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
     const envText = readFileSync(join(dir, "etc", "kunde-a", "instanz.env"), "utf8");
     for (const n of SECRETS) expect(envText).not.toContain(readFileSync(join(dir, "etc", "kunde-a", "secrets", n), "utf8"));
     expect(existsSync(join(dir, "etc", "kunde-a", "release.pub"))).toBe(true);
+  });
+  it.skipIf(!openssl)("Kunden-CA: prueft vor jeder Aenderung, legt tls/ an und setzt PLANORA_TLS/PLANORA_TLS_VERZEICHNIS", async () => {
+    const ca = testCa(openssl!);
+    try {
+      const gut = ca.ausstellen("gut", { dns: ["planora.kunde.test"] }), falsch = ca.ausstellen("falsch", { dns: ["andere.kunde.test"] });
+      const kunde = { domain: "planora.kunde.test", tls: "kundenzertifikat" as const };
+      await expect(installiere(optionen(kunde), fake().u)).rejects.toThrow(/--tls-zertifikat/);
+      await expect(installiere(optionen({ tlsZertifikat: gut.certDatei, tlsSchluessel: gut.keyDatei }), fake().u)).rejects.toThrow(/nur dann/);
+      const { u, aufrufe } = fake();
+      await expect(installiere(optionen({ ...kunde, tlsZertifikat: falsch.certDatei, tlsSchluessel: falsch.keyDatei }), u)).rejects.toThrow(/gilt nicht fuer planora.kunde.test/);
+      expect(aufrufe).toEqual([]);
+      expect(existsSync(join(dir, "etc"))).toBe(false);
+      const meldungen: string[] = [];
+      await installiere(optionen({ ...kunde, tlsZertifikat: gut.certDatei, tlsSchluessel: gut.keyDatei, melde: (t: string) => meldungen.push(t) }), fake().u);
+      const etc = join(dir, "etc", "kunde-a"), env = leseEnv(join(etc, "instanz.env"));
+      expect(env.PLANORA_TLS).toBe("/zertifikat/cert.pem /zertifikat/key.pem");
+      expect(env.PLANORA_TLS_VERZEICHNIS).toBe(join(etc, "tls").replace(/\\/g, "/"));
+      expect(readFileSync(join(etc, "tls", "cert.pem"), "utf8")).toBe(gut.certPem);
+      expect(readFileSync(join(etc, "tls", "key.pem"), "utf8")).toBe(gut.keyPem);
+      expect(meldungen.some((m) => /Kunden-Zertifikat geprueft: CN=planora.kunde.test/.test(m))).toBe(true);
+      expect(readFileSync(join(etc, "instanz.env"), "utf8")).not.toContain("PRIVATE KEY");
+    } finally { ca.aufraeumen(); }
   });
   it("zweite Installation derselben Instanz wird abgelehnt und veraendert nichts", async () => {
     await installiere(optionen(), fake().u);

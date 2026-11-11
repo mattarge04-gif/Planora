@@ -7,12 +7,22 @@ import { restoreHost } from "./restore/host.js";
 import { sql } from "./update/docker.js";
 import { dateiSperre, leseZustand } from "./update/zustand.js";
 import { dbSperre } from "./update/sperre.js";
+import { ausgeliefertesZertifikat, rotiereKundenzertifikat } from "./install/zertifikat.js";
 
 async function haupt() {
-  const { werte, positionen } = leseArgumente(process.argv.slice(2), ["instanz"]);
-  if (!/^[a-z][a-z0-9-]{1,31}$/.test(werte.instanz ?? "") || !["start", "reconcile", "dienst", "restore"].includes(positionen[0]) || positionen.length !== (positionen[0] === "restore" ? 2 : 1)) throw new Error("Aufruf: start|reconcile|dienst|restore [backup-id] --instanz <name>");
+  const { werte, positionen } = leseArgumente(process.argv.slice(2), ["instanz", "tls-zertifikat", "tls-schluessel"]);
+  if (!/^[a-z][a-z0-9-]{1,31}$/.test(werte.instanz ?? "") || !["start", "reconcile", "dienst", "restore", "zertifikat"].includes(positionen[0]) || positionen.length !== (positionen[0] === "restore" ? 2 : 1)) throw new Error("Aufruf: start|reconcile|dienst|restore [backup-id]|zertifikat --instanz <name>");
   const p = instanzPfade(werte.instanz), w = leseEnv(p.envDatei), docker = dockerAusfuehrer();
   const i = { projekt: `planora-${werte.instanz}`, envDatei: p.envDatei, composeDateien: composeDateien(w.PLANORA_BUNDLE_DIR) };
+  if (positionen[0] === "zertifikat") {
+    // Rotation des Kunden-Zertifikats: pruefen, ersetzen, Proxy neu starten, ausgeliefertes Zertifikat vergleichen.
+    if (!werte["tls-zertifikat"] || !werte["tls-schluessel"] || !w.PLANORA_TLS_VERZEICHNIS) throw new Error("Aufruf: zertifikat --instanz <name> --tls-zertifikat <kette.pem> --tls-schluessel <key.pem> (nur bei --tls kundenzertifikat)");
+    const r = await rotiereKundenzertifikat({ verzeichnis: w.PLANORA_TLS_VERZEICHNIS, domain: w.PLANORA_DOMAIN, zertifikatDatei: werte["tls-zertifikat"], schluesselDatei: werte["tls-schluessel"],
+      neustart: async () => { await mussGelingen(docker, [...composeArgs(i), "restart", "proxy"]); },
+      pruefe: async (fp) => (await ausgeliefertesZertifikat(Number(w.PLANORA_HTTPS_PORT ?? 443), w.PLANORA_DOMAIN)) === fp });
+    console.log(JSON.stringify(r));
+    return;
+  }
   if (positionen[0] === "restore") {
     const update = leseZustand(p.zustand);
     if (update && !["fertig", "zurueck"].includes(update.status)) throw new Error("Unabgeschlossenes Update: dessen --rueckweg verwenden");

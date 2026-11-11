@@ -57,17 +57,17 @@ export async function baueImage(tag: string, release: string, kontext = APP, dat
 }
 
 /** Wegwerf-Instanz: Secrets pro Lauf zufaellig in einem Temp-Verzeichnis, nie im Repo. */
-export function testInstanz(o: { image: string; zusatzDateien?: string[]; projekt?: string; httpsPort?: number; httpPort?: number }) {
+export function testInstanz(o: { image: string; zusatzDateien?: string[]; projekt?: string; httpsPort?: number; httpPort?: number; domain?: string; tls?: string; zusatzEnv?: Record<string, string> }) {
   const projekt = o.projekt ?? TEST.projekt, httpsPort = o.httpsPort ?? TEST.httpsPort, httpPort = o.httpPort ?? TEST.httpPort;
   const verzeichnis = mkdtempSync(join(tmpdir(), `${projekt}-`));
   const secrets = join(verzeichnis, "secrets");
   erzeugeSecrets(secrets);
   const envDatei = join(verzeichnis, "instanz.env");
-  const basis = `https://localhost:${httpsPort}`;
+  const domain = o.domain ?? "localhost", basis = `https://${domain}:${httpsPort}`;
   let vorne = vorneAdressen("172.31.240.0/29");
   const schreibeEnv = (image: string) => writeFileSync(envDatei, [
     `PLANORA_VORNE_SUBNETZ=${vorne.subnetz}`, `PLANORA_PROXY_IP=${vorne.proxy}`, `PLANORA_API_IP=${vorne.api}`,
-    `PLANORA_SECRETS=${secrets.replace(/\\/g, "/")}`, "PLANORA_DOMAIN=localhost", "PLANORA_TLS=internal",
+    `PLANORA_SECRETS=${secrets.replace(/\\/g, "/")}`, `PLANORA_DOMAIN=${domain}`, `PLANORA_TLS=${o.tls ?? "internal"}`, ...Object.entries(o.zusatzEnv ?? {}).map(([k, v]) => `${k}=${v}`),
     `PLANORA_HTTPS_PORT=${httpsPort}`, `PLANORA_HTTP_PORT=${httpPort}`, `PLANORA_BASE_URL=${basis}`, `PLANORA_IMAGE_APP=${image}`, "",
   ].join("\n"));
   schreibeEnv(o.image);

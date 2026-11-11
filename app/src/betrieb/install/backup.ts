@@ -2,7 +2,7 @@
 import { randomBytes } from "node:crypto";
 import { chmodSync, chownSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
-import { instanzPfade, leseEnv, schreibeAtomar, schreibeEnv } from "./plan.js";
+import { KUNDENZERTIFIKAT_TLS, instanzPfade, leseEnv, schreibeAtomar, schreibeEnv } from "./plan.js";
 
 export function lesbarFuerBackup(pfad: string, verzeichnis = false) {
   chmodSync(pfad, verzeichnis ? 0o700 : 0o600);
@@ -33,7 +33,7 @@ export function backupKonfigurieren(instanz: string, instanzId: string, release?
   const dbName = datenbank ?? w.PLANORA_DB_NAME ?? "planora";
   const dbUrl = (rolle: string, passwort: string) => `postgres://${rolle}:${encodeURIComponent(passwort)}@db:5432/${encodeURIComponent(dbName)}`;
   const konfiguration = { format: 1, instanzId, domain: w.PLANORA_DOMAIN,
-    tls: w.PLANORA_TLS === "internal" ? "internal" : "acme", profil: "P1", zeitzone: "Europe/Zurich",
+    tls: w.PLANORA_TLS === "internal" ? "internal" : w.PLANORA_TLS === KUNDENZERTIFIKAT_TLS ? "kundenzertifikat" : "acme", profil: "P1", zeitzone: "Europe/Zurich",
     ...(existsSync(join(d, "konfiguration.json")) ? JSON.parse(readFileSync(join(d, "konfiguration.json"), "utf8")) : {}), release: release ?? w.PLANORA_RELEASE };
   const dbRollen = Object.fromEntries(["app", "migrator", "backup", "betrieb"].map((r) => [`planora_${r}`, secret(`db_${r}_passwort`)]));
   const passwort = readFileSync(join(d, "restic_passwort"), "utf8").trim();

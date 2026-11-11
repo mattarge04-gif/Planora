@@ -26,6 +26,30 @@ Auf Linux aktiviert Installation als root die systemd-Instanz `planora-betrieb@k
 ./planora update --instanz kunde-a --fortsetzen
 ```
 
+## TLS mit Kunden-Zertifikat (Kunden-CA)
+
+Neben `--tls acme` und `--tls internal` kann die Instanz ein Zertifikat der Kunden-PKI verwenden. Die Kunden-IT stellt aus:
+
+- `kette.pem`: Serverzertifikat zuerst, danach allfaellige Zwischenzertifikate. subjectAltName muss die Domain enthalten. Die Root-CA gehoert nicht in die Datei; die Clients vertrauen ihr ueber die Kunden-IT.
+- `key.pem`: zugehoeriger privater Schluessel, unverschluesselt (PEM, PKCS#8 oder SEC1/PKCS#1). Caddy kann keine passwortgeschuetzten Schluessel laden.
+
+```sh
+./planora install --instanz kunde-a --domain planora.kunde.ch --tls kundenzertifikat \
+  --tls-zertifikat /sicher/kette.pem --tls-schluessel /sicher/key.pem --schluessel /sicher/release.pub ...
+```
+
+Vor jeder Aenderung prueft die Installation: Schluessel passt zum Zertifikat, Domain im Zertifikat, Gueltigkeitszeitraum, Kettenreihenfolge. Unter 30 Tagen Restlaufzeit gibt sie eine Warnung aus [A]. Danach liegen die Dateien unter `/etc/planora/<instanz>/tls/` (`cert.pem` 0644, `key.pem` 0600, Eigentuemer Proxy-UID 1001). `instanz.env` erhaelt `PLANORA_TLS=/zertifikat/cert.pem /zertifikat/key.pem` und `PLANORA_TLS_VERZEICHNIS`. Compose bindet dieses Verzeichnis nur lesend nach `/zertifikat` in den Proxy. Ohne Kunden-CA bleibt dort ein leeres Volume. Der Schluessel steht weder in `instanz.env` noch im Bundle noch im Backup-Inventar; die Kunden-IT bleibt fuer seine Sicherung zustaendig.
+
+Rotation vor Ablauf:
+
+```sh
+./planora zertifikat --instanz kunde-a --tls-zertifikat /sicher/kette-neu.pem --tls-schluessel /sicher/key-neu.pem
+```
+
+Der Befehl prueft das neue Paar zuerst; ein ungueltiges Paar aendert nichts. Danach sichert er das bisherige Paar als `cert.pem.vorher`/`key.pem.vorher`, ersetzt beide Dateien atomar und startet nur den Proxy neu (rund 5 bis 15 Sekunden ohne HTTPS [A]). Caddy laeuft ohne Admin-API und liest die Dateien nur beim Start. Liefert der Proxy danach nicht das neue Zertifikat aus, legt der Befehl das bisherige Paar zurueck und startet erneut. Die `*.vorher`-Dateien nach bestaetigter Rotation durch den Betreiber entfernen. Ablaufueberwachung: Restlaufzeit in die Betriebsalarmierung aufnehmen [A]. Ein Wechsel zwischen `internal`/`acme` und Kunden-CA ist ein Neuinstallations- oder Wartungsschritt und wird hier nicht automatisiert.
+
+Nachweis: `app/test-docker/kundenzertifikat.test.ts` erzeugt zur Laufzeit eine Test-Kunden-CA und eine fremde CA (openssl). Ein Client, der nur der Test-CA vertraut, erreicht `/api/health` mit dem erwarteten Zertifikat. Mit fremder CA oder nur dem System-Truststore wird die Verbindung abgelehnt. Die Rotation wird ueber den echten Proxy-Neustart geprueft.
+
 ## Rueckweg und Freigabe
 
 Vor begonnener Update-Freigabe ist der Rueckweg laut signierter Matrix zulaessig. Bei inkompatiblem Schema:
