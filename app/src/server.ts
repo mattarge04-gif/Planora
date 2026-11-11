@@ -9,6 +9,7 @@ import { pruefe, type Recht } from "./rechte/rechte.js";
 import { dateiAblage, type Ablage } from "./ablage/ablage.js";
 import { wartungAktiv, wartungsLage } from "./betrieb/wartung.js";
 import { bestaetigeRestoreKonto } from "./betrieb/freigabe.js";
+import { registriereWeltRouten } from "./welt/routen.js";
 
 declare module "fastify" { interface FastifyInstance { ablage: Ablage } }
 
@@ -18,7 +19,10 @@ export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; sec
 const MUTIEREND = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export async function baueServer(o: ServerOptionen) {
-  const app = Fastify({ logger: false, trustProxy: o.vertrauteProxies?.length ? o.vertrauteProxies : false });
+  // ajv strikt (kein removeAdditional, kein coerceTypes): Strukturfehler → 400, nichts stillschweigend entfernen oder umwandeln.
+  // Kuenftige Querystring-/Params-Schemas muessen daher Strings erwarten oder eine eigene Konvertierung haben.
+  const app = Fastify({ logger: false, trustProxy: o.vertrauteProxies?.length ? o.vertrauteProxies : false,
+    ajv: { customOptions: { removeAdditional: false, coerceTypes: false } } });
   const auth = baueAuth(o.pool, { baseURL: o.baseURL, secret: o.secret });
   app.decorate("ablage", dateiAblage(o.ablageWurzel, { pool: o.pool }));
   // Erster onRequest-Hook, vor Modul-Guard und Sitzungsregeln.
@@ -76,6 +80,7 @@ export async function baueServer(o: ServerOptionen) {
     } catch (e) { return reply.code(409).send({ fehler: (e as Error).message }); }
   });
 
+  registriereWeltRouten(app, o.pool); // M2a: /api/struktur/… (Huelle, Beschreibung), /api/szene/…/welt
   // Platzhalter fuer Fachmodule bis M2–M8: erreichbar nur, wenn Guard und Sitzung sie durchlassen
   for (const m of MANIFEST) for (const r of m.routen) {
     if (r.startsWith("/api/auth") || r.startsWith("/api/admin")) continue;
