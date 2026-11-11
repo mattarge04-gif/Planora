@@ -24,7 +24,7 @@ Erfolgskriterium: Die Beispielliegenschaft des ersten Schnitts (§9) laesst sich
 1. **Normalisierte Tabellen sind die Wahrheit.** Das Beschreibungsschema ist das gemeinsame Ein-/Ausgabeformat fuer Formular, spaeter Excel und KI; es wird vor dem Schreiben validiert (ADR 0032 Punkt 7).
 2. **Geometrie wird nicht gespeichert**, sondern bei jedem Abruf vom Generator berechnet. Gespeichert werden nur bestaetigte manuelle Layouts/Positionen.
 3. **Stabile IDs ueber die Beschreibung (Variante A):** Objekte tragen optional eine `id`. Mit ID → aktualisieren, ohne ID → neu (Server vergibt UUID), in DB vorhanden aber in Beschreibung fehlend → loeschen. Kopieren = ohne ID senden.
-4. **Dreiwertigkeit:** `ja` / `nein` / `unbekannt`; Mengen `null` = unbekannt. Unbekannt ist nie Null und erzeugt kein bestaetigtes Bauteil.
+4. **Dreiwertigkeit:** `ja` / `nein` / `unbekannt`; Mengen `null` = unbekannt. Unbekannt ist nie Null und erzeugt kein bestaetigtes Bauteil. Ein Bauteil darf trotz unbekannter Menge (`menge = null`) `bestaetigt` sein (PO 2026-11-11): bestaetigt wird die Existenz, nicht die Anzahl.
 5. **Vorschlaege:** Bauteile haben `status` `vorgeschlagen` | `bestaetigt`.
 
 ## 3. Katalog v1 und Welt-Regelwerk v1
