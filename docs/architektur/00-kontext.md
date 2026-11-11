@@ -1,6 +1,13 @@
 # Planora: Kontext und Entscheide (aktualisiert 2026-11-11)
 
-Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1b einschliesslich Sicherheitsnachpruefung implementiert und lokal getestet. Reale Betriebsabnahmen bleiben offen. Historische Abschnitte anhand neuerer Entscheide lesen.
+Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
+
+## E39 – Betrieb durch Planora, Alarm, Aufbewahrung, Lizenzmodell (PO, 2026-11-11)
+
+- Hosting: Planora stellt Server und Domain je Kunde; Kunde braucht keine eigene IT und erhaelt Zugang durch uns. Vorschlag Server: CH-VM 4 vCPU/8 GB/100+ GB, z. B. Infomaniak VPS Lite (CHF 18/Monat bei Jahresvertrag laut Anbieterseite 11.11.2026, vor Bestellung bestaetigen) [A]. [?] AVV/Lieferantenpruefung mit Siemens klaeren.
+- Backup-Aufbewahrung 14 taeglich / 8 woechentlich / 12 monatlich freigegeben.
+- Alarm per SMTP an die Konto-E-Mail-Adressen des Kunden (Standard Admin-Konten [A], umschaltbar auf alle) plus eine Planora-Adresse je Kunde zum Filtern.
+- Lizenz: Planora proprietaer, Nutzungsrecht je Instanz waehrend Vertragsdauer, kein Quellcode. Fixture @fastify/deepmerge: MIT- und ISC-Text beilegen. Menschliche Lizenzfreigabe bewusst offen.
 
 ## E38 – Kunden-Erfassung in vorbereiteter 3D-Welt (PO bestaetigt, 2026-11-11)
 

@@ -34,17 +34,21 @@ Alle sechs zusaetzlichen lokalen Planora-Worktrees vor Bereinigung geprueft: kei
 - Keine Addition ueberlappender Laeufe; kein erneuter Volltest nach jeder einzelnen Korrektur behauptet.
 - [Integrationsbericht](2026-11-10-m1b-integrationsbericht.md), [Sicherheitsnachpruefung](2026-11-10-m1b-pp-nachpruefung.md).
 
-## M1-Abnahme weiterhin offen
+## M1-Abnahme (Stand 2026-11-11 Mittag)
 
-1. Frische Linux-VM: Offline-Installation, echte Host-Bind-Mounts/UID-Rechte, systemd/Timer, zweite isolierte Instanz, Backup und Restore.
-2. Kunden-CA neben `tls internal` nachweisen. TLS-Herabstufung negativ getestet, positiver externer TLS-Endpunkt noch nicht.
-3. Retention-Politik freigeben und pruefen (Vorschlag 14 taeglich/8 woechentlich/12 monatlich); Inventar/Journal bis dahin konservativ behalten.
-4. Produktiven externen Alarmkanal anbinden und pruefen.
-5. Vollstaendige Image-SBOMs, Lizenztexte und menschliche Lizenz-/Lieferfreigabe. Vorhandenes Dossier ist ein Geruest.
-6. Echter CH-S3-Test nur dann benoetigter Liefernachweis, wenn dieses Ziel vereinbart wird. Der M1b-Plan fuehrt ihn ausdruecklich ausserhalb des Umfangs; aktuelle Host-Installation nutzt lokales Dateisystemziel. S3-Produktivreife nicht behaupten.
-7. VM-Totalverlust: Ersatzcluster separat gemaess Restore-Vertrag provisionieren; automatischer Update-Rueckweg erstellt eine frische DB im bestehenden Cluster, keine Ersatz-VM.
+Technisch abgeschlossen auf `main` (lokal, nicht gepusht): Spur A (Opus) und Spur B (Codex, ab Lizenznachtrag Opus), Reviews PP11a (Codex, nicht OK -> behoben), PP11a-N (Opus, OK mit Auflagen -> behoben), PP11b (Codex, OK mit Auflagen -> behoben). Berichte: [Spur A](2026-11-11-m1-abnahme-spur-a.md), [Spur B](2026-11-11-m1-abnahme-spur-b.md), [Lizenznachtrag](2026-11-11-m1-lizenznachtrag-spur-b.md).
 
-Restarbeit grob 2–4 PT [A] bei verfuegbarer Umgebung/Zugaengen/Entscheiden, externe Wartezeit kommt dazu. Merge/Push sichert Entwicklung und ist keine Produktivfreigabe.
+Teststand auf main nach Merge: `npm test` 314 bestanden/37 Docker uebersprungen, Typpruefung gruen, `test:docker` 32 bestanden/5 (Suite b) uebersprungen in 440 s, `test:docker:b` 9/9 (Projekt `pr-backup`; alte Testvolumes `planora-b_*` vom 10.11. liegen noch, Guard hat korrekt abgebrochen). WSL-Gesamtabnahme `betrieb/abnahme/abnahme.ps1` auf Spur-B-Stand Exit 0 in 417.6 s (nicht erneut nach Merge von Spur A ausgefuehrt).
+
+| Punkt | Stand |
+|---|---|
+| 1 Frische Linux-Umgebung | erledigt als WSL-Ersatz (Offline, Bind-Mounts/UID, Timer, 2 Instanzen, Backup/Restore). Echte VM = unsere CH-VM, offen bis bestellt |
+| 2 Kunden-CA | erledigt (Docker-Nachweis, Rotation/Rueckrollen). Bei Eigenhosting meist eigene Domain + oeffentliches Zertifikat [A] |
+| 3 Retention | erledigt, 14/8/12 PO-freigegeben (E39) |
+| 4 Alarmkanal | erledigt technisch (SMTP + optional Webhook, Empfaenger E39). Offen: SMTP-Zugang und echter Versandtest |
+| 5 SBOM/Lizenzen | technisch erledigt (13/14 + PO-Entscheide 3a/3b). Menschliche Freigabe bewusst offen (PO), Rechtekette Entwickler->Firma [?] juristisch |
+| 6 CH-S3 | weiterhin ausserhalb Umfang |
+| 7 Totalverlust | erledigt als Probe (Distribution verworfen, frischer Ersatz, Restore mit Host-Freigabe) |
 
 ## Naechste Coding-Aufgaben
 

@@ -12,7 +12,7 @@ Software fuer die schematische 3D-Gebaeudewelt, technischen Bestand und zugeordn
 - [Bestaetigte 3D-Erfassung: Huelle vorbereiten, Kunde erfasst Einheiten/Technik](docs/architektur/adr/0032-gebaeude-vorbereiten-kunde-erfasst-technik.md)
 - [Architektur](docs/architektur/03-architektur.md)
 
-M1 ist implementiert und lokal getestet; reale Betriebsabnahmen und Lieferfreigaben stehen aus. M2–M7 sind noch zu bauen. Historische Wochenangaben sind keine aktuellen Lieferzusagen.
+M1 ist technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen sind echte CH-VM, SMTP-Versandtest und menschliche Lizenzfreigabe. M2–M7 sind noch zu bauen. Historische Wochenangaben sind keine aktuellen Lieferzusagen.
 
 ## Lokale Pruefung
 
