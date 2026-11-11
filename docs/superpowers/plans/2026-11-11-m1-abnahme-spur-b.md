@@ -6,6 +6,27 @@ Fortschreibung nach dem ersten Auftrag: Im [Lizenznachtrag](2026-11-11-m1-lizenz
 
 Eigener Worktree/Branch `mattarge04-gif/m1-abnahme-b`, Ausgangspunkt main `ae3f5b5`. Kein Push, kein Merge. Anwendungscode unveraendert.
 
+## Folgeauftrag PP11b-Auflagen und PO-Entscheide (2026-11-11, Opus)
+
+Uebernahme von Codex nach Review "OK mit Auflagen". Alle vier Auflagen behoben, Gesamtlauf bestanden, PO-Entscheide im Dossier dokumentiert. Kein Push/Merge, Anwendungscode unveraendert.
+
+| Auflage | Behebung | Nachweis |
+|---|---|---|
+| PP11b-1 [mittel] Selbstpruefung schrieb neue Summen | `pruefe-dossier.py` ohne Option rein lesend: Gesamtsummen ohne fehlende/zusaetzliche Dateien, SBOM-Hashes, jedes referenzierte Mitglied von `upstream-lizenzen.tar.gz` und den vier `*.lizenzen.tar.gz`, abgeleitete Dateien gegen Neuberechnung. `--erzeugen` schreibt und prueft danach lesend | `test_pruefe_dossier.py` 7/7: manipulierte Archivmitglieder werden auch nach neu erzeugten Summen erkannt, ebenso veraenderte, zusaetzliche und abgeleitete Dateien; Lesemodus aendert weder Bytes noch mtime |
+| PP11b-2 [mittel] Lizenz-rootfs aus veraenderlichem Tag | `dossier.mjs` laedt das Lieferarchiv; signierte Image-ID muss einziger Index-Eintrag und inhaltsgepruefter Blob sein (`archiv-identitaet.mjs`); Container ueber die ID erzeugt, `{{.Image}}` geprueft; `rootfsQuelle` in `nachweis.json` | `archiv-identitaet.test.mjs` 5/5 (falscher Index, manipulierter Blob, mehrere Images); im Gesamtlauf fuer alle vier Images ID = Index = Blob = Container-Image |
+| PP11b-3 [mittel] stat nur protokolliert, leere Mount-Auswahl, Isolation nur db/api/proxy | `linux.sh` assertiert Besitzer/Modi aller 17 Secret-, 7 Backup- und Zielpfade; `isolation.mjs` verlangt exakt db/api/worker/proxy/journal laufend, exakte Mount-Ziele/-Quellen/-Anzahl und vergleicht Volumes, Netze, beschreibbare Binds inklusive worker und journal/Backup | Je Instanz journal 5, proxy 3, api 3, worker 2, db 6 Mounts; keine gemeinsamen Volumes/Netze/RW-Binds, gemeinsam nur 2 read-only Bundle-Dateien |
+| PP11b-4 [niedrig] Token-Leere ohne vorherige Tokens | `probe.mjs` legt vor beiden Sicherungen Session, Verification und offenes Setup-Token an, prueft positive Ausgangszahl, speichert sie im Bootstrap; nach beiden Restores alle drei 0 | Vor 1. Sicherung 1/1/3, nach lokalem Restore 0/0/0; vor 2. Sicherung 2/1/1, nach Totalverlust-Restore 0/0/0 |
+
+**Gesamtlauf** `abnahme.ps1`: Exit 0, **417.6 s** (Vorlauf 375.9 s; Mehrzeit durch `docker load` der vier Archive, Identitaets- und Negativtests). Totalverlust-Daemon vorher `de4d9002-...`, Ersatz `cf371f59-...`. Danach ist nur `docker-desktop` in der WSL-Liste. Protokolle: [nachweise/2026-11-11-pp11b](../../../betrieb/abnahme/nachweise/2026-11-11-pp11b). Das committete Dossier wurde durch das frische dieses Laufs ersetzt; App- und Backup-Image tragen neue IDs (Rebuild aus Cache mit neuen Attestierungs-Manifesten), SBOM-Inhalte sind unveraendert.
+
+**Fehlversuch:** Der erste Gesamtlauf scheiterte, wie von einer strengen Pruefung gewollt, in `isolation.mjs`. Das Backup-Image erbt `VOLUME /var/lib/postgresql`, deshalb erhaelt jeder journal-Container ein anonymes Volume. Je Instanz ist es genau eines und es wird nicht geteilt. Es ist jetzt als fuenfter journal-Mount ausdruecklich erwartet; anonyme Volumes sind nur an geprueften Instanzcontainern zulaessig. [A] Ob das Backup-Image dieses VOLUME braucht, ist eine Produktfrage ausserhalb Spur B.
+
+**PO-Entscheide 2026-11-11** (Regelversion 3 in `lizenz-luecken.py`, idempotent, zweiter Aufruf bytegleich): Die Deepmerge-Fixture ist technisch geschlossen, weil beide Lizenzen permissiv sind und ISC- sowie MIT-Text beigelegt sind. Fuer `planora-app` ist das Liefermodell als Beleg `0-po-liefermodell.md` dokumentiert: proprietaer, nicht-exklusives und nicht uebertragbares Nutzungsrecht je Instanz waehrend der Vertragsdauer, signierte Images ohne Quellcode, Drittkomponenten gemaess Dossier, Betrieb auf Server/Domain des Anbieters (CH-VM). Nachtrag nun **13/1**, 840 Lizenzbelege geprueft. Offen bleibt `[?]` schriftliche Rechtekette Entwickler -> Firma und Vertragstext (juristisch). Die menschliche Freigabe-Checkliste bleibt bewusst offen.
+
+Tests: `app` `npm.cmd test` 250 bestanden, 24 uebersprungen (30 Dateien bestanden, 3 uebersprungen, 41.2 s); `npm.cmd run pruefe:typen` Exit 0.
+
+Weiter offen: juristische Rechtekette/Vertragstext, menschliche Lizenz-/Lieferfreigabe, echte VM-Abnahme auf der CH-VM des Anbieters (WSL bleibt Ersatz).
+
 ## Commits
 
 - `fbde35c` – M1-Abnahme B: Linux- und Totalverlustprobe nachweisen.

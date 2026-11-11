@@ -1,5 +1,7 @@
 # M1-Lizenznachtrag Spur B, 2026-11-11
 
+Fortschreibung: Nach den PO-Entscheiden 2026-11-11 sind **13/14** geschlossen; die Deepmerge-Fixture ist mit beiden permissiven Texten beigelegt, und fuer `planora-app` bleibt nur Rechtekette/Vertragstext als juristisches `[?]` offen (siehe [Bericht Spur B](2026-11-11-m1-abnahme-spur-b.md)). Der folgende Text beschreibt den Stand 12/2.
+
 **12 der 14 urspruenglich offenen Zuordnungen geschlossen; 2 begruendete `[?]`-Restpunkte.** Der Folgeauftrag, technisch Belegbares zu ergaenzen und den Rest fuer die menschliche Freigabe auszuweisen, ist damit erledigt. Menschliche Lizenz-/Lieferfreigabe und echte VM-Abnahme bleiben wie beauftragt offen und sind kein Fehler dieses Auftrags.
 
 Eigener Branch `mattarge04-gif/m1-abnahme-b`, Folge von `9502af7`; kein Push/Merge, keine Docker-Ressourcen oder WSL-Distributionen angelegt/veraendert. Anwendungscode und die vier Image-SBOM-Saetze bleiben unveraendert.
