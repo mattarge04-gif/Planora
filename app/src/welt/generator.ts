@@ -107,6 +107,10 @@ export function weltErzeugen(h: HuelleGespeichert, b: Beschreibung, rw: Regelwer
     for (const e of manuell) rechtecke.set(pflichtId(e), e.layoutManuell!);
     for (const e of auto)
       if (manuell.some((m) => ueberlappt(rechtecke.get(pflichtId(e))!, m.layoutManuell!))) hinweise.push({ code: "ueberlappung", bezug: pflichtId(e) });
+    // Manuell gegen frueher manuell (Reihenfolge im Array): je spaeter Einheit hoechstens ein Hinweis
+    manuell.forEach((e, j) => {
+      if (manuell.slice(0, j).some((m) => ueberlappt(e.layoutManuell!, m.layoutManuell!))) hinweise.push({ code: "ueberlappung", bezug: pflichtId(e) });
+    });
   }
 
   // Bauteile: ein Symbol je Standort + Katalog-ID + Hersteller + Typ

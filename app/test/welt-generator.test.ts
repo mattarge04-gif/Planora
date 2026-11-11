@@ -75,6 +75,26 @@ describe("weltErzeugen", () => {
     b.bauteile.push({ id: G(34), katalogId: "heizung.waermepumpe", standort: { geschossId: G(9) }, menge: 1, status: "bestaetigt", versorgt: [] });
     expect(welt(b).symbole.find((s) => s.katalogId === "heizung.waermepumpe")!.position).toEqual({ x: 15, y: -2.5, z: 7.5 });
   });
+  it("widersprechende Positionen in einer Gruppe: erste Zeile gewinnt, Hinweis", () => {
+    const b = beschreibungFixture();
+    b.bauteile[0].positionManuell = { x: 1, z: 2 };
+    b.bauteile.push({ id: G(33), katalogId: "heizung.heizkoerper", standort: { einheitId: G(20) }, menge: 2, status: "bestaetigt", hersteller: "Zehnder", positionManuell: { x: 3, z: 4 }, versorgt: [] });
+    const w = welt(b);
+    const s = w.symbole.find((x) => x.hersteller === "Zehnder")!;
+    expect(s.position).toEqual({ x: 1, y: 0, z: 2 });
+    expect(w.hinweise).toContainEqual({ code: "position_widerspruch", bezug: s.schluessel });
+  });
+  it("zwei sich ueberlappende manuelle Einheiten: Hinweis nur fuer die spaetere", () => {
+    const b = beschreibungFixture();
+    b.einheiten[2].layoutManuell = { x: 0, z: 0, breite: 10, tiefe: 15 };
+    b.einheiten.push({ id: G(23), geschossId: G(11), bezeichnung: "D", art: "buero", flaecheM2: null, layoutManuell: { x: 5, z: 0, breite: 10, tiefe: 15 } });
+    expect(welt(b).hinweise).toEqual([{ code: "ueberlappung", bezug: G(23) }]);
+  });
+  it("manuelle Einheit ausserhalb der Auto-Flaechen: keine Hinweise", () => {
+    const b = beschreibungFixture();
+    b.einheiten.push({ id: G(23), geschossId: G(11), bezeichnung: "D", art: "buero", flaecheM2: null, layoutManuell: { x: 40, z: 0, breite: 5, tiefe: 5 } });
+    expect(welt(b).hinweise).toEqual([]);
+  });
   it("verlangt gespeicherte IDs", () => {
     const b = beschreibungFixture(); delete b.einheiten[0].id;
     expect(() => welt(b)).toThrow(/IDs/);
