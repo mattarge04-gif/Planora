@@ -1,4 +1,4 @@
-import Fastify from "fastify";
+import Fastify, { type FastifyError } from "fastify";
 import type pg from "pg";
 import { baueAuth } from "./auth/auth.js";
 import { registriereAuth } from "./auth/fastify.js";
@@ -23,6 +23,15 @@ export async function baueServer(o: ServerOptionen) {
   // Kuenftige Querystring-/Params-Schemas muessen daher Strings erwarten oder eine eigene Konvertierung haben.
   const app = Fastify({ logger: false, trustProxy: o.vertrauteProxies?.length ? o.vertrauteProxies : false,
     ajv: { customOptions: { removeAdditional: false, coerceTypes: false } } });
+  // Einheitliches Fehlerformat fuer Schemafehler (M2b-1 Spec §4.3): wie fachliche Fehler { fehler: [{ pfad, code, meldung }] }.
+  app.setErrorHandler((err: FastifyError, _req, reply) => {
+    if (err.validation) {
+      return reply.code(400).send({
+        fehler: err.validation.map((v) => ({ pfad: `${err.validationContext ?? "body"}${v.instancePath ?? ""}`, code: "struktur_ungueltig", meldung: v.message ?? "ungueltig" })),
+      });
+    }
+    throw err; // alle anderen Fehler wie bisher (Fastify-Standard)
+  });
   const auth = baueAuth(o.pool, { baseURL: o.baseURL, secret: o.secret });
   app.decorate("ablage", dateiAblage(o.ablageWurzel, { pool: o.pool }));
   // Erster onRequest-Hook, vor Modul-Guard und Sitzungsregeln.

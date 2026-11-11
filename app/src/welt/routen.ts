@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import type pg from "pg";
-import { pruefe } from "../rechte/rechte.js";
+import { MATRIX, pruefe, type Rolle } from "../rechte/rechte.js";
 import { auditEreignis } from "../audit/audit.js";
 import { REGELWERK_V1 } from "./regelwerk.v1.js";
 import { KATALOG_V1 } from "./katalog.v1.js";
@@ -122,4 +122,24 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
       return weltErzeugen(h, b, REGELWERK_V1); // nur Regelwerk v1 vorhanden; Verhalten bei v2 offen (Spec §11)
     });
   });
+
+  /** Gebaeude, die der Benutzer lesen darf; Betreiber und Benutzer ohne Fachrecht erhalten eine leere Liste. */
+  app.get("/api/struktur/gebaeude", async (req) => mitClient(async (c) => {
+    const benutzerId = req.kontext!.benutzerId;
+    const rolle = (await c.query("select rolle from rolle_zuordnung where benutzer_id=$1", [benutzerId])).rows[0]?.rolle as Rolle | undefined;
+    if (!rolle || !MATRIX["fach.lesen"].includes(rolle)) return [];
+    const r = await c.query(
+      `select g.id, g.name, l.id liegenschaft_id, l.name liegenschaft_name,
+              (select count(*)::int from geschoss s where s.gebaeude_id = g.id) geschosse
+         from gebaeude g join liegenschaft l on l.id = g.liegenschaft_id
+        where $2::boolean or exists (select 1 from rolle_liegenschaft r where r.benutzer_id = $1 and r.liegenschaft_id = g.liegenschaft_id)
+        order by l.name, g.name, g.id`, [benutzerId, rolle === "admin"]);
+    return r.rows.map((x) => ({ id: x.id, name: x.name, liegenschaftId: x.liegenschaft_id, liegenschaftName: x.liegenschaft_name, geschosse: x.geschosse }));
+  }));
+
+  /** Katalog fuer die Anzeige (Namen statt IDs). */
+  app.get("/api/katalog/v1", async () => ({
+    version: KATALOG_V1.version,
+    eintraege: KATALOG_V1.eintraege.map(({ id, name, bereich }) => ({ id, name, bereich })),
+  }));
 }
