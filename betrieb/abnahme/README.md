@@ -27,6 +27,7 @@ Der erzeugte Wegwerf-Recovery-Key liegt separat vom verschluesselten Sicherungsz
 | `totalverlust.sh`, `bootstrap.mjs` | Leere Ersatzumgebung, Inventar entschluesseln, Host-Secrets neu materialisieren, Cluster separat provisionieren, bestehender Host-Restore, Datenpruefung/Freigabe und systemd-Wiederanlauf |
 | `dossier.mjs`, `lizenzen.py` | Netzlose Syft-Scans des gelieferten Dateisystems als Syft/SPDX/CycloneDX, vorhandene Lizenzdateien und Notices |
 | `upstream-lizenzen.py` | Lizenzdateien exakter npm-/Go-Quellpakete, Git-Commit-Fallback und SPDX-Standardtexte; Fehlstellen bleiben explizit gelistet |
+| `lizenz-luecken.py` | Nachweisbare README-, Elternpaket-, Quellcommit- und Debian-copyright-Zuordnungen fuer die 14 bekannten Fehlstellen; nicht belegbare Restpunkte als `[?]` |
 | `pruefe-dossier.py` | Vier Pflichtimages, zwoelf lesbare SBOMs, Paketanzahlen, Pruefsummen, Lizenzarchive und Standardtext-Zuordnung |
 
 Die Probe erhaelt nur Bundle, oeffentliche Bootstrap-Metadaten, verschluesseltes externes Sicherungsziel und separaten Offline-Key ueber den Totalverlust hinweg. Kein altes pgdata-, Dokumente- oder Staging-Volume und keine unverschluesselten Host-Secrets werden uebernommen. Der Ersatzcluster startet zunaechst mit den minimalen Planora-Rollen und frisch angewendeten Basismigrationen, bevor der vorhandene Host-Restore eine frische Zieldatenbank anlegt.
@@ -42,3 +43,10 @@ Die Probe erhaelt nur Bundle, oeffentliche Bootstrap-Metadaten, verschluesseltes
 - SBOM-Vollstaendigkeit entspricht dem Scannerumfang des ausgelieferten Dateisystems, nicht einem mathematischen Beweis fuer unerkannte eingebettete Komponenten. Lizenztexte ersetzen keine komponentenbezogene Notice-/Copyright-Pruefung; siehe `FREIGABE.md` im Dossier.
 
 Der [Kurzbericht](../../docs/superpowers/plans/2026-11-11-m1-abnahme-spur-b.md) nennt die tatsaechlich ausgefuehrten Laeufe, Fehler und Ergebnisse.
+
+Der [Lizenznachtrag](../../docs/superpowers/plans/2026-11-11-m1-lizenznachtrag-spur-b.md) schliesst 12 der 14 zuvor offenen Zuordnungen. Ein ISC-/MIT-Widerspruch in einer mitgelieferten Deepmerge-Fixture und das private eigene `planora-app` bleiben mit Grund als `[?]` offen. Menschliche Freigabe und echte VM-Abnahme bleiben separate Aufgaben. Das Einstiegsskript fuehrt den Nachtrag vor der Dossier-Selbstpruefung automatisch aus; ein vorhandenes Dossier kann ohne neue Images oder WSL-Umgebung ergaenzt werden:
+
+```powershell
+python betrieb/abnahme/lizenz-luecken.py betrieb/abnahme/dossier-2026-11-11
+python betrieb/abnahme/pruefe-dossier.py betrieb/abnahme/dossier-2026-11-11
+```

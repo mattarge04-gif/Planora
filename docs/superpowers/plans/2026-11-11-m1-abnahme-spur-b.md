@@ -1,5 +1,7 @@
 # M1-Abnahme Spur B, 2026-11-11
 
+Fortschreibung nach dem ersten Auftrag: Im [Lizenznachtrag](2026-11-11-m1-lizenznachtrag-spur-b.md) sind **12 von 14** damaligen Zuordnungen geschlossen. Ein ISC-/MIT-Widerspruch in einer Deepmerge-Fixture und die Lizenz-/Liefermodell-Entscheidung fuer das private eigene `planora-app` bleiben mit Grund als `[?]` offen. Die folgenden 14er-Zahlen und `outcome failed` dokumentieren den historischen ersten Auftrag bis Commit `9502af7`; der Folgeauftrag bewertet menschliche Freigabe und echte VM ausdruecklich nicht als Fehler.
+
 **Teilweise erfuellt:** Die lokal beauftragten Ersatznachweise fuer Punkt 1 und 7 sind bestanden. Fuer Punkt 5 liegen Image-SBOMs und eine umfangreiche Lizenzsammlung vor; 14 Quellpakete ohne eigene Lizenzdatei verhindern weiterhin die Behauptung einer vollstaendigen komponentengenauen Lizenztext-/Notice-Abdeckung. Die menschliche Lizenz-/Lieferfreigabe bleibt wie beauftragt offen. Deshalb wird der gesamte Worker-Auftrag mit `outcome failed` zurueckgemeldet, obwohl der automatisierte Prueflauf Exit 0 erreicht.
 
 Eigener Worktree/Branch `mattarge04-gif/m1-abnahme-b`, Ausgangspunkt main `ae3f5b5`. Kein Push, kein Merge. Anwendungscode unveraendert.

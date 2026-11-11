@@ -52,6 +52,7 @@ try {
     Run wsl @('--unregister','planora-abnahme')
     Run node @('betrieb/abnahme/dossier.mjs',$ziel,(Join-Path $ziel 'dossier'))
     Run python @('betrieb/abnahme/upstream-lizenzen.py',(Join-Path $ziel 'dossier'))
+    Run python @('betrieb/abnahme/lizenz-luecken.py',(Join-Path $ziel 'dossier'))
     Run python @('betrieb/abnahme/pruefe-dossier.py',(Join-Path $ziel 'dossier'))
     "Prueflauf beendet: Dauer $([math]::Round(((Get-Date)-$start).TotalSeconds,1)) s; Nachweise $ziel; Lizenztextluecken siehe dossier/OFFENE-TEXTE.md"
 } finally { Pop-Location }
