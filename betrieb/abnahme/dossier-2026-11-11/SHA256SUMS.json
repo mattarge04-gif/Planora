@@ -76,8 +76,8 @@
   },
   {
     "datei": "FREIGABE.md",
-    "bytes": 1243,
-    "sha256": "30c61da21ef017ed3c62675ef5af90f79323eaf53b143d9664337970eb7938dc"
+    "bytes": 1840,
+    "sha256": "23533080116ce0545b75c5711228087917369524a8d1ed69e63bb0a6c16f6aa5"
   },
   {
     "datei": "komponenten.json",
@@ -86,8 +86,8 @@
   },
   {
     "datei": "lizenz-zuordnung.json",
-    "bytes": 439624,
-    "sha256": "be13aab5fac72ed262fbb8d313273ebde15af0edec2799503b30caa9ee53fe6e"
+    "bytes": 440328,
+    "sha256": "8bb17ac66c94e2658374051246f13a35f430d46d86ad2a4b3e4616aa323ed273"
   },
   {
     "datei": "nachweis.json",
@@ -96,8 +96,8 @@
   },
   {
     "datei": "OFFENE-TEXTE.md",
-    "bytes": 940,
-    "sha256": "af89dc3dd5b76d357f881be1836fd778c829d88c030a4964e5ae11ead7576544"
+    "bytes": 768,
+    "sha256": "8e28b1026f34ae68105f6fb7d17086221c92575d327d1133ab283fca8ed34556"
   },
   {
     "datei": "package-lock.json",
@@ -141,17 +141,17 @@
   },
   {
     "datei": "upstream-lizenzen.tar.gz",
-    "bytes": 388620,
-    "sha256": "a6397a47cdcc6d49212937fcb2991bfab0bd03346c579313532abcf94dcaacf7"
+    "bytes": 389101,
+    "sha256": "59d8298cf6967c5778ac0428c5d06d0cb465078a48bbb9226bca1286423a3f6d"
   },
   {
     "datei": "upstream-nachweis.json",
-    "bytes": 268251,
-    "sha256": "c255829009db07f88de03d94c4a919be7d9610ed70a6742b7046812f96d58f3c"
+    "bytes": 268786,
+    "sha256": "d4cd5e5ef0384b27f9e14865877f10ef1917000e3f4fc0f6d3ff8a24b6d612ac"
   },
   {
     "datei": "zuordnungen-nachtrag.json",
-    "bytes": 29253,
-    "sha256": "3ce5868f7649321819b8df25cbbe0d358b83b0d38138ae303111a1cfb23fb992"
+    "bytes": 29788,
+    "sha256": "740bcc454bfce6e6c6e703f3cf60189cf278cd53d3d3fb0aed758fab248bd621"
   }
 ]

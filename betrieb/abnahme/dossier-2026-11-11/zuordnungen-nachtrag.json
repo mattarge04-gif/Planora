@@ -364,7 +364,7 @@
         "archivSha256": "35022a4c0b31a2d423f36b36462a2a394d55b12d85fcb6b129b20612abcb10c0"
       }
     ],
-    "offen": "[?] @fastify/deepmerge 3.2.4: benchmark/package.json deklariert ISC, Eltern-LICENSE MIT; Fixture-Autor leer und keine eigene Copyright-Datei, deshalb keine eindeutige Auswahl belegen; secure-json-parse-Fixture separat belegt",
+    "offen": null,
     "fundstellen": [
       {
         "image": "app.syft.json.gz",
@@ -399,8 +399,9 @@
         "lizenzFixture": null
       }
     ],
-    "teilweise": "secure-json-parse-Fixture ueber BSD-3-Clause-Elterntext belegt; Deepmerge-Fixture samt abweichendem ISC-Eintrag und beiden Lizenztexten gesichert",
-    "regelVersion": 2
+    "regelVersion": 3,
+    "poEntscheid": "PO-Entscheid 2026-11-11",
+    "ergaenzung": "PO-Entscheid 2026-11-11: Deepmerge-Fixture (benchmark/package.json ISC, Eltern-LICENSE @fastify/deepmerge 3.2.4 MIT) technisch geschlossen, weil beide permissiv und beide Texte beigelegt sind; keine juristische Auswahl zwischen beiden. secure-json-parse-Fixture ueber BSD-3-Clause-Elterntext belegt."
   },
   {
     "typ": "npm",
@@ -499,10 +500,18 @@
     "typ": "npm",
     "name": "planora-app",
     "version": "1.0.0",
-    "quelle": "",
-    "dateien": [],
-    "offen": "[?] Privates eigenes Projekt ohne Lizenz-/Liefertext im Repository; Produkt-Owner muss Eigentum und vertragliches Liefermodell dokumentieren, keine externe Lizenz erfinden",
-    "regelVersion": 2
+    "quelle": "PO-Entscheid 2026-11-11",
+    "dateien": [
+      {
+        "pfad": "nachtrag/a251d0ca8e2632dc46b4/0-po-liefermodell.md",
+        "sha256": "3e0473f347bf14b1eca14fc66349c5c880e0396fc7bed97cf66a607b61a3af1e",
+        "quelle": "PO-Entscheid 2026-11-11"
+      }
+    ],
+    "offen": "[?] Liefermodell per PO-Entscheid dokumentiert; schriftliche Rechtekette Entwickler -> Firma und Vertragstext (juristisch) offen",
+    "regelVersion": 3,
+    "poEntscheid": "PO-Entscheid 2026-11-11",
+    "ergaenzung": "PO-Entscheid 2026-11-11: proprietaer, alle Rechte beim Anbieter; nicht-exklusives, nicht uebertragbares Nutzungsrecht des Kunden fuer seine Instanz waehrend der Vertragsdauer; Lieferung/Betrieb als signierte Images ohne Quellcode; Drittkomponenten unter eigenen Lizenzen gemaess Dossier."
   },
   {
     "typ": "npm",

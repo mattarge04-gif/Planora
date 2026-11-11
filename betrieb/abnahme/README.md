@@ -27,7 +27,7 @@ Der erzeugte Wegwerf-Recovery-Key liegt separat vom verschluesselten Sicherungsz
 | `totalverlust.sh`, `bootstrap.mjs` | Leere Ersatzumgebung, Inventar entschluesseln, Host-Secrets neu materialisieren, Cluster separat provisionieren, bestehender Host-Restore, Datenpruefung/Freigabe und systemd-Wiederanlauf |
 | `dossier.mjs`, `lizenzen.py`, `archiv-identitaet.mjs` | Netzlose Syft-Scans des gelieferten Image-Archivs als Syft/SPDX/CycloneDX; Lizenz-Rootfs ebenfalls aus dem geladenen Lieferarchiv: signierte Image-ID muss einziger Index-Eintrag und inhaltsgepruefter Blob des Archivs sein, Container wird ueber diese ID (nicht ueber einen Tag) erzeugt und `{{.Image}}` gegen sie geprueft. Vorhandene Lizenzdateien und Notices |
 | `upstream-lizenzen.py` | Lizenzdateien exakter npm-/Go-Quellpakete, Git-Commit-Fallback und SPDX-Standardtexte; Fehlstellen bleiben explizit gelistet |
-| `lizenz-luecken.py` | Nachweisbare README-, Elternpaket-, Quellcommit- und Debian-copyright-Zuordnungen fuer die 14 bekannten Fehlstellen; nicht belegbare Restpunkte als `[?]` |
+| `lizenz-luecken.py` | Nachweisbare README-, Elternpaket-, Quellcommit- und Debian-copyright-Zuordnungen fuer die 14 bekannten Fehlstellen; PO-Entscheide 2026-11-11 (Regelversion 3): Deepmerge-Fixture mit ISC- und MIT-Text technisch geschlossen, Planora-Liefermodell als Beleg `0-po-liefermodell.md`; nicht belegbare Restpunkte als `[?]` |
 | `pruefe-dossier.py` | Ohne Option rein lesend: Gesamtpruefsummen ohne fehlende/zusaetzliche Dateien, SBOM-Hashes, jedes referenzierte Mitglied von `upstream-lizenzen.tar.gz` und der vier `*.lizenzen.tar.gz` gegen den gespeicherten Hash, abgeleitete Dateien gegen Neuberechnung. `--erzeugen` schreibt Zuordnung, `OFFENE-TEXTE.md`, `FREIGABE.md` und `SHA256SUMS.json` neu und prueft danach lesend |
 | `test_pruefe_dossier.py` | Negativtests an einer Kopie: manipulierte Archivmitglieder (auch nach neu erzeugten Summen), veraenderte, zusaetzliche und abgeleitete Dateien werden erkannt |
 
@@ -35,7 +35,7 @@ Die Probe erhaelt nur Bundle, oeffentliche Bootstrap-Metadaten, verschluesseltes
 
 ## Grenzen
 
-- [A] WSL ist der vereinbarte lokale Ersatz: gemeinsamer WSL-Kernel und Windows-/WSL-Lebenszyklus statt unabhaengiger VM, kein Hypervisor-/Storage-/VM-Netzwerktest. Eine echte VM-/On-Premise-Abnahme wird dadurch nicht behauptet.
+- [A] WSL ist der vereinbarte lokale Ersatz: gemeinsamer WSL-Kernel und Windows-/WSL-Lebenszyklus statt unabhaengiger VM, kein Hypervisor-/Storage-/VM-Netzwerktest. Eine echte VM-Abnahme wird dadurch nicht behauptet. Betriebsmodell laut PO: Der Anbieter stellt Server und Domain und betreibt die Instanz, der Kunde hat keine eigene IT; die echte VM-Abnahme ist deshalb die Abnahme auf der CH-VM des Anbieters.
 - [A] systemd meldet im importierten Rootfs `kmod-static-nodes.service` als fehlgeschlagen; die Planora-Dienste und Docker sind davon unabhaengig aktiv. Ein vollstaendig fehlerfreier allgemeiner VM-Boot wird nicht behauptet.
 - [A] Die Netzsperre prueft den ausgehenden IPv4-Verkehr am WSL-Interface; die Skripte verweigern eine vorhandene IPv6-Default-Route. Diese Rootfs-Probe verwendet IPv4-Netze. Kein allgemeiner Nachweis fuer produktive Firewall-Regeln oder IPv6.
 - [A] containerd-Image-Speicher und Compose 5.7.0 sind Voraussetzungen dieses nachgewiesenen Profils. Der klassische Image-Speicher und Compose 2.40.3 wurden nach ihren jeweiligen Fehlversuchen geparkt. Keine Freigabe aller laut allgemeiner Mindestversion denkbaren Kombinationen.
@@ -45,7 +45,7 @@ Die Probe erhaelt nur Bundle, oeffentliche Bootstrap-Metadaten, verschluesseltes
 
 Der [Kurzbericht](../../docs/superpowers/plans/2026-11-11-m1-abnahme-spur-b.md) nennt die tatsaechlich ausgefuehrten Laeufe, Fehler und Ergebnisse.
 
-Der [Lizenznachtrag](../../docs/superpowers/plans/2026-11-11-m1-lizenznachtrag-spur-b.md) schliesst 12 der 14 zuvor offenen Zuordnungen. Ein ISC-/MIT-Widerspruch in einer mitgelieferten Deepmerge-Fixture und das private eigene `planora-app` bleiben mit Grund als `[?]` offen. Menschliche Freigabe und echte VM-Abnahme bleiben separate Aufgaben. Das Einstiegsskript fuehrt den Nachtrag vor der Dossier-Selbstpruefung automatisch aus; ein vorhandenes Dossier kann ohne neue Images oder WSL-Umgebung ergaenzt werden:
+Der [Lizenznachtrag](../../docs/superpowers/plans/2026-11-11-m1-lizenznachtrag-spur-b.md) schloss 12 der 14 zuvor offenen Zuordnungen. Nach den PO-Entscheiden 2026-11-11 sind 13 geschlossen: Die Deepmerge-Fixture ist mit beiden permissiven Texten (ISC, MIT) beigelegt. Fuer das proprietaere `planora-app` ist das Liefermodell dokumentiert; schriftliche Rechtekette Entwickler -> Firma und Vertragstext bleiben als juristisches `[?]` offen. Menschliche Freigabe (bewusst offen) und echte VM-Abnahme auf der CH-VM des Anbieters bleiben separate Aufgaben. Das Einstiegsskript fuehrt den Nachtrag vor der Dossier-Selbstpruefung automatisch aus; ein vorhandenes Dossier kann ohne neue Images oder WSL-Umgebung ergaenzt werden:
 
 ```powershell
 python betrieb/abnahme/lizenz-luecken.py betrieb/abnahme/dossier-2026-11-11

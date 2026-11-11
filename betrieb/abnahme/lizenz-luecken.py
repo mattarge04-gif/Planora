@@ -169,7 +169,7 @@ zielnamen = {'@aws-sdk/credential-provider-http', '@aws-sdk/credential-provider-
 bearbeitet = [e for e in nachweis if e.get('name') in zielnamen]
 assert len(bearbeitet) == 14
 for e in bearbeitet:
-    if e.get('regelVersion') == 2 and e.get('dateien'):
+    if e.get('regelVersion') in (2, 3) and e.get('dateien'):
         assert all(hashlib.sha256(dateien[b['pfad']]).hexdigest() == b['sha256'] for b in e['dateien'])
         continue
     try:
@@ -178,6 +178,33 @@ for e in bearbeitet:
         e.pop('ergaenzung', None)
         e['offen'] = '[?] ' + (str(fehler) or type(fehler).__name__)
     e['regelVersion'] = 2
+
+# PO-Entscheide 2026-11-11 (Regelversion 3). Technische Dokumentation der Produkt-Owner-Entscheide, keine juristische Freigabe.
+PO = 'PO-Entscheid 2026-11-11'
+LIEFERMODELL = f'''# Planora: Lizenz- und Liefermodell ({PO})
+
+- Planora (`planora-app`) ist proprietaer; alle Rechte liegen beim Anbieter.
+- Der Kunde erhaelt ein nicht-exklusives, nicht uebertragbares Nutzungsrecht fuer seine Instanz waehrend der Vertragsdauer.
+- Lieferung und Betrieb erfolgen als signierte Images; Quellcode wird nicht geliefert.
+- Betriebsmodell: Der Anbieter stellt Server (CH-VM) und Domain und betreibt die Instanz; der Kunde braucht keine eigene IT.
+- Drittkomponenten in den Images stehen unter ihren eigenen Lizenzen gemaess diesem Dossier (SBOMs, Lizenzarchive, upstream-nachweis.json).
+
+[?] Offen (juristisch): schriftliche Rechtekette Entwickler -> Firma und der Vertragstext mit dem Kunden.
+'''
+for e in bearbeitet:
+    if e['name'] == 'benchmarks':
+        isc = [b for b in e.get('dateien', []) if b['pfad'].endswith('-fixture-ISC.txt')]
+        mit = [b for b in e.get('dateien', []) if b['pfad'].endswith('-eltern-LICENSE') and '/@fastify/deepmerge/' in b.get('quelle', '')]
+        assert isc and mit and all(hashlib.sha256(dateien[b['pfad']]).hexdigest() == b['sha256'] for b in isc + mit), 'Deepmerge-Fixture: ISC- oder MIT-Text fehlt'
+        e.pop('teilweise', None)
+        e.update(offen=None, poEntscheid=PO, regelVersion=3, ergaenzung=f'{PO}: Deepmerge-Fixture (benchmark/package.json ISC, Eltern-LICENSE @fastify/deepmerge 3.2.4 MIT) technisch geschlossen, weil beide permissiv und beide Texte beigelegt sind; keine juristische Auswahl zwischen beiden. secure-json-parse-Fixture ueber BSD-3-Clause-Elterntext belegt.')
+    elif e['name'] == 'planora-app':
+        raw = LIEFERMODELL.encode()
+        pfad = 'nachtrag/' + hashlib.sha256(f'{e["name"]}|{e["version"]}'.encode()).hexdigest()[:20] + '/0-po-liefermodell.md'
+        dateien[pfad] = raw
+        e.update(quelle=PO, dateien=[{'pfad': pfad, 'sha256': hashlib.sha256(raw).hexdigest(), 'quelle': PO}], poEntscheid=PO, regelVersion=3,
+                 ergaenzung=f'{PO}: proprietaer, alle Rechte beim Anbieter; nicht-exklusives, nicht uebertragbares Nutzungsrecht des Kunden fuer seine Instanz waehrend der Vertragsdauer; Lieferung/Betrieb als signierte Images ohne Quellcode; Drittkomponenten unter eigenen Lizenzen gemaess Dossier.',
+                 offen='[?] Liefermodell per PO-Entscheid dokumentiert; schriftliche Rechtekette Entwickler -> Firma und Vertragstext (juristisch) offen')
 
 temp = ziel/'upstream-lizenzen.neu.tar.gz'
 with temp.open('wb') as ausgabe, gzip.GzipFile(filename='', mode='wb', fileobj=ausgabe, mtime=0) as gz, tarfile.open(fileobj=gz, mode='w') as tar:
