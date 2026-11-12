@@ -1,5 +1,5 @@
 import { KATALOG_V2 } from "./katalog.v2.js";
-import { mm, mitHash, pflichtId, weltKern } from "./generator.js";
+import { mm, mitHash, pflichtId, weltKern } from "./generator.kern.js";
 import type { RegelwerkV2 } from "./regelwerk.js";
 import type { Beschreibung, BauteilEingabe, HuelleGespeichert, Welt, WeltGruppe, WeltOrt } from "./typen.js";
 
