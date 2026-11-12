@@ -15,7 +15,41 @@ Einstiegsdokumente (in dieser Reihenfolge lesen):
 
 Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer Entscheide bleibt `00-kontext.md`.
 
-## 0b. Stand – zuletzt aktualisiert 11.11.2026
+**Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
+
+## 0b. Stand – zuletzt aktualisiert 12.11.2026
+
+### Fortsetzung nach erneutem Claude-Nutzungslimit [F]
+
+- Aktueller Checkout weiter `m2b2-redesign`, Teilaufgaben 4–7 inzwischen abgeschlossen; Abnahmen 1 und 2 freigegeben. Die älteren Rückgabeangaben unten sind historisch.
+- Teilaufgabe 8 durch Codex fortgesetzt: übernommene Zoom-/Beschnitt-/Nahkulissen-Korrekturen und Lazy-Loading, Tabellenfokus als ein Tab-Stopp sowie T-Rückmeldung integriert.
+- Vom PO im letzten Claude-Verlauf freigegebener Abbau umgesetzt: `Ansicht`, `Entwurf`, alte Szene und ausschliesslich alte Karten entfernt. Gebäude öffnen direkt im Digital Twin. `szene2/huelle.ts`, `szene2/leitungen.ts` und `panel/daten.ts` samt Tests bleiben gemeinsame Grundlagen.
+- Lizenztexte von 66 Produktionspaketen unter `app/web/public/lizenzen.txt`; fünf Pakete liefern keinen eigenen Text im installierten Paket. Vollständige Image-SBOM und menschliche Lieferfreigabe bleiben offen.
+- Aktueller Prüfstand und verbleibende Punkte: `docs/superpowers/plans/2026-11-12-teilaufgabe-8.md`. Kein Merge/Push ohne PO-Auftrag; PO-Server 3000/54500 nicht stoppen oder neu starten.
+- Abschlussprüfung: 172 Webtests, Typprüfung und Build grün; 48 echte GPU-Bilder, 60 fps je Fenster/Durchgang, unabhängige Bildkritik bereit für PO-Sichtung. Tabellen-/Tastaturfunktionen zusätzlich im Browser geprüft. Separate Testinstanz 3100/54600 wieder gestoppt.
+
+### Redesign durch Codex – aktueller Stand [F]
+
+**Rueckgabe an Claude (12.11.2026):** `docs/superpowers/plans/2026-11-12-rueckgabe-an-claude.md` zuerst vollstaendig lesen. **PO-Abnahme 1 ist freigegeben** ("passt machen wir in 30 min weiter wegen dem nutzung guthaben"). Nach der gewuenschten Pause naechster Schritt: Teilaufgabe 4, GLB-Anlagen und Leitungen. Codex hat die Arbeit beendet; Claude uebernimmt.
+
+Branch **`m2b2-redesign`**, aktueller Checkout; nicht wechseln oder pushen. Die Uebergabe `docs/superpowers/plans/2026-11-12-uebergabe-codex.md` ersetzt die aelteren M2b-Fortsetzungsangaben unten.
+
+- Teilaufgabe 1 abgeschlossen: PO waehlt **A – Architekturatelier**, mit geschossbezogenem Schnitt (oben alles weg, darunter sichtbar, gewaehlte Ebene oben offen und zwei kameraseitige Fassaden weg). Entscheid: `docs/design/entscheide/2026-11-12-redesign-digital-twin.md`; Regel 7 und Spec nachgefuehrt.
+- Teilaufgabe 2 abgeschlossen: gemeinsame `app/web/src/design/tokens.ts`; UI-/3D-Tokens und GPU-Uebersicht unter `docs/abnahme/2026-11-12-redesign-tokens/`.
+- Teilaufgabe 3 abgeschlossen, **PO-Abnahme 1 freigegeben**: neue Seite **Digital Twin**, parametrische Huelle/Kulisse, weiches Licht, Geschossschnitt, Kamerasteuerung, reduzierte Darstellung. Bilder: `docs/abnahme/2026-11-12-redesign-szene/README.md`. Unabhaengige Kritik bereit mit P2-Restauflagen (Schattenkoernung, Tonwertunterschied normal/reduziert).
+- Web 63/63, Backend 417/417, beide Typpruefungen und Webbuild gruen. GPU RTX 3070 Ti / D3D11, 60 fps bei Drehung in 1440/1920/1280. Keine CSP-Verletzung; bekannte Bibliotheks-/Shaderwarnungen dokumentiert. Docker nicht wiederholt.
+- Weiter mit **Teilaufgabe 4 (GLB-Anlagen, Leitungen)** nach der angekuendigten Pause; PO-OK zu Abnahme 1 liegt vor. Dashboard folgt in 5/6, Interaktionen in 7, Feinschliff in 8.
+- PO-Server 3000/54500 nicht stoppen/neustarten. Eigene Instanz 3100/54600 nach Pruefung gestoppt. Stash unveraendert als Material erhalten.
+
+### Visueller Zielentwurf E40 [F]
+
+Prototyp auf `m2b1-sichtbarer-schnitt` umgesetzt (`app/web/src/szene2`, `karten`, `seiten/Entwurf.tsx`); [Screenshots und offene Punkte](docs/abnahme/2026-11-12-entwurf/README.md). PO-Korrekturrunde offen, keine visuelle Endabnahme vorher. Ansehen: `npm run entwicklung` in `app/`, Gebaeude -> "Entwurf". Masse/Farben [A], nur im Software-Rendering geprueft.
+
+### Fortsetzung nach Claude-Usage-Abbruch [F]
+
+Tagesabschluss: M2b-1 technisch fertig, keine visuelle Endabnahme. PO-Entscheid E40: [plastische Gebaeudeuebersicht, Technikansicht und Informationskarten nach drei Bildreferenzen](docs/design/2026-11-12-visuelle-zielrichtung.md). Der visuelle Zielentwurf ist erledigt (umgesetzt 12.11., siehe Block "Visueller Zielentwurf E40"). Zusatzaufwand [A] +6–10 PT, Planungswert +8 PT. [Screenshots und Pruefstand](docs/abnahme/2026-11-12-m2b1/README.md) sind im Repo gesichert.
+
+Aktueller Branch `m2b1-sichtbarer-schnitt`, Tasks 1–5 bereits committet (HEAD bei Uebernahme `376885d`). Tasks 6–7 durch Codex fortgesetzt: Docker-Frontend, Web-Lockfile im Dossier, lokaler Entwicklungsstart. Siehe aktuellen Eintrag im [Fortsetzungsstand](docs/superpowers/plans/2026-11-11-fortsetzung.md). Der erste sichtbare Schnitt existiert jetzt; aeltere Aussagen unten zu fehlendem Frontend sind damit ueberholt. Weitere M2b-Schritte bleiben offen. Lokale Demo: `npm run entwicklung` in `app/`.
 
 ### Entschieden [F]
 
@@ -41,7 +75,7 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ### Das Kernproblem, richtig gefasst [F]
 
-M1 (Betriebsfundament) und M2a (Datenkern) sind gebaut; sichtbar ist noch nichts. Es gibt **kein Frontend** (kein Vite-Projekt, keine Login-Seite; Caddy liefert nur die Wartungsseite). Nutzen entsteht erst mit M2b, das das Frontend-Geruest mitbringen muss.
+M1 (Betriebsfundament), M2a (Datenkern) und M2b-1 (erster sichtbarer Schnitt) sind gebaut. Das Frontend unter `app/web/` liefert Login, Gebaeudeliste, 3D-Uebersicht und Seitenpanel. Geschossauswahl existiert als Fokus-Prototyp in der Seite "Entwurf"; Explosion, Tabellenweg und Erfassung fehlen weiterhin.
 
 ### Abbruchkriterium [A]
 
@@ -62,7 +96,7 @@ Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Ges
 
 ### Naechste Coding-Aufgabe
 
-M2b spezifizieren (Brainstorming, Spec, Plan): Frontend-Geruest (React/Vite nach ADR 0004), Login, 3D-Ansicht nach ADR 0008/0032 (Uebersicht, Geschossauswahl, Explosion, Seitenpanel, Leistungsstufen, Tabellenweg). Davor offene M2a-Nachtraege und Regelwerk-Freigabe klaeren.
+PO-Korrekturrunde am Entwurf ([docs/abnahme/2026-11-12-entwurf/README.md](docs/abnahme/2026-11-12-entwurf/README.md)); danach alte Szene durch szene2 ersetzen und Explosion, Tabellenweg, Leistungsstufen anbinden. Regelwerk-v1 bleibt Annahme bis PO-Rueckmeldung. Einheitliches 400-Format ist in M2b-1 umgesetzt; weitere M2a-Nachtraege bleiben offen.
 
 ## Antworten
 

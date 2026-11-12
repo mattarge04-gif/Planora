@@ -1,0 +1,33 @@
+{
+  "beschreibung": "Abnahme 1: geschlossene Übersicht, OG1 mit erhaltenem EG, EG ohne OG, Kameradrehung, Nahaufnahme und reduzierte Darstellung.",
+  "fenster": [[1440, 900], [1920, 1080], [1280, 720]],
+  "schritte": [
+    { "klick": "Beispielgebaeude" },
+    { "warte": 7000 },
+    { "bild": "uebersicht" },
+    { "knopf": "OG1 2 Einheiten", "exakt": true },
+    { "warte": 2500 },
+    { "bild": "schnitt-og1" },
+    { "knopf": "EG 3 Einheiten", "exakt": true },
+    { "warte": 2500 },
+    { "bild": "schnitt-eg" },
+    { "fps": 3000 },
+    { "warte": 1200 },
+    { "bild": "schnitt-eg-gedreht" },
+    { "taste": "Escape" },
+    { "warte": 2500 },
+    { "rad": [0.5, 0.5, -300] },
+    { "rad": [0.5, 0.5, -300] },
+    { "rad": [0.5, 0.5, -300] },
+    { "rad": [0.5, 0.5, -300] },
+    { "rad": [0.5, 0.5, -300] },
+    { "rad": [0.5, 0.5, -300] },
+    { "rad": [0.5, 0.5, -300] },
+    { "rad": [0.5, 0.5, -300] },
+    { "warte": 1500 },
+    { "bild": "nah" },
+    { "klick": "Reduzierte Darstellung" },
+    { "warte": 1500 },
+    { "bild": "reduziert" }
+  ]
+}

@@ -45,6 +45,8 @@ describe.skipIf(!DOCKER_TESTS)("Host-Update (Docker)", () => {
     const kontext = join(dir, "app"); mkdirSync(kontext);
     for (const f of ["package.json", "package-lock.json", "Dockerfile", ".dockerignore"]) cpSync(join(APP, f), join(kontext, f));
     cpSync(join(APP, "src"), join(kontext, "src"), { recursive: true });
+    cpSync(join(APP, "web"), join(kontext, "web"), { recursive: true,
+      filter: (pfad) => !["node_modules", "dist"].includes(pfad.split(/[\\/]/).at(-1)!) });
     const image1 = await baueImage(TEST.tag(11), "update-1", kontext);
     const backupKontext = join(dir, "backup-kontext"); mkdirSync(backupKontext); cpSync(kontext, join(backupKontext,"app"), { recursive:true });
     cpSync(join(APP,"tsconfig.json"),join(backupKontext,"app/tsconfig.json"));

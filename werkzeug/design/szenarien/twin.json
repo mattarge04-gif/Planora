@@ -1,0 +1,13 @@
+{
+  "beschreibung": "Digital-Twin-Seite (Redesign): erster Eindruck in drei Fenstergroessen, Nahaufnahme, fps. Schritte anpassen, sobald Fokus/Auswahl/Separieren existieren.",
+  "fenster": [[1440, 900], [1920, 1080], [1280, 720]],
+  "schritte": [
+    { "klick": "Beispielgebaeude" },
+    { "warte": 7000 },
+    { "bild": "uebersicht" },
+    { "rad": [0.5, 0.5, -500] },
+    { "warte": 1500 },
+    { "bild": "nah" },
+    { "fps": 3000 }
+  ]
+}

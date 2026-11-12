@@ -14,7 +14,7 @@ starte(async () => {
   const vertrauteProxies = env("PLANORA_VERTRAUTE_PROXIES", "").split(",").map((s) => s.trim()).filter(Boolean);
   const app = await baueServer({
     pool, stufe: stufe as Stufe, baseURL: env("PLANORA_BASE_URL"), secret: geheimnis("auth_secret"),
-    ablageWurzel: env("PLANORA_ABLAGE", "/daten/dokumente"), vertrauteProxies, release: release(),
+    ablageWurzel: env("PLANORA_ABLAGE", "/daten/dokumente"), vertrauteProxies, release: release(), webWurzel: env("PLANORA_WEB_DIR", "/app/web"),
   });
   let endet = false;
   const beende = async (signal: string) => {

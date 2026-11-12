@@ -1,0 +1,15 @@
+{
+  "szenario": "docs/design/entscheide/2026-11-12-redesign/ansatz-b/szenario.json",
+  "zeit": "2026-11-12T12:36:55.463Z",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002207) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "ansichten": [
+    {
+      "fenster": "1440x900",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-12-redesign-r3\\b\\ansatz-b-1440x900.png"
+      ],
+      "fps": [],
+      "meldungen": []
+    }
+  ]
+}

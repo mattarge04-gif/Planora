@@ -29,6 +29,14 @@ describe.skipIf(!DOCKER_TESTS)("Compose-Paket (Docker)", () => {
     expect(r.json()).toEqual({ ok: true, db: true, wartung: false, release: "test-1" });
   });
 
+  it("M2b-1: Frontend wird ueber Caddy ausgeliefert, mit CSP", async () => {
+    const r = await https(inst.basis, "GET", "/");
+    expect(r.status).toBe(200);
+    expect(r.text).toContain('<div id="app">');
+    expect(String(r.headers["content-security-policy"])).toContain("default-src 'self'");
+    expect((await https(inst.basis, "GET", "/api/gibt-es-nicht")).status).toBe(404);
+  });
+
   it("PP9-7: Laufzeitbaum ohne Compiler und Testwerkzeuge, natives Argon2 bleibt vorhanden", async () => {
     const r = await inst.compose(["exec", "-T", "api", "node", "--input-type=module", "-e",
       `import {existsSync,readdirSync} from 'node:fs';

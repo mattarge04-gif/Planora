@@ -3,6 +3,33 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-12 – Teilaufgabe 8 nach erneutem Claude-Nutzungslimit übernommen
+
+- [F] Letzten Auftrag aus Claudes lokalem Sitzungsverlauf rekonstruiert: Restauflagen Interaktionen abschliessen, vom PO freigegebene Altansichten entfernen, Lizenzhinweise und Dokumentation ergänzen, GPU-Prüfung. Orca-CLI war in dieser Sitzung nicht auf dem PATH.
+- [F] Vorhandene Änderungen an Zoom, Beschnitt, Nahkulisse, Lazy-Loading, Tabellenfokus und T-Rückmeldung übernommen. Vor dem Abbau: 186 Webtests und Build grün.
+- [F] Altansichten samt ausschliesslich alten Komponenten und 14 alten Tests entfernt. Gemeinsame Geometrie-, Leitungs- und Paneldatenmodule bleiben samt Tests erhalten. Gebäude öffnen direkt im Digital Twin.
+- [F] Nach dem Abbau: 172 Webtests, Typprüfung und Build grün. Drittanbietertexte von 66 Produktionspaketen beigelegt; fünf fehlende Pakettexte ausdrücklich gelistet, keine Lieferfreigabe behauptet.
+- [F] Weiterer Prüfstand und offene Punkte: [Teilaufgabe 8](superpowers/plans/2026-11-12-teilaufgabe-8.md). Kein Merge, Push oder Deployment.
+
+## 2026-11-12 – Visueller Zielentwurf (E40) umgesetzt
+
+- [F] Prototyp nach Spec und Plan (6 Tasks) auf `m2b1-sichtbarer-schnitt`: plastische Uebersicht, Fokusmodus je Geschoss, schematische Leitungen, schwebende Karten. [Abnahmestand](abnahme/2026-11-12-entwurf/README.md).
+- [F] Gelernt: ACES-Tonwertabbildung verfaelscht das Heizungsrot zu Lachs; `NeutralToneMapping` haelt die KOO-Farben. `shadows="soft"` ist in three 0.187 entfallen.
+- [F] Frontend 43/43, Backend 417/417, Typpruefungen/Build gruen, keine CSP-Verletzungen. fps nur im Software-Rendering gemessen [A].
+- [?] PO-Korrekturrunde: weisser Auswahl-Umriss, Zentrale->Verteiler [A], Dachaufbau [A], Masse/Farben [A].
+
+## 2026-11-12 – M2b-1 nach Claude-Usage-Abbruch fortgesetzt
+
+- [F] Tagesabschluss vom PO beauftragt: Dokumentation, Commit und Push auf dem Arbeitsbranch; kein Merge/Deployment. Visuelle Endabnahme ausdruecklich offen.
+- [F] E40: PO bestaetigt Bild 2 fuer Gebaeude, Bild 3 fuer Technikansicht, Bild 1 fuer Informationskarten. [Referenzen und Zusatzaufwand](design/2026-11-12-visuelle-zielrichtung.md), [dauerhaft gesicherte Screenshots](abnahme/2026-11-12-m2b1/README.md).
+- [A] Zusatzaufwand +6–10 PT, Planungswert +8 PT, ohne bereits geplante Funktionen doppelt zu zaehlen. Naechste Sitzung: visueller Zielentwurf am Beispielgebaeude.
+
+- [F] Uebernahme auf `m2b1-sichtbarer-schnitt` bei `376885d`: Tasks 1–5 committet, Task 6 mit fuenf geaenderten Dateien begonnen.
+- [F] Docker-Frontend, Web-Lockfile im Lizenz-Dossier inklusive Abnahme-Aufruf und lokaler Demostart fertiggestellt. Der Update-Test kopiert jetzt auch `web/` in seinen Build-Kontext, ohne `node_modules` und `dist`.
+- [F] Demostart verwendet frische temporaere Daten, bereinigt laufende Dienste bei Startfehlern und lehnt Produktion/ungueltige Ports ab. Keine bestehenden Entwicklungsdaten werden geloescht.
+- [F] Backend 402 Tests, Frontend 19 Tests, Typpruefungen und Build bestanden. Browser: Login, Liste, 3D, Verteiler-Picking mit Restaurant (EG) und Buero C (OG1), keine CSP-Verletzungen. Docker-Stand im aktuellen Fortsetzungsplan.
+- [F] Keine WSL-/CH-VM-Gesamtabnahme, keine vollstaendige SBOM-Neuerzeugung, kein Merge/Deployment. README, Spec und Einstieg nachgefuehrt; Branch wird zum Tagesabschluss gepusht.
+
 ## 2026-11-11 – M2a Welt-Kern
 
 ### 1. Was gemacht wurde

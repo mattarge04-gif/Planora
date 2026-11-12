@@ -19,6 +19,14 @@ it("erzeugt ein ungeprueftes Dossier nur aus signiertem Release und ueberschreib
     expect(spawnSync(process.execPath, args, { windowsHide: true }).status).toBe(0);
     expect(JSON.parse(readFileSync(join(ausgabe, "komponenten.json"), "utf8")).status).toBe("UNGEPRUEFT");
     expect(readFileSync(join(ausgabe, "FREIGABE.md"), "utf8")).toContain("keine Lieferfreigabe");
+    expect(JSON.parse(readFileSync(join(ausgabe, "komponenten.json"), "utf8")).npmWeb).toBeNull();
     expect(spawnSync(process.execPath, args, { windowsHide: true }).status).not.toBe(0);
+    // Mit Web-Lockfile landen dessen Pakete unter npmWeb.
+    const lockWeb = join(dir, "web-lock.json");
+    writeFileSync(lockWeb, JSON.stringify({ packages: { "node_modules/three": { version: "0.187.0", license: "MIT" } } }));
+    const ausgabeWeb = join(dir, "dossier-web");
+    const argsWeb = [...args.slice(0, -1), ausgabeWeb, "--lockfile-web", lockWeb];
+    expect(spawnSync(process.execPath, argsWeb, { windowsHide: true }).status).toBe(0);
+    expect(JSON.parse(readFileSync(join(ausgabeWeb, "komponenten.json"), "utf8")).npmWeb["node_modules/three"].license).toBe("MIT");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

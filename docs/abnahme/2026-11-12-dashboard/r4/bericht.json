@@ -1,0 +1,80 @@
+{
+  "szenario": "werkzeug/design/szenarien/twin-dashboard.json",
+  "zeit": "2026-11-12T16:30:30.609Z",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002207) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "ansichten": [
+    {
+      "fenster": "1440x900",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\uebersicht-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\technik-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\tabelle-auswahl-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\og1-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\separiert-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\ausgeblendet-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\profilmenue-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\gebaeudewahl-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\reduziert-1440x900.png"
+      ],
+      "fps": [
+        60
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.WebGLProgram: Program Info Log: (673,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (853,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (853,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (860,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (860,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value\n(85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value",
+        "warning: THREE.WebGLProgram: Program Info Log: (814,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (855,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (677,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (671,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)"
+      ]
+    },
+    {
+      "fenster": "1920x1080",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\uebersicht-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\technik-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\tabelle-auswahl-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\og1-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\separiert-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\ausgeblendet-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\profilmenue-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\gebaeudewahl-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\reduziert-1920x1080.png"
+      ],
+      "fps": [
+        60
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+      ]
+    },
+    {
+      "fenster": "1280x720",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\uebersicht-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\technik-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\tabelle-auswahl-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\og1-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\separiert-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\ausgeblendet-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\profilmenue-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\gebaeudewahl-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-12-dashboard\\r4\\reduziert-1280x720.png"
+      ],
+      "fps": [
+        60
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,681 @@
+{
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002207) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "tab": [
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "OG12 Einheiten",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1143,
+      "y": 121,
+      "w": 222,
+      "h": 38
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "OG1 ausblenden",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1367,
+      "y": 123,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "EG3 Einheiten",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1143,
+      "y": 160,
+      "w": 222,
+      "h": 38
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "EG ausblenden",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1367,
+      "y": 163,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "tag": "BUTTON",
+      "role": "switch",
+      "name": "Geschosse separieren",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1143,
+      "y": 208,
+      "w": 258,
+      "h": 33
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "Wärmepumpe–EG · Technik1Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 684,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "Speicher–EG · Technik1Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 720,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "Heizungsverteiler–EG · Technik1Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 756,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "HeizkörperZehnderEG · Buero A12Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 792,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "HeizkörperProluxEG · Buero A3Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 828,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "FBH-Kreis–EG · Restaurant6Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 833,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "FBH-Kreis–OG1 · Buero C4Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 797,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "FBH-Kreis–OG1 · Buero DunbekanntBestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 833,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "BODY",
+      "role": null,
+      "name": "PlanoraÜbersichtTechnikBeispielgebaeude1GebäudeBei",
+      "landmark": null,
+      "outline": "none 3px rgb(31, 41, 55)",
+      "boxShadow": "none",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 0
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Übersicht",
+      "landmark": "NAV[Ansicht]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgba(31, 38, 48, 0.18) 0px 1px 2px 0px, rgba(31, 38, 48, 0.1",
+      "x": 628,
+      "y": 20,
+      "w": 96,
+      "h": 32
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Technik",
+      "landmark": "NAV[Ansicht]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 727,
+      "y": 20,
+      "w": 85,
+      "h": 32
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Beispielgebaeude, Gebäude wählen",
+      "landmark": "HEADER",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgba(31, 38, 48, 0.05) 0px 0px 0px 0.5px, rgba(31, 38, 48, 0",
+      "x": 1147,
+      "y": 18,
+      "w": 185,
+      "h": 36
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Hinweise: 1",
+      "landmark": "HEADER",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgba(31, 38, 48, 0.05) 0px 0px 0px 0.5px, rgba(31, 38, 48, 0",
+      "x": 1340,
+      "y": 18,
+      "w": 36,
+      "h": 36
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Profil und Einstellungen",
+      "landmark": "HEADER",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgba(31, 38, 48, 0.05) 0px 0px 0px 0.5px, rgba(31, 38, 48, 0",
+      "x": 1384,
+      "y": 18,
+      "w": 36,
+      "h": 36
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Zum Ort in OG1",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 65,
+      "y": 439,
+      "w": 105,
+      "h": 22
+    },
+    {
+      "tag": "CANVAS",
+      "role": null,
+      "name": "Gebäudemodell: Pfeiltasten drehen, Plus und Minus ",
+      "landmark": "MAIN[Digital Twin]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "OG12 Einheiten",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1143,
+      "y": 121,
+      "w": 222,
+      "h": 38
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "OG1 ausblenden",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1367,
+      "y": 123,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "EG3 Einheiten",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1143,
+      "y": 160,
+      "w": 222,
+      "h": 38
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "EG ausblenden",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1367,
+      "y": 163,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "tag": "BUTTON",
+      "role": "switch",
+      "name": "Geschosse separieren",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1143,
+      "y": 208,
+      "w": 258,
+      "h": 33
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "Wärmepumpe–EG · Technik1Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 684,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "Speicher–EG · Technik1Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 720,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "Heizungsverteiler–EG · Technik1Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 756,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "HeizkörperZehnderEG · Buero A12Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 792,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "HeizkörperProluxEG · Buero A3Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 828,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "FBH-Kreis–EG · Restaurant6Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 833,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "FBH-Kreis–OG1 · Buero C4Bestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 797,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "TR",
+      "role": null,
+      "name": "FBH-Kreis–OG1 · Buero DunbekanntBestätigt",
+      "landmark": "DIV[Anlagenliste]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgb(95, 136, 176) 0px 0px 0px 2px inset",
+      "x": 39,
+      "y": 833,
+      "w": 1362,
+      "h": 36
+    },
+    {
+      "tag": "BODY",
+      "role": null,
+      "name": "PlanoraÜbersichtTechnikBeispielgebaeude1GebäudeBei",
+      "landmark": null,
+      "outline": "none 3px rgb(31, 41, 55)",
+      "boxShadow": "none",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 0
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Übersicht",
+      "landmark": "NAV[Ansicht]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgba(31, 38, 48, 0.18) 0px 1px 2px 0px, rgba(31, 38, 48, 0.1",
+      "x": 628,
+      "y": 20,
+      "w": 96,
+      "h": 32
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Technik",
+      "landmark": "NAV[Ansicht]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 727,
+      "y": 20,
+      "w": 85,
+      "h": 32
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Beispielgebaeude, Gebäude wählen",
+      "landmark": "HEADER",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgba(31, 38, 48, 0.05) 0px 0px 0px 0.5px, rgba(31, 38, 48, 0",
+      "x": 1147,
+      "y": 18,
+      "w": 185,
+      "h": 36
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Hinweise: 1",
+      "landmark": "HEADER",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgba(31, 38, 48, 0.05) 0px 0px 0px 0.5px, rgba(31, 38, 48, 0",
+      "x": 1340,
+      "y": 18,
+      "w": 36,
+      "h": 36
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Profil und Einstellungen",
+      "landmark": "HEADER",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "rgba(31, 38, 48, 0.05) 0px 0px 0px 0.5px, rgba(31, 38, 48, 0",
+      "x": 1384,
+      "y": 18,
+      "w": 36,
+      "h": 36
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Zum Ort in OG1",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 65,
+      "y": 439,
+      "w": 105,
+      "h": 22
+    },
+    {
+      "tag": "CANVAS",
+      "role": null,
+      "name": "Gebäudemodell: Pfeiltasten drehen, Plus und Minus ",
+      "landmark": "MAIN[Digital Twin]",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "OG12 Einheiten",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1143,
+      "y": 121,
+      "w": 222,
+      "h": 38
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "OG1 ausblenden",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1367,
+      "y": 123,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "EG3 Einheiten",
+      "landmark": "SECTION",
+      "outline": "solid 2px rgb(95, 136, 176)",
+      "boxShadow": "none",
+      "x": 1143,
+      "y": 160,
+      "w": 222,
+      "h": 38
+    }
+  ],
+  "tasten": [
+    {
+      "taste": "ArrowRight",
+      "ansage": "",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "ArrowRight",
+      "ansage": "",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "ArrowRight",
+      "ansage": "",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "ArrowUp",
+      "ansage": "",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "ArrowUp",
+      "ansage": "",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "+",
+      "ansage": "",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "+",
+      "ansage": "",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "+",
+      "ansage": "",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "-",
+      "ansage": "",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "-",
+      "ansage": "",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "-",
+      "ansage": "",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "PageDown",
+      "ansage": "OG1 geöffnet",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "PageDown",
+      "ansage": "EG geöffnet",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "PageUp",
+      "ansage": "OG1 geöffnet",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "t",
+      "ansage": "OG1 geöffnet",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "s",
+      "ansage": "Geschosse separiert",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "s",
+      "ansage": "Geschosse zusammengeführt",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "Escape",
+      "ansage": "Übersicht, Gebäude geschlossen",
+      "aktiv": "CANVAS"
+    },
+    {
+      "taste": "Escape",
+      "ansage": "Übersicht, Gebäude geschlossen",
+      "aktiv": "CANVAS"
+    }
+  ],
+  "meldungen": [
+    "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+    "warning: THREE.WebGLProgram: Program Info Log: (817,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value\n(85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value",
+    "warning: THREE.WebGLProgram: Program Info Log: (958,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (956,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (821,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (815,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)"
+  ],
+  "landmarken": [
+    "MAIN[Digital Twin]",
+    "HEADER[]",
+    "NAV[Ansicht]",
+    "ASIDE[Gebäude und Hinweise]",
+    "HEADER[]",
+    "HEADER[]",
+    "ASIDE[Geschosse und Anlage]",
+    "HEADER[]",
+    "HEADER[]",
+    "DIV/region[Anlagenliste]",
+    "P/status[]"
+  ],
+  "canvasAttr": {
+    "tabindex": "0",
+    "label": "Gebäudemodell: Pfeiltasten drehen, Plus und Minus vergrössern und verkleinern",
+    "keys": "ArrowLeft ArrowRight ArrowUp ArrowDown + -",
+    "role": null
+  },
+  "ansageVerteiler": "Heizungsverteiler gewählt, EG · Technik",
+  "verbindung": {
+    "x": 1440,
+    "y": 900
+  }
+}

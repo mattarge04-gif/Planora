@@ -13,6 +13,14 @@ RUN npx tsc --outDir dist --rootDir src --target ES2023 --module NodeNext --modu
       --strict --esModuleInterop --skipLibCheck $(find src -name '*.ts') \
  && mkdir -p dist/db && cp -r src/db/migrationen dist/db/migrationen
 
+# --- Frontend: Vite-Build, nur das Ergebnis dist/ geht ins Laufzeit-Image (keine Build-Werkzeuge).
+FROM ${NODE_IMAGE} AS web-bau
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY web ./
+RUN npm run build
+
 # --- Laufzeit-Abhaengigkeiten ohne Dev-Pakete, exakt nach Lockfile
 FROM ${NODE_IMAGE} AS abh
 WORKDIR /app
@@ -31,6 +39,8 @@ WORKDIR /app
 COPY --from=abh /app/node_modules ./node_modules
 COPY --from=abh /app/package.json ./package.json
 COPY --from=bau /bau/dist ./dist
+COPY --from=web-bau /web/dist ./web
+ENV PLANORA_WEB_DIR=/app/web
 # Ablagewurzel = Mountpunkt des Volumes `dokumente` (Spec §6, PP8-6): nur fuer den App-Benutzer beschreibbar.
 RUN mkdir -p /daten/dokumente && chown node:node /daten/dokumente && chmod 0700 /daten/dokumente
 USER node
