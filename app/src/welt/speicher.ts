@@ -136,6 +136,18 @@ export async function ladeBeschreibung(c: pg.ClientBase, gebaeudeId: string): Pr
   return b;
 }
 
+/** IDs, die heute zu diesem Gebaeude gehoeren (Grundlage von pruefeBeschreibung). */
+export async function ladeBestand(c: pg.ClientBase, gebaeudeId: string): Promise<Bestand> {
+  const es = (await c.query("select e.id, e.layout_manuell is not null m from einheit e join geschoss g on g.id=e.geschoss_id where g.gebaeude_id=$1", [gebaeudeId])).rows;
+  const ts = (await c.query("select id, position_manuell is not null m from bauteil where gebaeude_id=$1", [gebaeudeId])).rows;
+  return {
+    geschossIds: new Set((await c.query("select id from geschoss where gebaeude_id=$1", [gebaeudeId])).rows.map((r) => r.id)),
+    einheitIds: new Set(es.map((r) => r.id)), bauteilIds: new Set(ts.map((r) => r.id)),
+    einheitenManuell: new Set(es.filter((r) => r.m).map((r) => r.id)), bauteileManuell: new Set(ts.filter((r) => r.m).map((r) => r.id)),
+    gruppeIds: new Set((await c.query("select id from gruppe where gebaeude_id=$1", [gebaeudeId])).rows.map((r) => r.id)),
+  };
+}
+
 export type Zaehler = Record<"einheiten" | "bauteile" | "gruppen", { angelegt: number; aktualisiert: number; geloescht: number }>;
 
 /** Abgleich Beschreibung → Tabellen (Spec §6). Laeuft in der Transaktion des Aufrufers. */
@@ -145,14 +157,7 @@ export async function schreibeBeschreibung(c: pg.ClientBase, gebaeudeId: string,
   if (b.stand !== g.stand) throw new FachFehler([{ pfad: "stand", code: "stand_veraltet", meldung: "Beschreibung wurde inzwischen geaendert; bitte neu laden" }], 409);
   const L: string = g.liegenschaft_id;
 
-  const es = (await c.query("select e.id, e.layout_manuell is not null m from einheit e join geschoss g on g.id=e.geschoss_id where g.gebaeude_id=$1", [gebaeudeId])).rows;
-  const ts = (await c.query("select id, position_manuell is not null m from bauteil where gebaeude_id=$1", [gebaeudeId])).rows;
-  const bestand: Bestand = {
-    geschossIds: new Set((await c.query("select id from geschoss where gebaeude_id=$1", [gebaeudeId])).rows.map((r) => r.id)),
-    einheitIds: new Set(es.map((r) => r.id)), bauteilIds: new Set(ts.map((r) => r.id)),
-    einheitenManuell: new Set(es.filter((r) => r.m).map((r) => r.id)), bauteileManuell: new Set(ts.filter((r) => r.m).map((r) => r.id)),
-    gruppeIds: new Set((await c.query("select id from gruppe where gebaeude_id=$1", [gebaeudeId])).rows.map((r) => r.id)),
-  };
+  const bestand = await ladeBestand(c, gebaeudeId);
   const f = pruefeBeschreibung(b, bestand, rw, katalog);
   if (f.length) throw new FachFehler(f);
 

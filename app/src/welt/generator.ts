@@ -1,10 +1,12 @@
 import { createHash } from "node:crypto";
 import { geschossRang, type Regelwerk } from "./regelwerk.js";
+import { weltErzeugenV2 } from "./generator.v2.js";
+import type { RegelwerkV2 } from "./regelwerk.js";
 import type { BauteilEingabe, Beschreibung, EinheitEingabe, Grundform, Hinweis, HuelleGespeichert, Punkt, Rechteck, Welt, WeltSymbol } from "./typen.js";
 
-const mm = (v: number) => Math.round(v * 1000) / 1000;
-const rundeRechteck = (r: Rechteck): Rechteck => ({ x: mm(r.x), z: mm(r.z), breite: mm(r.breite), tiefe: mm(r.tiefe) });
-function pflichtId(x: { id?: string }): string {
+export const mm = (v: number) => Math.round(v * 1000) / 1000;
+export const rundeRechteck = (r: Rechteck): Rechteck => ({ x: mm(r.x), z: mm(r.z), breite: mm(r.breite), tiefe: mm(r.tiefe) });
+export function pflichtId(x: { id?: string }): string {
   if (!x.id) throw new Error("Generator braucht gespeicherte IDs");
   return x.id;
 }
@@ -75,9 +77,26 @@ export function kanonisch(v: unknown): string {
 
 type Gruppe = { schluessel: string; geschossId: string; katalogId: string; hersteller: string | null; typ: string | null; zeilen: BauteilEingabe[] };
 
+export interface KernOptionen {
+  /** Ersatzmasse (Breite, Tiefe), wenn die Huelle keine hat; ohne Angabe wirft der Kern bei fehlenden Massen. */
+  standardMasse?: [number, number];
+  /** Zusatz fuer den Symbolschluessel (v2: Ort); null = kein Ort. Ohne Funktion bleibt der v1-Schluessel unveraendert. */
+  ortSchluessel?: (t: BauteilEingabe) => string | null;
+}
+type WeltOhneHash = Omit<Welt, "hash">;
+const mitHash = (ohneHash: WeltOhneHash): Welt => ({ ...ohneHash, hash: createHash("sha256").update(kanonisch(ohneHash)).digest("hex") });
+export { mitHash };
+
 export function weltErzeugen(h: HuelleGespeichert, b: Beschreibung, rw: Regelwerk): Welt {
-  if (h.breiteM === null || h.tiefeM === null) throw new Error("Masse fehlen (Regelwerk v1 setzt sie voraus)");
-  const teile = grundriss(h.grundform, h.breiteM, h.tiefeM, rw.schenkelAnteil);
+  if (rw.version === 2) return weltErzeugenV2(h, b, rw as RegelwerkV2);
+  return mitHash(weltKern(h, b, rw));
+}
+
+/** Gemeinsame Layoutlogik (Regelwerk v1); v2 nutzt sie im Stub mit Optionen. */
+export function weltKern(h: HuelleGespeichert, b: Beschreibung, rw: Regelwerk, opt: KernOptionen = {}): WeltOhneHash {
+  const breiteM = h.breiteM ?? opt.standardMasse?.[0] ?? null, tiefeM = h.tiefeM ?? opt.standardMasse?.[1] ?? null;
+  if (breiteM === null || tiefeM === null) throw new Error("Masse fehlen (Regelwerk v1 setzt sie voraus)");
+  const teile = grundriss(h.grundform, breiteM, tiefeM, rw.schenkelAnteil);
   // Bauteile direkt am Geschoss: Raster im groessten Teilrechteck (bei Gleichstand das erste, d.h. der Riegel)
   const geschossFlaeche = teile.reduce((m, r) => (r.breite * r.tiefe > m.breite * m.tiefe ? r : m), teile[0]);
   const rang = (code: string) => {
@@ -125,7 +144,7 @@ export function weltErzeugen(h: HuelleGespeichert, b: Beschreibung, rw: Regelwer
     if (!standortId) throw new Error("Generator braucht gespeicherte IDs im Standort");
     const geschossId = t.standort.einheitId ? einheitGeschoss.get(t.standort.einheitId)! : standortId;
     const hersteller = t.hersteller ?? null, typ = t.typ ?? null;
-    const schluessel = JSON.stringify([standortId, t.katalogId, hersteller, typ]);
+    const schluessel = JSON.stringify(opt.ortSchluessel ? [standortId, t.katalogId, hersteller, typ, opt.ortSchluessel(t)] : [standortId, t.katalogId, hersteller, typ]);
     let gr = gruppen.get(schluessel);
     if (!gr) {
       gr = { schluessel, geschossId, katalogId: t.katalogId, hersteller, typ, zeilen: [] };
@@ -166,5 +185,5 @@ export function weltErzeugen(h: HuelleGespeichert, b: Beschreibung, rw: Regelwer
     symbole,
     hinweise,
   };
-  return { ...ohneHash, hash: createHash("sha256").update(kanonisch(ohneHash)).digest("hex") };
+  return ohneHash;
 }

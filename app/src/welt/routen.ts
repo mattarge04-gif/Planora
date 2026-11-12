@@ -7,8 +7,10 @@ import { KATALOG_V1 } from "./katalog.v1.js";
 import { KATALOG_V2 } from "./katalog.v2.js";
 import { regelwerkFuer } from "./regelwerk.wahl.js";
 import { weltErzeugen } from "./generator.js";
-import { FachFehler, aendereHuelle, ladeBeschreibung, ladeHuelle, legeGebaeudeAn, schreibeBeschreibung } from "./speicher.js";
-import { BESCHREIBUNG_SCHEMA, HUELLE_SCHEMA, ID_PARAMS, LID_PARAMS } from "./schema.js";
+import { FachFehler, aendereHuelle, ladeBeschreibung, ladeBestand, ladeHuelle, legeGebaeudeAn, schreibeBeschreibung } from "./speicher.js";
+import { ladeEntwurf, loescheEntwurf, mitPlatzhalterIds, speichereEntwurf } from "./entwurf.js";
+import { pruefeBeschreibung } from "./pruefung.js";
+import { BESCHREIBUNG_SCHEMA, ENTWURF_SCHEMA, HUELLE_SCHEMA, ID_PARAMS, LID_PARAMS } from "./schema.js";
 import type { BauteilVerweis, Beschreibung, EinheitVerweis, GruppeVerweis, Huelle } from "./typen.js";
 
 /** UUIDs kanonisch klein: Postgres liefert IDs klein, der Abgleich vergleicht Texte. */
@@ -127,9 +129,48 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
       if (z !== 200) return verweigert(reply, z);
       const h = (await ladeHuelle(c, req.params.id))!;
       const b = (await ladeBeschreibung(c, req.params.id))!;
-      return weltErzeugen(h, b, REGELWERK_V1); // nur Regelwerk v1 vorhanden; Verhalten bei v2 offen (Spec §11)
+      return weltErzeugen(h, b, regelwerkFuer(h.regelwerkVersion));
     });
   });
+
+  app.get<{ Params: { id: string } }>("/api/struktur/gebaeude/:id/entwurf", { schema: { params: ID_PARAMS } }, async (req, reply) => {
+    return inSnapshot(async (c) => {
+      const z = await zugriff(c, req.kontext!.benutzerId, req.params.id, false);
+      if (z !== 200) return verweigert(reply, z);
+      return (await ladeEntwurf(c, req.params.id)) ?? reply.code(404).send({ fehler: "kein Entwurf" });
+    });
+  });
+
+  app.put<{ Params: { id: string }; Body: { stand: number; daten: unknown } }>("/api/struktur/gebaeude/:id/entwurf",
+    { schema: { params: ID_PARAMS, body: ENTWURF_SCHEMA } }, async (req, reply) => {
+      const z = await mitClient((c) => zugriff(c, req.kontext!.benutzerId, req.params.id, true));
+      if (z !== 200) return verweigert(reply, z);
+      try {
+        const stand = await inTransaktion((c) => speichereEntwurf(c, req.params.id, req.body.stand, req.body.daten));
+        return { stand };
+      } catch (e) { return fachAntwort(reply, e); }
+    });
+
+  app.delete<{ Params: { id: string } }>("/api/struktur/gebaeude/:id/entwurf", { schema: { params: ID_PARAMS } }, async (req, reply) => {
+    const z = await mitClient((c) => zugriff(c, req.kontext!.benutzerId, req.params.id, true));
+    if (z !== 200) return verweigert(reply, z);
+    await mitClient((c) => loescheEntwurf(c, req.params.id));
+    return reply.code(204).send();
+  });
+
+  /** Welt zu einer noch nicht gespeicherten Beschreibung: gleiche Pruefung wie Schreiben (ohne Stand-Vergleich), schreibt nichts. */
+  app.post<{ Params: { id: string }; Body: Beschreibung }>("/api/szene/gebaeude/:id/vorschau",
+    { schema: { params: ID_PARAMS, body: BESCHREIBUNG_SCHEMA } }, async (req, reply) => {
+      return inSnapshot(async (c) => {
+        const z = await zugriff(c, req.kontext!.benutzerId, req.params.id, true);
+        if (z !== 200) return verweigert(reply, z);
+        const h = (await ladeHuelle(c, req.params.id))!;
+        const b = kanonischeBeschreibung(req.body);
+        const fehler = pruefeBeschreibung(b, await ladeBestand(c, req.params.id), regelwerkFuer(h.regelwerkVersion), h.regelwerkVersion === 1 ? KATALOG_V1 : KATALOG_V2);
+        if (fehler.length) return reply.code(422).send({ fehler });
+        return weltErzeugen(h, mitPlatzhalterIds(b), regelwerkFuer(h.regelwerkVersion));
+      });
+    });
 
   /** Gebaeude, die der Benutzer lesen darf; Betreiber und Benutzer ohne Fachrecht erhalten eine leere Liste. */
   app.get("/api/struktur/gebaeude", async (req) => mitClient(async (c) => {

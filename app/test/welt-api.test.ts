@@ -15,7 +15,7 @@ let db: Awaited<ReturnType<typeof frischeDb>>; let app: FastifyInstance;
 let L1: string, L2: string, kBetr: string, kBearb: string, kLeser: string, kFremd: string;
 let G: string;
 
-const anfrage = (method: "GET" | "POST" | "PUT", url: string, cookie: string, body?: unknown) => app.inject({
+const anfrage = (method: "GET" | "POST" | "PUT" | "DELETE", url: string, cookie: string, body?: unknown) => app.inject({
   method, url,
   headers: { cookie, origin: ORIGIN, "x-planora-request": "1", ...(body !== undefined ? { "content-type": "application/json" } : {}) },
   payload: body !== undefined ? JSON.stringify(body) : undefined,
@@ -159,5 +159,90 @@ describe("Welt-API", () => {
     const ok = await anfrage("PUT", `/api/struktur/gebaeude/${G}/huelle`, kBetr, neu);
     expect(ok.statusCode).toBe(200);
     expect(ok.json().geschosse).toHaveLength(3);
+  });
+});
+
+describe("Entwurf und Vorschau (Regelwerk v2)", () => {
+  let V: string;
+  const urlE = () => `/api/struktur/gebaeude/${V}/entwurf`;
+  const urlV = () => `/api/szene/gebaeude/${V}/vorschau`;
+  const urlBV = () => `/api/struktur/gebaeude/${V}/beschreibung`;
+  const ohneMasse = { name: "Haus v2", grundform: "quader", geschosse: [{ code: "EG" }, { code: "OG1" }] };
+
+  /** Neue Elemente ohne id: HK in Einheit 0, Verteiler in Einheit 1, Pumpe in Gruppe 0; Gruppe 0 mit dem HK. */
+  function vorschauBody(leer: any) {
+    const [eg] = leer.geschosse;
+    return {
+      ...leer, heizungStandard: { hk: "ja", fbh: "nein", tabs: "nein" },
+      einheiten: [
+        { geschossId: eg.id, bezeichnung: "Buero A", art: "buero", flaecheM2: null },
+        { geschossId: eg.id, bezeichnung: "Technik", art: "technik", flaecheM2: null },
+      ],
+      bauteile: [
+        { katalogId: "heizung.heizkoerper", standort: { einheitIndex: 0 }, menge: 5, status: "bestaetigt", versorgt: [] },
+        { katalogId: "heizung.verteiler", standort: { einheitIndex: 1 }, menge: 1, status: "bestaetigt", versorgt: [{ einheitIndex: 0 }] },
+        { katalogId: "heizung.umwaelzpumpe", standort: { einheitIndex: 1 }, menge: 1, status: "bestaetigt", versorgt: [], ort: { gruppe: { gruppeIndex: 0 } } },
+      ],
+      gruppen: [{ verteiler: { bauteilIndex: 1 }, nummer: 1, art: "ungeregelt", bezeichnung: "Gruppe 1", verbraucher: [{ bauteilIndex: 0 }] }],
+    };
+  }
+
+  it("Entwurf: CRUD, Stand-Konflikt, Rechte", async () => {
+    const r = await anfrage("POST", `/api/struktur/liegenschaften/${L1}/gebaeude`, kBetr, ohneMasse);
+    expect(r.statusCode).toBe(201);
+    V = r.json().id;
+    expect((await anfrage("GET", urlE(), kBearb)).statusCode).toBe(404);
+    expect((await anfrage("GET", urlE(), kBearb)).json().fehler).toBe("kein Entwurf");
+    const p1 = await anfrage("PUT", urlE(), kBearb, { stand: 0, daten: { schritt: 2 } });
+    expect(p1.statusCode).toBe(200);
+    expect(p1.json()).toEqual({ stand: 1 });
+    expect((await anfrage("GET", urlE(), kLeser)).json()).toEqual({ stand: 1, daten: { schritt: 2 } });
+    expect((await anfrage("PUT", urlE(), kBearb, { stand: 0, daten: { schritt: 3 } })).statusCode).toBe(409);
+    expect((await anfrage("PUT", urlE(), kBearb, { stand: 1, daten: { schritt: 3 } })).json()).toEqual({ stand: 2 });
+    expect((await anfrage("PUT", urlE(), kLeser, { stand: 2, daten: {} })).statusCode).toBe(403);
+    expect((await anfrage("DELETE", urlE(), kLeser)).statusCode).toBe(403);
+    expect((await anfrage("GET", urlE(), kFremd)).statusCode).toBe(404);
+    expect((await anfrage("PUT", urlE(), kFremd, { stand: 2, daten: {} })).statusCode).toBe(404);
+    expect((await anfrage("PUT", urlE(), kBearb, { stand: 2 })).statusCode).toBe(400);
+    expect((await anfrage("DELETE", urlE(), kBearb)).statusCode).toBe(204);
+    expect((await anfrage("GET", urlE(), kBearb)).statusCode).toBe(404);
+  });
+  it("Vorschau liefert Welt mit Gruppen und Platzhalter-IDs und schreibt nichts", async () => {
+    const leer = (await anfrage("GET", urlBV(), kBearb)).json();
+    await anfrage("PUT", urlE(), kBearb, { stand: 0, daten: { x: 1 } });
+    const r = await anfrage("POST", urlV(), kBearb, vorschauBody(leer));
+    expect(r.statusCode).toBe(200);
+    const w = r.json();
+    expect(w.regelwerkVersion).toBe(2);
+    expect(w.einheiten.map((e: any) => e.id)).toEqual(["neu-e-0", "neu-e-1"]);
+    expect(w.symbole.flatMap((s: any) => s.bauteilIds).sort()).toEqual(["neu-b-0", "neu-b-1", "neu-b-2"]);
+    expect(w.gruppen).toHaveLength(1);
+    expect(w.gruppen[0].id).toBe("neu-g-0");
+    expect(w.gruppen[0].verbraucher).toHaveLength(1);
+    expect(w.gruppen[0].zubehoer).toHaveLength(1);
+    const nachher = (await anfrage("GET", urlBV(), kBearb)).json();
+    expect(nachher.stand).toBe(leer.stand);
+    expect(nachher.einheiten).toHaveLength(0);
+    expect((await anfrage("GET", urlE(), kBearb)).json().stand).toBe(1); // Entwurf unberuehrt
+  });
+  it("Vorschau: gleiche Pruefung wie Schreiben, Rechte, Stand egal", async () => {
+    const leer = (await anfrage("GET", urlBV(), kBearb)).json();
+    const body = vorschauBody(leer);
+    expect((await anfrage("POST", urlV(), kLeser, body)).statusCode).toBe(403);
+    expect((await anfrage("POST", urlV(), kFremd, body)).statusCode).toBe(404);
+    const falsch = { ...body, bauteile: [{ ...body.bauteile[0], katalogId: "gibt.es.nicht" }, ...body.bauteile.slice(1)] };
+    const r = await anfrage("POST", urlV(), kBearb, falsch);
+    expect(r.statusCode).toBe(422);
+    expect(r.json().fehler.map((f: any) => f.code)).toContain("katalog_unbekannt");
+    expect((await anfrage("POST", urlV(), kBearb, { ...body, stand: 99 })).statusCode).toBe(200);
+  });
+  it("Speichern der Beschreibung verwirft den Entwurf; Welt-Route rendert v2", async () => {
+    const leer = (await anfrage("GET", urlBV(), kBearb)).json();
+    const put = await anfrage("PUT", urlBV(), kBearb, vorschauBody(leer));
+    expect(put.statusCode).toBe(200);
+    expect((await anfrage("GET", urlE(), kBearb)).statusCode).toBe(404);
+    const w = await anfrage("GET", `/api/szene/gebaeude/${V}/welt`, kBearb);
+    expect(w.statusCode).toBe(200);
+    expect(w.json().gruppen).toHaveLength(1);
   });
 });
