@@ -56,7 +56,7 @@ export function Schritt6Unterverteiler({ z, dispatch }: SchrittInhaltProps) {
         const e = einheitVon(z, t);
         const versorgt = t.versorgt.map((s) => z.einheiten.find((x) => x.schluessel === s)?.bezeichnung).filter(Boolean);
         return (
-          <div key={t.schluessel} className="as-karte as-uv">
+          <div key={t.schluessel} className="as-karte as-uv as-uv-weitere">
             <div className="as-uv-kopf">
               <span className="as-code">{e?.geschoss ?? "–"}</span>
               <strong className="as-uv-name">Verteiler in {e?.bezeichnung ?? "Geschoss"}</strong>

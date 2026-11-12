@@ -11,6 +11,7 @@ import { Autosave, entwurfDaten, httpApi, konfliktLaden, ladeAssistent, type Ass
 import { SCHRITTE, leererZustand, reduziere, schrittErreichbar, type AssistentZustand, type SchrittNr } from "../assistent/zustand";
 import type { AssistentRoute } from "../assistent/route";
 import { SCHRITT_INHALT } from "../assistent/schritte";
+import { tasteBehandeln } from "../assistent/tastatur";
 import "../ui/ui.css";
 import "./Assistent.css";
 
@@ -73,6 +74,7 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
   const zRef = useRef(z);
   zRef.current = z;
   const titelRef = useRef<HTMLHeadingElement>(null);
+  const inhaltRef = useRef<HTMLDivElement>(null);
   const gebaeudeId = route.art === "bearbeiten" ? route.gebaeudeId : null;
   const gebaeudeName = liste?.find((g) => g.id === gebaeudeId)?.name;
   const liegenschaften: LiegenschaftWahl[] = useMemo(() => {
@@ -173,11 +175,12 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datenSchluessel, bereit]);
 
-  // Fokus auf den Schritttitel nach Schrittwechsel (Tastatur, Screenreader)
+  // Nach Schrittwechsel: Inhalt nach oben, Fokus auf den Schritttitel (Tastatur, Screenreader)
   const ersterRender = useRef(true);
   useEffect(() => {
     if (ersterRender.current) { ersterRender.current = false; return; }
-    titelRef.current?.focus();
+    if (inhaltRef.current) inhaltRef.current.scrollTop = 0;
+    titelRef.current?.focus({ preventScroll: true });
   }, [z.schritt]);
 
   async function gebaeudeAnlegen(): Promise<boolean> {
@@ -282,12 +285,15 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
           </ol>
         </nav>
 
-        <section className="as-formular ui-glas" aria-labelledby="as-titel">
+        <section className="as-formular ui-glas" aria-labelledby="as-titel" onKeyDown={(e) => {
+          const kannWeiter = z.schritt < 8 && bereit && !arbeitet;
+          if (tasteBehandeln(e, e.target, () => { if (kannWeiter) void weiter(); })) e.preventDefault();
+        }}>
           <header className="as-formular-kopf">
             <span className="as-schritt-zaehler">Schritt {z.schritt} von {SCHRITTE.length}</span>
             <h1 id="as-titel" ref={titelRef} tabIndex={-1}>{info.titel}</h1>
           </header>
-          <div className="as-formular-inhalt">
+          <div className="as-formular-inhalt" ref={inhaltRef}>
             {meldung && <p className="as-meldung" role="status"><span>{meldung}</span>
               <button type="button" className="as-rundknopf" aria-label="Meldung schliessen" onClick={() => setMeldung(null)}><X size={14} strokeWidth={1.75} aria-hidden /></button></p>}
             {!bereit && !fehler && <p className="as-laden" role="status">Gebäude wird geladen …</p>}
@@ -300,7 +306,8 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
               <button type="button" className="as-knopf" onClick={() => dispatch({ typ: "zurueck" })} disabled={z.schritt === 1 || arbeitet}>
                 <ArrowLeft size={16} strokeWidth={1.75} aria-hidden />Zurück</button>
               {z.schritt < 8
-                ? <button type="button" className="as-knopf as-knopf-primaer" onClick={weiter} disabled={!bereit || arbeitet}>
+                ? <button type="button" className="as-knopf as-knopf-primaer" onClick={weiter} disabled={!bereit || arbeitet}
+                  aria-keyshortcuts="Control+Enter" title="Ctrl+Enter">
                   {z.schritt === 1 && !z.gebaeude.id ? "Gebäude anlegen" : "Weiter"}<ArrowRight size={16} strokeWidth={1.75} aria-hidden /></button>
                 : <button type="button" className="as-knopf as-knopf-primaer" onClick={uebernehmen} disabled={!bereit || arbeitet || !z.gebaeude.id}>
                   <Check size={16} strokeWidth={1.75} aria-hidden />Übernehmen</button>}

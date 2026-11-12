@@ -20,7 +20,8 @@
 .as button:disabled { cursor: default; opacity: 1; }
 .as :focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-offset: 2px; }
 .as h1:focus { outline: none; }
-.as h1:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-offset: 4px; border-radius: 4px; }
+/* Der Titel erhält den Fokus nur programmatisch (Schrittwechsel); er ist kein Bedienelement und bleibt ohne Rahmen. */
+.as h1:focus-visible { outline: none; }
 
 /* Kopf */
 .as-kopf { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-width: 0; }
@@ -270,6 +271,7 @@
 .as-uv-kopf { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .as-uv-name { font-size: 13px; font-weight: 500; }
 .as-uv-details { display: flex; align-items: end; gap: 16px; flex-wrap: wrap; padding-left: 46px; }
+.as-uv-weitere .as-uv-details { padding-left: 0; }
 .as-speisung { min-width: 220px; }
 
 /* Schritt 7: Teile */
@@ -286,3 +288,11 @@
 .as-hinweis-zeile > svg { color: var(--tw-warnung); }
 .as-ok { margin: 0; display: flex; gap: 8px; align-items: center; color: var(--tw-text); }
 .as-ok svg { color: var(--tw-sekundaer); }
+
+/* Tastatur: Fokus in Listenzeilen und Karten deutlich, ohne die Zeile zu verschieben */
+.as-verbraucher-eintrag:has(input:focus-visible) { background: var(--tw-eis); }
+.as-bestueckung-zeile:has(:focus-visible) { box-shadow: inset 0 0 0 1px rgb(95 136 176 / 0.35); }
+.as-karte:has(> .as-karte-kopf input:focus-visible) { box-shadow: inset 0 0 0 1px rgb(95 136 176 / 0.35); }
+.as-check input:focus-visible { outline-offset: 1px; }
+.as .as-schritt:focus-visible { outline-offset: 0; }
+.as-formular-inhalt { scroll-padding-block: 16px; }
