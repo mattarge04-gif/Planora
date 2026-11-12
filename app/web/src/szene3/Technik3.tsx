@@ -46,7 +46,7 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle }: {
         const g = schnitt.geschosse.find((x) => x.id === e.geschossId);
         if (!g || gesehen.has(e.id)) return [];
         gesehen.add(e.id);
-        return [{ punkte: schlange(e.rechteck, g.yUnten + 0.032, 1.6, 0.8), daten: { ...anlagenDaten(s), einheitId: e.id } }];
+        return [{ punkte: schlange(e.rechteck, g.yUnten + 0.032, 1.2, 0.6), daten: { ...anlagenDaten(s), einheitId: e.id } }];
       });
     });
   }, [welt, schnitt]);
@@ -89,8 +89,9 @@ function Durchgang({ huelse: h, schatten }: { huelse: Huelse; schatten: boolean 
 }
 
 function Flaechenband({ punkte, daten }: { punkte: V3[]; daten: object }) {
-  const geometrie = useMemo(() => bandGeometrie(punkte), [punkte]);
-  const farbe = useMemo(() => new THREE.Color(TOKENS.farbe.flaecheSekundaer).lerp(new THREE.Color(TOKENS.farbe.kooHeizung), 0.045), []);
+  // PO 12.11.2026: Muster war unsichtbar → breiter und deutlich rötlicher, bleibt aber heller als die Rohre.
+  const geometrie = useMemo(() => bandGeometrie(punkte, 0.06), [punkte]);
+  const farbe = useMemo(() => new THREE.Color(TOKENS.farbe.flaecheSekundaer).lerp(new THREE.Color(TOKENS.farbe.kooHeizung), 0.32), []);
   useEffect(() => () => geometrie?.dispose(), [geometrie]);
   if (!geometrie) return null;
   return <mesh geometry={geometrie} userData={daten}>
