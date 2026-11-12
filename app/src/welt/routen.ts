@@ -5,10 +5,11 @@ import { auditEreignis } from "../audit/audit.js";
 import { REGELWERK_V1 } from "./regelwerk.v1.js";
 import { KATALOG_V1 } from "./katalog.v1.js";
 import { KATALOG_V2 } from "./katalog.v2.js";
+import { regelwerkFuer } from "./regelwerk.wahl.js";
 import { weltErzeugen } from "./generator.js";
 import { FachFehler, aendereHuelle, ladeBeschreibung, ladeHuelle, legeGebaeudeAn, schreibeBeschreibung } from "./speicher.js";
 import { BESCHREIBUNG_SCHEMA, HUELLE_SCHEMA, ID_PARAMS, LID_PARAMS } from "./schema.js";
-import type { Beschreibung, EinheitVerweis, Huelle } from "./typen.js";
+import type { BauteilVerweis, Beschreibung, EinheitVerweis, GruppeVerweis, Huelle } from "./typen.js";
 
 /** UUIDs kanonisch klein: Postgres liefert IDs klein, der Abgleich vergleicht Texte. */
 const klein = (id: string | undefined) => id?.toLowerCase();
@@ -17,6 +18,8 @@ function kanonischeHuelle(h: Huelle): Huelle {
 }
 function kanonischeBeschreibung(b: Beschreibung): Beschreibung {
   const verweis = <T extends EinheitVerweis>(v: T): T => (v.einheitId === undefined ? v : { ...v, einheitId: klein(v.einheitId) });
+  const bv = (v: BauteilVerweis): BauteilVerweis => (v.bauteilId === undefined ? v : { ...v, bauteilId: klein(v.bauteilId) });
+  const gv = (v: GruppeVerweis): GruppeVerweis => (v.gruppeId === undefined ? v : { ...v, gruppeId: klein(v.gruppeId) });
   return {
     ...b,
     einheiten: b.einheiten.map((e) => ({ ...e, ...(e.id !== undefined && { id: klein(e.id) }), geschossId: klein(e.geschossId)! })),
@@ -24,7 +27,9 @@ function kanonischeBeschreibung(b: Beschreibung): Beschreibung {
       ...t, ...(t.id !== undefined && { id: klein(t.id) }),
       standort: { ...verweis(t.standort), ...(t.standort.geschossId !== undefined && { geschossId: klein(t.standort.geschossId) }) },
       versorgt: t.versorgt.map(verweis),
+      ...(t.ort && { ort: "gruppe" in t.ort ? { gruppe: gv(t.ort.gruppe) } : { vorBauteil: bv(t.ort.vorBauteil) } }),
     })),
+    ...(b.gruppen && { gruppen: b.gruppen.map((g) => ({ ...g, ...(g.id !== undefined && { id: klein(g.id) }), verteiler: bv(g.verteiler), verbraucher: g.verbraucher.map(bv) })) }),
   };
 }
 
@@ -107,7 +112,9 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
       if (z !== 200) return verweigert(reply, z);
       try {
         return await inTransaktion(async (c) => {
-          const zaehler = await schreibeBeschreibung(c, req.params.id, kanonischeBeschreibung(req.body), REGELWERK_V1, KATALOG_V1);
+          const huelle = await ladeHuelle(c, req.params.id);
+          const version = huelle?.regelwerkVersion ?? 1;
+          const zaehler = await schreibeBeschreibung(c, req.params.id, kanonischeBeschreibung(req.body), regelwerkFuer(version), version === 1 ? KATALOG_V1 : KATALOG_V2);
           await auditEreignis(c, k.auditId, "gebaeude.beschreibung", { gebaeudeId: req.params.id, ...zaehler });
           return ladeBeschreibung(c, req.params.id);
         });

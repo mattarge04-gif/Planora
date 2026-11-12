@@ -3,7 +3,7 @@ import { geschossRang, type Katalog, type Regelwerk } from "./regelwerk.js";
 import { REGELWERK_V2 } from "./regelwerk.v2.js";
 import { pruefeBeschreibung, type Bestand } from "./pruefung.js";
 import { verteilerHinweise, wirksameHeizung } from "./heizung.js";
-import { HEIZ_ARTEN, type BauteilEingabe, type Beschreibung, type EinheitEingabe, type Fehler, type HeizArt, type Heizung, type Huelle, type HuelleGespeichert } from "./typen.js";
+import { HEIZ_ARTEN, type BauteilEingabe, type Beschreibung, type EinheitEingabe, type Fehler, type GruppeEingabe, type HeizArt, type Heizung, type Huelle, type HuelleGespeichert } from "./typen.js";
 
 export class FachFehler extends Error {
   readonly fehler: Fehler[];
@@ -112,22 +112,31 @@ export async function ladeBeschreibung(c: pg.ClientBase, gebaeudeId: string): Pr
     };
   });
   const ts = (await c.query(
-    "select id, katalog_id, einheit_id, geschoss_id, menge, status, hersteller, typ, baujahr, position_manuell from bauteil where gebaeude_id=$1 order by reihenfolge",
+    "select id, katalog_id, einheit_id, geschoss_id, menge, status, hersteller, typ, baujahr, position_manuell, gruppe_id, vor_bauteil_id from bauteil where gebaeude_id=$1 order by reihenfolge",
     [gebaeudeId])).rows;
   const vs = (await c.query(
     `select v.bauteil_id, v.einheit_id from versorgung v
        join bauteil t on t.id = v.bauteil_id join einheit e on e.id = v.einheit_id where t.gebaeude_id=$1 order by e.reihenfolge`, [gebaeudeId])).rows;
   const bauteile: BauteilEingabe[] = ts.map((r) => ({
+    ...(r.gruppe_id ? { ort: { gruppe: { gruppeId: r.gruppe_id } } } : r.vor_bauteil_id ? { ort: { vorBauteil: { bauteilId: r.vor_bauteil_id } } } : {}),
     id: r.id, katalogId: r.katalog_id, standort: r.einheit_id ? { einheitId: r.einheit_id } : { geschossId: r.geschoss_id },
     menge: r.menge, status: r.status, hersteller: r.hersteller, typ: r.typ, baujahr: r.baujahr, positionManuell: r.position_manuell,
     versorgt: vs.filter((v) => v.bauteil_id === r.id).map((v) => ({ einheitId: v.einheit_id })),
   }));
-  const b: Beschreibung = { gebaeudeId, stand: h.stand, geschosse: h.geschosse.map((g) => ({ id: g.id, code: g.code })), heizungStandard, einheiten, bauteile };
+  const gr = (await c.query("select id, verteiler_bauteil_id, nummer, art, bezeichnung from gruppe where gebaeude_id=$1 order by reihenfolge", [gebaeudeId])).rows;
+  const gv = (await c.query(
+    "select v.gruppe_id, v.bauteil_id from gruppe_verbraucher v join gruppe g on g.id = v.gruppe_id join bauteil t on t.id = v.bauteil_id where g.gebaeude_id=$1 order by t.reihenfolge",
+    [gebaeudeId])).rows;
+  const gruppen: GruppeEingabe[] = gr.map((r) => ({
+    id: r.id, verteiler: { bauteilId: r.verteiler_bauteil_id }, nummer: r.nummer, art: r.art, bezeichnung: r.bezeichnung,
+    verbraucher: gv.filter((v) => v.gruppe_id === r.id).map((v) => ({ bauteilId: v.bauteil_id })),
+  }));
+  const b: Beschreibung = { gebaeudeId, stand: h.stand, geschosse: h.geschosse.map((g) => ({ id: g.id, code: g.code })), heizungStandard, einheiten, bauteile, gruppen };
   b.hinweise = verteilerHinweise(b);
   return b;
 }
 
-export type Zaehler = Record<"einheiten" | "bauteile", { angelegt: number; aktualisiert: number; geloescht: number }>;
+export type Zaehler = Record<"einheiten" | "bauteile" | "gruppen", { angelegt: number; aktualisiert: number; geloescht: number }>;
 
 /** Abgleich Beschreibung → Tabellen (Spec §6). Laeuft in der Transaktion des Aufrufers. */
 export async function schreibeBeschreibung(c: pg.ClientBase, gebaeudeId: string, b: Beschreibung, rw: Regelwerk, katalog: Katalog): Promise<Zaehler> {
@@ -142,13 +151,19 @@ export async function schreibeBeschreibung(c: pg.ClientBase, gebaeudeId: string,
     geschossIds: new Set((await c.query("select id from geschoss where gebaeude_id=$1", [gebaeudeId])).rows.map((r) => r.id)),
     einheitIds: new Set(es.map((r) => r.id)), bauteilIds: new Set(ts.map((r) => r.id)),
     einheitenManuell: new Set(es.filter((r) => r.m).map((r) => r.id)), bauteileManuell: new Set(ts.filter((r) => r.m).map((r) => r.id)),
+    gruppeIds: new Set((await c.query("select id from gruppe where gebaeude_id=$1", [gebaeudeId])).rows.map((r) => r.id)),
   };
   const f = pruefeBeschreibung(b, bestand, rw, katalog);
   if (f.length) throw new FachFehler(f);
 
-  const z: Zaehler = { einheiten: { angelegt: 0, aktualisiert: 0, geloescht: 0 }, bauteile: { angelegt: 0, aktualisiert: 0, geloescht: 0 } };
+  const z: Zaehler = { einheiten: { angelegt: 0, aktualisiert: 0, geloescht: 0 }, bauteile: { angelegt: 0, aktualisiert: 0, geloescht: 0 }, gruppen: { angelegt: 0, aktualisiert: 0, geloescht: 0 } };
 
-  // 1. Versorgung komplett neu; entfallende Bauteile loeschen
+  // 1. Versorgung, Gruppen und Ort komplett neu; entfallende Bauteile loeschen.
+  //    Gruppen werden mit unveraenderter ID neu eingefuegt (vermeidet Konflikte bei vertauschten Nummern).
+  const gruppenAlt = new Set(bestand.gruppeIds);
+  await c.query("delete from gruppe_verbraucher where gruppe_id in (select id from gruppe where gebaeude_id=$1)", [gebaeudeId]);
+  await c.query("update bauteil set gruppe_id=null, vor_bauteil_id=null where gebaeude_id=$1", [gebaeudeId]);
+  await c.query("delete from gruppe where gebaeude_id=$1", [gebaeudeId]);
   await c.query("delete from versorgung where bauteil_id in (select id from bauteil where gebaeude_id=$1)", [gebaeudeId]);
   const bauteilBehalten = b.bauteile.flatMap((t) => (t.id ? [t.id] : []));
   z.bauteile.geloescht = (await c.query("delete from bauteil where gebaeude_id=$1 and not (id = any($2::uuid[]))", [gebaeudeId, bauteilBehalten])).rowCount ?? 0;
@@ -180,6 +195,7 @@ export async function schreibeBeschreibung(c: pg.ClientBase, gebaeudeId: string,
     }
 
   // 4. Bauteile aktualisieren/anlegen, Versorgung
+  const bauteilIds: string[] = [];
   const einheitVon = (v: { einheitId?: string; einheitIndex?: number }) => v.einheitId ?? (v.einheitIndex !== undefined ? einheitIds[v.einheitIndex] : null);
   for (const [j, t] of b.bauteile.entries()) {
     const werte = [t.katalogId, einheitVon(t.standort), t.standort.geschossId ?? null, t.menge, t.status, t.hersteller ?? null, t.typ ?? null,
@@ -196,9 +212,31 @@ export async function schreibeBeschreibung(c: pg.ClientBase, gebaeudeId: string,
          values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) returning id`, [L, gebaeudeId, ...werte])).rows[0].id;
       z.bauteile.angelegt++;
     }
+    bauteilIds.push(id);
     for (const v of t.versorgt)
       await c.query("insert into versorgung(bauteil_id, einheit_id, liegenschaft_id) values ($1,$2,$3) on conflict do nothing", [id, einheitVon(v), L]);
   }
+
+  // 4b. Gruppen (Reihenfolge = Index), Verbraucher, Ort
+  const bauteilVon = (v: { bauteilId?: string; bauteilIndex?: number }) => v.bauteilId ?? bauteilIds[v.bauteilIndex!];
+  const gruppeIds: string[] = [];
+  for (const [i, gr] of (b.gruppen ?? []).entries()) {
+    const werte = [L, gebaeudeId, bauteilVon(gr.verteiler), gr.nummer, gr.bezeichnung, gr.art, i];
+    gruppeIds.push((await c.query(
+      `insert into gruppe(liegenschaft_id, gebaeude_id, verteiler_bauteil_id, nummer, bezeichnung, art, reihenfolge${gr.id ? ", id" : ""})
+       values ($1,$2,$3,$4,$5,$6,$7${gr.id ? ",$8" : ""}) returning id`, gr.id ? [...werte, gr.id] : werte)).rows[0].id);
+    if (gr.id) z.gruppen.aktualisiert++; else z.gruppen.angelegt++;
+  }
+  z.gruppen.geloescht = [...gruppenAlt].filter((id) => !gruppeIds.includes(id)).length;
+  for (const [i, gr] of (b.gruppen ?? []).entries())
+    for (const v of gr.verbraucher)
+      await c.query("insert into gruppe_verbraucher(gruppe_id, bauteil_id, liegenschaft_id) values ($1,$2,$3)", [gruppeIds[i], bauteilVon(v), L]);
+  for (const [j, t] of b.bauteile.entries()) {
+    if (!t.ort) continue;
+    if ("gruppe" in t.ort) await c.query("update bauteil set gruppe_id=$2 where id=$1", [bauteilIds[j], t.ort.gruppe.gruppeId ?? gruppeIds[t.ort.gruppe.gruppeIndex!]]);
+    else await c.query("update bauteil set vor_bauteil_id=$2 where id=$1", [bauteilIds[j], bauteilVon(t.ort.vorBauteil)]);
+  }
+  await c.query("delete from entwurf where gebaeude_id=$1", [gebaeudeId]);
 
   // 5. Entfallende Einheiten erst jetzt loeschen (Bauteile zeigen nicht mehr darauf)
   z.einheiten.geloescht = (await c.query(

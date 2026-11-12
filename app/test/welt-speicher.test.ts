@@ -93,7 +93,7 @@ describe("Beschreibung", () => {
   it("schreibt und liest: IDs, Standard, Ausnahme, Versorgung sortiert, keine Hinweise", async () => {
     const { g, h } = await neuesGebaeude();
     const z = await schreibe(g, basis(h));
-    expect(z).toEqual({ einheiten: { angelegt: 3, aktualisiert: 0, geloescht: 0 }, bauteile: { angelegt: 2, aktualisiert: 0, geloescht: 0 } });
+    expect(z).toEqual({ einheiten: { angelegt: 3, aktualisiert: 0, geloescht: 0 }, bauteile: { angelegt: 2, aktualisiert: 0, geloescht: 0 }, gruppen: { angelegt: 0, aktualisiert: 0, geloescht: 0 } });
     const b = await lade(g);
     expect(b.stand).toBe(1);
     expect(b.einheiten.map((e) => e.bezeichnung)).toEqual(["Restaurant", "Technik", "Buero C"]);
@@ -200,5 +200,99 @@ describe("Beschreibung", () => {
     const b = basis(h); b.bauteile[1].katalogId = "heizung.kamin";
     const e = await fehlerVon(schreibe(g, b));
     expect(e.fehler).toEqual([{ pfad: "bauteile[1].katalogId", code: "katalog_unbekannt", meldung: "Katalog-ID heizung.kamin unbekannt" }]);
+  });
+});
+
+describe("Gruppen und Ort", () => {
+  const nullZaehler = { angelegt: 0, aktualisiert: 0, geloescht: 0 };
+  /** basis + 2 Heizkoerper; Gruppe 1 am Verteiler (Index 0) mit FBH-Kreis (1) und Heizkoerper (2); Heizkoerper (3) steht vor dem Verteiler. */
+  function mitGruppen(h: HuelleGespeichert): Beschreibung {
+    const b = basis(h);
+    b.bauteile.push(
+      { katalogId: "heizung.heizkoerper", standort: { einheitIndex: 2 }, menge: 4, status: "bestaetigt", versorgt: [], ort: { gruppe: { gruppeIndex: 0 } } },
+      { katalogId: "heizung.heizkoerper", standort: { einheitIndex: 2 }, menge: 2, status: "bestaetigt", versorgt: [], ort: { vorBauteil: { bauteilIndex: 0 } } },
+    );
+    b.gruppen = [{ verteiler: { bauteilIndex: 0 }, nummer: 1, art: "beimisch", bezeichnung: "Ost", verbraucher: [{ bauteilIndex: 1 }, { bauteilIndex: 2 }] }];
+    return b;
+  }
+  const zeilen = async (sql: string, p: unknown[]) => (await db.pool.query(sql, p)).rows;
+
+  it("Rundlauf: schreiben, laden, zurueckschreiben ergibt dasselbe", async () => {
+    const { g, h } = await neuesGebaeude();
+    const z = await schreibe(g, mitGruppen(h));
+    expect(z.gruppen).toEqual({ angelegt: 1, aktualisiert: 0, geloescht: 0 });
+    const b = await lade(g);
+    const gr = b.gruppen![0];
+    expect(gr).toMatchObject({ nummer: 1, art: "beimisch", bezeichnung: "Ost", verteiler: { bauteilId: b.bauteile[0].id } });
+    expect(gr.verbraucher).toEqual([{ bauteilId: b.bauteile[1].id }, { bauteilId: b.bauteile[2].id }]);
+    expect(b.bauteile[2].ort).toEqual({ gruppe: { gruppeId: gr.id } });
+    expect(b.bauteile[3].ort).toEqual({ vorBauteil: { bauteilId: b.bauteile[0].id } });
+    expect(b.bauteile[0].ort).toBeUndefined();
+    const z2 = await schreibe(g, b);
+    expect(z2.gruppen).toEqual({ angelegt: 0, aktualisiert: 1, geloescht: 0 });
+    const b2 = await lade(g);
+    expect(b2.gruppen).toEqual(b.gruppen);
+    expect(b2.bauteile.map((t) => t.ort)).toEqual(b.bauteile.map((t) => t.ort));
+  });
+  it("Gruppe durch Weglassen loeschen; Ort faellt weg", async () => {
+    const { g, h } = await neuesGebaeude();
+    await schreibe(g, mitGruppen(h));
+    const b = await lade(g);
+    delete b.gruppen;
+    b.bauteile.forEach((t) => { if (t.ort && "gruppe" in t.ort) delete t.ort; });
+    const z = await schreibe(g, b);
+    expect(z.gruppen).toEqual({ ...nullZaehler, geloescht: 1 });
+    const n = await lade(g);
+    expect(n.gruppen).toEqual([]);
+    expect(n.bauteile[2].ort).toBeUndefined();
+    expect(n.bauteile[3].ort).toEqual({ vorBauteil: { bauteilId: n.bauteile[0].id } });
+  });
+  it("Verbraucher entfernen loescht die Zuordnung", async () => {
+    const { g, h } = await neuesGebaeude();
+    await schreibe(g, mitGruppen(h));
+    const b = await lade(g);
+    b.gruppen![0].verbraucher = [b.gruppen![0].verbraucher[0]];
+    await schreibe(g, b);
+    expect((await lade(g)).gruppen![0].verbraucher).toHaveLength(1);
+    expect(await zeilen("select 1 from gruppe_verbraucher where bauteil_id=$1", [b.bauteile[2].id])).toHaveLength(0);
+  });
+  it("Nummern vertauschen; Verteiler loeschen nimmt die Gruppen mit", async () => {
+    const { g, h } = await neuesGebaeude();
+    const b0 = mitGruppen(h);
+    b0.gruppen!.push({ verteiler: { bauteilIndex: 0 }, nummer: 2, art: "drossel", bezeichnung: "West", verbraucher: [] });
+    await schreibe(g, b0);
+    const b = await lade(g);
+    b.gruppen![0].nummer = 2; b.gruppen![1].nummer = 1;
+    await schreibe(g, b);
+    expect((await lade(g)).gruppen!.map((x) => x.nummer)).toEqual([2, 1]);
+    const c = await lade(g);
+    const verteilerId = c.bauteile[0].id;
+    c.gruppen = [];
+    c.bauteile = c.bauteile.filter((t) => t.id !== verteilerId).map((t) => ({ ...t, ort: undefined }));
+    const z = await schreibe(g, c);
+    expect(z.gruppen.geloescht).toBe(2);
+    expect((await lade(g)).gruppen).toEqual([]);
+  });
+  it("Schreiben loescht den Entwurf", async () => {
+    const { g, h } = await neuesGebaeude();
+    await db.pool.query("insert into entwurf(gebaeude_id, liegenschaft_id, daten) values ($1,$2,'{}')", [g, h.liegenschaftId]);
+    await schreibe(g, basis(h));
+    expect(await zeilen("select 1 from entwurf where gebaeude_id=$1", [g])).toHaveLength(0);
+  });
+  it("Fehlercodes ergeben 422 und aendern nichts", async () => {
+    const { g, h } = await neuesGebaeude();
+    await schreibe(g, mitGruppen(h));
+    const b = await lade(g);
+    b.gruppen![0].verteiler = { bauteilId: b.bauteile[1].id! };
+    b.bauteile[3].ort = { vorBauteil: { bauteilId: b.bauteile[3].id } };
+    const e = await fehlerVon(schreibe(g, b));
+    expect([e.status, e.fehler.map((f) => f.code)]).toEqual([422, ["gruppe_verteiler_ungueltig", "ort_selbstbezug"]]);
+    expect((await lade(g)).gruppen).toHaveLength(1);
+  });
+  it("v2-Gebaeude ohne Masse laedt mit null-Massen und leeren Gruppen", async () => {
+    const g = await tx((c) => legeGebaeudeAn(c, L1, { name: "V2", grundform: "quadrat", geschosse: [{ code: "EG" }] }, REGELWERK_V1));
+    const h = (await tx((c) => ladeHuelle(c, g)))!;
+    expect([h.breiteM, h.tiefeM, h.regelwerkVersion]).toEqual([null, null, 2]);
+    expect((await lade(g)).gruppen).toEqual([]);
   });
 });

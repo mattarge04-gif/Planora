@@ -8,7 +8,7 @@ import { G, beschreibungFixture } from "./hilfe-welt.js";
 
 const bestand = (): Bestand => ({
   geschossIds: new Set([G(9), G(10), G(11)]), einheitIds: new Set([G(20), G(21), G(22)]),
-  bauteilIds: new Set([G(30), G(31), G(32)]), einheitenManuell: new Set(), bauteileManuell: new Set(),
+  bauteilIds: new Set([G(30), G(31), G(32)]), einheitenManuell: new Set(), bauteileManuell: new Set(), gruppeIds: new Set([G(40)]),
 });
 const codes = (b: Beschreibung, best = bestand()) => pruefeBeschreibung(b, best, REGELWERK_V1, KATALOG_V1).map((f) => f.code);
 
@@ -110,5 +110,56 @@ describe("pruefeBeschreibung", () => {
     b.bauteile.push({ katalogId: "heizung.heizkoerper", standort: { einheitIndex: 3 }, menge: 4, status: "bestaetigt", versorgt: [] });
     b.bauteile[2].versorgt.push({ einheitIndex: 3 });
     expect(codes(b)).toEqual([]);
+  });
+});
+
+describe("Gruppen und Ort", () => {
+  const mitGruppe = () => {
+    const b = beschreibungFixture();
+    b.gruppen = [{ verteiler: { bauteilId: G(32) }, nummer: 1, art: "ungeregelt", bezeichnung: "Ost", verbraucher: [{ bauteilId: G(30) }, { bauteilIndex: 1 }] }];
+    return b;
+  };
+  it("gueltige Gruppe und Ort ohne Fehler", () => {
+    const b = mitGruppe();
+    b.bauteile[1].ort = { vorBauteil: { bauteilId: G(30) } };
+    b.bauteile[0].ort = { gruppe: { gruppeIndex: 0 } };
+    expect(codes(b)).toEqual([]);
+  });
+  it("Verteiler muss heizung.verteiler sein", () => {
+    const b = mitGruppe(); b.gruppen![0].verteiler = { bauteilId: G(30) };
+    expect(codes(b)).toEqual(["gruppe_verteiler_ungueltig"]);
+  });
+  it("Nummer doppelt am gleichen Verteiler", () => {
+    const b = mitGruppe();
+    b.gruppen!.push({ verteiler: { bauteilIndex: 2 }, nummer: 1, art: "drossel", bezeichnung: "West", verbraucher: [] });
+    expect(codes(b)).toEqual(["gruppe_nummer_doppelt"]);
+  });
+  it("Verbraucher in zwei Gruppen oder doppelt in einer", () => {
+    const b = mitGruppe();
+    b.gruppen![0].verbraucher.push({ bauteilId: G(30) });
+    expect(codes(b)).toEqual(["verbraucher_doppelt"]);
+    const c2 = mitGruppe();
+    c2.gruppen!.push({ verteiler: { bauteilId: G(32) }, nummer: 2, art: "drossel", bezeichnung: "West", verbraucher: [{ bauteilId: G(31) }] });
+    expect(codes(c2)).toEqual(["verbraucher_doppelt"]);
+  });
+  it("verweis_ungueltig bei unbekannter ID, Index ausserhalb, Gruppenverweis", () => {
+    const b = mitGruppe();
+    b.gruppen![0].verbraucher = [{ bauteilId: G(99) }, { bauteilIndex: 9 }];
+    b.bauteile[0].ort = { gruppe: { gruppeIndex: 5 } };
+    b.bauteile[1].ort = { vorBauteil: { bauteilIndex: -1 } };
+    expect(codes(b)).toEqual(["verweis_ungueltig", "verweis_ungueltig", "verweis_ungueltig", "verweis_ungueltig"]);
+  });
+  it("ort_selbstbezug", () => {
+    const b = beschreibungFixture();
+    b.bauteile[0].ort = { vorBauteil: { bauteilId: G(30) } };
+    b.bauteile[1].ort = { vorBauteil: { bauteilIndex: 1 } };
+    expect(codes(b)).toEqual(["ort_selbstbezug", "ort_selbstbezug"]);
+  });
+  it("Gruppen-ID unbekannt oder doppelt", () => {
+    const b = mitGruppe();
+    b.gruppen![0].id = G(41);
+    b.gruppen!.push({ id: G(40), verteiler: { bauteilIndex: 2 }, nummer: 2, art: "ungeregelt", bezeichnung: "A", verbraucher: [] });
+    b.gruppen!.push({ id: G(40), verteiler: { bauteilIndex: 2 }, nummer: 3, art: "ungeregelt", bezeichnung: "B", verbraucher: [] });
+    expect(codes(b)).toEqual(["id_unbekannt", "id_doppelt"]);
   });
 });
