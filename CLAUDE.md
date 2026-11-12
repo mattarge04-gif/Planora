@@ -17,7 +17,12 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 **Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
 
-## 0b. Stand – zuletzt aktualisiert 12.11.2026
+## 0b. Stand – zuletzt aktualisiert 13.11.2026
+
+### Stufe 1 integriert [F]
+
+- Tracks A (Generator v2/Raumkomposition), C (Gruppenleitungen) und B (Web-Assistent) auf `m2c-interview` gemergt, plus I1 (Twin-Menue "Gebäude bearbeiten"). Backend 565/565, Web 251/251, Typpruefungen und Build gruen.
+- Einstieg und offene Punkte: `docs/superpowers/plans/2026-11-13-stufe1-integration.md`. Naechster Schritt: Vorschau-Zoom im Assistenten beheben, dann I2 (GPU-Bilder aller Muster, visual-critic, PO-Sichtung). Kein Push/Merge nach `main` ohne PO-Auftrag.
 
 ### Aktueller Abschluss Stufe 1 nach Claude-Stopp [F]
 
