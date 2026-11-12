@@ -9,8 +9,11 @@ import { TwinGebaeude } from "../karten/TwinGebaeude";
 import { TwinHinweise } from "../karten/TwinHinweise";
 import { TwinGeschosse } from "../karten/TwinGeschosse";
 import { TwinAnlagen } from "../karten/TwinAnlagen";
-import { TwinLegende } from "../karten/TwinLegende";
-import { anlagenZeilen, geschossListe, hinweisListe, kennzahlen, zentraleGeschoss } from "../dashboard";
+import { TwinObjekt, TwinVerbindung } from "../karten/TwinObjekt";
+import { TwinTooltip } from "../karten/TwinTooltip";
+import { speicher } from "../ui/speicher";
+import type { BildschirmPunkt } from "../szene3/Interaktion";
+import { anlagenZeilen, anzeigeName, geschossListe, hinweisListe, kennzahlen, objektKarte, zentraleGeschoss, type AnlagenZeile, type Zielort } from "../dashboard";
 import "./Twin.css";
 
 function webglVorhanden(): boolean {
@@ -69,12 +72,23 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
   const [reduziert, setReduziert] = useState(false);
   const [webgl] = useState(webglVorhanden);
   const [freiraum, setFreiraum] = useState<Freiraum>(FREIRAUM_START);
-  const frei = useRef<HTMLDivElement>(null);
+  const [ausgeblendet, setAusgeblendet] = useState<string[]>([]);
+  const [separiert, setSepariert] = useState(false);
+  const [auswahl, setAuswahl] = useState<string | null>(null);
+  const [hover, setHover] = useState<string | null>(null);
+  const [punkt] = useState(() => speicher<BildschirmPunkt | null>(null));
+  const links = useRef<HTMLDivElement>(null);
+  const rechts = useRef<HTMLDivElement>(null);
+  const unten = useRef<HTMLDivElement>(null);
+  const objektRef = useRef<HTMLElement>(null);
   const hinweisKarte = useRef<HTMLElement>(null);
+  const auswahlRef = useRef(auswahl);
+  auswahlRef.current = auswahl;
 
   useEffect(() => {
     let aktiv = true;
     setWelt(null); setBeschreibung(null); setKatalog(null); setFehler(null); setFokusId(null);
+    setAuswahl(null); setAusgeblendet([]); setSepariert(false);
     Promise.all([
       holeJson<Welt>(`/api/szene/gebaeude/${gebaeudeId}/welt`),
       holeJson<Beschreibung>(`/api/struktur/gebaeude/${gebaeudeId}/beschreibung`),
@@ -98,28 +112,32 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
   }, [onAbgelaufen]);
 
   useEffect(() => {
-    const taste = (e: KeyboardEvent) => { if (e.key === "Escape") setFokusId(null); };
+    // Esc schliesst zuerst die Anlagenkarte, danach den Geschossschnitt.
+    const taste = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (auswahlRef.current) setAuswahl(null); else setFokusId(null);
+    };
     window.addEventListener("keydown", taste);
     return () => window.removeEventListener("keydown", taste);
   }, []);
 
-  // Freiraum der Kamera = gemessene freie Mittelfläche zwischen den Karten.
+  // Freiraum der Kamera aus den gerenderten Kartenrechtecken (Kopf, linke/rechte Spalte, Tabellenoberkante).
   const bereit = !!(welt && beschreibung && katalog && webgl);
   useLayoutEffect(() => {
-    const el = frei.current;
-    if (!el) return;
+    const els = [links.current, rechts.current, unten.current];
+    if (els.some((e) => !e)) return;
     const messen = () => {
-      const r = el.getBoundingClientRect();
-      const neu = { links: Math.round(r.left), oben: Math.round(r.top),
-        rechts: Math.round(window.innerWidth - r.right), unten: Math.round(window.innerHeight - r.bottom) };
+      const [l, r, u] = els.map((e) => e!.getBoundingClientRect());
+      const neu = { oben: Math.round(Math.min(l.top, r.top)), links: Math.round(l.right),
+        rechts: Math.round(window.innerWidth - r.left), unten: Math.round(window.innerHeight - u.top) };
       setFreiraum((alt) => alt.links === neu.links && alt.oben === neu.oben && alt.rechts === neu.rechts && alt.unten === neu.unten ? alt : neu);
     };
     messen();
     const ro = new ResizeObserver(messen);
-    ro.observe(el);
+    els.forEach((e) => ro.observe(e!));
     window.addEventListener("resize", messen);
     return () => { ro.disconnect(); window.removeEventListener("resize", messen); };
-  }, [bereit]);
+  }, [bereit, !!(welt && beschreibung && katalog)]);
 
   const daten = useMemo(() => {
     if (!welt || !beschreibung || !katalog) return null;
@@ -144,11 +162,33 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
     k.focus({ preventScroll: true });
     k.classList.remove("tw-hervor"); void k.offsetWidth; k.classList.add("tw-hervor");
   };
+  const karte = useMemo(() => welt && beschreibung && katalog && auswahl
+    ? objektKarte(welt, beschreibung, katalog.eintraege, auswahl) : null, [welt, beschreibung, katalog, auswahl]);
+  const hoverName = useMemo(() => {
+    const s = hover && welt?.symbole.find((x) => x.schluessel === hover);
+    return s ? anzeigeName(s.katalogId, katalog?.eintraege) : null;
+  }, [hover, welt, katalog]);
+  /** Ort öffnen: Geschoss einblenden und schneiden, dann Anlage wählen (falls bekannt). */
+  const zumOrt = (ziel: Pick<Zielort, "geschossId" | "schluessel">) => {
+    if (ziel.geschossId) {
+      const g = ziel.geschossId;
+      setAusgeblendet((a) => a.filter((x) => x !== g));
+      setFokusId(g);
+    }
+    setAuswahl(ziel.schluessel);
+  };
+  const waehleZeile = (a: AnlagenZeile) => zumOrt({ geschossId: a.geschossId, schluessel: a.schluessel });
+  const ausblenden = (id: string) => setAusgeblendet((a) => a.includes(id) ? a.filter((x) => x !== id) : [...a, id]);
+  const punktSetzen = useCallback((p: BildschirmPunkt | null) => punkt.setzen(p), [punkt]);
   const liegenschaft = liste?.find((g) => g.id === gebaeudeId)?.liegenschaftName ?? null;
 
   return (
     <main className="twin" style={stil} aria-label="Digital Twin">
-      {bereit && <Szene3 welt={welt!} katalog={katalog!.eintraege} fokusId={fokusId} reduziert={reduziert} freiraum={freiraum} />}
+      {bereit && <Szene3 welt={welt!} katalog={katalog!.eintraege} fokusId={fokusId} reduziert={reduziert} freiraum={freiraum}
+        ausgeblendet={ausgeblendet} separiert={separiert} auswahl={auswahl}
+        onAuswahl={setAuswahl} onHover={setHover} onAuswahlPunkt={punktSetzen} />}
+      {karte && <TwinVerbindung punkt={punkt} kartenRef={objektRef} />}
+      {bereit && <TwinTooltip text={hoverName} />}
       <div className="tw-flaeche">
         <Kopfzeile modus={modus} modusAktiv={!!daten} onModus={waehleModus}
           gebaeudeId={gebaeudeId} gebaeudeName={name} gebaeude={liste} onGebaeude={onGebaeude}
@@ -163,19 +203,21 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
         </div>}
 
         {welt && daten && <>
-          <div className="tw-links">
+          <div className="tw-links" ref={links}>
             <TwinGebaeude name={name} liegenschaft={liegenschaft} welt={welt} zahlen={daten.zahlen} />
-            <TwinHinweise ref={hinweisKarte} hinweise={daten.hinweise} geschossCode={geschossCode} onZiel={setFokusId} />
+            <TwinHinweise ref={hinweisKarte} hinweise={daten.hinweise} geschossCode={geschossCode} onZiel={zumOrt} />
           </div>
-          <div className="tw-rechts">
-            <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={setFokusId} />
-            <TwinLegende fokus={fokusId !== null} />
+          <div className="tw-rechts" ref={rechts}>
+            <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={setFokusId}
+              ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} />
+            {karte
+              ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={() => setAuswahl(null)} />
+              : <p className="tw-objekt-leer">Anlage im Modell oder in der Liste wählen, um Details zu sehen.</p>}
           </div>
-          <div className="tw-unten">
-            <TwinAnlagen anlagen={daten.anlagen} fokusId={fokusId} onZiel={setFokusId} />
+          <div className="tw-unten" ref={unten}>
+            <TwinAnlagen anlagen={daten.anlagen} auswahl={auswahl} fokusId={fokusId} onWahl={waehleZeile} />
           </div>
         </>}
-        <div className="tw-frei" ref={frei} aria-hidden="true" />
       </div>
     </main>
   );

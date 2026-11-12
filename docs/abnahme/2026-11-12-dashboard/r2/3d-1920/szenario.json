@@ -1,0 +1,3 @@
+{ "beschreibung": "3D-Klick und Hover, fenstergenau", "fenster": [[1920, 1080]],
+  "schritte": [ {"klick":"Beispielgebaeude"}, {"knopf":"Digital Twin"}, {"warte":7000}, {"knopf":"Technik","exakt":true}, {"warte":3000},
+    {"maus":[0.6182, 0.4463]}, {"warte":800}, {"bild":"hover-3d"}, {"punkt":[0.6182, 0.4463]}, {"warte":2000}, {"maus":[0.5, 0.2]}, {"warte":600}, {"bild":"klick-3d"} ] }

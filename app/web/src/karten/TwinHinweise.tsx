@@ -1,8 +1,8 @@
 import { ArrowUpRight, TriangleAlert } from "lucide-react";
 import { forwardRef } from "react";
-import type { HinweisZeile } from "../dashboard";
+import type { HinweisZeile, Zielort } from "../dashboard";
 
-interface Props { hinweise: HinweisZeile[]; geschossCode: (id: string) => string; onZiel: (geschossId: string) => void }
+interface Props { hinweise: HinweisZeile[]; geschossCode: (id: string) => string; onZiel: (ziel: Zielort) => void }
 
 /** Text «Einheit: Aussage» wird für die Darstellung in Titel und Aussage geteilt. */
 function teile(text: string): [string | null, string] {
@@ -10,7 +10,7 @@ function teile(text: string): [string | null, string] {
   return i > 0 && i < 40 ? [text.slice(0, i), text.slice(i + 2)] : [null, text];
 }
 
-/** Hinweiskarte: echte Hinweise; «… öffnen» fährt zum Geschoss des Zielorts. */
+/** Hinweiskarte: echte Hinweise; «Zum Ort» öffnet das Geschoss und wählt, falls vorhanden, die Anlage. */
 export const TwinHinweise = forwardRef<HTMLElement, Props>(function TwinHinweise({ hinweise, geschossCode, onZiel }, ref) {
   return (
     <section ref={ref} tabIndex={-1} className="ui-glas ui-karte tw-hinweise" aria-labelledby="karte-hinweise">
@@ -29,8 +29,8 @@ export const TwinHinweise = forwardRef<HTMLElement, Props>(function TwinHinweise
                 <div>
                   {titel && <strong>{titel}</strong>}
                   <span>{aussage}</span>
-                  {g && <button type="button" className="tw-ziel" onClick={() => onZiel(g)}>
-                    {geschossCode(g)} öffnen<ArrowUpRight size={14} strokeWidth={1.75} aria-hidden="true" />
+                  {g && h.ziel && <button type="button" className="tw-ziel" onClick={() => onZiel(h.ziel!)}>
+                    {h.ziel.schluessel ? "Zur Anlage" : `Zum Ort in ${geschossCode(g)}`}<ArrowUpRight size={14} strokeWidth={1.75} aria-hidden="true" />
                   </button>}
                 </div>
               </li>

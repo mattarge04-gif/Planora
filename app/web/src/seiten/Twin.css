@@ -1,22 +1,31 @@
 .twin {
+  /* Vorläufige Werte, als Token-Wunsch gemeldet (tokens.ts nicht geändert):
+     Linktext auf Weiss >= 4.5:1, Sekundärtext auf Kachel >= 4.5:1, Badge-Grund. */
+  --tw-link: #4a7298;
+  --tw-link-hover: #3b5f82;
+  --tw-sekundaer-kachel: #5e6b78;
+  --tw-sekundaer-eis: #4f5c69;
+  --tw-heizung-grund: rgb(229 50 45 / 0.08);
   position: fixed; inset: 0; overflow: hidden; background: var(--tw-grund); color: var(--tw-text);
   font: 13px/1.5 var(--tw-schrift); font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased;
 }
 .twin > .szene { position: absolute; inset: 0; }
 
-/* Raster über der Szene: Kopf / links – frei – rechts / Tabelle */
+/* Raster über der Szene: Kopf / links – frei – rechts / Anlagenleiste über die volle Breite */
 .tw-flaeche {
   position: absolute; inset: 0; pointer-events: none;
   display: grid; grid-template-columns: 328px minmax(0, 1fr) 296px; grid-template-rows: 72px minmax(0, 1fr) auto;
   column-gap: 16px; padding: 0 var(--tw-rand) var(--tw-rand);
 }
-.tw-flaeche > *:not(.tw-frei), .ui-kopf > * { pointer-events: auto; }
-.tw-flaeche > .ui-kopf { pointer-events: none; }
-.tw-frei { grid-column: 2; grid-row: 2; pointer-events: none; }
+.tw-flaeche > *, .ui-kopf > * { pointer-events: auto; }
+.tw-flaeche > .ui-kopf, .tw-flaeche > .tw-links, .tw-flaeche > .tw-rechts { pointer-events: none; }
+.tw-links > *, .tw-rechts > * { pointer-events: auto; }
 
-.tw-links { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; gap: 12px; min-height: 0; padding-bottom: 12px; align-self: start; max-height: 100%; }
-.tw-rechts { grid-column: 3; grid-row: 2 / 4; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
-.tw-unten { grid-column: 1 / 3; grid-row: 3; min-width: 0; width: 100%; max-width: 1120px; }
+.tw-links, .tw-rechts { grid-row: 2; display: flex; flex-direction: column; gap: 12px; min-height: 0; padding-bottom: 12px; }
+.tw-links { grid-column: 1; }
+.tw-rechts { grid-column: 3; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; margin: 0 -8px; padding: 0 8px 12px; }
+.tw-rechts::-webkit-scrollbar { display: none; }
+.tw-unten { grid-column: 1 / -1; grid-row: 3; min-width: 0; }
 .tw-links, .tw-rechts, .tw-unten { animation: tw-ein var(--tw-panel-ms) var(--tw-kurve) both; }
 .tw-rechts { animation-delay: 40ms; }
 .tw-unten { animation-delay: 80ms; }
@@ -31,14 +40,14 @@
   display: flex; flex-direction: column-reverse; gap: 2px; padding: 10px 12px; border-radius: var(--tw-radius-kachel);
   background: rgb(242 243 245 / 0.8); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.9);
 }
-.tw-kennzahlen dt { font-size: 12px; color: var(--tw-sekundaer); }
+.tw-kennzahlen dt { font-size: 12px; color: var(--tw-sekundaer-kachel); }
 .tw-kennzahlen dd { margin: 0; font-size: 22px; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.tw-zeilen { margin: 0; display: grid; gap: 6px; }
-.tw-zeilen > div { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
-.tw-zeilen dt { color: var(--tw-sekundaer); }
-.tw-zeilen dd { margin: 0; font-weight: 500; font-variant-numeric: tabular-nums; }
-.tw-balken { margin-top: 10px; height: 4px; border-radius: 999px; background: var(--tw-grau-1); overflow: hidden; }
-.tw-balken > span { display: block; height: 100%; width: var(--anteil, 0%); border-radius: inherit; background: var(--tw-ok); }
+.tw-zeilen { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.tw-zeilen > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 12px; }
+.tw-zeilen dt { color: var(--tw-sekundaer); flex: none; }
+.tw-zeilen dd { margin: 0; font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; min-width: 0; }
+.tw-balken { margin-top: 12px; height: 4px; border-radius: 999px; background: var(--tw-grau-1); overflow: hidden; }
+.tw-balken > span { display: block; height: 100%; border-radius: inherit; background: var(--tw-ok); transition: width var(--tw-panel-ms) var(--tw-kurve); }
 
 /* Hinweise */
 .tw-hinweise { min-height: 0; display: flex; flex-direction: column; outline: none; }
@@ -50,94 +59,160 @@
 .tw-warnicon { color: var(--tw-warnung); margin-top: 1px; }
 .tw-hinweisliste div { display: grid; gap: 1px; min-width: 0; }
 .tw-hinweisliste strong { font-weight: 600; }
-.tw-hinweisliste span { color: var(--tw-text); }
 .ui-karte .tw-ziel {
-  justify-self: start; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 2px 8px 2px 0;
-  font-size: 12px; font-weight: 500; color: var(--tw-eis-akzent); border-radius: 6px;
+  justify-self: start; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 2px 0;
+  font-size: 12px; font-weight: 500; color: var(--tw-link); border-radius: 4px;
 }
 .ui-karte .tw-ziel svg { transition: transform var(--tw-hover-ms) var(--tw-kurve); }
-.ui-karte .tw-ziel:hover { color: #46698c; }
+.ui-karte .tw-ziel:hover { color: var(--tw-link-hover); }
 .ui-karte .tw-ziel:hover svg { transform: translate(1px, -1px); }
 .tw-leer { margin: 0; color: var(--tw-sekundaer); }
 
 /* Geschosse */
-.tw-geschossliste { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.ui-karte .tw-geschossliste button {
-  position: relative; width: 100%; display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  padding: 10px 12px; border-radius: var(--tw-radius-kachel); text-align: left;
-  transition: background-color var(--tw-hover-ms) var(--tw-kurve);
+.tw-geschossliste { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.tw-geschossliste li { display: flex; align-items: center; gap: 2px; border-radius: var(--tw-radius-kachel); transition: background-color var(--tw-hover-ms) var(--tw-kurve); }
+.tw-geschossliste li:hover { background: rgb(242 243 245 / 0.9); }
+.tw-geschossliste li:has(.tw-geschoss[aria-pressed="true"]) { background: var(--tw-eis); }
+.ui-karte .tw-geschoss {
+  position: relative; flex: 1; min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 9px 4px 9px 12px; border-radius: var(--tw-radius-kachel); text-align: left;
 }
-.ui-karte .tw-geschossliste button:hover { background: rgb(242 243 245 / 0.9); }
-.ui-karte .tw-geschossliste button[aria-pressed="true"] { background: var(--tw-eis); }
-.ui-karte .tw-geschossliste button[aria-pressed="true"]::before {
-  content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--tw-eis-akzent);
+.ui-karte .tw-geschoss[aria-pressed="true"]::before {
+  content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--tw-eis-akzent);
 }
 .tw-code { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .tw-einheiten { font-size: 12px; color: var(--tw-sekundaer); font-variant-numeric: tabular-nums; }
+.tw-geschossliste li:has(.tw-geschoss[aria-pressed="true"]) .tw-einheiten { color: var(--tw-sekundaer-eis); }
+.ui-karte .tw-auge {
+  flex: none; display: grid; place-items: center; width: 32px; height: 32px; margin-right: 2px; border-radius: 6px; color: var(--tw-sekundaer);
+  transition: color var(--tw-hover-ms) var(--tw-kurve), background-color var(--tw-hover-ms) var(--tw-kurve);
+}
+.ui-karte .tw-auge:hover { color: var(--tw-text); background: rgb(31 38 48 / 0.05); }
+.tw-weg .tw-code, .tw-weg .tw-einheiten { color: var(--tw-sekundaer); }
+.tw-weg .tw-code { text-decoration: line-through; text-decoration-color: var(--tw-grau-2); }
+.ui-karte .tw-separieren {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 10px; padding: 12px 2px 0 0; border-top: 1px solid var(--tw-grau-1); border-radius: 0; font-size: 13px; text-align: left;
+}
+.ui-karte .tw-separieren:focus-visible { outline-offset: 4px; border-radius: 4px; }
 
-/* Legende */
-.tw-legende { margin-top: auto; display: grid; justify-items: end; gap: 2px; padding: 0 2px 2px; font-size: 12px; color: var(--tw-sekundaer); text-align: right; }
-.tw-legende p { margin: 0; display: flex; align-items: center; gap: 8px; }
-.tw-strich { width: 18px; height: 3px; border-radius: 2px; background: var(--tw-heizung); }
-.tw-legende p > span:not(.tw-strich) { color: var(--tw-text); }
-.tw-punkt { width: 3px; height: 3px; border-radius: 999px; background: var(--tw-grau-2) !important; margin: 0 2px; }
-.tw-bedienung { color: var(--tw-sekundaer); }
+/* Anlagenkarte rechts */
+.tw-objekt { animation: tw-objekt var(--tw-panel-ms) var(--tw-kurve); }
+@keyframes tw-objekt { from { opacity: 0; transform: translateX(8px); } }
+.tw-objekt-kopf { display: grid; grid-template-columns: 36px 1fr 28px; gap: 12px; align-items: start; margin-bottom: 14px; }
+.tw-objekt-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--tw-radius-kachel); background: var(--tw-heizung-grund); color: var(--tw-heizung); }
+.tw-objekt-titel { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.tw-objekt-titel h2 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3; }
+.ui-karte .tw-schliessen { display: grid; place-items: center; width: 28px; height: 28px; margin: -2px -6px 0 0; border-radius: 6px; color: var(--tw-sekundaer); transition: background-color var(--tw-hover-ms) var(--tw-kurve), color var(--tw-hover-ms) var(--tw-kurve); }
+.ui-karte .tw-schliessen:hover { background: rgb(31 38 48 / 0.06); color: var(--tw-text); }
+.tw-badge { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px 1px 7px; border-radius: 999px; font-size: 12px; font-weight: 500; background: var(--tw-flaeche-2); }
+.tw-badge::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+.tw-badge-bestaetigt::before { background: var(--tw-ok); }
+.tw-badge-vorgeschlagen::before { background: var(--tw-warnung); }
+.tw-objekt-daten { gap: 7px; }
+.tw-id { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tw-sekundaer); font-weight: 400 !important; }
+.tw-fehlt { color: var(--tw-sekundaer); font-weight: 400 !important; }
+.tw-objekt-block { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--tw-grau-1); }
+.tw-objekt-block h3 { margin: 0 0 4px; font-size: 12px; font-weight: 500; color: var(--tw-sekundaer); }
+.tw-versorgt { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.tw-versorgt li { padding: 1px 8px; border-radius: 999px; background: var(--tw-flaeche-2); font-size: 12px; color: var(--tw-text); }
+.tw-dokumente { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 8px; }
+.tw-dokumente h3 { margin: 0; }
+.tw-dokumente p { grid-column: 1 / -1; margin: 0; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--tw-sekundaer); }
+.ui-karte .tw-dokumente button {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 4px 0 10px; border-radius: 999px; font-size: 12px;
+  color: var(--tw-sekundaer); background: var(--tw-flaeche-2); cursor: not-allowed;
+}
+.tw-folgt { margin-left: 2px; padding: 0 6px; border-radius: 999px; background: rgb(255 255 255 / 0.9); font-size: 12px; line-height: 18px; }
+.tw-objekt-leer {
+  margin: 0; padding: 14px 16px; border-radius: var(--tw-radius); font-size: 12px; color: var(--tw-sekundaer);
+  border: 1px dashed rgb(138 146 158 / 0.45); background: rgb(255 255 255 / 0.35);
+}
 
-/* Anlagen-Tabelle */
-.tw-anlagen { padding-bottom: 8px; }
+/* Verbindungslinie zum Objekt und Hover-Tooltip */
+.tw-verbindung { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.tw-verbindung path { fill: none; stroke: var(--tw-grau-2); stroke-width: 1; }
+.tw-verbindung circle { fill: #fff; stroke: var(--tw-eis-akzent); stroke-width: 1.5; }
+.tw-tooltip {
+  position: absolute; left: 0; top: 0; z-index: 30; pointer-events: none; padding: 4px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 500; color: var(--tw-text); white-space: nowrap;
+  background: rgb(255 255 255 / 0.94); box-shadow: 0 0 0 0.5px rgb(31 38 48 / 0.08), var(--tw-schatten);
+  opacity: 0; transition: opacity var(--tw-hover-ms) var(--tw-kurve);
+}
+.tw-tooltip-an { opacity: 1; }
+
+/* Anlagenleiste */
+.tw-anlagen { padding-bottom: 10px; position: relative; }
 .tw-anlagen .ui-karte-kopf { margin-bottom: 6px; }
-.tw-tabelle { max-height: calc(36px * 4 + 30px); overflow: auto; border-radius: var(--tw-radius-kachel); scrollbar-width: thin; scrollbar-color: var(--tw-grau-2) transparent; }
+.tw-legende { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--tw-sekundaer); white-space: nowrap; }
+.tw-strich { width: 18px; height: 3px; border-radius: 2px; background: var(--tw-heizung); }
+.tw-punkt { width: 3px; height: 3px; border-radius: 999px; background: var(--tw-grau-2); margin: 0 2px; }
+.tw-tabelle {
+  --zeile: 36px; --kopfzeile: 30px; --zeilen: 5;
+  max-height: calc(var(--zeile) * var(--zeilen) + var(--kopfzeile)); overflow: auto; border-radius: var(--tw-radius-kachel);
+  scrollbar-width: thin; scrollbar-color: var(--tw-grau-2) transparent;
+}
+.tw-tabelle.tw-mehr-unten { -webkit-mask-image: linear-gradient(#000 calc(100% - 28px), transparent); mask-image: linear-gradient(#000 calc(100% - 28px), transparent); }
+.tw-tabelle:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-offset: 2px; }
 .tw-tabelle table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; font-variant-numeric: tabular-nums; }
 .tw-tabelle thead th {
-  position: sticky; top: 0; z-index: 1; height: 30px; padding: 0 12px; text-align: left; font-size: 12px; font-weight: 500; color: var(--tw-sekundaer);
-  background: var(--tw-flaeche-2);
+  position: sticky; top: 0; z-index: 1; height: var(--kopfzeile); padding: 0 12px; text-align: left; font-size: 12px; font-weight: 500;
+  color: var(--tw-sekundaer-kachel); background: var(--tw-flaeche-2);
 }
 .tw-tabelle thead th:first-child { border-radius: var(--tw-radius-kachel) 0 0 var(--tw-radius-kachel); }
 .tw-tabelle thead th:last-child { border-radius: 0 var(--tw-radius-kachel) var(--tw-radius-kachel) 0; }
-.tw-tabelle tbody th, .tw-tabelle td { height: 36px; padding: 0 12px; text-align: left; font-weight: 400; white-space: nowrap; border-bottom: 1px solid rgb(230 233 237 / 0.7); }
-.tw-tabelle tbody tr:last-child > * { border-bottom: 0; }
+.tw-tabelle tbody th, .tw-tabelle td { height: var(--zeile); padding: 0 12px; text-align: left; font-weight: 400; white-space: nowrap; border-bottom: 1px solid rgb(230 233 237 / 0.7); }
+.tw-tabelle tbody tr:last-child > * { border-bottom-color: transparent; }
 .tw-tabelle tbody th { font-weight: 500; }
-.tw-tabelle tbody tr { cursor: pointer; }
+.tw-tabelle tbody tr { cursor: pointer; outline: none; transition: background-color var(--tw-hover-ms) var(--tw-kurve), color var(--tw-panel-ms) var(--tw-kurve); }
+.tw-tabelle tbody tr > :first-child { border-radius: var(--tw-radius-kachel) 0 0 var(--tw-radius-kachel); }
+.tw-tabelle tbody tr > :last-child { border-radius: 0 var(--tw-radius-kachel) var(--tw-radius-kachel) 0; }
 .tw-tabelle tbody tr:hover { background: rgb(242 243 245 / 0.9); }
-.tw-tabelle tbody tr { transition: background-color var(--tw-hover-ms) var(--tw-kurve), color var(--tw-panel-ms) var(--tw-kurve); }
-.tw-gefiltert tbody tr:not(.tw-im-fokus) { color: var(--tw-sekundaer); }
-.tw-gefiltert tbody tr:not(.tw-im-fokus) .tw-status { color: var(--tw-sekundaer); }
-.tw-tabelle tbody th:first-child, .tw-tabelle thead th:first-child { padding-left: 10px; }
+.tw-tabelle tbody tr:focus-visible { box-shadow: inset 0 0 0 2px var(--tw-eis-akzent); }
+.tw-tabelle tbody tr[aria-current="true"] { background: var(--tw-eis); color: var(--tw-text); }
+.tw-tabelle tbody tr[aria-current="true"] > * { border-bottom-color: transparent; }
+.tw-tabelle tbody tr[aria-current="true"] .tw-fehlt { color: var(--tw-sekundaer-eis); }
+.tw-gefiltert tbody tr:not(.tw-im-fokus):not([aria-current="true"]) { color: var(--tw-sekundaer); }
+.tw-tabelle tbody th:first-child, .tw-tabelle thead th:first-child { padding-left: 12px; }
 .tw-tabelle .tw-zahl { text-align: right; width: 1%; }
-.tw-tabelle .tw-fehlt { color: var(--tw-sekundaer); }
-.tw-tabelle tbody th button { font-weight: 500; text-align: left; border-radius: 4px; }
-.tw-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tw-text); }
+.tw-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
 .tw-status::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
 .tw-status-bestaetigt::before { background: var(--tw-ok); }
 .tw-status-vorgeschlagen::before { background: var(--tw-warnung); }
+.tw-scrollhinweis { font-size: 12px; font-weight: 400; color: var(--tw-sekundaer); }
+.tw-scrollhinweis::before { content: "·"; margin-right: 8px; color: var(--tw-grau-2); }
 
 /* Meldungen */
 .tw-meldung-platz { grid-column: 1 / -1; grid-row: 2; display: grid; place-items: center; pointer-events: none; }
 .tw-meldung { margin: 0; padding: 12px 18px; max-width: 520px; text-align: center; pointer-events: auto; }
 .tw-laden { color: var(--tw-sekundaer); }
 
+/* Hohe Fenster: alle Anlagen ohne Scrollen, soweit Platz */
+@media (min-height: 1000px) { .tw-tabelle { --zeilen: 8; } }
+
 /* Kompakt: niedrige Fenster (z. B. 1280 × 720) */
 @media (max-height: 820px) {
   .tw-flaeche { grid-template-rows: 64px minmax(0, 1fr) auto; grid-template-columns: 312px minmax(0, 1fr) 280px; }
   .ui-karte { padding: 12px 14px 14px; }
   .ui-karte-kopf { margin-bottom: 8px; }
-  .tw-name { margin-bottom: 10px; }
+  .tw-name { margin-bottom: 8px; }
   .tw-kennzahlen { margin-bottom: 10px; }
-  .tw-kennzahlen > div { padding: 7px 10px; }
-  .tw-kennzahlen dd { font-size: 20px; }
-  .tw-links, .tw-rechts { gap: 10px; }
-  .tw-links { padding-bottom: 10px; }
-  .tw-tabelle { max-height: calc(32px * 3 + 28px); }
-  .tw-tabelle thead th { height: 28px; }
-  .tw-tabelle tbody th, .tw-tabelle td { height: 32px; }
-  .ui-karte .tw-geschossliste button { padding: 8px 12px; }
+  .tw-kennzahlen > div { padding: 5px 10px; gap: 0; }
+  .tw-links, .tw-rechts { gap: 10px; padding-bottom: 10px; }
+  .tw-tabelle { --zeile: 32px; --kopfzeile: 28px; --zeilen: 3; }
+  .ui-karte .tw-geschoss { padding-top: 6px; padding-bottom: 6px; }
+  .ui-karte .tw-auge { width: 28px; height: 28px; }
+  .ui-karte .tw-separieren { margin-top: 6px; padding-top: 8px; }
+  .tw-objekt-kopf { margin-bottom: 10px; }
+  .tw-objekt-block { margin-top: 8px; padding-top: 8px; }
+  .tw-objekt-daten { gap: 4px; }
 }
 @media (max-width: 1360px) {
   .tw-tabelle td:nth-child(2), .tw-tabelle thead th:nth-child(2) { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tw-links, .tw-rechts, .tw-unten { animation-name: tw-blende; }
+  .tw-links, .tw-rechts, .tw-unten, .tw-objekt { animation-name: tw-blende; }
   @keyframes tw-blende { from { opacity: 0; } }
   .tw-hinweise.tw-hervor { animation-duration: 1ms; }
 }

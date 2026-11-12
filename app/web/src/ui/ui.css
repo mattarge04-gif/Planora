@@ -30,7 +30,7 @@
 .ui-marke-platte2 { fill: rgb(255 255 255 / 0.62); }
 .ui-marke-platte3 { fill: rgb(255 255 255 / 0.36); }
 .ui-marke-schnitt { fill: var(--tw-eis); }
-.ui-wortmarke { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; color: var(--tw-text); }
+.ui-wortmarke { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; color: var(--tw-text); }
 
 /* Pill-Navigation */
 .ui-pills {
@@ -48,7 +48,7 @@
 
 /* Gebäudewahl und Rundknöpfe */
 .ui-kopf .ui-wahl {
-  display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px 0 14px; max-width: 260px;
+  display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px 0 14px; max-width: 260px;
   border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--tw-text);
   transition: box-shadow var(--tw-hover-ms) var(--tw-kurve);
 }
@@ -57,15 +57,15 @@
 .ui-chevron { color: var(--tw-sekundaer); flex: none; transition: transform var(--tw-hover-ms) var(--tw-kurve); }
 .ui-wahl[aria-expanded="true"] .ui-chevron { transform: rotate(180deg); }
 .ui-kopf .ui-rund {
-  position: relative; display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; color: var(--tw-text);
+  position: relative; display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; color: var(--tw-text);
   transition: box-shadow var(--tw-hover-ms) var(--tw-kurve), transform 120ms var(--tw-kurve);
 }
 .ui-kopf .ui-rund:active { transform: scale(0.96); }
 .ui-kopf .ui-wahl:hover, .ui-kopf .ui-rund:hover { box-shadow: 0 0 0 0.5px rgb(31 38 48 / 0.08), var(--tw-schatten-objekt); }
 .ui-zaehler {
-  position: absolute; top: 4px; right: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
-  display: grid; place-items: center; font-size: 10px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
-  background: var(--tw-warnung); color: #fff; box-shadow: 0 0 0 2px #fff;
+  position: absolute; top: -3px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  display: grid; place-items: center; font-size: 12px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
+  background: var(--tw-text); color: #fff; box-shadow: 0 0 0 2px var(--tw-grund);
 }
 .ui-profil { color: var(--tw-sekundaer); }
 
@@ -94,7 +94,7 @@
 .ui-eintrag-text { display: grid; gap: 1px; flex: 1; min-width: 0; }
 .ui-eintrag-text > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ui-eintrag-text small { font-size: 12px; color: var(--tw-sekundaer); }
-.ui-haken { color: var(--tw-eis-akzent) !important; }
+.ui-haken { color: var(--tw-link, #4a7298) !important; }
 .ui-trenner { display: block; height: 1px; margin: 6px 4px; background: var(--tw-grau-1); }
 .ui-schalter {
   position: relative; flex: none; width: 30px; height: 18px; border-radius: 999px; background: var(--tw-grau-2);
