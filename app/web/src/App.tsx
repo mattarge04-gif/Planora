@@ -48,6 +48,7 @@ export function App() {
     <Twin gebaeudeId={zustand.gebaeudeId} name={zustand.name}
     onGebaeude={(g) => setZustand({ art: "twin", gebaeudeId: g.id, name: g.name })}
     onListe={() => setZustand({ art: "liste" })}
+    onBearbeiten={() => setZustand({ art: "assistent", route: { art: "bearbeiten", gebaeudeId: zustand.gebaeudeId } })}
     onAbmelden={abmelden} onAbgelaufen={abgelaufen} /></Suspense>;
   if (zustand.art === "assistent") return <Suspense fallback={<div role="status" style={ladeStil}>Assistent wird geladen …</div>}>
     <Assistent key={zustand.route.art === "bearbeiten" ? zustand.route.gebaeudeId : "neu"} route={zustand.route}

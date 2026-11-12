@@ -68,10 +68,11 @@ interface Props {
   gebaeudeId: string; name: string;
   onGebaeude: (g: GebaeudeEintrag) => void;
   onListe: () => void;
+  onBearbeiten?: () => void;
   onAbmelden: () => void; onAbgelaufen: () => void;
 }
 
-export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAbmelden, onAbgelaufen }: Props) {
+export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAbmelden, onAbgelaufen }: Props) {
   const [welt, setWelt] = useState<Welt | null>(null);
   const [beschreibung, setBeschreibung] = useState<Beschreibung | null>(null);
   const [katalog, setKatalog] = useState<Katalog | null>(null);
@@ -248,7 +249,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAbmelden, onAbge
           gebaeudeId={gebaeudeId} gebaeudeName={name} gebaeude={liste} onGebaeude={onGebaeude}
           hinweise={daten ? daten.hinweise.length : null} onHinweise={zeigeHinweise}
           reduziert={reduziert} onReduziert={setReduziert}
-          onListe={onListe} onAbmelden={onAbmelden} />
+          onListe={onListe} onBearbeiten={onBearbeiten} onAbmelden={onAbmelden} />
 
         {(!webgl || fehler || !daten) && <div className="tw-meldung-platz">
           {!webgl && <p className="ui-glas tw-meldung" role="alert">3D-Darstellung nicht verfügbar. Dein Browser unterstützt WebGL 2 nicht.</p>}

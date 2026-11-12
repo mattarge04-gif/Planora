@@ -1,4 +1,4 @@
-import { Bell, Building2, Check, ChevronDown, LogOut, UserRound, LayoutList } from "lucide-react";
+import { Bell, Building2, Check, ChevronDown, LogOut, UserRound, LayoutList, PencilLine } from "lucide-react";
 import type { GebaeudeEintrag } from "../typen";
 import { Menue } from "./Menue";
 import "./ui.css";
@@ -18,6 +18,8 @@ interface Props {
   reduziert: boolean;
   onReduziert: (r: boolean) => void;
   onListe: () => void;
+  /** Öffnet den Assistenten für das aktuelle Gebäude. */
+  onBearbeiten?: () => void;
   onAbmelden: () => void;
 }
 
@@ -70,6 +72,9 @@ export function Kopfzeile(p: Props) {
             <button type="button" role="menuitem" className="ui-eintrag" onClick={() => { schliessen(); p.onListe(); }}>
               <LayoutList {...ICON} />Alle Gebäude
             </button>
+            {p.onBearbeiten && <button type="button" role="menuitem" className="ui-eintrag" onClick={() => { schliessen(); p.onBearbeiten?.(); }}>
+              <PencilLine {...ICON} />Gebäude bearbeiten
+            </button>}
           </>}
         </Menue>
 
