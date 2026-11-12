@@ -19,6 +19,17 @@ const TRENNWAND = 1, TRENNDICKE = 0.1;
 export function FokusInhalt({ welt, katalog, fokusId, auswahl, onAuswahl, mat }: Props) {
   const g = welt.geschosse.find((x) => x.id === fokusId);
   const alle = useMemo(() => leitungen(welt, katalog), [welt, katalog]);
+  const flaechen = useMemo(() => {
+    const gs = welt.geschosse.find((x) => x.id === fokusId);
+    if (!gs) return [];
+    const eh = welt.einheiten.filter((e) => e.geschossId === fokusId);
+    return welt.symbole
+      .filter((s) => geschossBeiY(welt, s.position.y) === fokusId && FLAECHE.has(s.katalogId))
+      .flatMap((s) => {
+        const e = eh.find((x) => imRechteck(x.rechteck, s.position.x, s.position.z));
+        return e ? [{ schluessel: s.schluessel, punkte: schlange(e.rechteck, gs.yUnten + 0.02) }] : [];
+      });
+  }, [welt, fokusId]);
   if (!g) return null;
   const einheiten = welt.einheiten.filter((e) => e.geschossId === fokusId);
   const symbole = welt.symbole.filter((s) => geschossBeiY(welt, s.position.y) === fokusId);
@@ -44,10 +55,7 @@ export function FokusInhalt({ welt, katalog, fokusId, auswahl, onAuswahl, mat }:
           </group>
         );
       })}
-      {symbole.filter((s) => FLAECHE.has(s.katalogId)).map((s) => {
-        const e = einheiten.find((x) => imRechteck(x.rechteck, s.position.x, s.position.z));
-        return e ? <Linienzug key={`f${s.schluessel}`} punkte={schlange(e.rechteck, g.yUnten + 0.02)} m={mat.flaeche} /> : null;
-      })}
+      {flaechen.map((f) => <Linienzug key={`f${f.schluessel}`} punkte={f.punkte} m={mat.flaeche} />)}
       {sichtbar.map((l, i) => (
         <Rohr key={`l${i}`} punkte={l.punkte} radius={l.art === "haupt" ? ROHR.haupt : ROHR.verteil}
           m={!auswahl ? mat.leitung : betrifft(l) ? mat.leitungAktiv : mat.leitungBlass} />
@@ -64,6 +72,7 @@ function Bauteil({ schluessel, position, katalogId, m, onAuswahl }: {
   schluessel: string; position: V3; katalogId: string; m: THREE.Material; onAuswahl: (s: string) => void;
 }) {
   const { gl } = useThree();
+  useEffect(() => () => { gl.domElement.style.cursor = ""; }, [gl]);
   return (
     <group position={position}
       onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); onAuswahl(schluessel); }}
