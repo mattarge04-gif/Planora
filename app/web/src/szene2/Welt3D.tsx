@@ -10,6 +10,7 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import type { KatalogEintrag, Welt } from "../typen";
 import { FASSADE } from "./farben";
 import { MASSE, huelle as huelleVon, wandQuader, type Bereich, type Fenster, type Huelle, type Quader, type V3 } from "./huelle";
+import { FokusInhalt } from "./Fokus";
 import { geschossBeiY } from "./leitungen";
 import { entsorgeMaterialien, erzeugeMaterialien, type Materialien } from "./materialien";
 import { Schild } from "./schrift";
@@ -24,7 +25,7 @@ const EBENE = new THREE.PlaneGeometry(1, 1);
 
 /** Prototyp nach Spec 2026-11-12: plastische Uebersicht, Fokusmodus je Geschoss. Zeichnen nur bei Aenderung. */
 export function Welt3D(props: Welt3DProps) {
-  const { welt, fokusId, onAuswahl, reduziert, auswahl, karteRef } = props;
+  const { welt, katalog, fokusId, onAuswahl, reduziert, auswahl, karteRef } = props;
   const h = useMemo(() => huelleVon(welt), [welt]);
   const mat = useMemo(() => erzeugeMaterialien(), []);
   useEffect(() => () => entsorgeMaterialien(mat), [mat]);
@@ -40,7 +41,7 @@ export function Welt3D(props: Welt3DProps) {
       <Kamera bereich={h.bereich} zielY={zielY} />
       <Gebaeude h={h} fokus={fokus} mat={mat} />
       {!fokus && <GeschossSchilder welt={welt} h={h} />}
-      {/* FOKUS-INHALT (Task 5) */}
+      {fokus && <FokusInhalt welt={welt} katalog={katalog} fokusId={fokus.id} auswahl={auswahl} onAuswahl={onAuswahl} mat={mat} />}
       <Anker punkt={ankerPunkt} ziel={karteRef} />
       <Nachbearbeitung reduziert={reduziert} />
     </Canvas>
