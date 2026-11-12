@@ -34,6 +34,9 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
     const ganz = rohrnetz(welt, katalog, anschluesse);
     const huelsen = new Map<string, Huelse>();
     for (const r of ganz) for (const h of durchgaenge(welt, r.punkte, r.radius)) {
+      // Offene Geschosse zeigen Innenwände nur bis 1.15 m; Wandhülsen der Deckenleitung würden sonst frei schweben.
+      const g = welt.geschosse.find((g) => h.position[1] >= g.yUnten && h.position[1] < g.yUnten + g.hoehe);
+      if (h.art === "wand" && g && h.position[1] - g.yUnten > 1.17) continue;
       if (h.position[1] <= yMax) huelsen.set(h.position.map((n) => n.toFixed(4)).join(":"), h);
     }
     return {

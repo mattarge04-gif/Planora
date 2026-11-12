@@ -2,6 +2,10 @@
 
 Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
 
+## E41 – Gekuerzter Weg zu V1, Interview zuerst als Web-Assistent (PO, 2026-11-12)
+
+Der PO bestaetigt den gekuerzten Plan (Interview → Twin → Anlagenakte → Ampel → Installation, ≈ 25–30 PT [A]) und das Interview zuerst als gefuehrten Web-Assistenten ohne KI. Suche, KI-Interview, KI-Auslesen, Excel-Import und weitere Gewerke folgen nach V1. Leitungsfuehrung bleibt schematisch (unter der Decke); detaillierte Leitungsplanung ist nicht Ziel. Raumgroessen sollen dem Inhalt folgen; Zubehoer (Pumpen, Ventile, Zaehler) muss flexibel an beliebigen Orten im Fluss moeglich sein. Plan und Konzept: [Weg zu V1](../superpowers/plans/2026-11-12-weg-zu-v1.md).
+
 ## E40 – Plastische 3D-Welt und ausgearbeitete Oberflaeche (PO, 2026-11-12)
 
 Der PO bestaetigt die Kombination seiner drei Bildreferenzen: Bild 2 fuer eine helle, plastische Gebaeudeuebersicht, Bild 3 fuer aufgeschnittene Geschoss-/Technikansichten mit erkennbaren Bauteilen und Versorgungsbeziehungen, Bild 1 fuer die Anordnung der Informationskarten und Navigation. M2b-1 ist ein funktionaler Schnitt, keine visuelle Endabnahme. Die einfache Quader-/Pin-Ansicht ist kein finales Erscheinungsbild. Schematisch und datengetrieben bleibt verbindlich; hochwertige Gestaltung ist damit vereinbar.

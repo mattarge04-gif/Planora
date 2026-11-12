@@ -2,7 +2,7 @@ import { imRechteck, type V3 } from "../szene2/huelle";
 import { geschossBeiY, leitungen } from "../szene2/leitungen";
 import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
 import { innenwaende } from "./geometrie";
-import { anschlussFuehrung, modellFuer, ROHR, verteilerAbgang } from "./technik";
+import { anschlussFuehrung, deckenLauf, modellFuer, ROHR, verteilerAbgang } from "./technik";
 
 const ERZEUGER = new Set(["heizung.waermepumpe", "heizung.gaskessel", "heizung.oelkessel", "heizung.fernwaerme_uebergabe"]);
 const ABGABE = new Set(["heizung.heizkoerper", "heizung.fbh_kreis", "heizung.tabs_feld"]);
@@ -62,11 +62,17 @@ export function rohrnetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Rec
   for (const v of verbindungen(welt, katalog)) {
     const radius = ROHR[v.art];
     const adapter: Rohrstueck[] = [];
+    const lage = (key: string): number | undefined => {
+      const s = welt.symbole.find((s) => s.schluessel === key);
+      if (s) return s.position.z;
+      const e = welt.einheiten.find((e) => e.id === key);
+      return e ? e.rechteck.z + e.rechteck.tiefe / 2 : undefined;
+    };
     const endpunkt = (key: string, ausgang = false): V3 | null => {
       const s = welt.symbole.find((s) => s.schluessel === key);
       if (!s) {
         const e = welt.einheiten.find((e) => e.id === key), g = welt.geschosse.find((g) => g.id === e?.geschossId);
-        return e && g ? [e.rechteck.x + e.rechteck.breite / 2, g.yUnten + ROHR.durchgangHoehe, e.rechteck.z + e.rechteck.tiefe / 2] : null;
+        return e && g ? [e.rechteck.x + e.rechteck.breite / 2, deckenLauf(g), e.rechteck.z + e.rechteck.tiefe / 2] : null;
       }
       const m = modellFuer(s.katalogId);
       let lokal = (m.pfad && anschluesse[m.pfad]) || [0, m.masse[1], 0];
@@ -74,7 +80,9 @@ export function rohrnetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Rec
         const index = naechsterAbgang.get(key) ?? 0;
         lokal = verteilerAbgang(index); naechsterAbgang.set(key, index + 1);
       }
-      const f = anschlussFuehrung([], { symbol: s, lokal: lokal as V3 }, radius, einheitVon(welt, s)?.rechteck);
+      const g = welt.geschosse.find((g) => g.id === geschossBeiY(welt, s.position.y));
+      const laufY = g ? deckenLauf(g) - s.position.y : ROHR.durchgangHoehe;
+      const f = anschlussFuehrung([], { symbol: s, lokal: lokal as V3 }, radius, einheitVon(welt, s)?.rechteck, laufY, lage(key === v.von ? v.nach : v.von));
       const stutzen = s.katalogId === "heizung.verteiler" ? ausgang ? 0.02 : 0.035 : s.katalogId === "heizung.waermepumpe" ? 0.026 : ROHR.anschluss;
       adapter.push({ punkte: f.adapter, radius: f.adapterRadius, startRadius: stutzen, endRadius: radius, boden: s.position.y,
         daten: { ...v, bauteilIds: s.bauteilIds }, frei: false });
@@ -87,9 +95,11 @@ export function rohrnetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Rec
       return abgang ? Math.sign(p[2] - abgang.punkte[abgang.punkte.length - 2][2]) || 1 : 1;
     };
     const sa = richtung(a), sb = richtung(b);
-    const z = sa > 0 ? Math.max(a[2], b[2]) + 0.4 : Math.min(a[2], b[2]) - 0.4;
+    // Zeigen beide Abgänge aufeinander zu, treffen sie sich in der Mitte statt hinter dem Ziel zu wenden.
+    const zugewandt = sa !== sb && (b[2] - a[2]) * sa > 0.3;
+    const z = zugewandt ? (a[2] + b[2]) / 2 : sa > 0 ? Math.max(a[2], b[2]) + 0.4 : Math.min(a[2], b[2]) - 0.4;
     let punkte: V3[] = [a, [a[0], a[1], z], [a[0], b[1], z], [b[0], b[1], z], b];
-    if (sa !== sb) {
+    if (sa !== sb && !zugewandt) {
       const x = Math.min(a[0], b[0]) - 0.8, az = a[2] + sa * 0.4, bz = b[2] + sb * 0.4;
       punkte = [a, [a[0], a[1], az], [x, a[1], az], [x, b[1], az], [x, b[1], bz], [b[0], b[1], bz], b];
     }
@@ -98,7 +108,7 @@ export function rohrnetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Rec
       if (adapterSchluessel.has(key)) return false;
       adapterSchluessel.add(key); return true;
     });
-    stuecke.push(...neueAdapter, { punkte, radius, startRadius: radius, endRadius: radius, boden: Math.min(a[1], b[1]) - ROHR.durchgangHoehe,
+    stuecke.push(...neueAdapter, { punkte, radius, startRadius: radius, endRadius: radius, boden: Math.min(...adapter.map((r) => r.boden)),
       daten: { ...v, bauteilIds: [...new Set(adapter.flatMap((a) => a.daten.bauteilIds))] }, frei: !welt.symbole.some((s) => s.schluessel === v.nach) });
   }
   return stuecke;

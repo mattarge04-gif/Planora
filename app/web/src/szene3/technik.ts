@@ -5,7 +5,9 @@ import type { Welt, WeltSymbol } from "../typen";
 import { geschossSchnitt } from "./schnitt";
 
 /** Schematische Rohrmasse [A], Meter; Bodenoberkante liegt bei +0.025 m. */
-export const ROHR = { haupt: 0.07, verteil: 0.045, flaeche: 0.014, anschluss: 0.018, bodenAbstand: 0.06, bogenFaktor: 2.5, durchgangHoehe: 0.3 } as const;
+export const ROHR = { haupt: 0.07, verteil: 0.045, flaeche: 0.014, anschluss: 0.018, bodenAbstand: 0.06, bogenFaktor: 2.5, durchgangHoehe: 0.3, deckenAbstand: 0.4 } as const;
+/** Leitungsebene unter der Decke [A]: Achse 0.40 m unter Geschossoberkante, damit Rohr samt Isolation unter der 0.25-m-Platte liegt. */
+export const deckenLauf = (g: { yUnten: number; hoehe: number }) => g.yUnten + g.hoehe - ROHR.deckenAbstand;
 export const rohrAchse = (boden: number, radius: number) => boden + radius + ROHR.bodenAbstand;
 
 const MASSE: Record<string, V3> = {
@@ -104,21 +106,22 @@ export interface ModellAnschluss { symbol: WeltSymbol; lokal: V3 }
 /** [A] Vier vorhandene Vorlaufstutzen des eigenen Verteiler-GLB; weitere Räume teilen diese Anschlüsse. */
 export function verteilerAbgang(index: number): V3 { return [-0.36 + 0.24 * (index % 4), 1, 0.02]; }
 
-/** Kurze Geräteabgänge bleiben innerhalb der Einheit; erst auf 0.30 m Höhe beginnt die Raumleitung. */
-export function anschlussFuehrung(punkte: V3[], anschluss: ModellAnschluss, radius: number, raum?: import("../typen").Rechteck): { rohr: V3[]; adapter: V3[]; adapterRadius: number } {
+/** Kurze Geräteabgänge bleiben innerhalb der Einheit und steigen auf die Leitungsebene `laufY` (lokal zum Gerät). */
+export function anschlussFuehrung(punkte: V3[], anschluss: ModellAnschluss, radius: number, raum?: import("../typen").Rechteck, laufY: number = ROHR.durchgangHoehe, zielZ?: number): { rohr: V3[]; adapter: V3[]; adapterRadius: number } {
   const { symbol: s, lokal: a } = anschluss;
   const masse = modellFuer(s.katalogId).masse;
   let adapterRadius = 0.035;
-  const rand = 0.22, y = ROHR.durchgangHoehe;
+  const rand = 0.22, y = laufY;
   const richtungZ = raum && s.position.z + masse[2] / 2 + rand > raum.z + raum.tiefe - 0.15 ? -1 : 1;
   const z = richtungZ * (masse[2] / 2 + rand);
   let adapter: V3[];
   const unten = ["heizung.fernwaerme_uebergabe", "heizung.heizkoerper", "heizung.fbh_kreis", "heizung.tabs_feld"].includes(s.katalogId);
   if (unten) {
-    const tief = Math.max(0.035, a[1] - 0.03);
-    adapter = [a, [a[0], tief, a[2]], [a[0], tief, z], [a[0], y, z]];
+    // Abgaben unter der Deckenleitung erhalten einen direkten Fallstrang neben dem Gerät, ohne Umweg über den Boden.
+    adapter = y > a[1] + 0.3 ? [a, [a[0], a[1], z], [a[0], y, z]] : [a, [a[0], Math.max(0.035, a[1] - 0.03), a[2]], [a[0], Math.max(0.035, a[1] - 0.03), z], [a[0], y, z]];
   } else if (s.katalogId === "heizung.verteiler" && a[1] > 0.95) {
-    adapter = [a, [a[0], a[1] + 0.14, a[2]], [a[0], a[1] + 0.14, z], [a[0], y, z]];
+    // Abgänge oben am Balken steigen gerade zur Deckenleitung auf.
+    adapter = y > a[1] + 0.3 ? [a, [a[0], y, a[2]]] : [a, [a[0], a[1] + 0.14, a[2]], [a[0], a[1] + 0.14, z], [a[0], y, z]];
   } else if (s.katalogId === "heizung.verteiler") {
     adapterRadius = radius;
     // [A] Steht der linke Balkenstutzen wandnah, führt die Zuleitung gerade durch die Wand auf Stutzenhöhe statt mit einem gequetschten Bogen.
@@ -138,7 +141,9 @@ export function anschlussFuehrung(punkte: V3[], anschluss: ModellAnschluss, radi
     adapter = [a, [a[0], oben, a[2]], [a[0], oben, z], [a[0], y, z]];
   }
   const ausgang = adapter.at(-1)!;
-  adapter.push([ausgang[0], ausgang[1], ausgang[2] + richtungZ * 0.22]);
+  // Der kurze Abgang auf der Leitungsebene zeigt zum Ziel; so entsteht keine Schlaufe zurück über das Gerät.
+  const abgangZ = zielZ === undefined || Math.abs(zielZ - s.position.z - ausgang[2]) < 0.6 ? richtungZ : Math.sign(zielZ - s.position.z - ausgang[2]);
+  adapter.push([ausgang[0], ausgang[1], ausgang[2] + abgangZ * 0.22]);
   const welt = ([x, y, z]: V3): V3 => [x + s.position.x, y + s.position.y, z + s.position.z];
   adapter = adapter.map(welt);
   const start = adapter.at(-1)!;
