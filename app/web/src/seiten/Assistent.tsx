@@ -59,6 +59,7 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
   const neu = route.art === "neu";
   const [z, dispatch] = useReducer(reduziere, null, () => leererZustand(null));
   const [liste, setListe] = useState<GebaeudeEintrag[] | null>(null);
+  const [liegenschaftListe, setLiegenschaftListe] = useState<LiegenschaftWahl[]>([]);
   const [bereit, setBereit] = useState(neu);
   const [fehler, setFehler] = useState<string | null>(null);
   const [meldung, setMeldung] = useState<string | null>(null);
@@ -79,9 +80,10 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
   const gebaeudeName = liste?.find((g) => g.id === gebaeudeId)?.name;
   const liegenschaften: LiegenschaftWahl[] = useMemo(() => {
     const m = new Map<string, string>();
+    for (const l of liegenschaftListe) m.set(l.id, l.name);
     for (const g of liste ?? []) m.set(g.liegenschaftId, g.liegenschaftName);
     return [...m].map(([id, name]) => ({ id, name }));
-  }, [liste]);
+  }, [liste, liegenschaftListe]);
   const kopf = useMemo(() => ({}), []);
 
   const fehlerBehandeln = useCallback((e: unknown, fallback: string) => {
@@ -100,6 +102,8 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
     holeJson<GebaeudeEintrag[]>("/api/struktur/gebaeude").then(setListe, (e) => {
       if (e instanceof ApiFehler && e.status === 401) onAbgelaufen(); else setListe([]);
     });
+    // Betreiber sehen keine Gebäude (keine Fachdaten), brauchen aber die Liegenschaften für die Anlage.
+    holeJson<LiegenschaftWahl[]>("/api/struktur/liegenschaften").then(setLiegenschaftListe, () => setLiegenschaftListe([]));
   }, [api, onAbgelaufen]);
 
   // Name und Liegenschaft aus der Gebäudeliste (die Beschreibung enthält sie nicht)
@@ -108,7 +112,6 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
     if (gebaeudeId && gebaeudeName && !zRef.current.gebaeude.name) dispatch({ typ: "kopf", name: gebaeudeName });
     if (!gebaeudeId && !zRef.current.gebaeude.liegenschaftId && liegenschaften[0]) dispatch({ typ: "kopf", liegenschaftId: liegenschaften[0].id });
   }, [liste, bereit, gebaeudeId, gebaeudeName, liegenschaften]);
-
   // Laden (bestehendes Gebäude): Entwurf, sonst Beschreibung; Grundform und erste Ansicht aus der Welt
   useEffect(() => {
     if (!gebaeudeId) return;
@@ -191,7 +194,16 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
     try {
       const huelle: Huelle = { name: g.name.trim(), grundform: g.grundform, geschosse: g.geschosse.map((x) => ({ code: x.code })) };
       const id = await api.legeAn(g.liegenschaftId, huelle);
-      const b = await api.ladeBeschreibung(id);
+      let b: Awaited<ReturnType<typeof api.ladeBeschreibung>>;
+      try { b = await api.ladeBeschreibung(id); } catch (e) {
+        // Betreiber legt nur die Hülle an; Einheiten und Technik erfasst der Kunde (E38).
+        if (e instanceof ApiFehler && (e.status === 403 || e.status === 404)) {
+          dispatch({ typ: "kopf", name: "" });
+          setMeldung(`Gebäude «${huelle.name}» ist angelegt. Einheiten und Technik erfasst der Kunde: mit einem Admin-Konto anmelden und das Gebäude bearbeiten.`);
+          return false;
+        }
+        throw e;
+      }
       dispatch({ typ: "gebaeudeAngelegt", id, stand: b.stand, geschosse: b.geschosse ?? [] });
       const angelegt = reduziere(zRef.current, { typ: "gebaeudeAngelegt", id, stand: b.stand, geschosse: b.geschosse ?? [] });
       autosaveStarten(0, angelegt);

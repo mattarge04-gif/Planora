@@ -42,6 +42,21 @@ beforeAll(async () => {
 });
 afterAll(async () => { await app.close(); await db.ende(); });
 
+describe("GET /api/struktur/liegenschaften", () => {
+  it("Betreiber sieht alle Liegenschaften (nur ID und Name), damit er Gebaeude anlegen kann", async () => {
+    const r = await anfrage("GET", "/api/struktur/liegenschaften", kBetr);
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toEqual([{ id: L2, name: "A-Liegenschaft" }, { id: L1, name: "B-Liegenschaft" }]);
+  });
+  it("Admin sieht alle, Leser nur seine", async () => {
+    expect((await anfrage("GET", "/api/struktur/liegenschaften", kAdmin)).json().map((l: any) => l.id)).toEqual([L2, L1]);
+    expect((await anfrage("GET", "/api/struktur/liegenschaften", kLeser)).json()).toEqual([{ id: L1, name: "B-Liegenschaft" }]);
+  });
+  it("ohne Sitzung 401", async () => {
+    expect((await app.inject({ url: "/api/struktur/liegenschaften" })).statusCode).toBe(401);
+  });
+});
+
 describe("GET /api/struktur/gebaeude", () => {
   it("Admin sieht alle, sortiert nach Liegenschaft und Name", async () => {
     const r = await anfrage("GET", "/api/struktur/gebaeude", kAdmin);

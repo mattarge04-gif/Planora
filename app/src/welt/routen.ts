@@ -173,6 +173,19 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
     });
 
   /** Gebaeude, die der Benutzer lesen darf; Betreiber und Benutzer ohne Fachrecht erhalten eine leere Liste. */
+  // Liegenschaften (nur ID und Name) fuer die Gebaeudeanlage: Betreiber (huelle.verwalten) und Admin alle, uebrige ihre zugeordneten.
+  app.get("/api/struktur/liegenschaften", async (req) => mitClient(async (c) => {
+    const benutzerId = req.kontext!.benutzerId;
+    const rolle = (await c.query("select rolle from rolle_zuordnung where benutzer_id=$1", [benutzerId])).rows[0]?.rolle as Rolle | undefined;
+    if (!rolle) return [];
+    const alle = rolle === "admin" || MATRIX["huelle.verwalten"].includes(rolle);
+    const r = await c.query(
+      `select l.id, l.name from liegenschaft l
+        where $2::boolean or exists (select 1 from rolle_liegenschaft r where r.benutzer_id = $1 and r.liegenschaft_id = l.id)
+        order by l.name, l.id`, [benutzerId, alle]);
+    return r.rows.map((x) => ({ id: x.id, name: x.name }));
+  }));
+
   app.get("/api/struktur/gebaeude", async (req) => mitClient(async (c) => {
     const benutzerId = req.kontext!.benutzerId;
     const rolle = (await c.query("select rolle from rolle_zuordnung where benutzer_id=$1", [benutzerId])).rows[0]?.rolle as Rolle | undefined;
