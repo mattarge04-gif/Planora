@@ -2,9 +2,9 @@
 
 Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
 
-## E41 – Gekuerzter Weg zu V1, Interview zuerst als Web-Assistent (PO, 2026-11-12)
+## E41 – Neue Reihenfolge zu V1, Interview zuerst als Web-Assistent (PO, 2026-11-12)
 
-Der PO bestaetigt den gekuerzten Plan (Interview → Twin → Anlagenakte → Ampel → Installation, ≈ 25–30 PT [A]) und das Interview zuerst als gefuehrten Web-Assistenten ohne KI. Suche, KI-Interview, KI-Auslesen, Excel-Import und weitere Gewerke folgen nach V1. Leitungsfuehrung bleibt schematisch (unter der Decke); detaillierte Leitungsplanung ist nicht Ziel. Raumgroessen sollen dem Inhalt folgen; Zubehoer (Pumpen, Ventile, Zaehler) muss flexibel an beliebigen Orten im Fluss moeglich sein. Plan und Konzept: [Weg zu V1](../superpowers/plans/2026-11-12-weg-zu-v1.md).
+Der PO lehnt eine Kuerzung ab ("nichts kuerzen einfach bessere reihenfolge"): Alle Meilensteine M2c–M11 bleiben im Umfang, die Reihenfolge wird neu gesetzt (Assistent → Anlagenakte → Ampel → fruehe Teil-Abnahme → Excel → Suche → KI-Auslesen → KI-Interview → Gesamtabnahme). Das Interview kommt zuerst als gefuehrter Web-Assistent ohne KI; das KI-Interview folgt auf demselben Faktenschema. Leitungsfuehrung bleibt schematisch (unter der Decke); detaillierte Leitungsplanung ist nicht Ziel. Raumgroessen sollen dem Inhalt folgen; Zubehoer (Pumpen, Ventile, Zaehler) muss flexibel an beliebigen Orten im Fluss moeglich sein. Plan und Konzept: [Weg zu V1](../superpowers/plans/2026-11-12-weg-zu-v1.md).
 
 ## E40 – Plastische 3D-Welt und ausgearbeitete Oberflaeche (PO, 2026-11-12)
 
