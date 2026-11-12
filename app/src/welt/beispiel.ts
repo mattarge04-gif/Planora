@@ -3,6 +3,9 @@ import { REGELWERK_V1 } from "./regelwerk.v1.js";
 import { KATALOG_V1 } from "./katalog.v1.js";
 import { ladeHuelle, legeGebaeudeAn, schreibeBeschreibung } from "./speicher.js";
 import type { Beschreibung } from "./typen.js";
+import { REGELWERK_V2 } from "./regelwerk.v2.js";
+import { KATALOG_V2 } from "./katalog.v2.js";
+import { ALLE_MUSTER } from "./muster.js";
 
 /** Erster durchgehender Schnitt nach ADR 0032 / Spec §9. Nur fuer Entwicklung und Tests. */
 export async function beispielAnlegen(pool: pg.Pool): Promise<{ liegenschaftId: string; gebaeudeId: string }> {
@@ -37,5 +40,24 @@ export async function beispielAnlegen(pool: pg.Pool): Promise<{ liegenschaftId: 
     await schreibeBeschreibung(c, gebaeudeId, b, REGELWERK_V1, KATALOG_V1);
     await c.query("commit");
     return { liegenschaftId, gebaeudeId };
+  } catch (e) { await c.query("rollback"); throw e; } finally { c.release(); }
+}
+
+/** Nur Entwicklung: alle Mustergebaeude der Stufe 1 (v2) in einer zweiten Liegenschaft. Getrennt von beispielAnlegen. */
+export async function musterAnlegen(pool: pg.Pool): Promise<{ liegenschaftId: string; gebaeudeIds: string[] }> {
+  const c = await pool.connect();
+  try {
+    await c.query("begin");
+    const liegenschaftId: string = (await c.query("insert into liegenschaft(name) values ('Muster Stufe 1') returning id")).rows[0].id;
+    const gebaeudeIds: string[] = [];
+    for (const m of ALLE_MUSTER) {
+      const gebaeudeId = await legeGebaeudeAn(c, liegenschaftId, m.huelle, REGELWERK_V2);
+      const h = (await ladeHuelle(c, gebaeudeId))!;
+      const r = m.beschreibung(h.geschosse.map((g) => g.id));
+      await schreibeBeschreibung(c, gebaeudeId, { ...r, gebaeudeId, stand: h.stand }, REGELWERK_V2, KATALOG_V2);
+      gebaeudeIds.push(gebaeudeId);
+    }
+    await c.query("commit");
+    return { liegenschaftId, gebaeudeIds };
   } catch (e) { await c.query("rollback"); throw e; } finally { c.release(); }
 }

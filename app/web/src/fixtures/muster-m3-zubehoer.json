@@ -1,0 +1,345 @@
+{
+  "regelwerkVersion": 2,
+  "grundriss": [
+    {
+      "x": 0,
+      "z": 0,
+      "breite": 30,
+      "tiefe": 15
+    }
+  ],
+  "geschosse": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "code": "EG",
+      "yUnten": 0,
+      "hoehe": 3.2
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "code": "OG1",
+      "yUnten": 3.2,
+      "hoehe": 3.2
+    }
+  ],
+  "einheiten": [
+    {
+      "id": "00000000-0000-4000-8000-000000000100",
+      "geschossId": "00000000-0000-4000-8000-000000000001",
+      "bezeichnung": "Buero A",
+      "art": "buero",
+      "rechteck": {
+        "x": 0,
+        "z": 0,
+        "breite": 12,
+        "tiefe": 15
+      },
+      "quelle": "schematisch"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000101",
+      "geschossId": "00000000-0000-4000-8000-000000000001",
+      "bezeichnung": "Restaurant",
+      "art": "gastro",
+      "rechteck": {
+        "x": 12,
+        "z": 0,
+        "breite": 15,
+        "tiefe": 15
+      },
+      "quelle": "schematisch"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000102",
+      "geschossId": "00000000-0000-4000-8000-000000000001",
+      "bezeichnung": "Technik",
+      "art": "technik",
+      "rechteck": {
+        "x": 27,
+        "z": 0,
+        "breite": 3,
+        "tiefe": 15
+      },
+      "quelle": "schematisch"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000103",
+      "geschossId": "00000000-0000-4000-8000-000000000002",
+      "bezeichnung": "Buero C",
+      "art": "buero",
+      "rechteck": {
+        "x": 0,
+        "z": 0,
+        "breite": 15,
+        "tiefe": 15
+      },
+      "quelle": "schematisch"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000104",
+      "geschossId": "00000000-0000-4000-8000-000000000002",
+      "bezeichnung": "Buero D",
+      "art": "buero",
+      "rechteck": {
+        "x": 15,
+        "z": 0,
+        "breite": 15,
+        "tiefe": 15
+      },
+      "quelle": "schematisch"
+    }
+  ],
+  "symbole": [
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000102\",\"heizung.waermepumpe\",null,null,null]",
+      "katalogId": "heizung.waermepumpe",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000200"
+      ],
+      "mengeSumme": 1,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 27.5,
+        "y": 0,
+        "z": 3.75
+      },
+      "versorgt": []
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000102\",\"heizung.speicher\",null,null,null]",
+      "katalogId": "heizung.speicher",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000201"
+      ],
+      "mengeSumme": 1,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 28.5,
+        "y": 0,
+        "z": 3.75
+      },
+      "versorgt": []
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000102\",\"heizung.verteiler\",null,null,null]",
+      "katalogId": "heizung.verteiler",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000207"
+      ],
+      "mengeSumme": 1,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 29.5,
+        "y": 0,
+        "z": 3.75
+      },
+      "versorgt": [
+        "00000000-0000-4000-8000-000000000100",
+        "00000000-0000-4000-8000-000000000101",
+        "00000000-0000-4000-8000-000000000103",
+        "00000000-0000-4000-8000-000000000104"
+      ]
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000102\",\"heizung.umwaelzpumpe\",null,null,\"g:00000000-0000-4000-8000-000000000301\"]",
+      "katalogId": "heizung.umwaelzpumpe",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000208",
+        "00000000-0000-4000-8000-000000000210"
+      ],
+      "mengeSumme": 2,
+      "mengeUnbekannt": false,
+      "status": "vorgeschlagen",
+      "position": {
+        "x": 27.5,
+        "y": 0,
+        "z": 11.25
+      },
+      "versorgt": [],
+      "ort": {
+        "gruppe": "00000000-0000-4000-8000-000000000301"
+      }
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000102\",\"heizung.ventil_2weg\",null,null,\"g:00000000-0000-4000-8000-000000000301\"]",
+      "katalogId": "heizung.ventil_2weg",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000209",
+        "00000000-0000-4000-8000-000000000212"
+      ],
+      "mengeSumme": 2,
+      "mengeUnbekannt": false,
+      "status": "vorgeschlagen",
+      "position": {
+        "x": 28.5,
+        "y": 0,
+        "z": 11.25
+      },
+      "versorgt": [],
+      "ort": {
+        "gruppe": "00000000-0000-4000-8000-000000000301"
+      }
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000102\",\"heizung.ventil_3weg\",null,null,\"g:00000000-0000-4000-8000-000000000301\"]",
+      "katalogId": "heizung.ventil_3weg",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000211"
+      ],
+      "mengeSumme": 1,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 29.5,
+        "y": 0,
+        "z": 11.25
+      },
+      "versorgt": [],
+      "ort": {
+        "gruppe": "00000000-0000-4000-8000-000000000301"
+      }
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000100\",\"heizung.heizkoerper\",\"Zehnder\",null,null]",
+      "katalogId": "heizung.heizkoerper",
+      "hersteller": "Zehnder",
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000202"
+      ],
+      "mengeSumme": 12,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 3,
+        "y": 0,
+        "z": 7.5
+      },
+      "versorgt": []
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000100\",\"heizung.heizkoerper\",\"Prolux\",null,null]",
+      "katalogId": "heizung.heizkoerper",
+      "hersteller": "Prolux",
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000203"
+      ],
+      "mengeSumme": 3,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 9,
+        "y": 0,
+        "z": 7.5
+      },
+      "versorgt": []
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000101\",\"heizung.fbh_kreis\",null,null,null]",
+      "katalogId": "heizung.fbh_kreis",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000204"
+      ],
+      "mengeSumme": 6,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 19.5,
+        "y": 0,
+        "z": 7.5
+      },
+      "versorgt": []
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000103\",\"heizung.fbh_kreis\",null,null,null]",
+      "katalogId": "heizung.fbh_kreis",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000205"
+      ],
+      "mengeSumme": 4,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 7.5,
+        "y": 3.2,
+        "z": 7.5
+      },
+      "versorgt": []
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000104\",\"heizung.fbh_kreis\",null,null,null]",
+      "katalogId": "heizung.fbh_kreis",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000206"
+      ],
+      "mengeSumme": 0,
+      "mengeUnbekannt": true,
+      "status": "bestaetigt",
+      "position": {
+        "x": 22.5,
+        "y": 3.2,
+        "z": 7.5
+      },
+      "versorgt": []
+    }
+  ],
+  "hinweise": [],
+  "gruppen": [
+    {
+      "id": "00000000-0000-4000-8000-000000000300",
+      "verteiler": "[\"00000000-0000-4000-8000-000000000102\",\"heizung.verteiler\",null,null,null]",
+      "nummer": 1,
+      "art": "ungeregelt",
+      "bezeichnung": "HK Buero",
+      "verbraucher": [
+        "[\"00000000-0000-4000-8000-000000000100\",\"heizung.heizkoerper\",\"Zehnder\",null,null]",
+        "[\"00000000-0000-4000-8000-000000000100\",\"heizung.heizkoerper\",\"Prolux\",null,null]"
+      ],
+      "zubehoer": []
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000301",
+      "verteiler": "[\"00000000-0000-4000-8000-000000000102\",\"heizung.verteiler\",null,null,null]",
+      "nummer": 2,
+      "art": "einspritz",
+      "bezeichnung": "FBH",
+      "verbraucher": [
+        "[\"00000000-0000-4000-8000-000000000101\",\"heizung.fbh_kreis\",null,null,null]",
+        "[\"00000000-0000-4000-8000-000000000103\",\"heizung.fbh_kreis\",null,null,null]",
+        "[\"00000000-0000-4000-8000-000000000104\",\"heizung.fbh_kreis\",null,null,null]"
+      ],
+      "zubehoer": [
+        "[\"00000000-0000-4000-8000-000000000102\",\"heizung.umwaelzpumpe\",null,null,\"g:00000000-0000-4000-8000-000000000301\"]",
+        "[\"00000000-0000-4000-8000-000000000102\",\"heizung.ventil_2weg\",null,null,\"g:00000000-0000-4000-8000-000000000301\"]",
+        "[\"00000000-0000-4000-8000-000000000102\",\"heizung.ventil_3weg\",null,null,\"g:00000000-0000-4000-8000-000000000301\"]"
+      ]
+    }
+  ],
+  "steigzone": {
+    "x": 28.5,
+    "z": 7.5
+  },
+  "hash": "95932ebb3f9f6e3113649930cd3bad4b77d6d9826e726a8461eb25b8aa3638ec"
+}

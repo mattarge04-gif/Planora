@@ -1,0 +1,168 @@
+{
+  "regelwerkVersion": 2,
+  "grundriss": [
+    {
+      "x": 0,
+      "z": 0,
+      "breite": 30,
+      "tiefe": 15
+    }
+  ],
+  "geschosse": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "code": "EG",
+      "yUnten": 0,
+      "hoehe": 3.2
+    }
+  ],
+  "einheiten": [
+    {
+      "id": "00000000-0000-4000-8000-000000000100",
+      "geschossId": "00000000-0000-4000-8000-000000000001",
+      "bezeichnung": "Buero",
+      "art": "buero",
+      "rechteck": {
+        "x": 0,
+        "z": 0,
+        "breite": 24,
+        "tiefe": 15
+      },
+      "quelle": "schematisch"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000101",
+      "geschossId": "00000000-0000-4000-8000-000000000001",
+      "bezeichnung": "Technik",
+      "art": "technik",
+      "rechteck": {
+        "x": 24,
+        "z": 0,
+        "breite": 6,
+        "tiefe": 15
+      },
+      "quelle": "schematisch"
+    }
+  ],
+  "symbole": [
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000100\",\"heizung.heizkoerper\",null,null,null]",
+      "katalogId": "heizung.heizkoerper",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000200"
+      ],
+      "mengeSumme": 6,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 12,
+        "y": 0,
+        "z": 7.5
+      },
+      "versorgt": []
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000101\",\"heizung.waermepumpe\",null,null,null]",
+      "katalogId": "heizung.waermepumpe",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000201"
+      ],
+      "mengeSumme": 1,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 3.75
+      },
+      "versorgt": []
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000101\",\"heizung.umwaelzpumpe\",null,null,\"b:00000000-0000-4000-8000-000000000201\"]",
+      "katalogId": "heizung.umwaelzpumpe",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000202"
+      ],
+      "mengeSumme": 1,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 28.5,
+        "y": 0,
+        "z": 3.75
+      },
+      "versorgt": [],
+      "ort": {
+        "vorBauteil": "[\"00000000-0000-4000-8000-000000000101\",\"heizung.waermepumpe\",null,null,null]"
+      }
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000101\",\"heizung.verteiler\",null,null,null]",
+      "katalogId": "heizung.verteiler",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000203"
+      ],
+      "mengeSumme": 1,
+      "mengeUnbekannt": false,
+      "status": "bestaetigt",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 11.25
+      },
+      "versorgt": [
+        "00000000-0000-4000-8000-000000000100"
+      ]
+    },
+    {
+      "schluessel": "[\"00000000-0000-4000-8000-000000000101\",\"heizung.umwaelzpumpe\",null,null,\"g:00000000-0000-4000-8000-000000000300\"]",
+      "katalogId": "heizung.umwaelzpumpe",
+      "hersteller": null,
+      "typ": null,
+      "bauteilIds": [
+        "00000000-0000-4000-8000-000000000204"
+      ],
+      "mengeSumme": 1,
+      "mengeUnbekannt": false,
+      "status": "vorgeschlagen",
+      "position": {
+        "x": 28.5,
+        "y": 0,
+        "z": 11.25
+      },
+      "versorgt": [],
+      "ort": {
+        "gruppe": "00000000-0000-4000-8000-000000000300"
+      }
+    }
+  ],
+  "hinweise": [],
+  "gruppen": [
+    {
+      "id": "00000000-0000-4000-8000-000000000300",
+      "verteiler": "[\"00000000-0000-4000-8000-000000000101\",\"heizung.verteiler\",null,null,null]",
+      "nummer": 1,
+      "art": "ungeregelt",
+      "bezeichnung": "Heizkoerper Buero",
+      "verbraucher": [
+        "[\"00000000-0000-4000-8000-000000000100\",\"heizung.heizkoerper\",null,null,null]"
+      ],
+      "zubehoer": [
+        "[\"00000000-0000-4000-8000-000000000101\",\"heizung.umwaelzpumpe\",null,null,\"g:00000000-0000-4000-8000-000000000300\"]"
+      ]
+    }
+  ],
+  "steigzone": {
+    "x": 27,
+    "z": 7.5
+  },
+  "hash": "5e5c0fbc8778a65ffb0c4146c85855f23690277bc3b955a4db20b87346d5a4f5"
+}

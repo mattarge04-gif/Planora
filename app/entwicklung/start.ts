@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { migriere } from "../src/db/migrator.js";
 import { baueServer } from "../src/server.js";
 import { erzeugeSetupToken, loeseSetupTokenEin } from "../src/auth/setup.js";
-import { beispielAnlegen } from "../src/welt/beispiel.js";
+import { beispielAnlegen, musterAnlegen } from "../src/welt/beispiel.js";
 
 if (process.env.NODE_ENV === "production") throw new Error("Entwicklungsstart ist in Produktion gesperrt");
 const port = Number(process.env.PLANORA_PORT ?? 3000);
@@ -43,6 +43,7 @@ try {
   const passwort = randomBytes(12).toString("base64url");
   await loeseSetupTokenEin(pool, await erzeugeSetupToken(pool), "admin@planora.invalid", "Admin", passwort);
   await beispielAnlegen(pool);
+  await musterAnlegen(pool);
   const baseURL = `http://localhost:${port}`;
   app = await baueServer({ pool, stufe: 2, baseURL, secret: randomBytes(32).toString("hex"), ablageWurzel: ablage,
     webWurzel: fileURLToPath(new URL("../web/dist", import.meta.url)) });
