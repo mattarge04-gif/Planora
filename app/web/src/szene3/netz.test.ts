@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
-import { durchgaenge, rohrnetz, verbindungen } from "./netz";
+import { durchgaenge, freieVerteilerAbgaenge, rohrnetz, verbindungen } from "./netz";
 import { bandGeometrie, huelsenGeometrie, rohrGeometrie } from "./technikGeometrie";
-import { ROHR } from "./technik";
+import { ROHR, rohrPfad } from "./technik";
 
 const s = (key: string, id: string, x: number, y: number, z: number, versorgt: string[] = []): WeltSymbol => ({
   schluessel: key, katalogId: `heizung.${id}`, position: { x, y, z }, versorgt,
@@ -75,14 +75,46 @@ describe("Geschlossenes Techniknetz", () => {
       expect(Math.abs(tangent.dot(new THREE.Vector3(...nachbar).sub(new THREE.Vector3(...ende)).normalize()))).toBeCloseTo(1);
     }
   });
-  it("führt Wanddurchgänge auf 0.30 m und keinen Anschlussbügel über die Technikraumwand", () => {
+  it("führt Raumdurchgänge auf 0.30 m und die wandnahe Verteilerzuleitung direkt auf Balkenhöhe durch die Wand", () => {
     const n = rohrnetz(welt, katalog, anschluesse);
     const h = n.flatMap((r) => durchgaenge(welt, r.punkte, r.radius));
     expect(h.filter((h) => h.art === "wand").length).toBeGreaterThan(0);
-    expect(h.filter((h) => h.art === "wand").every((h) => [0.3, 3.5].some((y) => Math.abs(y - h.position[1]) < 1e-6))).toBe(true);
+    expect(h.filter((h) => h.art === "wand").every((h) => [0.3, 0.62, 3.5].some((y) => Math.abs(y - h.position[1]) < 1e-6))).toBe(true);
     for (const r of n.filter((r) => r.radius < r.endRadius && ["wp", "speicher", "v"].some((id) => r.daten.bauteilIds.includes(`bauteil-${id}`)))) {
       expect(r.punkte.every((p) => p[0] > 27.09 && p[0] < 29.91 && p[2] > 0 && p[2] < 15)).toBe(true);
     }
+  });
+  it("verbindet die Raumleitungen mit getrennten vorhandenen Ventilstutzen statt mit dem Verteiler-Eingang", () => {
+    const n = rohrnetz(welt, katalog, anschluesse);
+    const abgaenge = n.filter((r) => r.daten.von === "v" && r.daten.bauteilIds.length === 1 && r.daten.bauteilIds[0] === "bauteil-v");
+    expect(abgaenge).toHaveLength(3);
+    expect(abgaenge.map((r) => r.punkte[0][0] - 27.75)).toEqual(expect.arrayContaining([expect.closeTo(-0.36), expect.closeTo(-0.12), expect.closeTo(0.12)]));
+    expect(abgaenge.every((r) => r.punkte[0][1] === 1 && r.punkte[0][2] === 11.27)).toBe(true);
+    const kappen = freieVerteilerAbgaenge(welt, katalog);
+    expect(kappen).toHaveLength(1); expect(kappen[0].position[0]).toBeCloseTo(28.11);
+  });
+  it("belässt am Verteiler-Eingang einen geraden Rohrquerschnitt und zeigt die Hülse auch auf Zentraleseite", () => {
+    const n = rohrnetz(welt, katalog, anschluesse);
+    const eingang = n.find((r) => r.daten.nach === "v" && r.daten.bauteilIds.length === 1 && r.daten.bauteilIds[0] === "bauteil-v")!;
+    expect(eingang.punkte[0]).toEqual([27.15, 0.62, 11.27]);
+    expect(eingang.punkte[1][1]).toBe(0.62); expect(eingang.punkte[1][2]).toBe(11.27);
+    expect(eingang.radius).toBe(ROHR.haupt); expect(eingang.startRadius).toBe(0.035);
+    const h = durchgaenge(welt, eingang.punkte, eingang.radius).filter((h) => h.art === "wand");
+    expect(h.some((h) => h.position[0] > 27.13 && h.normale[0] === 1)).toBe(true);
+    expect(h.some((h) => h.position[0] < 26.87 && h.normale[0] === -1)).toBe(true);
+  });
+  it("hält Verteilerbögen zylindrisch und reduziert nur kurz direkt am Stutzen", () => {
+    const n = rohrnetz(welt, katalog, anschluesse);
+    const r = n.find((r) => r.daten.nach === "v" && r.daten.bauteilIds.length === 1 && r.daten.bauteilIds[0] === "bauteil-v")!;
+    const g = rohrGeometrie(r)!, position = g.getAttribute("position"), pfad = rohrPfad(r.punkte, r.radius), ringe = pfad.curves.length * 16;
+    expect(new THREE.Vector3().fromBufferAttribute(position, 0).distanceTo(pfad.getPointAt(0))).toBeCloseTo(0.035, 5);
+    for (let i = 1; i <= ringe; i++) {
+      const mitte = pfad.getPointAt(i / ringe);
+      if (mitte.distanceTo(pfad.getPointAt(0)) < 0.04) continue;
+      expect(new THREE.Vector3().fromBufferAttribute(position, i * 13).distanceTo(mitte)).toBeCloseTo(ROHR.haupt, 5);
+    }
+    expect(n.find((r) => r.daten.von === "wp" && r.daten.bauteilIds.length === 1)?.startRadius).toBe(0.026);
+    g.dispose();
   });
   it("hat auf OG1 einen durchgehenden Steigstrang mit Hülsen auf beiden Plattenseiten", () => {
     const h = rohrnetz(welt, katalog, anschluesse).flatMap((r) => durchgaenge(welt, r.punkte, r.radius));

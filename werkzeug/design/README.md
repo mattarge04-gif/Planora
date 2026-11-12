@@ -38,6 +38,9 @@ Die HTML-Datei bindet nur lokale Assets ein; JavaScript-Module vorher als klassi
 | `{ "ziehen": [x1, y1, x2, y2] }` | Ziehen (Kamera drehen) |
 | `{ "maus": [x, y] }` / `{ "punkt": [x, y] }` | Hover / Klick an Position |
 | `{ "taste": "Escape" }` | Taste |
+| `{ "bewegung": "reduziert" }` / `"normal"` | `prefers-reduced-motion` simulieren |
+| `{ "selektor": "css" }` | erstes passendes Element per CSS-Selektor anklicken |
+| `{ "fokus": "css" }` | erstes passendes Element fokussieren (Tastaturprüfung) |
 | `{ "fps": ms }` | fps waehrend einer Kameradrehung messen |
 
 Vorhanden: `entwurf.json` (bisheriger Prototyp), `twin.json` (Redesign-Seite, sobald vorhanden).

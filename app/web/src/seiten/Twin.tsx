@@ -11,6 +11,7 @@ import { TwinGeschosse } from "../karten/TwinGeschosse";
 import { TwinAnlagen } from "../karten/TwinAnlagen";
 import { TwinObjekt, TwinVerbindung } from "../karten/TwinObjekt";
 import { TwinTooltip } from "../karten/TwinTooltip";
+import { TwinSzenenTasten } from "../karten/TwinSzenenTasten";
 import { speicher } from "../ui/speicher";
 import type { BildschirmPunkt } from "../szene3/Interaktion";
 import { anlagenZeilen, anzeigeName, geschossListe, hinweisListe, kennzahlen, objektKarte, zentraleGeschoss, type AnlagenZeile, type Zielort } from "../dashboard";
@@ -37,6 +38,11 @@ const stil = {
   "--tw-eis": F.eis,
   "--tw-eis-akzent": F.eisAkzent,
   "--tw-heizung": F.kooHeizung,
+  "--tw-heizung-grund": F.kooHeizungGrund,
+  "--tw-link": F.link,
+  "--tw-link-hover": F.linkHover,
+  "--tw-sekundaer-kachel": F.textSekundaerKachel,
+  "--tw-sekundaer-eis": F.textSekundaerEis,
   "--tw-ok": F.statusOk,
   "--tw-warnung": F.statusWarnung,
   "--tw-panel-alpha": String(TOKENS.flaeche.panelDeckkraft),
@@ -81,8 +87,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
   const [ortZiel, setOrtZiel] = useState<OrtZiel | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const [punkt] = useState(() => speicher<BildschirmPunkt | null>(null));
-  const links = useRef<HTMLDivElement>(null);
-  const rechts = useRef<HTMLDivElement>(null);
+  const links = useRef<HTMLElement>(null);
+  const rechts = useRef<HTMLElement>(null);
   const unten = useRef<HTMLDivElement>(null);
   const objektRef = useRef<HTMLElement>(null);
   const hinweisKarte = useRef<HTMLElement>(null);
@@ -188,13 +194,31 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
   const waehleZeile = (a: AnlagenZeile) => zumOrt({ geschossId: a.geschossId, schluessel: a.schluessel });
   const ausblenden = (id: string) => setAusgeblendet((a) => a.includes(id) ? a.filter((x) => x !== id) : [...a, id]);
   const punktSetzen = useCallback((p: BildschirmPunkt | null) => punkt.setzen(p), [punkt]);
+  const schliesseKarte = () => {
+    const s = auswahl;
+    setAuswahl(null);
+    // Fokus nicht verlieren: zurück auf die Tabellenzeile der Anlage.
+    requestAnimationFrame(() => {
+      if (s) document.querySelector<HTMLElement>(`tr[data-schluessel="${CSS.escape(s)}"]`)?.focus({ preventScroll: true });
+    });
+  };
+
+  // Ansagen für Screenreader (aria-live): Auswahl, Geschoss, Separieren.
+  const [ansage, setAnsage] = useState("");
+  const vorher = useRef({ auswahl, fokusId, separiert, erst: true });
+  useEffect(() => {
+    const v = vorher.current;
+    vorher.current = { auswahl, fokusId, separiert, erst: false };
+    if (v.erst || !welt) return;
+    if (v.auswahl !== auswahl) setAnsage(karte ? `${karte.name} gewählt, ${karte.standort}` : "Auswahl aufgehoben");
+    else if (v.fokusId !== fokusId) setAnsage(fokusId ? `${geschossCode(fokusId)} geöffnet` : "Übersicht, Gebäude geschlossen");
+    else if (v.separiert !== separiert) setAnsage(separiert ? "Geschosse separiert" : "Geschosse zusammengeführt");
+  }, [auswahl, fokusId, separiert, karte, welt, geschossCode]);
+
   const liegenschaft = liste?.find((g) => g.id === gebaeudeId)?.liegenschaftName ?? null;
 
   return (
     <main className="twin" style={stil} aria-label="Digital Twin">
-      {bereit && <Szene3 welt={welt!} katalog={katalog!.eintraege} fokusId={fokusId} reduziert={reduziert} freiraum={freiraum}
-        ausgeblendet={ausgeblendet} separiert={separiert} auswahl={auswahl}
-        onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} />}
       {karte && <TwinVerbindung punkt={punkt} kartenRef={objektRef} />}
       {bereit && <TwinTooltip text={hoverName} />}
       <div className="tw-flaeche">
@@ -211,22 +235,30 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
         </div>}
 
         {welt && daten && <>
-          <div className="tw-links" ref={links}>
+          <aside className="tw-links" ref={links} aria-label="Gebäude und Hinweise">
             <TwinGebaeude name={name} liegenschaft={liegenschaft} welt={welt} zahlen={daten.zahlen} />
             <TwinHinweise ref={hinweisKarte} hinweise={daten.hinweise} geschossCode={geschossCode} onZiel={zumOrt} />
-          </div>
-          <div className="tw-rechts" ref={rechts}>
+          </aside>
+          {/* Szene im DOM zwischen linken und rechten Karten: ein Tab-Stopp (Canvas) an der richtigen Stelle. */}
+          {bereit && <Szene3 welt={welt!} katalog={katalog!.eintraege} fokusId={fokusId} reduziert={reduziert} freiraum={freiraum}
+            ausgeblendet={ausgeblendet} separiert={separiert} auswahl={auswahl}
+            onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} tastatur />}
+          {bereit && <TwinSzenenTasten name={name} geschosse={daten.geschosse} fokusId={fokusId}
+            onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
+            onTechnik={() => waehleModus("technik")} separiert={separiert} onSeparieren={setSepariert} />}
+          <aside className="tw-rechts" ref={rechts} aria-label="Geschosse und Anlage">
             <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
               ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} />
             {karte
-              ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={() => setAuswahl(null)} />
+              ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={schliesseKarte} />
               : <p className="tw-objekt-leer">Anlage im Modell oder in der Liste wählen, um Details zu sehen.</p>}
-          </div>
+          </aside>
           <div className="tw-unten" ref={unten}>
             <TwinAnlagen anlagen={daten.anlagen} auswahl={auswahl} fokusId={fokusId} onWahl={waehleZeile} />
           </div>
         </>}
       </div>
+      <p className="ui-sr" role="status" aria-live="polite" aria-atomic="true">{ansage}</p>
     </main>
   );
 }

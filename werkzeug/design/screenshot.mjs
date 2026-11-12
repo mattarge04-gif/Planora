@@ -77,6 +77,9 @@ try {
       else if (s.knopf) await page.getByRole("button", { name: s.knopf, exact: s.exakt ?? false }).first().click();
       else if (s.warte) await page.waitForTimeout(s.warte);
       else if (s.taste) await page.keyboard.press(s.taste);
+      else if (s.bewegung) await page.emulateMedia({ reducedMotion: s.bewegung === "reduziert" ? "reduce" : "no-preference" });
+      else if (s.selektor) await page.locator(s.selektor).first().click();
+      else if (s.fokus) await page.locator(s.fokus).first().focus();
       else if (s.maus) await page.mouse.move(s.maus[0] * breite, s.maus[1] * hoehe);
       else if (s.punkt) await page.mouse.click(s.punkt[0] * breite, s.punkt[1] * hoehe);
       else if (s.rad) { await page.mouse.move(s.rad[0] * breite, s.rad[1] * hoehe); await page.mouse.wheel(0, s.rad[2]); }

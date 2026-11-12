@@ -23,7 +23,7 @@ interface Props { karte: ObjektKarte; onSchliessen: () => void }
 export function TwinObjekt({ karte, onSchliessen, kartenRef }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
   const Icon = ANLAGEN_ICON[karte.icon];
   return (
-    <section ref={kartenRef} className="ui-glas ui-karte tw-objekt" aria-labelledby="karte-objekt" aria-live="polite">
+    <section ref={kartenRef} className="ui-glas ui-karte tw-objekt" aria-labelledby="karte-objekt">
       <header className="tw-objekt-kopf">
         <span className="tw-objekt-icon" aria-hidden="true"><Icon size={18} strokeWidth={1.75} /></span>
         <div className="tw-objekt-titel">

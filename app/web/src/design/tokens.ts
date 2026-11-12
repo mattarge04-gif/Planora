@@ -13,9 +13,14 @@ export const TOKENS = {
     grau3: "#8a929e", // Dekorative Details, nicht für kleinen Datentext.
     text: "#1f2630",
     textSekundaer: "#64717f",
+    textSekundaerKachel: "#5e6b78", // Nebentext auf flaecheSekundaer, >= 4.5:1 (UI)
+    textSekundaerEis: "#4f5c69", // Nebentext auf eis, >= 4.5:1 (UI)
+    link: "#4a7298", // Linktext auf Weiss 5.1:1 (UI); eisAkzent bleibt für Flächen/Ringe
+    linkHover: "#3b5f82",
     eis: "#dbe6f0",
     eisAkzent: "#5f88b0",
     kooHeizung: "#e5322d",
+    kooHeizungGrund: "rgba(229, 50, 45, 0.08)", // Icon-Grund Gewerk Heizung (UI)
     statusOk: "#2f9e6b",
     statusWarnung: "#e08a1e",
     statusStoerung: "#d64541",

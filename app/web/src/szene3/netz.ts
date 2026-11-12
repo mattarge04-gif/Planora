@@ -2,13 +2,24 @@ import { imRechteck, type V3 } from "../szene2/huelle";
 import { geschossBeiY, leitungen } from "../szene2/leitungen";
 import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
 import { innenwaende } from "./geometrie";
-import { anschlussFuehrung, modellFuer, ROHR } from "./technik";
+import { anschlussFuehrung, modellFuer, ROHR, verteilerAbgang } from "./technik";
 
 const ERZEUGER = new Set(["heizung.waermepumpe", "heizung.gaskessel", "heizung.oelkessel", "heizung.fernwaerme_uebergabe"]);
 const ABGABE = new Set(["heizung.heizkoerper", "heizung.fbh_kreis", "heizung.tabs_feld"]);
 export interface Verbindung { art: "haupt" | "verteil"; von: string; nach: string }
 export interface Rohrstueck { punkte: V3[]; radius: number; startRadius: number; endRadius: number; boden: number; daten: Verbindung & { bauteilIds: string[] }; frei: boolean }
 export interface Huelse { position: V3; normale: V3; radius: number; art: "wand" | "decke" }
+
+export function freieVerteilerAbgaenge(welt: Welt, katalog: KatalogEintrag[]) {
+  const kanten = verbindungen(welt, katalog);
+  return welt.symbole.filter((s) => s.katalogId === "heizung.verteiler").flatMap((s) => {
+    const belegt = Math.min(4, kanten.filter((v) => v.von === s.schluessel && v.art === "verteil").length);
+    return Array.from({ length: 4 - belegt }, (_, i) => {
+      const p = verteilerAbgang(belegt + i);
+      return { symbol: s, position: [p[0] + s.position.x, p[1] + s.position.y, p[2] + s.position.z] as V3 };
+    });
+  });
+}
 
 export function einheitVon(welt: Welt, s: WeltSymbol) {
   return welt.einheiten.find((e) => e.geschossId === geschossBeiY(welt, s.position.y) && imRechteck(e.rechteck, s.position.x, s.position.z));
@@ -47,22 +58,29 @@ const abstand = (a: WeltSymbol, b: WeltSymbol) => Math.hypot(a.position.x - b.po
 export function rohrnetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>): Rohrstueck[] {
   const stuecke: Rohrstueck[] = [];
   const adapterSchluessel = new Set<string>();
+  const naechsterAbgang = new Map<string, number>();
   for (const v of verbindungen(welt, katalog)) {
     const radius = ROHR[v.art];
     const adapter: Rohrstueck[] = [];
-    const endpunkt = (key: string): V3 | null => {
+    const endpunkt = (key: string, ausgang = false): V3 | null => {
       const s = welt.symbole.find((s) => s.schluessel === key);
       if (!s) {
         const e = welt.einheiten.find((e) => e.id === key), g = welt.geschosse.find((g) => g.id === e?.geschossId);
         return e && g ? [e.rechteck.x + e.rechteck.breite / 2, g.yUnten + ROHR.durchgangHoehe, e.rechteck.z + e.rechteck.tiefe / 2] : null;
       }
-      const m = modellFuer(s.katalogId), lokal = (m.pfad && anschluesse[m.pfad]) || [0, m.masse[1], 0];
+      const m = modellFuer(s.katalogId);
+      let lokal = (m.pfad && anschluesse[m.pfad]) || [0, m.masse[1], 0];
+      if (ausgang && v.art === "verteil" && s.katalogId === "heizung.verteiler") {
+        const index = naechsterAbgang.get(key) ?? 0;
+        lokal = verteilerAbgang(index); naechsterAbgang.set(key, index + 1);
+      }
       const f = anschlussFuehrung([], { symbol: s, lokal: lokal as V3 }, radius, einheitVon(welt, s)?.rechteck);
-      adapter.push({ punkte: f.adapter, radius: f.adapterRadius, startRadius: Math.min(ROHR.anschluss, f.adapterRadius), endRadius: radius, boden: s.position.y,
+      const stutzen = s.katalogId === "heizung.verteiler" ? ausgang ? 0.02 : 0.035 : s.katalogId === "heizung.waermepumpe" ? 0.026 : ROHR.anschluss;
+      adapter.push({ punkte: f.adapter, radius: f.adapterRadius, startRadius: stutzen, endRadius: radius, boden: s.position.y,
         daten: { ...v, bauteilIds: s.bauteilIds }, frei: false });
       return f.adapter.at(-1)!;
     };
-    const a = endpunkt(v.von), b = endpunkt(v.nach);
+    const a = endpunkt(v.von, true), b = endpunkt(v.nach);
     if (!a || !b) continue;
     const richtung = (p: V3) => {
       const abgang = adapter.find((r) => r.punkte.at(-1) === p);
@@ -116,7 +134,7 @@ export function durchgaenge(welt: Welt, punkte: V3[], radius: number): Huelse[] 
       if (t <= 0 || t >= 1 || Math.abs(q - w.mitte[quer]) > w.groesse[quer] / 2) continue;
       for (const seite of [-1, 1]) {
         const p: V3 = [a[0], a[1], a[2]], n: V3 = [0, 0, 0];
-        p[achse] = w.mitte[achse] + seite * (w.groesse[achse] / 2 + 0.025); p[quer] = q; n[achse] = seite;
+        p[achse] = w.mitte[achse] + seite * (w.groesse[achse] / 2 + 0.045); p[quer] = q; n[achse] = seite;
         hinzu(p, n, "wand");
       }
     }

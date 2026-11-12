@@ -15,8 +15,9 @@ export function rohrGeometrie(stueck: Pick<Rohrstueck, "punkte" | "radius" | "st
   const position = geometrie.getAttribute("position");
   const adapter = stueck.radius < stueck.endRadius;
   for (let i = 0; i <= n; i++) {
-    let r = THREE.MathUtils.lerp(stueck.startRadius, stueck.radius, Math.min(1, laengen[i] / 0.16));
-    r = THREE.MathUtils.lerp(r, stueck.endRadius, Math.max(0, 1 - (laengen[n] - laengen[i]) / 0.18));
+    // Reduzierungen sind kurze gerade Fittings direkt an den Enden, keine konischen Bögen.
+    let r = THREE.MathUtils.lerp(stueck.startRadius, stueck.radius, Math.min(1, laengen[i] / 0.025));
+    r = THREE.MathUtils.lerp(r, stueck.endRadius, Math.max(0, 1 - (laengen[n] - laengen[i]) / 0.025));
     if (adapter) r = Math.min(r, Math.max(0.004, (punkte[i].y - stueck.boden - 0.027) * 0.7));
     for (let j = 0; j <= 12; j++) {
       const index = i * 13 + j, p = new THREE.Vector3().fromBufferAttribute(position, index);

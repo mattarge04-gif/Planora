@@ -2,7 +2,7 @@ import { AccumulativeShadows, Environment, Lightformer, OrbitControls, Randomize
 import { Canvas, useThree } from "@react-three/fiber";
 import { EffectComposer, N8AO, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
@@ -12,7 +12,7 @@ import { Gebaeude3 } from "./Gebaeude3";
 import { Kulisse3 } from "./Kulisse3";
 import { ortBereich, type Freiraum, type SzenenZiel } from "./kamera";
 import { kulisse } from "./kulisse";
-import { geschossSchnitt } from "./schnitt";
+import { geschossSchnitt, kameraSeiten, POLAR_GRENZEN } from "./schnitt";
 import { Technik3 } from "./Technik3";
 import { GeschossGruppe, useGeschossBewegung, useWenigerBewegung } from "./Bewegung";
 import { gebaeudeBereich, separationsOffsets, sichtbareGeschosse } from "./darstellung";
@@ -20,11 +20,14 @@ import { InteraktionsBewegung, type BildschirmPunkt } from "./Interaktion";
 import { geschossBeiY } from "../szene2/leitungen";
 import { Kamera3 } from "./Kamera3";
 import { FreiraumSchnitt } from "./FreiraumSchnitt";
+import { HINTERGRUND, SCHATTEN, kontaktLichtZiel } from "./qualitaet";
+import { TastaturKamera } from "./TastaturKamera";
 
 export interface Szene3Props {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; freiraum: Freiraum; reduziert: boolean;
   ausgeblendet?: string[]; separiert?: boolean; auswahl?: string | null;
   ziel?: SzenenZiel | null;
+  tastatur?: boolean;
   onAuswahl?: (schluessel: string | null) => void; onHover?: (schluessel: string | null) => void;
   onAuswahlPunkt?: (punkt: BildschirmPunkt | null) => void;
 }
@@ -32,15 +35,16 @@ const KEINE_GESCHOSSE: string[] = [];
 
 /** Optionale Interaktions-Props lassen die bisherigen Aufrufer unverändert gültig. */
 export function Szene3(props: Szene3Props) {
-  return <Canvas className="szene" orthographic shadows={props.reduziert ? false : "basic"} dpr={[1, 1.5]} frameloop="always"
-    gl={{ antialias: true, toneMapping: THREE.NeutralToneMapping, toneMappingExposure: TOKENS.licht.belichtung }}
+  return <Canvas className="szene" style={{ background: HINTERGRUND.css }} orthographic shadows={props.reduziert ? false : "basic"} dpr={[1, 1.5]} frameloop="always"
+    gl={{ alpha: true, antialias: true, toneMapping: THREE.NeutralToneMapping, toneMappingExposure: TOKENS.licht.belichtung }}
+    onCreated={({ gl }) => gl.setClearColor(HINTERGRUND.clearColor, HINTERGRUND.clearAlpha)}
     camera={{ near: 0.1, far: 1000 }} onPointerMissed={() => props.onAuswahl?.(null)}>
     <SzenenInhalt {...props} />
   </Canvas>;
 }
 
 function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblendet = KEINE_GESCHOSSE, separiert = false,
-  auswahl = null, ziel, onAuswahl, onHover, onAuswahlPunkt }: Szene3Props) {
+  auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt }: Szene3Props) {
   const h = useMemo(() => huelle(welt), [welt]);
   const [kameraRichtung, setKameraRichtung] = useState<V3>([1, 1, 1]);
   const controls = useRef<OrbitControlsImpl>(null);
@@ -87,18 +91,17 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
   const kameraGeaendert = () => {
     const c = controls.current;
     if (!c) return;
-    const x = Math.sign(c.object.position.x - c.target.x) || 1;
-    const z = Math.sign(c.object.position.z - c.target.z) || 1;
-    setKameraRichtung((alt) => alt[0] === x && alt[2] === z ? alt : [x, 1, z]);
+    const richtung = c.object.position.clone().sub(c.target).toArray() as V3;
+    setKameraRichtung((alt) => kameraSeiten(richtung, alt));
   };
   const durchsichtig = (o: THREE.Object3D) => o instanceof THREE.Mesh && (Array.isArray(o.material) ? o.material.every((m) => m.transparent) : o.material.transparent);
   return <>
-    <color attach="background" args={[TOKENS.farbe.grund]} />
-    {!reduziert && <SoftShadows size={TOKENS.licht.schattenFilterTexel} samples={TOKENS.licht.schattenSamples} />}
-    <OrbitControls ref={controls} makeDefault enableDamping zoomToCursor maxPolarAngle={Math.PI / 2 - 0.12} minPolarAngle={0.15}
+    {!reduziert && <SoftShadows size={TOKENS.licht.schattenFilterTexel} samples={SCHATTEN.samples} />}
+    <OrbitControls ref={controls} makeDefault enableDamping={!weniger} zoomToCursor maxPolarAngle={POLAR_GRENZEN.max} minPolarAngle={POLAR_GRENZEN.min}
       onChange={kameraGeaendert} enablePan={false} />
     <Kamera3 welt={welt} fokusId={fokusId} bereich={sichtbar} freiraum={freiraum} repKey={repKey}
       auswahl={auswahl} ziel={ziel} darstellung={darstellung} weniger={weniger} />
+    <TastaturKamera aktiv={tastatur} />
     <InteraktionsBewegung welt={welt} interaktion={interaktion} darstellung={darstellung} weniger={weniger} onAuswahlPunkt={onAuswahlPunkt} />
     <Licht bereich={sichtbar} reduziert={reduziert} />
     <group onClick={(e) => { if (e.delta <= 4 && !durchsichtig(e.object)) { e.stopPropagation(); waehlen(null); } }}
@@ -144,7 +147,7 @@ function Licht({ bereich, reduziert }: { bereich: Bereich; reduziert: boolean })
     <hemisphereLight color={TOKENS.farbe.flaeche} groundColor={TOKENS.farbe.grau2} intensity={TOKENS.licht.umgebungIntensitaet} />
     <primitive object={ziel} position={[cx, bereich.yMin, cz]} />
     <directionalLight position={[cx + s[0], bereich.yMin + s[1], cz + s[2]]} target={ziel}
-      intensity={TOKENS.licht.sonneIntensitaet} castShadow={!reduziert} shadow-mapSize={[1024, 1024]}
+      intensity={TOKENS.licht.sonneIntensitaet} castShadow={!reduziert} shadow-mapSize={[SCHATTEN.sonnenMap, SCHATTEN.sonnenMap]}
       shadow-intensity={TOKENS.licht.schattenDeckkraft}
       shadow-bias={-0.0001} shadow-normalBias={0.03}>
       <orthographicCamera attach="shadow-camera" args={[-r, r, r, -r, 1, 160]} />
@@ -164,10 +167,13 @@ function Bodenschatten({ bereich }: { bereich: Bereich }) {
   const k = useMemo(() => kulisse(bereich), [bereich]);
   const s = sonnenPosition();
   const groesse = Math.max(k.platte.groesse[0], k.platte.groesse[2]);
-  return <AccumulativeShadows temporal frames={TOKENS.licht.schattenFrames} scale={groesse}
+  const gruppe = useRef<THREE.Group>(null), ziel = useMemo(() => new THREE.Object3D(), []);
+  useLayoutEffect(() => kontaktLichtZiel(gruppe.current, ziel), [ziel]);
+  return <group ref={gruppe}><primitive object={ziel} position={[k.platte.mitte[0], bereich.yMin, k.platte.mitte[2]]} />
+  <AccumulativeShadows temporal frames={SCHATTEN.frames} scale={groesse}
     position={[k.platte.mitte[0], bereich.yMin - 0.264, k.platte.mitte[2]]}
-    color={TOKENS.farbe.textSekundaer} opacity={TOKENS.licht.schattenDeckkraft} alphaTest={0.85} resolution={1024}>
-    <RandomizedLight amount={6} radius={TOKENS.licht.schattenRadiusM} ambient={0.5} position={s}
-      size={groesse * 0.75} mapSize={512} near={1} far={160} bias={0.001} />
-  </AccumulativeShadows>;
+    color={TOKENS.farbe.textSekundaer} opacity={TOKENS.licht.schattenDeckkraft} alphaTest={0.85} resolution={SCHATTEN.bodenAufloesung}>
+    <RandomizedLight amount={6} radius={TOKENS.licht.schattenRadiusM * 0.6} ambient={0.25} position={s}
+      size={groesse * 0.75} mapSize={SCHATTEN.randomMap} near={1} far={160} bias={0.0003} />
+  </AccumulativeShadows></group>;
 }

@@ -1,6 +1,18 @@
 import type { Bereich, V3 } from "../szene2/huelle";
 import type { Camera, Vector3 } from "three";
 import type { Welt } from "../typen";
+import { POLAR_GRENZEN } from "./schnitt";
+
+export function tastaturSchritt(key: string, azimut: number, polar: number, zoom: number) {
+  const winkel = Math.PI / 18;
+  if (key === "ArrowLeft") return { azimut: azimut - winkel, polar, zoom };
+  if (key === "ArrowRight") return { azimut: azimut + winkel, polar, zoom };
+  if (key === "ArrowUp") return { azimut, polar: Math.max(POLAR_GRENZEN.min, polar - winkel / 2), zoom };
+  if (key === "ArrowDown") return { azimut, polar: Math.min(POLAR_GRENZEN.max, polar + winkel / 2), zoom };
+  if (key === "+" || key === "=") return { azimut, polar, zoom: zoom * 1.15 };
+  if (key === "-" || key === "_") return { azimut, polar, zoom: zoom / 1.15 };
+  return null;
+}
 
 /** Blickrichtung von Ziel zu Kamera: isometrisch 3/4 (45 Grad gedreht, ca. 35 Grad Neigung). */
 export const ISO_RICHTUNG: V3 = (() => { const l = Math.sqrt(3); return [1 / l, 1 / l, 1 / l] as V3; })();

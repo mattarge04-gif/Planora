@@ -1,18 +1,20 @@
 import { AccumulativeShadows, RandomizedLight } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
 import { type V3 } from "../szene2/huelle";
 import { schlange, geschossBeiY } from "../szene2/leitungen";
-import type { KatalogEintrag, Welt } from "../typen";
+import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
 import { Anlagen3 } from "./Anlagen3";
-import { durchgaenge, einheitVon, rohrnetz, type Huelse, type Rohrstueck } from "./netz";
+import { durchgaenge, einheitVon, freieVerteilerAbgaenge, rohrnetz, type Huelse, type Rohrstueck } from "./netz";
 import { geschossSchnitt } from "./schnitt";
 import { anlagenDaten, anlageSichtbar, rohrAbschluesse, rohrSchnitt } from "./technik";
 import { bandGeometrie, huelsenGeometrie, rohrGeometrie } from "./technikGeometrie";
 import { GeschossGruppe, type Darstellung } from "./Bewegung";
 import type { Interaktion } from "./Interaktion";
 import { rohrGeschosse } from "./darstellung";
+import { SCHATTEN, kontaktLichtZiel } from "./qualitaet";
 
 const FLAECHE = new Set(["heizung.fbh_kreis", "heizung.tabs_feld"]);
 
@@ -55,6 +57,7 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
     });
   }, [welt, schnitt]);
   const sichtbar = darstellung?.sichtbar ?? schnitt.geschosse.map((g) => g.id);
+  const kappen = useMemo(() => freieVerteilerAbgaenge(welt, katalog), [welt, katalog]);
   const getrennt = separiert || !!darstellung?.bewegung || sichtbar.length !== schnitt.geschosse.length;
   const rohre = useMemo(() => netz.rohre.flatMap((r) => rohrGeschosse(welt, r.punkte, sichtbar).map((t) => ({
     ...t, stueck: { ...r, punkte: t.punkte, frei: t.endeGetrennt ? getrennt : r.frei }, anfangFrei: getrennt && t.anfangGetrennt,
@@ -65,6 +68,8 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
   return <group name="technik">
     {sichtbar.map((id) => <GeschossGruppe key={id} id={id} darstellung={darstellung}>
       <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} onModell={onModell} interaktion={interaktion} />
+      {kappen.filter((k) => geschossBeiY(welt, k.symbol.position.y) === id).map((k, i) =>
+        <VerteilerKappe key={`kappe-${i}`} {...k} interaktion={interaktion} schatten={schatten} />)}
       {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} />)}
       {netz.huelsen.filter((h) => huelsenGeschoss(h) === id).map((h, i) => <Durchgang key={i} huelse={h} schatten={schatten} />)}
       {flaechen.filter((f) => f.geschossId === id).map((f) => <Flaechenband key={f.daten.einheitId} {...f} />)}
@@ -72,6 +77,16 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
         welt={welt} y={schnitt.fokus.yUnten} />}
     </GeschossGruppe>)}
   </group>;
+}
+
+function VerteilerKappe({ symbol, position, interaktion, schatten }: { symbol: WeltSymbol; position: V3; interaktion?: Interaktion; schatten: boolean }) {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(() => { if (ref.current) ref.current.position.y = position[1] + (interaktion?.lift.current[symbol.schluessel] ?? 0); }, -1);
+  return <mesh ref={ref} position={position} userData={anlagenDaten(symbol)} castShadow={schatten} receiveShadow={schatten}
+    onClick={interaktion?.aktiv ? (e) => { if (e.delta <= 4) { e.stopPropagation(); interaktion.waehlen(symbol.schluessel); } } : undefined}>
+    <cylinderGeometry args={[0.025, 0.025, 0.025, 12]} />
+    <meshStandardMaterial color={TOKENS.farbe.grau2} {...TOKENS.material.metall} />
+  </mesh>;
 }
 
 function Rohr({ stueck, schatten, anfangFrei = false }: { stueck: Rohrstueck; schatten: boolean; anfangFrei?: boolean }) {
@@ -117,14 +132,17 @@ function Flaechenband({ punkte, daten }: { punkte: V3[]; daten: object }) {
 /** Kontakte auf dem Geschossboden statt ausschliesslich auf dem Modellsockel; BasicShadowMap bleibt aktiv. */
 function Technikkontakte({ welt, y }: { welt: Welt; y: number }) {
   const ref = useRef<ComponentRef<typeof AccumulativeShadows>>(null);
+  const gruppe = useRef<THREE.Group>(null), ziel = useMemo(() => new THREE.Object3D(), []);
   const x0 = Math.min(...welt.grundriss.map((r) => r.x)), x1 = Math.max(...welt.grundriss.map((r) => r.x + r.breite));
   const z0 = Math.min(...welt.grundriss.map((r) => r.z)), z1 = Math.max(...welt.grundriss.map((r) => r.z + r.tiefe));
   const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
   useLayoutEffect(() => { ref.current?.getMesh().scale.set(x1 - x0, z1 - z0, 1); }, [x0, x1, z0, z1]);
+  useLayoutEffect(() => kontaktLichtZiel(gruppe.current, ziel), [ziel]);
   if (!welt.grundriss.length) return null;
-  return <AccumulativeShadows ref={ref} temporal frames={TOKENS.licht.schattenFrames} position={[cx, y + 0.027, cz]}
+  return <group ref={gruppe}><primitive object={ziel} position={[cx, y, cz]} />
+  <AccumulativeShadows ref={ref} temporal frames={SCHATTEN.frames} position={[cx, y + 0.027, cz]}
     scale={1} resolution={2048} color={TOKENS.farbe.textSekundaer} opacity={TOKENS.licht.schattenDeckkraft} alphaTest={0.9}>
-    <RandomizedLight amount={4} radius={0.7} ambient={0.15} position={[5 - cx, 18, 5 - cz]}
-      size={Math.max(x1 - x0, z1 - z0) * 1.5} mapSize={1024} near={0.1} far={100} bias={0.0001} />
-  </AccumulativeShadows>;
+    <RandomizedLight amount={4} radius={0.7} ambient={0.15} position={[5, 12, 5]}
+      size={Math.max(x1 - x0, z1 - z0) * 0.75} mapSize={SCHATTEN.kontaktMap} near={0.1} far={100} bias={0.0001} />
+  </AccumulativeShadows></group>;
 }

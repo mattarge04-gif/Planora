@@ -101,12 +101,14 @@ export function rohrPfad(punkte: V3[], radius: number): THREE.CurvePath<THREE.Ve
 }
 
 export interface ModellAnschluss { symbol: WeltSymbol; lokal: V3 }
+/** [A] Vier vorhandene Vorlaufstutzen des eigenen Verteiler-GLB; weitere Räume teilen diese Anschlüsse. */
+export function verteilerAbgang(index: number): V3 { return [-0.36 + 0.24 * (index % 4), 1, 0.02]; }
 
 /** Kurze Geräteabgänge bleiben innerhalb der Einheit; erst auf 0.30 m Höhe beginnt die Raumleitung. */
 export function anschlussFuehrung(punkte: V3[], anschluss: ModellAnschluss, radius: number, raum?: import("../typen").Rechteck): { rohr: V3[]; adapter: V3[]; adapterRadius: number } {
   const { symbol: s, lokal: a } = anschluss;
   const masse = modellFuer(s.katalogId).masse;
-  const adapterRadius = 0.035;
+  let adapterRadius = 0.035;
   const rand = 0.22, y = ROHR.durchgangHoehe;
   const richtungZ = raum && s.position.z + masse[2] / 2 + rand > raum.z + raum.tiefe - 0.15 ? -1 : 1;
   const z = richtungZ * (masse[2] / 2 + rand);
@@ -115,8 +117,16 @@ export function anschlussFuehrung(punkte: V3[], anschluss: ModellAnschluss, radi
   if (unten) {
     const tief = Math.max(0.035, a[1] - 0.03);
     adapter = [a, [a[0], tief, a[2]], [a[0], tief, z], [a[0], y, z]];
-  } else if (s.katalogId === "heizung.umwaelzpumpe" || s.katalogId === "heizung.verteiler") {
-    const richtung = s.katalogId === "heizung.umwaelzpumpe" ? 1 : -1;
+  } else if (s.katalogId === "heizung.verteiler" && a[1] > 0.95) {
+    adapter = [a, [a[0], a[1] + 0.14, a[2]], [a[0], a[1] + 0.14, z], [a[0], y, z]];
+  } else if (s.katalogId === "heizung.verteiler") {
+    adapterRadius = radius;
+    // [A] Steht der linke Balkenstutzen wandnah, führt die Zuleitung gerade durch die Wand auf Stutzenhöhe statt mit einem gequetschten Bogen.
+    const wandnah = raum && s.position.x + a[0] - raum.x < radius * 3 + 0.15;
+    const x = wandnah ? raum.x - s.position.x - 0.3 - radius * ROHR.bogenFaktor : a[0] - 0.35;
+    adapter = [a, [x, a[1], a[2]], [x, y, a[2]], [x, y, z]];
+  } else if (s.katalogId === "heizung.umwaelzpumpe") {
+    const richtung = 1;
     const platz = raum ? (richtung > 0 ? raum.x + raum.breite - s.position.x - a[0] : s.position.x + a[0] - raum.x) - 0.13 : 0.16;
     const x = a[0] + richtung * Math.max(0.02, Math.min(0.16, platz));
     adapter = [a, [x, a[1], a[2]], [x, y, a[2]], [x, y, z]];
