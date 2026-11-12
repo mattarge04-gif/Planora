@@ -6,7 +6,7 @@ function textur(text: string, farbe: string) {
   const c = document.createElement("canvas");
   c.width = 512; c.height = 96;
   const g = c.getContext("2d")!;
-  g.font = "600 44px system-ui, sans-serif"; g.fillStyle = farbe; g.textBaseline = "middle";
+  g.font = "600 52px system-ui, sans-serif"; g.fillStyle = farbe; g.textBaseline = "middle";
   g.fillText(text, 8, 48);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -27,7 +27,7 @@ export function Schild({ text, position, groesse }: { text: string; position: V3
 
 /** Flache Schrift auf dem Boden; breite = Breite in m. */
 export function BodenSchrift({ text, position, breite }: { text: string; position: V3; breite: number }) {
-  const t = useMemo(() => textur(text, "#475569"), [text]);
+  const t = useMemo(() => textur(text, "#1e293b"), [text]);
   useEffect(() => () => t.dispose(), [t]);
   return (
     <mesh position={position} rotation={[-Math.PI / 2, 0, 0]}>

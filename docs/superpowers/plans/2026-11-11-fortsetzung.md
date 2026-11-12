@@ -4,6 +4,8 @@ Einstieg fuer die naechste Sitzung. Historische Worker-Notizen und alte Stoppmel
 
 ## Aktueller Nachtrag 12.11.2026: M2b-1
 
+**12.11.2026, visueller Zielentwurf (E40):** Prototyp nach [Spec](../specs/2026-11-12-visueller-zielentwurf-design.md) auf `m2b1-sichtbarer-schnitt` umgesetzt (Uebersicht, Fokus je Geschoss, Leitungen, Karten). Drei Feinabstimmungsrunden, Screenshots und Pruefstand unter [docs/abnahme/2026-11-12-entwurf](../../abnahme/2026-11-12-entwurf/README.md). Frontend 43/43, Backend 417/417, Typpruefungen und Build gruen, keine CSP-Verletzungen. Ansehen: `npm run entwicklung` in `app/`, Gebaeude -> "Entwurf". Naechster Schritt: Korrekturrunde mit dem PO; keine visuelle Endabnahme vorher.
+
 Aktuell wird auf Branch `m2b1-sichtbarer-schnitt` gearbeitet. Der Hinweis auf `main` oben beschreibt die fruehere Konsolidierung.
 
 Claude hat Tasks 1–5 des [M2b-1-Plans](2026-11-12-m2b1-sichtbarer-schnitt.md) committet und waehrend Task 6 das Usage-Limit erreicht. Codex hat Docker-Build/Smoke, Web-Lockfile im Dossier samt Abnahme-Aufruf und lokalen Demostart vervollstaendigt. Der Update-Test brauchte den neuen `web/`-Ordner auch in seinem separat kopierten Docker-Build-Kontext.

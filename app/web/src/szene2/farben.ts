@@ -17,8 +17,8 @@ export const FASSADE = {
   fenster: "#8fa3b8",
   band: "#ffffff",
   platte: "#e8ebef",
-  boden: ["#eef1f4", "#e4e9ef", "#f4f6f8"],
+  boden: ["#c8d2de", "#e0e5eb", "#b9c5d3"],
 } as const;
 
 /** Rohrradien in m: Haupt- und Verteilleitung unterscheiden sich nur in der Dicke. */
-export const ROHR = { haupt: 0.08, verteil: 0.04 } as const;
+export const ROHR = { haupt: 0.12, verteil: 0.06 } as const;

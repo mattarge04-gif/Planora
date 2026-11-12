@@ -21,8 +21,8 @@ export function erzeugeMaterialien() {
     geraetAuswahl: std(rot.geraet, { emissive: rot.leitung, emissiveIntensity: 0.7, roughness: 0.4 }),
     leitung: std(rot.leitung, { emissive: rot.leitung, emissiveIntensity: 0, roughness: 0.35 }),
     leitungAktiv: std(rot.leitung, { emissive: rot.leitung, emissiveIntensity: 1, roughness: 0.3 }),
-    leitungBlass: std(rot.leitung, { transparent: true, opacity: 0.25, depthWrite: false }),
-    flaeche: new THREE.LineBasicMaterial({ color: rot.leitung, transparent: true, opacity: 0.45 }),
+    leitungBlass: std(rot.leitung, { transparent: true, opacity: 0.18, depthWrite: false }),
+    flaeche: new THREE.LineBasicMaterial({ color: rot.leitung, transparent: true, opacity: 0.85 }),
   };
 }
 export type Materialien = ReturnType<typeof erzeugeMaterialien>;

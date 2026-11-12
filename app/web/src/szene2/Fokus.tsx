@@ -51,7 +51,7 @@ export function FokusInhalt({ welt, katalog, fokusId, auswahl, onAuswahl, mat }:
             {wand([r.x + r.breite / 2, y + TRENNWAND / 2, r.z + r.tiefe], [r.breite, TRENNWAND, TRENNDICKE], "n")}
             {wand([r.x, y + TRENNWAND / 2, r.z + r.tiefe / 2], [TRENNDICKE, TRENNWAND, r.tiefe], "w")}
             {wand([r.x + r.breite, y + TRENNWAND / 2, r.z + r.tiefe / 2], [TRENNDICKE, TRENNWAND, r.tiefe], "o")}
-            <BodenSchrift text={e.bezeichnung} position={[r.x + r.breite / 2, y + 0.03, r.z + r.tiefe - 1.2]} breite={Math.min(6, r.breite * 0.8)} />
+            <BodenSchrift text={e.bezeichnung} position={[r.x + r.breite / 2, y + 0.03, r.z + 1.6]} breite={Math.min(6, r.breite * 0.8)} />
           </group>
         );
       })}

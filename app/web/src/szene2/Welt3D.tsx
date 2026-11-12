@@ -34,8 +34,8 @@ export function Welt3D(props: Welt3DProps) {
   const symbol = auswahl ? welt.symbole.find((s) => s.schluessel === auswahl) : undefined;
   const ankerPunkt: V3 | null = symbol ? [symbol.position.x, symbol.position.y + 1, symbol.position.z] : null;
   return (
-    <Canvas className="szene" orthographic shadows="soft" frameloop="demand" dpr={[1, 1.75]}
-      gl={{ antialias: true }} onPointerMissed={() => onAuswahl(null)}>
+    <Canvas className="szene" orthographic shadows="percentage" frameloop="demand" dpr={[1, 1.75]}
+      gl={{ antialias: true, toneMapping: THREE.NeutralToneMapping }} onPointerMissed={() => onAuswahl(null)}>
       <Licht bereich={h.bereich} reduziert={reduziert} ziel={fokus ? 1 : 0} mat={mat} />
       <Umgebung />
       <Kamera bereich={h.bereich} zielY={zielY} />
@@ -117,8 +117,8 @@ function GeschossSchilder({ welt, h }: { welt: Welt; h: Huelle }) {
       {h.geschosse.map((g) => {
         const n = welt.symbole.filter((s) => geschossBeiY(welt, s.position.y) === g.geschossId).length;
         return (
-          <Schild key={g.geschossId} text={`${g.code} · ${n} ${n === 1 ? "Bauteil" : "Bauteile"}`} groesse={0.8}
-            position={[h.bereich.xMax + 3.5, g.yUnten + g.hoehe / 2, (h.bereich.zMin + h.bereich.zMax) / 2]} />
+          <Schild key={g.geschossId} text={`${g.code} · ${n} ${n === 1 ? "Bauteil" : "Bauteile"}`} groesse={1.6}
+            position={[h.bereich.xMax + 4, g.yUnten + g.hoehe / 2, h.bereich.zMin - 4]} />
         );
       })}
     </>
@@ -142,7 +142,7 @@ function Licht({ bereich, reduziert, ziel, mat }: { bereich: Bereich; reduziert:
   const umgebung = useMemo(() => new THREE.AmbientLight("#ffffff", HELL.umgebung), []);
   const hintergrund = useMemo(() => new THREE.Color(), []);
   useLayoutEffect(() => {
-    sonne.position.set(cx - r * 0.8, bereich.yMax + r * 1.6, cz + r * 1.1);
+    sonne.position.set(cx - r * 1.2, bereich.yMax + r * 1.1, cz + r * 0.7);
     sonne.target.position.set(cx, bereich.yMin, cz);
     const k = sonne.shadow.camera;
     k.left = -r * 1.6; k.right = r * 1.6; k.top = r * 1.6; k.bottom = -r * 1.6; k.near = 0.5; k.far = r * 6;
@@ -160,7 +160,7 @@ function Licht({ bereich, reduziert, ziel, mat }: { bereich: Bereich; reduziert:
     mat.dach.color.set(mischeFarbe(FASSADE.platte, s.hintergrund, s.abblenden));
     mat.platte.color.set(mischeFarbe(FASSADE.platte, s.hintergrund, s.abblenden));
     mat.leitung.emissiveIntensity = s.leuchten;
-    mat.leitungAktiv.emissiveIntensity = s.leuchten + 1;
+    mat.leitungAktiv.emissiveIntensity = s.leuchten + 0.3;
   };
   useLayoutEffect(() => { anwenden(mische(HELL, FOKUS, t.current)); invalidate(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { invalidate(); }, [ziel, invalidate]);
@@ -187,7 +187,7 @@ function Umgebung() {
     const pm = new THREE.PMREMGenerator(gl);
     const env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
     scene.environment = env;
-    scene.environmentIntensity = 0.5;
+    scene.environmentIntensity = 0.45;
     pm.dispose();
     invalidate();
     return () => { scene.environment = null; env.dispose(); };
@@ -263,7 +263,8 @@ function Nachbearbeitung({ reduziert }: { reduziert: boolean }) {
     const c = new EffectComposer(gl);
     c.addPass(new RenderPass(scene, camera));
     const ao = new GTAOPass(scene, camera, size.width, size.height);
-    ao.blendIntensity = 0.9;
+    ao.blendIntensity = 1;
+    ao.updateGtaoMaterial({ radius: 1.5 });
     // Sprites (Beschriftung) wuerden im AO-Normalen-/Tiefen-Pass als dunkle Quader erscheinen.
     const zeichne = ao.render.bind(ao) as (...a: unknown[]) => void;
     (ao as unknown as { render: (...a: unknown[]) => void }).render = (...a) => {

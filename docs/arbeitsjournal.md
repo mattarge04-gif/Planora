@@ -3,6 +3,13 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-12 – Visueller Zielentwurf (E40) umgesetzt
+
+- [F] Prototyp nach Spec und Plan (6 Tasks) auf `m2b1-sichtbarer-schnitt`: plastische Uebersicht, Fokusmodus je Geschoss, schematische Leitungen, schwebende Karten. [Abnahmestand](abnahme/2026-11-12-entwurf/README.md).
+- [F] Gelernt: ACES-Tonwertabbildung verfaelscht das Heizungsrot zu Lachs; `NeutralToneMapping` haelt die KOO-Farben. `shadows="soft"` ist in three 0.187 entfallen.
+- [F] Frontend 43/43, Backend 417/417, Typpruefungen/Build gruen, keine CSP-Verletzungen. fps nur im Software-Rendering gemessen [A].
+- [?] PO-Korrekturrunde: weisser Auswahl-Umriss, Zentrale->Verteiler [A], Dachaufbau [A], Masse/Farben [A].
+
 ## 2026-11-12 – M2b-1 nach Claude-Usage-Abbruch fortgesetzt
 
 - [F] Tagesabschluss vom PO beauftragt: Dokumentation, Commit und Push auf dem Arbeitsbranch; kein Merge/Deployment. Visuelle Endabnahme ausdruecklich offen.

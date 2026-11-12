@@ -17,6 +17,10 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 12.11.2026
 
+### Visueller Zielentwurf E40 [F]
+
+Prototyp auf `m2b1-sichtbarer-schnitt` umgesetzt (`app/web/src/szene2`, `karten`, `seiten/Entwurf.tsx`); [Screenshots und offene Punkte](docs/abnahme/2026-11-12-entwurf/README.md). PO-Korrekturrunde offen, keine visuelle Endabnahme vorher. Ansehen: `npm run entwicklung` in `app/`, Gebaeude -> "Entwurf". Masse/Farben [A], nur im Software-Rendering geprueft.
+
 ### Fortsetzung nach Claude-Usage-Abbruch [F]
 
 Tagesabschluss: M2b-1 technisch fertig, keine visuelle Endabnahme. PO-Entscheid E40: [plastische Gebaeudeuebersicht, Technikansicht und Informationskarten nach drei Bildreferenzen](docs/design/2026-11-12-visuelle-zielrichtung.md). Naechste Sitzung beginnt mit dem visuellen Zielentwurf. Zusatzaufwand [A] +6–10 PT, Planungswert +8 PT. [Screenshots und Pruefstand](docs/abnahme/2026-11-12-m2b1/README.md) sind im Repo gesichert.
