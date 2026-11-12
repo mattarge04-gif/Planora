@@ -1,0 +1,17 @@
+{
+  "beschreibung": "Bisherige Entwurf-Seite (E40-Prototyp): Uebersicht, Fokus EG, Nahaufnahme, fps",
+  "fenster": [[1440, 900]],
+  "schritte": [
+    { "klick": "Beispielgebaeude" },
+    { "knopf": "Entwurf" },
+    { "warte": 4000 },
+    { "bild": "uebersicht" },
+    { "knopf": "EG" },
+    { "warte": 1500 },
+    { "bild": "fokus-eg" },
+    { "rad": [0.5, 0.5, -500] },
+    { "warte": 1200 },
+    { "bild": "nah" },
+    { "fps": 3000 }
+  ]
+}

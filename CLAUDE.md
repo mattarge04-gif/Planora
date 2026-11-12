@@ -15,6 +15,8 @@ Einstiegsdokumente (in dieser Reihenfolge lesen):
 
 Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer Entscheide bleibt `00-kontext.md`.
 
+**Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
+
 ## 0b. Stand – zuletzt aktualisiert 12.11.2026
 
 ### Visueller Zielentwurf E40 [F]
