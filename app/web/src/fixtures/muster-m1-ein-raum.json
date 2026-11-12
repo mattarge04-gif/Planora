@@ -4,7 +4,7 @@
     {
       "x": 0,
       "z": 0,
-      "breite": 30,
+      "breite": 12,
       "tiefe": 15
     }
   ],
@@ -25,8 +25,8 @@
       "rechteck": {
         "x": 0,
         "z": 0,
-        "breite": 24,
-        "tiefe": 15
+        "breite": 12,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     },
@@ -36,10 +36,10 @@
       "bezeichnung": "Technik",
       "art": "technik",
       "rechteck": {
-        "x": 24,
-        "z": 0,
-        "breite": 6,
-        "tiefe": 15
+        "x": 0,
+        "z": 9,
+        "breite": 12,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     }
@@ -57,9 +57,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 12,
+        "x": 6,
         "y": 0,
-        "z": 7.5
+        "z": 0.16
       },
       "versorgt": []
     },
@@ -75,9 +75,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 25.5,
+        "x": 2.7,
         "y": 0,
-        "z": 3.75
+        "z": 14.5
       },
       "versorgt": []
     },
@@ -93,9 +93,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 28.5,
+        "x": 1.1,
         "y": 0,
-        "z": 3.75
+        "z": 14.35
       },
       "versorgt": [
         "00000000-0000-4000-8000-000000000100"
@@ -113,9 +113,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 25.5,
+        "x": 1.1,
         "y": 0,
-        "z": 11.25
+        "z": 14.35
       },
       "versorgt": [],
       "ort": {
@@ -123,7 +123,16 @@
       }
     }
   ],
-  "hinweise": [],
+  "hinweise": [
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000100"
+    },
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000101"
+    }
+  ],
   "gruppen": [
     {
       "id": "00000000-0000-4000-8000-000000000300",
@@ -140,8 +149,8 @@
     }
   ],
   "steigzone": {
-    "x": 27,
-    "z": 7.5
+    "x": 0.3,
+    "z": 9.3
   },
-  "hash": "f8f2b9b2f9ee3b3da5e46e89d6ba3daa8e3d48b18a2b5e9defccd50944a3f3fc"
+  "hash": "f699b14ead5882205b2606967692c3364e41055eb85b9eb38340d0002eb82482"
 }

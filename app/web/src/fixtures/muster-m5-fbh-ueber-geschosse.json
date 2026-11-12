@@ -4,7 +4,7 @@
     {
       "x": 0,
       "z": 0,
-      "breite": 30,
+      "breite": 12,
       "tiefe": 15
     }
   ],
@@ -37,8 +37,8 @@
       "rechteck": {
         "x": 0,
         "z": 0,
-        "breite": 30,
-        "tiefe": 15
+        "breite": 12,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     },
@@ -50,8 +50,8 @@
       "rechteck": {
         "x": 0,
         "z": 0,
-        "breite": 4.286,
-        "tiefe": 15
+        "breite": 6,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     },
@@ -61,10 +61,10 @@
       "bezeichnung": "Wohnung 1",
       "art": "wohnung",
       "rechteck": {
-        "x": 4.286,
-        "z": 0,
-        "breite": 12.857,
-        "tiefe": 15
+        "x": 0,
+        "z": 9,
+        "breite": 12,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     },
@@ -74,10 +74,10 @@
       "bezeichnung": "Wohnung 2",
       "art": "wohnung",
       "rechteck": {
-        "x": 17.143,
+        "x": 6,
         "z": 0,
-        "breite": 12.857,
-        "tiefe": 15
+        "breite": 6,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     },
@@ -89,8 +89,8 @@
       "rechteck": {
         "x": 0,
         "z": 0,
-        "breite": 15,
-        "tiefe": 15
+        "breite": 12,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     },
@@ -100,10 +100,10 @@
       "bezeichnung": "Wohnung 4",
       "art": "wohnung",
       "rechteck": {
-        "x": 15,
-        "z": 0,
-        "breite": 15,
-        "tiefe": 15
+        "x": 0,
+        "z": 9,
+        "breite": 12,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     }
@@ -121,9 +121,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 7.5,
+        "x": 2.7,
         "y": 0,
-        "z": 3.75
+        "z": 0.5
       },
       "versorgt": []
     },
@@ -139,9 +139,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 22.5,
+        "x": 1.1,
         "y": 0,
-        "z": 3.75
+        "z": 0.65
       },
       "versorgt": [
         "00000000-0000-4000-8000-000000000101"
@@ -159,9 +159,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 7.5,
+        "x": 1.1,
         "y": 0,
-        "z": 11.25
+        "z": 0.65
       },
       "versorgt": [],
       "ort": {
@@ -180,9 +180,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 22.5,
+        "x": 1.1,
         "y": 0,
-        "z": 11.25
+        "z": 0.65
       },
       "versorgt": [],
       "ort": {
@@ -201,9 +201,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 2.143,
+        "x": 1.2,
         "y": 3.2,
-        "z": 7.5
+        "z": 5.65
       },
       "versorgt": [
         "00000000-0000-4000-8000-000000000102",
@@ -224,9 +224,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 10.714,
+        "x": 6,
         "y": 3.2,
-        "z": 7.5
+        "z": 12
       },
       "versorgt": []
     },
@@ -242,9 +242,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 23.571,
+        "x": 9,
         "y": 3.2,
-        "z": 7.5
+        "z": 3
       },
       "versorgt": []
     },
@@ -260,9 +260,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 7.5,
+        "x": 6,
         "y": 6.4,
-        "z": 7.5
+        "z": 3
       },
       "versorgt": []
     },
@@ -278,14 +278,31 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 22.5,
+        "x": 6,
         "y": 6.4,
-        "z": 7.5
+        "z": 12
       },
       "versorgt": []
     }
   ],
-  "hinweise": [],
+  "hinweise": [
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000100"
+    },
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000102"
+    },
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000104"
+    },
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000105"
+    }
+  ],
   "gruppen": [
     {
       "id": "00000000-0000-4000-8000-000000000300",
@@ -303,8 +320,8 @@
     }
   ],
   "steigzone": {
-    "x": 15,
-    "z": 7.5
+    "x": 0.3,
+    "z": 5.7
   },
-  "hash": "a7a2f2ee730af0cf83a14bcf28992303f7d7f6643f048807d489fd5df3560ea0"
+  "hash": "414c156e234e5c9bd1a74698e80567877473706d87988511921a65a30536f9a4"
 }

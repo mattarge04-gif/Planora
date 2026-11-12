@@ -76,12 +76,6 @@ export function kanonisch(v: unknown): string {
 /** Bauteile mit gleichem Symbolschluessel (Standort + Katalog-ID + Hersteller + Typ [+ Ort bei v2]). */
 export type SymbolGruppe = { schluessel: string; standortId: string; geschossId: string; katalogId: string; hersteller: string | null; typ: string | null; zeilen: BauteilEingabe[] };
 
-export interface KernOptionen {
-  /** Ersatzmasse (Breite, Tiefe), wenn die Huelle keine hat; ohne Angabe wirft der Kern bei fehlenden Massen. */
-  standardMasse?: [number, number];
-  /** Zusatz fuer den Symbolschluessel (v2: Ort); null = kein Ort. Ohne Funktion bleibt der v1-Schluessel unveraendert. */
-  ortSchluessel?: (t: BauteilEingabe) => string | null;
-}
 export type WeltOhneHash = Omit<Welt, "hash">;
 export const mitHash = (ohneHash: WeltOhneHash): Welt => ({ ...ohneHash, hash: createHash("sha256").update(kanonisch(ohneHash)).digest("hex") });
 
@@ -141,9 +135,9 @@ export function symbolAus(b: Beschreibung, gr: SymbolGruppe, p: Punkt, yUnten: M
   };
 }
 
-/** Gemeinsame Layoutlogik (Regelwerk v1); v2 nutzt sie im Stub mit Optionen. */
-export function weltKern(h: HuelleGespeichert, b: Beschreibung, rw: Regelwerk, opt: KernOptionen = {}): WeltOhneHash {
-  const breiteM = h.breiteM ?? opt.standardMasse?.[0] ?? null, tiefeM = h.tiefeM ?? opt.standardMasse?.[1] ?? null;
+/** Layout nach Regelwerk v1 (Streifen ueber die Teilrechtecke, Masse aus der Huelle). */
+export function weltKern(h: HuelleGespeichert, b: Beschreibung, rw: Regelwerk): WeltOhneHash {
+  const breiteM = h.breiteM, tiefeM = h.tiefeM;
   if (breiteM === null || tiefeM === null) throw new Error("Masse fehlen (Regelwerk v1 setzt sie voraus)");
   const teile = grundriss(h.grundform, breiteM, tiefeM, rw.schenkelAnteil);
   // Bauteile direkt am Geschoss: Raster im groessten Teilrechteck (bei Gleichstand das erste, d.h. der Riegel)
@@ -172,7 +166,7 @@ export function weltKern(h: HuelleGespeichert, b: Beschreibung, rw: Regelwerk, o
   }
 
   // Bauteile: ein Symbol je Standort + Katalog-ID + Hersteller + Typ
-  const jeStandort = gruppiereBauteile(b, opt.ortSchluessel);
+  const jeStandort = gruppiereBauteile(b);
   const symbole: WeltSymbol[] = [];
   for (const [standortId, liste] of jeStandort) {
     const punkte = raster(rechtecke.get(standortId) ?? geschossFlaeche, liste.length);

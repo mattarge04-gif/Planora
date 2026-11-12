@@ -4,20 +4,20 @@
     {
       "x": 0,
       "z": 0,
-      "breite": 30,
-      "tiefe": 6
+      "breite": 36,
+      "tiefe": 15
     },
     {
       "x": 0,
-      "z": 6,
-      "breite": 12,
-      "tiefe": 9
+      "z": 15,
+      "breite": 15,
+      "tiefe": 6
     },
     {
-      "x": 18,
-      "z": 6,
-      "breite": 12,
-      "tiefe": 9
+      "x": 21,
+      "z": 15,
+      "breite": 15,
+      "tiefe": 6
     }
   ],
   "geschosse": [
@@ -49,7 +49,7 @@
       "rechteck": {
         "x": 0,
         "z": 0,
-        "breite": 30,
+        "breite": 36,
         "tiefe": 6
       },
       "quelle": "schematisch"
@@ -60,9 +60,9 @@
       "bezeichnung": "Kern",
       "art": "kern",
       "rechteck": {
-        "x": 0,
-        "z": 0,
-        "breite": 5.172,
+        "x": 9,
+        "z": 9,
+        "breite": 18,
         "tiefe": 6
       },
       "quelle": "schematisch"
@@ -73,10 +73,10 @@
       "bezeichnung": "Buero A",
       "art": "buero",
       "rechteck": {
-        "x": 5.172,
-        "z": 0,
-        "breite": 24.828,
-        "tiefe": 6
+        "x": 0,
+        "z": 6,
+        "breite": 6,
+        "tiefe": 15
       },
       "quelle": "schematisch"
     },
@@ -87,9 +87,9 @@
       "art": "gastro",
       "rechteck": {
         "x": 0,
-        "z": 6,
-        "breite": 12,
-        "tiefe": 9
+        "z": 0,
+        "breite": 36,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     },
@@ -100,9 +100,9 @@
       "art": "buero",
       "rechteck": {
         "x": 0,
-        "z": 0,
-        "breite": 30,
-        "tiefe": 6
+        "z": 6,
+        "breite": 6,
+        "tiefe": 15
       },
       "quelle": "schematisch"
     },
@@ -113,9 +113,9 @@
       "art": "wohnung",
       "rechteck": {
         "x": 0,
-        "z": 6,
-        "breite": 12,
-        "tiefe": 9
+        "z": 0,
+        "breite": 36,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     }
@@ -133,9 +133,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 3.75,
+        "x": 31.9,
         "y": -3.2,
-        "z": 1
+        "z": 0.8
       },
       "versorgt": []
     },
@@ -151,9 +151,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 11.25,
+        "x": 33.35,
         "y": -3.2,
-        "z": 1
+        "z": 0.65
       },
       "versorgt": []
     },
@@ -169,9 +169,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 18.75,
+        "x": 34.9,
         "y": -3.2,
-        "z": 1
+        "z": 0.95
       },
       "versorgt": [
         "00000000-0000-4000-8000-000000000101",
@@ -193,9 +193,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 26.25,
+        "x": 34.9,
         "y": -3.2,
-        "z": 1
+        "z": 0.95
       },
       "versorgt": [],
       "ort": {
@@ -214,9 +214,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 3.75,
+        "x": 34.9,
         "y": -3.2,
-        "z": 3
+        "z": 0.95
       },
       "versorgt": [],
       "ort": {
@@ -235,9 +235,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 11.25,
+        "x": 34.9,
         "y": -3.2,
-        "z": 3
+        "z": 0.95
       },
       "versorgt": [],
       "ort": {
@@ -256,9 +256,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 18.75,
+        "x": 34.9,
         "y": -3.2,
-        "z": 3
+        "z": 0.95
       },
       "versorgt": [],
       "ort": {
@@ -277,9 +277,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 26.25,
+        "x": 34.9,
         "y": -3.2,
-        "z": 3
+        "z": 0.95
       },
       "versorgt": [],
       "ort": {
@@ -298,9 +298,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 3.75,
+        "x": 34.9,
         "y": -3.2,
-        "z": 5
+        "z": 0.95
       },
       "versorgt": [],
       "ort": {
@@ -319,9 +319,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 11.25,
+        "x": 34.9,
         "y": -3.2,
-        "z": 5
+        "z": 0.95
       },
       "versorgt": [],
       "ort": {
@@ -340,9 +340,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 18.75,
+        "x": 34.9,
         "y": -3.2,
-        "z": 5
+        "z": 0.95
       },
       "versorgt": [],
       "ort": {
@@ -361,9 +361,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 17.586,
+        "x": 0.16,
         "y": 0,
-        "z": 3
+        "z": 13.5
       },
       "versorgt": []
     },
@@ -379,9 +379,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 3,
+        "x": 18,
         "y": 0,
-        "z": 10.5
+        "z": 3
       },
       "versorgt": []
     },
@@ -397,9 +397,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 9,
+        "x": 18,
         "y": 0,
-        "z": 10.5
+        "z": 0.16
       },
       "versorgt": []
     },
@@ -415,9 +415,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 15,
+        "x": 3,
         "y": 3.2,
-        "z": 3
+        "z": 13.5
       },
       "versorgt": []
     },
@@ -433,9 +433,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 6,
+        "x": 18,
         "y": 3.2,
-        "z": 10.5
+        "z": 3
       },
       "versorgt": []
     },
@@ -451,14 +451,39 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 2.586,
+        "x": 18,
         "y": 0,
-        "z": 3
+        "z": 14.84
       },
       "versorgt": []
     }
   ],
-  "hinweise": [],
+  "hinweise": [
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000100"
+    },
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000101"
+    },
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000102"
+    },
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000103"
+    },
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000104"
+    },
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000105"
+    }
+  ],
   "gruppen": [
     {
       "id": "00000000-0000-4000-8000-000000000300",
@@ -542,8 +567,8 @@
     }
   ],
   "steigzone": {
-    "x": 2.586,
-    "z": 3
+    "x": 18,
+    "z": 12
   },
-  "hash": "99f0f3d56bcedaef52fefa81916c328049c91dfe9a7c9fbc11cb8f2aa86a1a5d"
+  "hash": "cfe2750382a3362782d09427e40771560fc5591e079acb941f5bde45e288aaf9"
 }
