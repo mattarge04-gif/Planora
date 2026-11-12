@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type pg from "pg";
 import { frischeDb } from "./hilfe.js";
+import { REGELWERK_V2 } from "../src/welt/regelwerk.v2.js";
 import { FachFehler, aendereHuelle, ladeBeschreibung, ladeHuelle, legeGebaeudeAn, pruefeHuelle, schreibeBeschreibung } from "../src/welt/speicher.js";
 import { REGELWERK_V1 } from "../src/welt/regelwerk.v1.js";
 import { KATALOG_V1 } from "../src/welt/katalog.v1.js";
@@ -42,6 +43,19 @@ beforeAll(async () => {
   L1 = (await db.pool.query("insert into liegenschaft(name) values ('L1') returning id")).rows[0].id;
 });
 afterAll(async () => { await db.ende(); });
+
+describe("Huelle v2", () => {
+  const H2 = { name: "V2", grundform: "quadrat" as const, geschosse: [{ code: "EG" }] };
+  it("v1 verlangt Masse und erlaubt kein quadrat; v2 braucht keine Masse", () => {
+    expect(pruefeHuelle(H2, REGELWERK_V1).map((f) => f.code)).toEqual(["mass_ungueltig", "mass_ungueltig", "grundform_nicht_erlaubt"]);
+    expect(pruefeHuelle(H2, REGELWERK_V2)).toEqual([]);
+  });
+  it("legeGebaeudeAn ohne Masse waehlt Regelwerk v2", async () => {
+    const g = await tx((c) => legeGebaeudeAn(c, L1, H2, REGELWERK_V1));
+    const r = (await db.pool.query("select regelwerk_version v, breite_m b from gebaeude where id=$1", [g])).rows[0];
+    expect(r).toEqual({ v: 2, b: null });
+  });
+});
 
 describe("Huelle", () => {
   it("pruefeHuelle meldet Masse, Codes, Doppel und Hoehen", () => {

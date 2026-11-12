@@ -62,6 +62,16 @@ describe("GET /api/struktur/gebaeude", () => {
   });
 });
 
+describe("GET /api/katalog/v2", () => {
+  it("liefert Eintraege mit Masse, ohne Sitzung 401", async () => {
+    const k = (await anfrage("GET", "/api/katalog/v2", kLeser)).json();
+    expect(k.version).toBe(2);
+    expect(k.eintraege).toHaveLength(13);
+    expect(k.eintraege.find((e: any) => e.id === "heizung.wmz")).toEqual({ id: "heizung.wmz", name: "Waermezaehler", bereich: "zubehoer", masse: [0.25, 0.2, 0.15] });
+    expect((await app.inject({ url: "/api/katalog/v2" })).statusCode).toBe(401);
+  });
+});
+
 describe("GET /api/katalog/v1", () => {
   it("liefert IDs, Namen und Bereich", async () => {
     const r = await anfrage("GET", "/api/katalog/v1", kLeser);

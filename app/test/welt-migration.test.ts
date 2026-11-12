@@ -53,3 +53,36 @@ describe("Migration 013", () => {
     expect(await anzahl("versorgung where bauteil_id=$1", [t])).toBe(0);
   });
 });
+
+describe("Migration 014", () => {
+  const bauteil = (extra: string, p: unknown[]) =>
+    q(`insert into bauteil(liegenschaft_id, gebaeude_id, katalog_id, geschoss_id, status, reihenfolge${extra ? ", " + extra.split("=")[0] : ""}) values ($1,$2,'heizung.verteiler',$3,'bestaetigt',0${extra ? ",$4" : ""}) returning id`, p);
+  it("Gebaeude v2 ohne Masse und mit quadrat, v1 ohne Masse scheitert", async () => {
+    await expect(q("insert into gebaeude(liegenschaft_id, name, grundform, regelwerk_version) values ($1,'V2','quadrat',2)", [L1])).resolves.toBeDefined();
+    await expect(q("insert into gebaeude(liegenschaft_id, name, grundform, regelwerk_version) values ($1,'V1','quader',1)", [L1])).rejects.toThrow(/gebaeude_masse_v1/);
+  });
+  it("bauteil_ort_exklusiv verhindert Gruppe und Vorbauteil zugleich", async () => {
+    const v = (await bauteil("", [L1, G1, GS1])).rows[0].id;
+    const v2 = (await bauteil("", [L1, G1, GS1])).rows[0].id;
+    const gr = (await q("insert into gruppe(liegenschaft_id, gebaeude_id, verteiler_bauteil_id, nummer, bezeichnung, art, reihenfolge) values ($1,$2,$3,1,'G1','beimisch',0) returning id", [L1, G1, v])).rows[0].id;
+    await expect(q("insert into bauteil(liegenschaft_id, gebaeude_id, katalog_id, geschoss_id, status, reihenfolge, gruppe_id, vor_bauteil_id) values ($1,$2,'heizung.umwaelzpumpe',$3,'bestaetigt',0,$4,$5)", [L1, G1, GS1, gr, v2]))
+      .rejects.toThrow(/bauteil_ort_exklusiv/);
+    const t = (await bauteil("gruppe_id=", [L1, G1, GS1, gr])).rows[0].id;
+    await q("delete from gruppe where id=$1", [gr]);
+    const r = (await q("select gruppe_id, liegenschaft_id from bauteil where id=$1", [t])).rows[0];
+    expect(r.gruppe_id).toBeNull();
+    expect(r.liegenschaft_id).toBe(L1);
+  });
+  it("gruppe_verbraucher: ein Bauteil nur in einer Gruppe", async () => {
+    const v = (await bauteil("", [L1, G1, GS1])).rows[0].id;
+    const mk = async (n: number) => (await q("insert into gruppe(liegenschaft_id, gebaeude_id, verteiler_bauteil_id, nummer, bezeichnung, art, reihenfolge) values ($1,$2,$3,$4,'G','ungeregelt',0) returning id", [L1, G1, v, n])).rows[0].id;
+    const a = await mk(1), b = await mk(2);
+    const x = (await bauteil("", [L1, G1, GS1])).rows[0].id;
+    await q("insert into gruppe_verbraucher(gruppe_id, bauteil_id, liegenschaft_id) values ($1,$2,$3)", [a, x, L1]);
+    await expect(q("insert into gruppe_verbraucher(gruppe_id, bauteil_id, liegenschaft_id) values ($1,$2,$3)", [b, x, L1])).rejects.toThrow(/unique|duplicate/);
+  });
+  it("planora_app darf gruppe, gruppe_verbraucher und entwurf nutzen", async () => {
+    for (const t of ["gruppe", "gruppe_verbraucher", "entwurf"])
+      expect((await q("select has_table_privilege('planora_app', $1, 'select,insert,update,delete') ok", [t])).rows[0].ok).toBe(true);
+  });
+});

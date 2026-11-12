@@ -1,5 +1,6 @@
 import type pg from "pg";
 import { geschossRang, type Katalog, type Regelwerk } from "./regelwerk.js";
+import { REGELWERK_V2 } from "./regelwerk.v2.js";
 import { pruefeBeschreibung, type Bestand } from "./pruefung.js";
 import { verteilerHinweise, wirksameHeizung } from "./heizung.js";
 import { HEIZ_ARTEN, type BauteilEingabe, type Beschreibung, type EinheitEingabe, type Fehler, type HeizArt, type Heizung, type Huelle, type HuelleGespeichert } from "./typen.js";
@@ -16,8 +17,11 @@ export class FachFehler extends Error {
 
 export function pruefeHuelle(h: Huelle, rw: Regelwerk): Fehler[] {
   const f: Fehler[] = [];
-  for (const [pfad, v] of [["breiteM", h.breiteM], ["tiefeM", h.tiefeM]] as const)
-    if (v === undefined || v < rw.masse.min || v > rw.masse.max) f.push({ pfad, code: "mass_ungueltig", meldung: `${rw.masse.min}–${rw.masse.max} m erwartet` });
+  if (rw.version === 1) {
+    for (const [pfad, v] of [["breiteM", h.breiteM], ["tiefeM", h.tiefeM]] as const)
+      if (v === undefined || v < rw.masse.min || v > rw.masse.max) f.push({ pfad, code: "mass_ungueltig", meldung: `${rw.masse.min}–${rw.masse.max} m erwartet` });
+    if (h.grundform === "quadrat") f.push({ pfad: "grundform", code: "grundform_nicht_erlaubt", meldung: "Quadrat gibt es erst ab Regelwerk v2" });
+  }
   if (h.geschosse.length === 0) f.push({ pfad: "geschosse", code: "geschoss_fehlt", meldung: "Mindestens ein Geschoss angeben" });
   const codes = new Set<string>();
   h.geschosse.forEach((g, i) => {
@@ -31,7 +35,9 @@ export function pruefeHuelle(h: Huelle, rw: Regelwerk): Fehler[] {
   return f;
 }
 
-export async function legeGebaeudeAn(c: pg.ClientBase, liegenschaftId: string, h: Huelle, rw: Regelwerk): Promise<string> {
+export async function legeGebaeudeAn(c: pg.ClientBase, liegenschaftId: string, h: Huelle, rwVorgabe: Regelwerk): Promise<string> {
+  // Ohne Masse ergibt sich die Groesse aus dem Inhalt: Regelwerk v2.
+  const rw = h.breiteM === undefined && h.tiefeM === undefined && rwVorgabe.version === 1 ? REGELWERK_V2 : rwVorgabe;
   const f = pruefeHuelle(h, rw);
   if (f.length) throw new FachFehler(f);
   const id: string = (await c.query(

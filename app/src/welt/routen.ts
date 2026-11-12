@@ -4,6 +4,7 @@ import { MATRIX, pruefe, type Rolle } from "../rechte/rechte.js";
 import { auditEreignis } from "../audit/audit.js";
 import { REGELWERK_V1 } from "./regelwerk.v1.js";
 import { KATALOG_V1 } from "./katalog.v1.js";
+import { KATALOG_V2 } from "./katalog.v2.js";
 import { weltErzeugen } from "./generator.js";
 import { FachFehler, aendereHuelle, ladeBeschreibung, ladeHuelle, legeGebaeudeAn, schreibeBeschreibung } from "./speicher.js";
 import { BESCHREIBUNG_SCHEMA, HUELLE_SCHEMA, ID_PARAMS, LID_PARAMS } from "./schema.js";
@@ -141,5 +142,9 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
   app.get("/api/katalog/v1", async () => ({
     version: KATALOG_V1.version,
     eintraege: KATALOG_V1.eintraege.map(({ id, name, bereich }) => ({ id, name, bereich })),
+  }));
+  app.get("/api/katalog/v2", async () => ({
+    version: KATALOG_V2.version,
+    eintraege: KATALOG_V2.eintraege.map(({ id, name, bereich, masse }) => ({ id, name, bereich, masse })),
   }));
 }
