@@ -1,0 +1,283 @@
+{
+  "huelle": {
+    "name": "Muster 3 Zubehoer",
+    "grundform": "quader",
+    "geschosse": [
+      {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "code": "EG"
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "code": "OG1"
+      }
+    ]
+  },
+  "beschreibung": {
+    "gebaeudeId": "00000000-0000-4000-8000-000000000900",
+    "stand": 0,
+    "heizungStandard": {
+      "hk": "ja",
+      "fbh": "nein",
+      "tabs": "nein"
+    },
+    "einheiten": [
+      {
+        "geschossId": "00000000-0000-4000-8000-000000000001",
+        "bezeichnung": "Buero A",
+        "art": "buero",
+        "flaecheM2": null,
+        "id": "00000000-0000-4000-8000-000000000100"
+      },
+      {
+        "geschossId": "00000000-0000-4000-8000-000000000001",
+        "bezeichnung": "Restaurant",
+        "art": "gastro",
+        "flaecheM2": null,
+        "heizungAusnahme": {
+          "hk": "nein",
+          "fbh": "ja"
+        },
+        "id": "00000000-0000-4000-8000-000000000101"
+      },
+      {
+        "geschossId": "00000000-0000-4000-8000-000000000001",
+        "bezeichnung": "Technik",
+        "art": "technik",
+        "flaecheM2": null,
+        "id": "00000000-0000-4000-8000-000000000102"
+      },
+      {
+        "geschossId": "00000000-0000-4000-8000-000000000002",
+        "bezeichnung": "Buero C",
+        "art": "buero",
+        "flaecheM2": null,
+        "heizungAusnahme": {
+          "fbh": "ja"
+        },
+        "id": "00000000-0000-4000-8000-000000000103"
+      },
+      {
+        "geschossId": "00000000-0000-4000-8000-000000000002",
+        "bezeichnung": "Buero D",
+        "art": "buero",
+        "flaecheM2": null,
+        "heizungAusnahme": {
+          "fbh": "ja"
+        },
+        "id": "00000000-0000-4000-8000-000000000104"
+      }
+    ],
+    "bauteile": [
+      {
+        "katalogId": "heizung.waermepumpe",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000102"
+        },
+        "menge": 1,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "id": "00000000-0000-4000-8000-000000000200"
+      },
+      {
+        "katalogId": "heizung.speicher",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000102"
+        },
+        "menge": 1,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "id": "00000000-0000-4000-8000-000000000201"
+      },
+      {
+        "katalogId": "heizung.heizkoerper",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000100"
+        },
+        "menge": 12,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "hersteller": "Zehnder",
+        "id": "00000000-0000-4000-8000-000000000202"
+      },
+      {
+        "katalogId": "heizung.heizkoerper",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000100"
+        },
+        "menge": 3,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "hersteller": "Prolux",
+        "id": "00000000-0000-4000-8000-000000000203"
+      },
+      {
+        "katalogId": "heizung.fbh_kreis",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000101"
+        },
+        "menge": 6,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "id": "00000000-0000-4000-8000-000000000204"
+      },
+      {
+        "katalogId": "heizung.fbh_kreis",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000103"
+        },
+        "menge": 4,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "id": "00000000-0000-4000-8000-000000000205"
+      },
+      {
+        "katalogId": "heizung.fbh_kreis",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000104"
+        },
+        "menge": null,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "id": "00000000-0000-4000-8000-000000000206"
+      },
+      {
+        "katalogId": "heizung.verteiler",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000102"
+        },
+        "menge": 1,
+        "status": "bestaetigt",
+        "versorgt": [
+          {
+            "einheitId": "00000000-0000-4000-8000-000000000100"
+          },
+          {
+            "einheitId": "00000000-0000-4000-8000-000000000101"
+          },
+          {
+            "einheitId": "00000000-0000-4000-8000-000000000103"
+          },
+          {
+            "einheitId": "00000000-0000-4000-8000-000000000104"
+          }
+        ],
+        "id": "00000000-0000-4000-8000-000000000207"
+      },
+      {
+        "katalogId": "heizung.umwaelzpumpe",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000102"
+        },
+        "menge": 1,
+        "status": "vorgeschlagen",
+        "versorgt": [],
+        "ort": {
+          "gruppe": {
+            "gruppeId": "00000000-0000-4000-8000-000000000301"
+          }
+        },
+        "id": "00000000-0000-4000-8000-000000000208"
+      },
+      {
+        "katalogId": "heizung.ventil_2weg",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000102"
+        },
+        "menge": 1,
+        "status": "vorgeschlagen",
+        "versorgt": [],
+        "ort": {
+          "gruppe": {
+            "gruppeId": "00000000-0000-4000-8000-000000000301"
+          }
+        },
+        "id": "00000000-0000-4000-8000-000000000209"
+      },
+      {
+        "katalogId": "heizung.umwaelzpumpe",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000102"
+        },
+        "menge": 1,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "ort": {
+          "gruppe": {
+            "gruppeId": "00000000-0000-4000-8000-000000000301"
+          }
+        },
+        "id": "00000000-0000-4000-8000-000000000210"
+      },
+      {
+        "katalogId": "heizung.ventil_3weg",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000102"
+        },
+        "menge": 1,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "ort": {
+          "gruppe": {
+            "gruppeId": "00000000-0000-4000-8000-000000000301"
+          }
+        },
+        "id": "00000000-0000-4000-8000-000000000211"
+      },
+      {
+        "katalogId": "heizung.ventil_2weg",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000102"
+        },
+        "menge": 1,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "ort": {
+          "gruppe": {
+            "gruppeId": "00000000-0000-4000-8000-000000000301"
+          }
+        },
+        "id": "00000000-0000-4000-8000-000000000212"
+      }
+    ],
+    "gruppen": [
+      {
+        "verteiler": {
+          "bauteilId": "00000000-0000-4000-8000-000000000207"
+        },
+        "nummer": 1,
+        "art": "ungeregelt",
+        "bezeichnung": "HK Buero",
+        "verbraucher": [
+          {
+            "bauteilId": "00000000-0000-4000-8000-000000000202"
+          },
+          {
+            "bauteilId": "00000000-0000-4000-8000-000000000203"
+          }
+        ],
+        "id": "00000000-0000-4000-8000-000000000300"
+      },
+      {
+        "verteiler": {
+          "bauteilId": "00000000-0000-4000-8000-000000000207"
+        },
+        "nummer": 2,
+        "art": "einspritz",
+        "bezeichnung": "FBH",
+        "verbraucher": [
+          {
+            "bauteilId": "00000000-0000-4000-8000-000000000204"
+          },
+          {
+            "bauteilId": "00000000-0000-4000-8000-000000000205"
+          },
+          {
+            "bauteilId": "00000000-0000-4000-8000-000000000206"
+          }
+        ],
+        "id": "00000000-0000-4000-8000-000000000301"
+      }
+    ]
+  }
+}

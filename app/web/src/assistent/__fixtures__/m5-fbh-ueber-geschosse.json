@@ -1,0 +1,208 @@
+{
+  "huelle": {
+    "name": "Muster 5 FBH ueber Geschosse",
+    "grundform": "quader",
+    "geschosse": [
+      {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "code": "EG"
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "code": "OG1"
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000003",
+        "code": "OG2"
+      }
+    ]
+  },
+  "beschreibung": {
+    "gebaeudeId": "00000000-0000-4000-8000-000000000900",
+    "stand": 0,
+    "heizungStandard": {
+      "hk": "nein",
+      "fbh": "ja",
+      "tabs": "nein"
+    },
+    "einheiten": [
+      {
+        "geschossId": "00000000-0000-4000-8000-000000000001",
+        "bezeichnung": "Technik",
+        "art": "technik",
+        "flaecheM2": null,
+        "id": "00000000-0000-4000-8000-000000000100"
+      },
+      {
+        "geschossId": "00000000-0000-4000-8000-000000000002",
+        "bezeichnung": "Technik OG1",
+        "art": "technik",
+        "flaecheM2": null,
+        "id": "00000000-0000-4000-8000-000000000101"
+      },
+      {
+        "geschossId": "00000000-0000-4000-8000-000000000002",
+        "bezeichnung": "Wohnung 1",
+        "art": "wohnung",
+        "flaecheM2": null,
+        "id": "00000000-0000-4000-8000-000000000102"
+      },
+      {
+        "geschossId": "00000000-0000-4000-8000-000000000002",
+        "bezeichnung": "Wohnung 2",
+        "art": "wohnung",
+        "flaecheM2": null,
+        "id": "00000000-0000-4000-8000-000000000103"
+      },
+      {
+        "geschossId": "00000000-0000-4000-8000-000000000003",
+        "bezeichnung": "Wohnung 3",
+        "art": "wohnung",
+        "flaecheM2": null,
+        "id": "00000000-0000-4000-8000-000000000104"
+      },
+      {
+        "geschossId": "00000000-0000-4000-8000-000000000003",
+        "bezeichnung": "Wohnung 4",
+        "art": "wohnung",
+        "flaecheM2": null,
+        "id": "00000000-0000-4000-8000-000000000105"
+      }
+    ],
+    "bauteile": [
+      {
+        "katalogId": "heizung.waermepumpe",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000100"
+        },
+        "menge": 1,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "id": "00000000-0000-4000-8000-000000000200"
+      },
+      {
+        "katalogId": "heizung.verteiler",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000100"
+        },
+        "menge": 1,
+        "status": "bestaetigt",
+        "versorgt": [
+          {
+            "einheitId": "00000000-0000-4000-8000-000000000101"
+          }
+        ],
+        "id": "00000000-0000-4000-8000-000000000201"
+      },
+      {
+        "katalogId": "heizung.verteiler",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000101"
+        },
+        "menge": 1,
+        "status": "bestaetigt",
+        "versorgt": [
+          {
+            "einheitId": "00000000-0000-4000-8000-000000000102"
+          },
+          {
+            "einheitId": "00000000-0000-4000-8000-000000000103"
+          },
+          {
+            "einheitId": "00000000-0000-4000-8000-000000000104"
+          },
+          {
+            "einheitId": "00000000-0000-4000-8000-000000000105"
+          }
+        ],
+        "id": "00000000-0000-4000-8000-000000000202"
+      },
+      {
+        "katalogId": "heizung.fbh_kreis",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000102"
+        },
+        "menge": 3,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "id": "00000000-0000-4000-8000-000000000203"
+      },
+      {
+        "katalogId": "heizung.fbh_kreis",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000103"
+        },
+        "menge": 3,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "id": "00000000-0000-4000-8000-000000000204"
+      },
+      {
+        "katalogId": "heizung.fbh_kreis",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000104"
+        },
+        "menge": 3,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "id": "00000000-0000-4000-8000-000000000205"
+      },
+      {
+        "katalogId": "heizung.fbh_kreis",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000105"
+        },
+        "menge": 3,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "id": "00000000-0000-4000-8000-000000000206"
+      },
+      {
+        "katalogId": "heizung.umwaelzpumpe",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000100"
+        },
+        "menge": 1,
+        "status": "vorgeschlagen",
+        "versorgt": [],
+        "ort": {
+          "gruppe": {
+            "gruppeId": "00000000-0000-4000-8000-000000000300"
+          }
+        },
+        "id": "00000000-0000-4000-8000-000000000207"
+      },
+      {
+        "katalogId": "heizung.wmz",
+        "standort": {
+          "einheitId": "00000000-0000-4000-8000-000000000100"
+        },
+        "menge": 1,
+        "status": "bestaetigt",
+        "versorgt": [],
+        "ort": {
+          "gruppe": {
+            "gruppeId": "00000000-0000-4000-8000-000000000300"
+          }
+        },
+        "id": "00000000-0000-4000-8000-000000000208"
+      }
+    ],
+    "gruppen": [
+      {
+        "verteiler": {
+          "bauteilId": "00000000-0000-4000-8000-000000000201"
+        },
+        "nummer": 1,
+        "art": "ungeregelt",
+        "bezeichnung": "Steigstrang FBH",
+        "verbraucher": [
+          {
+            "bauteilId": "00000000-0000-4000-8000-000000000202"
+          }
+        ],
+        "id": "00000000-0000-4000-8000-000000000300"
+      }
+    ]
+  }
+}
