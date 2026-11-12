@@ -1,5 +1,7 @@
 # Stufe 1 – Interview-Assistent, Gruppen, Raumkomposition: Umsetzungsplan
 
+**Aktueller Stand 12.11.2026:** Phase V1–V5 bis `c5a335e` umgesetzt und im [Abschlussbericht](2026-11-12-stufe1-abschluss.md) geprüft. Die ursprünglichen Schritt-Checkboxen unten dokumentieren den Ablauf und sind kein aktueller Fortschrittszähler. Tracks A/B/C und Phase I bleiben offen.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ein gefuehrter Web-Assistent beschreibt ein Gebaeude; Generator v2 komponiert daraus Raeume und Gebaeude nach Inhalt; Leitungen werden je Heizgruppe sauber gefuehrt.

@@ -3,6 +3,14 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-12 – Stufe 1: Vertragsphase nach Claude-Stopp abgeschlossen
+
+- [F] Aktueller Branch `m2c-interview`, Implementierungsstand `c5a335e`; M2b bereits mit `ba3f339` nach `main` integriert. Ältere Einstiegsangaben korrigiert.
+- [F] Phase V1–V5 umgesetzt: Gruppen-/Ort-Vertrag, Migration/Katalog/Regelwerk v2, Speicher/Prüfung, Entwurf/Vorschau, Generator-Stub, sechs Muster plus U-Variante.
+- [F] Abschlussprüfung: 477 Backendtests, 174 Webtests, beide Typprüfungen und Webbuild bestanden. Echte Demo per HTTP mit Login, acht Gebäuden und allen Welt-Endpunkten geprüft. Eigene temporäre Dienste beendet; bestehende Dienste unberührt.
+- [F] Windows-Sandbox-Teardown der eigenen Testdatenbank erforderte gezieltes Beenden der nach Datenpfad/Port identifizierten Instanz. Danach erster Testprozess Exit 0.
+- [F] [Abschluss und Fortschritt](superpowers/plans/2026-11-12-stufe1-abschluss.md). Generator-Raumkomposition, Assistent und Gruppenleitungen bleiben offen; keine neue GPU-/Docker-/Lieferabnahme, kein Push/Merge/Deployment.
+
 ## 2026-11-12 – Teilaufgabe 8 nach erneutem Claude-Nutzungslimit übernommen
 
 - [F] Letzten Auftrag aus Claudes lokalem Sitzungsverlauf rekonstruiert: Restauflagen Interaktionen abschliessen, vom PO freigegebene Altansichten entfernen, Lizenzhinweise und Dokumentation ergänzen, GPU-Prüfung. Orca-CLI war in dieser Sitzung nicht auf dem PATH.

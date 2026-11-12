@@ -19,6 +19,14 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 12.11.2026
 
+### Aktueller Abschluss Stufe 1 nach Claude-Stopp [F]
+
+- Aktueller Checkout `m2c-interview`, letzter Implementierungscommit `c5a335e`. M2b ist bereits mit `ba3f339` nach `main` integriert; ältere Branch-/Fortsetzungsangaben darunter sind historisch.
+- Phase V (V1–V5) umgesetzt: Typen/Schema, Migration 014, Katalog/Regelwerk v2, Gruppen/Ort speichern und prüfen, Entwurf-CRUD, schreibfreie Vorschau, Generator-v2-Stub, sechs Muster plus U-Variante und sieben Welt-Fixtures.
+- Codex-Abschluss: 477 Backendtests und 174 Webtests bestanden, beide Typprüfungen und Webbuild grün. Demostart per HTTP mit Login und allen acht Gebäude-Welten geprüft; eigene temporäre Instanz auf freien Ports. Bestehende Dienste nicht verändert.
+- Einstieg: `docs/superpowers/plans/2026-11-12-stufe1-abschluss.md`. Nächste Implementierung: Tracks A (Raumkomposition), B (Web-Assistent), C (Gruppenleitungen), danach Integration und GPU-/PO-Abnahme. Der v2-Generator verwendet noch ein Übergangslayout; keine fertige Assistentenoberfläche behaupten.
+- Keine neue GPU-, Docker- oder Lieferabnahme. Kein Push/Merge/Deployment in diesem Abschluss.
+
 ### Fortsetzung nach erneutem Claude-Nutzungslimit [F]
 
 - Aktueller Checkout weiter `m2b2-redesign`, Teilaufgaben 4–7 inzwischen abgeschlossen; Abnahmen 1 und 2 freigegeben. Die älteren Rückgabeangaben unten sind historisch.
