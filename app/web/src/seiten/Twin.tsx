@@ -3,7 +3,7 @@ import { ArrowLeft, Layers3 } from "lucide-react";
 import { ApiFehler, holeJson } from "../api";
 import { TOKENS } from "../design/tokens";
 import { Szene3 } from "../szene3/Szene3";
-import type { Welt } from "../typen";
+import type { Katalog, Welt } from "../typen";
 import "./Twin.css";
 
 function webglVorhanden(): boolean {
@@ -30,6 +30,7 @@ interface Props { gebaeudeId: string; name: string; onZurueck: () => void; onAbg
 
 export function Twin({ gebaeudeId, name, onZurueck, onAbgelaufen }: Props) {
   const [welt, setWelt] = useState<Welt | null>(null);
+  const [katalog, setKatalog] = useState<Katalog | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [fokusId, setFokusId] = useState<string | null>(null);
   const [reduziert, setReduziert] = useState(false);
@@ -37,9 +38,12 @@ export function Twin({ gebaeudeId, name, onZurueck, onAbgelaufen }: Props) {
 
   useEffect(() => {
     let aktiv = true;
-    setWelt(null); setFehler(null); setFokusId(null);
-    holeJson<Welt>(`/api/szene/gebaeude/${gebaeudeId}/welt`).then((w) => {
-      if (aktiv) setWelt(w);
+    setWelt(null); setKatalog(null); setFehler(null); setFokusId(null);
+    Promise.all([
+      holeJson<Welt>(`/api/szene/gebaeude/${gebaeudeId}/welt`),
+      holeJson<Katalog>("/api/katalog/v1"),
+    ]).then(([w, k]) => {
+      if (aktiv) { setWelt(w); setKatalog(k); }
     }, (e: Error) => {
       if (!aktiv) return;
       if (e instanceof ApiFehler && e.status === 401) onAbgelaufen();
@@ -59,7 +63,7 @@ export function Twin({ gebaeudeId, name, onZurueck, onAbgelaufen }: Props) {
 
   return (
     <main className="twin" style={stil} aria-label="Digital Twin">
-      {webgl && welt && <Szene3 welt={welt} fokusId={fokusId} reduziert={reduziert}
+      {webgl && welt && katalog && <Szene3 welt={welt} katalog={katalog.eintraege} fokusId={fokusId} reduziert={reduziert}
         freiraum={{ links: 32, rechts: 32, oben: 100, unten: 100 }} />}
       <header className="twin-kopf">
         <button className="twin-zurueck" onClick={onZurueck}><ArrowLeft size={16} />Gebäude</button>
@@ -77,7 +81,7 @@ export function Twin({ gebaeudeId, name, onZurueck, onAbgelaufen }: Props) {
           {geschosse.map((g) => <button key={g.id} aria-pressed={g.id === fokusId}
             onClick={() => setFokusId(g.id)}>{g.code}</button>)}
         </nav>
-        <p className="twin-hilfe">{fokus ? `${fokus.code}: nach oben offen · untere Geschosse bleiben sichtbar` : "Drehen: ziehen · Vergrössern: scrollen"}</p>
+        <p className="twin-hilfe">{fokus ? `${fokus.code}: nach oben offen · untere Geschosse bleiben sichtbar` : "Drehen: ziehen · Vergrössern: scrollen"} · Leitungen: schematischer Verlauf</p>
       </>}
     </main>
   );

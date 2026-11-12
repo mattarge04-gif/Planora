@@ -2,30 +2,33 @@ import { AccumulativeShadows, Environment, Lightformer, OrbitControls, Randomize
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, N8AO, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
 import { huelle, type Bereich, type V3 } from "../szene2/huelle";
-import type { Welt } from "../typen";
+import type { KatalogEintrag, Welt } from "../typen";
 import { Gebaeude3 } from "./Gebaeude3";
 import { Kulisse3 } from "./Kulisse3";
 import { einpassen, type Einpassung, type Freiraum } from "./kamera";
 import { kulisse } from "./kulisse";
 import { geschossSchnitt } from "./schnitt";
+import { Technik3 } from "./Technik3";
 
-export interface Szene3Props { welt: Welt; fokusId: string | null; freiraum: Freiraum; reduziert: boolean }
+export interface Szene3Props { welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; freiraum: Freiraum; reduziert: boolean }
 
-/** Helles, lokales Architektur-Diorama. Anlagen und Dashboard folgen in den nächsten Teilaufgaben. */
-export function Szene3({ welt, fokusId, freiraum, reduziert }: Szene3Props) {
+/** Helles, lokales Architektur-Diorama mit Anlagen und schematischem Leitungsnetz. */
+export function Szene3({ welt, katalog, fokusId, freiraum, reduziert }: Szene3Props) {
   const h = useMemo(() => huelle(welt), [welt]);
   const [kameraRichtung, setKameraRichtung] = useState<V3>([1, 1, 1]);
   const controls = useRef<OrbitControlsImpl>(null);
+  const [modellStand, setModellStand] = useState(0);
+  const modelleGeladen = useCallback(() => setModellStand((s) => s + 1), []);
   const schnitt = useMemo(() => geschossSchnitt(welt, fokusId), [welt, fokusId]);
   const sichtbar = useMemo(() => ({ ...h.bereich,
     yMax: schnitt.fokus ? schnitt.fokus.yUnten + schnitt.fokus.hoehe : h.bereich.yMax + (h.aufbau?.groesse[1] ?? 0),
   }), [h, schnitt.fokus]);
-  const schattenKey = `${welt.hash}:${fokusId}:${kameraRichtung[0]}:${kameraRichtung[2]}`;
+  const schattenKey = `${welt.hash}:${fokusId}:${kameraRichtung[0]}:${kameraRichtung[2]}:${modellStand}`;
   const kameraGeaendert = () => {
     const c = controls.current;
     if (!c) return;
@@ -38,11 +41,12 @@ export function Szene3({ welt, fokusId, freiraum, reduziert }: Szene3Props) {
     camera={{ near: 0.1, far: 1000 }}>
     <color attach="background" args={[TOKENS.farbe.grund]} />
     {!reduziert && <SoftShadows size={TOKENS.licht.schattenFilterTexel} samples={TOKENS.licht.schattenSamples} />}
-    <OrbitControls ref={controls} makeDefault enableDamping maxPolarAngle={Math.PI / 2 - 0.12} minPolarAngle={0.15}
+    <OrbitControls ref={controls} makeDefault enableDamping zoomToCursor maxPolarAngle={Math.PI / 2 - 0.12} minPolarAngle={0.15}
       onChange={kameraGeaendert} enablePan={false} />
     <Kamera welt={welt} fokusId={fokusId} bereich={sichtbar} freiraum={freiraum} />
     <Licht bereich={h.bereich} reduziert={reduziert} />
     <Gebaeude3 welt={welt} h={h} fokusId={fokusId} kameraRichtung={kameraRichtung} schatten={!reduziert} />
+    <Technik3 welt={welt} katalog={katalog} fokusId={fokusId} schatten={!reduziert} onModelle={modelleGeladen} />
     <Kulisse3 bereich={h.bereich} schatten={!reduziert} />
     {!reduziert && <Bodenschatten key={schattenKey} bereich={h.bereich} />}
     {!reduziert && <EffectComposer multisampling={4} enableNormalPass={false}>
