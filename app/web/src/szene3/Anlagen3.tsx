@@ -4,15 +4,34 @@ import { Component, Suspense, useEffect, useLayoutEffect, useMemo, useRef, type 
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
 import type { V3 } from "../szene2/huelle";
-import type { WeltSymbol } from "../typen";
-import { anlagenDaten, modellFuer } from "./technik";
+import type { KatalogEintrag, WeltSymbol } from "../typen";
+import { anlagenDaten, inlineMatrix, modellVon, type AnzeigeSymbol } from "./technik";
 import type { Interaktion } from "./Interaktion";
 
 interface Props {
-  symbole: WeltSymbol[]; schatten: boolean;
+  symbole: WeltSymbol[]; schatten: boolean; katalog?: KatalogEintrag[];
   onModell: (pfad: string, anschluss: V3) => void;
   interaktion?: Interaktion;
 }
+
+/** Eine dargestellte Instanz: Teile in der Leitung (Gruppenstock, «vor Bauteil») erscheinen je Stück einmal. */
+export interface Instanz { s: WeltSymbol; masse: V3; basis: THREE.Matrix4; mitte: V3; inline: boolean }
+export function instanzen(symbole: WeltSymbol[], katalog?: KatalogEintrag[]): Instanz[] {
+  return symbole.flatMap((s): Instanz[] => {
+    const masse = modellVon(s, katalog).masse, inline = (s as AnzeigeSymbol).inline;
+    if (inline) return inline.mitten.map((m) => ({ s, masse, inline: true, mitte: m,
+      basis: new THREE.Matrix4().makeTranslation(...m).multiply(inlineMatrix(s.katalogId, masse)) }));
+    const p = s.position;
+    return [{ s, masse, inline: false, mitte: [p.x, p.y + masse[1] / 2, p.z] as V3, basis: new THREE.Matrix4().makeTranslation(p.x, p.y, p.z) }];
+  });
+}
+/** Achsmasse in Einbaulage: Modellmasse durch die Drehung der Basismatrix. */
+export function lageMasse(i: Instanz): V3 {
+  const v = new THREE.Vector3(...i.masse).applyMatrix4(new THREE.Matrix4().extractRotation(i.basis));
+  return [Math.abs(v.x), Math.abs(v.y), Math.abs(v.z)];
+}
+const hervorgehoben = (s: WeltSymbol, interaktion?: Interaktion) =>
+  interaktion?.auswahl === s.schluessel || interaktion?.hover === s.schluessel || !!interaktion?.betont?.has(s.schluessel);
 
 /** Ein Ladefehler betrifft nur diesen Modelltyp, niemals die übrige Szene. */
 class ModellGrenze extends Component<{ children: ReactNode; ersatz: ReactNode }, { fehler: boolean }> {
@@ -21,25 +40,25 @@ class ModellGrenze extends Component<{ children: ReactNode; ersatz: ReactNode },
   render() { return this.state.fehler ? this.props.ersatz : this.props.children; }
 }
 
-export function Anlagen3({ symbole, schatten, onModell, interaktion }: Props) {
+export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion }: Props) {
   const gruppen = useMemo(() => {
-    const g = new Map<string, WeltSymbol[]>();
-    for (const s of symbole) {
-      const key = modellFuer(s.katalogId).pfad ?? s.katalogId;
-      g.set(key, [...(g.get(key) ?? []), s]);
+    const g = new Map<string, Instanz[]>();
+    for (const i of instanzen(symbole, katalog)) {
+      const key = modellVon(i.s, katalog).pfad ?? i.s.katalogId;
+      g.set(key, [...(g.get(key) ?? []), i]);
     }
     return [...g.entries()];
-  }, [symbole]);
+  }, [symbole, katalog]);
   useEffect(() => {
     for (const [pfad] of gruppen) if (pfad.startsWith("/modelle/")) useGLTF.preload(pfad, false, false);
   }, [gruppen]);
   return <group name="anlagen">{gruppen.map(([pfad, gruppe]) => {
-    const ersatz = <Ersatz symbole={gruppe} schatten={schatten} interaktion={interaktion} />;
+    const ersatz = <Ersatz instanzen={gruppe} schatten={schatten} interaktion={interaktion} />;
     return pfad.startsWith("/modelle/")
       ? <ModellGrenze key={pfad} ersatz={ersatz}><Suspense fallback={ersatz}>
-        <Modell pfad={pfad} symbole={gruppe} schatten={schatten} onModell={onModell} interaktion={interaktion} />
+        <Modell pfad={pfad} instanzen={gruppe} schatten={schatten} onModell={onModell} interaktion={interaktion} />
       </Suspense></ModellGrenze>
-      : <Ersatz key={pfad} symbole={gruppe} schatten={schatten} interaktion={interaktion} />;
+      : <Ersatz key={pfad} instanzen={gruppe} schatten={schatten} interaktion={interaktion} />;
   })}</group>;
 }
 
@@ -51,27 +70,29 @@ function ereignisse(key: (e: ThreeEvent<PointerEvent | MouseEvent>) => string | 
     onClick: (e: ThreeEvent<MouseEvent>) => { const k = key(e); if (k && e.delta <= 4) { e.stopPropagation(); interaktion.waehlen(k); } },
   };
 }
-function Ersatz({ symbole, schatten, interaktion }: { symbole: WeltSymbol[]; schatten: boolean; interaktion?: Interaktion }) {
-  return <>{symbole.map((s) => <ErsatzAnlage key={s.schluessel} s={s} schatten={schatten} interaktion={interaktion} />)}</>;
+function Ersatz({ instanzen, schatten, interaktion }: { instanzen: Instanz[]; schatten: boolean; interaktion?: Interaktion }) {
+  return <>{instanzen.map((i, k) => <ErsatzAnlage key={`${i.s.schluessel}:${k}`} i={i} schatten={schatten} interaktion={interaktion} />)}</>;
 }
-function ErsatzAnlage({ s, schatten, interaktion }: { s: WeltSymbol; schatten: boolean; interaktion?: Interaktion }) {
-    const masse = modellFuer(s.katalogId).masse, ref = useRef<THREE.Group>(null);
-    const aktiv = interaktion?.auswahl === s.schluessel || interaktion?.hover === s.schluessel;
-    useFrame(() => { if (ref.current) ref.current.position.y = s.position.y + (interaktion?.lift.current[s.schluessel] ?? 0); }, -1);
+function ErsatzAnlage({ i, schatten, interaktion }: { i: Instanz; schatten: boolean; interaktion?: Interaktion }) {
+    const { s } = i, masse = lageMasse(i), ref = useRef<THREE.Group>(null);
+    const aktiv = hervorgehoben(s, interaktion);
+    const unten = i.mitte[1] - masse[1] / 2;
+    const radius = Math.min(TOKENS.radius.geraetM, Math.min(...masse) / 2 - 0.002);
+    useFrame(() => { if (ref.current) ref.current.position.y = unten + (i.inline ? 0 : interaktion?.lift.current[s.schluessel] ?? 0); }, -1);
     return <group ref={ref} name={s.schluessel} userData={{ ...anlagenDaten(s), ersatz: true }} {...ereignisse(() => s.schluessel, interaktion)}
-      position={[s.position.x, s.position.y, s.position.z]}>
-      <RoundedBox args={masse} position={[0, masse[1] / 2, 0]} radius={TOKENS.radius.geraetM} smoothness={3}
+      position={[i.mitte[0], unten, i.mitte[2]]}>
+      <RoundedBox args={masse} position={[0, masse[1] / 2, 0]} radius={radius} smoothness={3}
         userData={anlagenDaten(s)} castShadow={schatten} receiveShadow={schatten}>
         <meshStandardMaterial color={TOKENS.farbe.grau1} {...TOKENS.material.geraet} />
       </RoundedBox>
-      {aktiv && <RoundedBox args={masse} position={[0, masse[1] / 2, 0]} scale={1.04} radius={TOKENS.radius.geraetM} smoothness={3} raycast={() => {}}>
+      {aktiv && <RoundedBox args={masse} position={[0, masse[1] / 2, 0]} scale={1.04} radius={radius} smoothness={3} raycast={() => {}}>
         <meshBasicMaterial color={TOKENS.farbe.eisAkzent} side={THREE.BackSide} />
       </RoundedBox>}
     </group>;
 }
 
-function Modell({ pfad, symbole, schatten, onModell, interaktion }: {
-  pfad: string; symbole: WeltSymbol[]; schatten: boolean; onModell: Props["onModell"]; interaktion?: Interaktion;
+function Modell({ pfad, instanzen, schatten, onModell, interaktion }: {
+  pfad: string; instanzen: Instanz[]; schatten: boolean; onModell: Props["onModell"]; interaktion?: Interaktion;
 }) {
   const { scene } = useGLTF(pfad, false, false);
   const modell = useMemo(() => {
@@ -93,54 +114,54 @@ function Modell({ pfad, symbole, schatten, onModell, interaktion }: {
     });
     const empty = scene.getObjectByName("anschluss");
     const anschluss = empty ? empty.getWorldPosition(new THREE.Vector3()).toArray() as V3
-      : [0, modellFuer(symbole[0].katalogId).masse[1], 0] as V3;
+      : [0, instanzen[0].masse[1], 0] as V3;
     return { teile, anschluss, materialien };
   }, [scene, pfad]);
   useEffect(() => { onModell(pfad, modell.anschluss); }, [pfad, modell, onModell]);
   useEffect(() => () => modell.materialien.forEach((m) => m.dispose()), [modell]);
-  return <group name={pfad}>{modell.teile.map((t, i) => <Modellinstanzen key={i} teil={t} symbole={symbole} schatten={schatten} interaktion={interaktion} />)}</group>;
+  return <group name={pfad}>{modell.teile.map((t, i) => <Modellinstanzen key={i} teil={t} instanzen={instanzen} schatten={schatten} interaktion={interaktion} />)}</group>;
 }
 
-function Modellinstanzen({ teil, symbole, schatten, interaktion }: {
+function Modellinstanzen({ teil, instanzen, schatten, interaktion }: {
   teil: { geometrie: THREE.BufferGeometry; material: THREE.Material | THREE.Material[]; matrix: THREE.Matrix4 };
-  symbole: WeltSymbol[]; schatten: boolean; interaktion?: Interaktion;
+  instanzen: Instanz[]; schatten: boolean; interaktion?: Interaktion;
 }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const rand = useRef<THREE.InstancedMesh>(null);
-  const aktiv = symbole.filter((s) => interaktion?.auswahl === s.schluessel || interaktion?.hover === s.schluessel);
+  const aktiv = instanzen.filter((i) => hervorgehoben(i.s, interaktion));
   const material = useMemo(() => new THREE.MeshBasicMaterial({ color: TOKENS.farbe.eisAkzent, side: THREE.BackSide }), []);
   useEffect(() => () => material.dispose(), [material]);
   const setzen = () => {
     const mesh = ref.current;
     if (!mesh) return;
-    const matrix = (s: WeltSymbol, umriss = false) => {
-      const p = s.position;
-      const m = new THREE.Matrix4().makeTranslation(p.x, p.y + (interaktion?.lift.current[s.schluessel] ?? 0), p.z);
+    const matrix = (i: Instanz, umriss = false) => {
+      // Teile in der Leitung heben sich nicht ab, sonst lösen sie sich vom Rohr.
+      const m = new THREE.Matrix4().makeTranslation(0, i.inline ? 0 : interaktion?.lift.current[i.s.schluessel] ?? 0, 0);
       if (umriss) {
-        const h = modellFuer(s.katalogId).masse[1] / 2;
-        m.multiply(new THREE.Matrix4().makeTranslation(0, h, 0)).multiply(new THREE.Matrix4().makeScale(1.04, 1.04, 1.04)).multiply(new THREE.Matrix4().makeTranslation(0, -h, 0));
+        const [x, y, z] = i.mitte;
+        m.multiply(new THREE.Matrix4().makeTranslation(x, y, z)).multiply(new THREE.Matrix4().makeScale(1.04, 1.04, 1.04)).multiply(new THREE.Matrix4().makeTranslation(-x, -y, -z));
       }
-      return m.multiply(teil.matrix);
+      return m.multiply(i.basis).multiply(teil.matrix);
     };
-    symbole.forEach((s, i) => mesh.setMatrixAt(i, matrix(s)));
+    instanzen.forEach((i, k) => mesh.setMatrixAt(k, matrix(i)));
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
     if (rand.current) {
-      aktiv.forEach((s, i) => rand.current!.setMatrixAt(i, matrix(s, true)));
+      aktiv.forEach((i, k) => rand.current!.setMatrixAt(k, matrix(i, true)));
       rand.current.instanceMatrix.needsUpdate = true; rand.current.computeBoundingSphere();
     }
   };
-  useLayoutEffect(setzen, [symbole, teil, interaktion]);
+  useLayoutEffect(setzen, [instanzen, teil, interaktion]);
   useFrame(setzen, -1);
   useEffect(() => {
     const mesh = ref.current;
     return () => { mesh?.dispose(); };
-  }, [symbole.length]);
+  }, [instanzen.length]);
   useEffect(() => { const mesh = rand.current; return () => mesh?.dispose(); }, [aktiv.length]);
-  return <><instancedMesh key={symbole.length} ref={ref} args={[teil.geometrie, teil.material, symbole.length]}
+  return <><instancedMesh key={instanzen.length} ref={ref} args={[teil.geometrie, teil.material, instanzen.length]}
     dispose={null} castShadow={schatten} receiveShadow={schatten}
-    {...ereignisse((e) => e.instanceId === undefined ? undefined : symbole[e.instanceId]?.schluessel, interaktion)}
-    userData={{ instanzen: symbole.map(anlagenDaten) }} />
+    {...ereignisse((e) => e.instanceId === undefined ? undefined : instanzen[e.instanceId]?.s.schluessel, interaktion)}
+    userData={{ instanzen: instanzen.map((i) => anlagenDaten(i.s)) }} />
     {aktiv.length > 0 && <instancedMesh key={`rand-${aktiv.length}`} ref={rand} args={[teil.geometrie, material, aktiv.length]} dispose={null} raycast={() => {}} />}
   </>;
 }

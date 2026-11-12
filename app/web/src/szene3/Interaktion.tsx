@@ -5,7 +5,7 @@ import { TOKENS } from "../design/tokens";
 import { geschossBeiY } from "../szene2/leitungen";
 import type { Welt } from "../typen";
 import type { Darstellung } from "./Bewegung";
-import { modellFuer } from "./technik";
+import { modellVon } from "./technik";
 import { bildpunkt, type BildschirmPunkt } from "./kamera";
 import { bewegungsAnteil } from "./darstellung";
 export type { BildschirmPunkt } from "./kamera";
@@ -13,6 +13,10 @@ export type { BildschirmPunkt } from "./kamera";
 export interface Interaktion {
   auswahl: string | null; hover: string | null; aktiv: boolean;
   lift: RefObject<Record<string, number>>;
+  /** Anlagen, die eine gewählte oder überfahrene Heizgruppe hervorhebt (Zubehör und Verbraucher). */
+  betont?: ReadonlySet<string>;
+  /** Hervorgehobene Heizgruppe (Rohre mit dieser `gruppeId`). */
+  gruppe?: string | null;
   waehlen: (key: string | null) => void; schweben: (key: string | null) => void;
 }
 
@@ -45,7 +49,7 @@ export function InteraktionsBewegung({ welt, interaktion, darstellung, weniger, 
     if (s && id && darstellung.sichtbar.includes(id)) {
       camera.updateMatrixWorld();
       punkt = bildpunkt(camera, size.width, size.height, new THREE.Vector3(s.position.x,
-        s.position.y + modellFuer(s.katalogId).masse[1] / 2 + (darstellung.aktuell.current[id] ?? 0) + (interaktion.lift.current[s.schluessel] ?? 0), s.position.z));
+        s.position.y + modellVon(s).masse[1] / 2 + (darstellung.aktuell.current[id] ?? 0) + (interaktion.lift.current[s.schluessel] ?? 0), s.position.z));
     }
     const wert = JSON.stringify(punkt);
     if (wert !== letzter.current) { letzter.current = wert; callback.current(punkt); }

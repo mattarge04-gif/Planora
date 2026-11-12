@@ -9,7 +9,7 @@ import type { Welt } from "../typen";
 import type { Darstellung } from "./Bewegung";
 import { anlageEinpassen, einpassen, FIT_ANTEIL, ortBereich, type Einpassung, type Freiraum, type SzenenZiel } from "./kamera";
 import { fahrtSchritt, kameraEingaben, rueckkehrAnsicht, type Kamerafahrt } from "./kameraFahrt";
-import { modellFuer } from "./technik";
+import { modellVon } from "./technik";
 
 export function Kamera3({ welt, fokusId, bereich, freiraum, repKey, auswahl, ziel, darstellung, weniger }: {
   welt: Welt; fokusId: string | null; bereich: Bereich; freiraum: Freiraum; repKey: string; auswahl: string | null;
@@ -51,7 +51,7 @@ export function Kamera3({ welt, fokusId, bereich, freiraum, repKey, auswahl, zie
       if (!rueckfahrt.current || repNeu || formatNeu) rueckfahrt.current = !vorher || repNeu || formatNeu ? normal : fahrt.current?.nach ?? snapshot();
       const s = welt.symbole.find((s) => s.schluessel === auswahl), id = s ? geschossBeiY(welt, s.position.y) : null;
       if (s && id && darstellung.sichtbar.includes(id)) {
-        const m = modellFuer(s.katalogId).masse, y = s.position.y + (darstellung.offsets[id] ?? 0);
+        const m = modellVon(s).masse, y = s.position.y + (darstellung.offsets[id] ?? 0);
         nach = anlageEinpassen({ xMin: s.position.x - m[0] / 2, xMax: s.position.x + m[0] / 2,
           yMin: y, yMax: y + m[1] + 0.04, zMin: s.position.z - m[2] / 2, zMax: s.position.z + m[2] / 2 },
         size.width, size.height, freiraum, richtung);

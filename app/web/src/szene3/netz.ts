@@ -2,15 +2,18 @@ import { imRechteck, type V3 } from "../szene2/huelle";
 import { geschossBeiY, leitungen } from "../szene2/leitungen";
 import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
 import { innenwaende } from "./geometrie";
-import { anschlussFuehrung, deckenLauf, modellFuer, ROHR, verteilerAbgang } from "./technik";
+import { anschlussFuehrung, anschlussLokal, deckenLauf, ROHR, verteilerAbgang } from "./technik";
+import { gruppenRohrnetz } from "./gruppenNetz";
 
 const ERZEUGER = new Set(["heizung.waermepumpe", "heizung.gaskessel", "heizung.oelkessel", "heizung.fernwaerme_uebergabe"]);
 const ABGABE = new Set(["heizung.heizkoerper", "heizung.fbh_kreis", "heizung.tabs_feld"]);
 export interface Verbindung { art: "haupt" | "verteil"; von: string; nach: string }
-export interface Rohrstueck { punkte: V3[]; radius: number; startRadius: number; endRadius: number; boden: number; daten: Verbindung & { bauteilIds: string[] }; frei: boolean }
+export interface Rohrstueck { punkte: V3[]; radius: number; startRadius: number; endRadius: number; boden: number; daten: Verbindung & { bauteilIds: string[]; gruppeId?: string }; frei: boolean }
 export interface Huelse { position: V3; normale: V3; radius: number; art: "wand" | "decke" }
 
 export function freieVerteilerAbgaenge(welt: Welt, katalog: KatalogEintrag[]) {
+  // Verteiler mit Gruppen (v2) erhalten genau so viele Abgänge wie Stränge; keine freien Stutzen.
+  if (welt.gruppen) return [];
   const kanten = verbindungen(welt, katalog);
   return welt.symbole.filter((s) => s.katalogId === "heizung.verteiler").flatMap((s) => {
     const belegt = Math.min(4, kanten.filter((v) => v.von === s.schluessel && v.art === "verteil").length);
@@ -55,11 +58,19 @@ export function verbindungen(welt: Welt, katalog: KatalogEintrag[]): Verbindung[
 }
 const abstand = (a: WeltSymbol, b: WeltSymbol) => Math.hypot(a.position.x - b.position.x, a.position.y - b.position.y, a.position.z - b.position.z);
 
+/** v1: alle Verbindungen einzeln; v2 (mit Gruppen): Hauptleitungen wie bisher, Verteilung je Gruppe (gruppenNetz). */
 export function rohrnetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>): Rohrstueck[] {
+  if (welt.gruppen) return gruppenRohrnetz(welt, katalog, anschluesse);
+  return kantenNetz(welt, katalog, anschluesse, verbindungen(welt, katalog)).map((r) =>
+    r.daten.art === "verteil" ? { ...r, daten: { ...r.daten, gruppeId: `ersatz:${r.daten.von}>${r.daten.nach}` } } : r);
+}
+
+/** Bisherige Führung je Verbindung: Anschlussstück an beiden Enden, rechtwinkliger Lauf auf der Leitungsebene. */
+export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>, kanten: Verbindung[]): Rohrstueck[] {
   const stuecke: Rohrstueck[] = [];
   const adapterSchluessel = new Set<string>();
   const naechsterAbgang = new Map<string, number>();
-  for (const v of verbindungen(welt, katalog)) {
+  for (const v of kanten) {
     const radius = ROHR[v.art];
     const adapter: Rohrstueck[] = [];
     const lage = (key: string): number | undefined => {
@@ -74,8 +85,7 @@ export function rohrnetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Rec
         const e = welt.einheiten.find((e) => e.id === key), g = welt.geschosse.find((g) => g.id === e?.geschossId);
         return e && g ? [e.rechteck.x + e.rechteck.breite / 2, deckenLauf(g), e.rechteck.z + e.rechteck.tiefe / 2] : null;
       }
-      const m = modellFuer(s.katalogId);
-      let lokal = (m.pfad && anschluesse[m.pfad]) || [0, m.masse[1], 0];
+      let lokal = anschlussLokal(s, anschluesse, katalog);
       if (ausgang && v.art === "verteil" && s.katalogId === "heizung.verteiler") {
         const index = naechsterAbgang.get(key) ?? 0;
         lokal = verteilerAbgang(index); naechsterAbgang.set(key, index + 1);

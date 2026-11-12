@@ -10,6 +10,7 @@ import { Anlagen3 } from "./Anlagen3";
 import { durchgaenge, einheitVon, freieVerteilerAbgaenge, rohrnetz, type Huelse, type Rohrstueck } from "./netz";
 import { geschossSchnitt } from "./schnitt";
 import { anlagenDaten, anlageSichtbar, rohrAbschluesse, rohrSchnitt } from "./technik";
+import { anzeigeWelt } from "./gruppenNetz";
 import { bandGeometrie, huelsenGeometrie, rohrGeometrie } from "./technikGeometrie";
 import { GeschossGruppe, type Darstellung } from "./Bewegung";
 import type { Interaktion } from "./Interaktion";
@@ -27,7 +28,9 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
     setAnschluesse((alt) => alt[pfad] ? alt : { ...alt, [pfad]: anschluss });
   }, []);
   useEffect(onModelle, [anschluesse, onModelle]);
-  const symbole = useMemo(() => welt.symbole.filter((s) => anlageSichtbar(welt, fokusId, s)), [welt, fokusId]);
+  // Verteiler mit Gruppen und Teile in der Leitung erhalten ihre Darstellungslage (v1-Welten unverändert).
+  const anzeige = useMemo(() => anzeigeWelt(welt, katalog, anschluesse), [welt, katalog, anschluesse]);
+  const symbole = useMemo(() => anzeige.symbole.filter((s) => anlageSichtbar(anzeige, fokusId, s)), [anzeige, fokusId]);
   const schnitt = useMemo(() => geschossSchnitt(welt, fokusId), [welt, fokusId]);
   const netz = useMemo(() => {
     const yMax = schnitt.fokus ? schnitt.fokus.yUnten + schnitt.fokus.hoehe - 0.25 : Infinity;
@@ -70,7 +73,7 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
     : geschossBeiY(welt, h.position[1]);
   return <group name="technik">
     {sichtbar.map((id) => <GeschossGruppe key={id} id={id} darstellung={darstellung}>
-      <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} onModell={onModell} interaktion={interaktion} />
+      <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} />
       {kappen.filter((k) => geschossBeiY(welt, k.symbol.position.y) === id).map((k, i) =>
         <VerteilerKappe key={`kappe-${i}`} {...k} interaktion={interaktion} schatten={schatten} />)}
       {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} />)}
