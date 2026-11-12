@@ -24,7 +24,11 @@ export function App() {
   if (zustand.art === "laden") return <p className="status">Laden …</p>;
   if (zustand.art === "login") return <Login onAngemeldet={() => setZustand({ art: "liste" })} />;
   if (zustand.art === "twin") return <Twin gebaeudeId={zustand.gebaeudeId} name={zustand.name}
-    onZurueck={() => setZustand({ ...zustand, art: "ansicht" })} onAbgelaufen={abgelaufen} />;
+    onGebaeude={(g) => setZustand({ art: "twin", gebaeudeId: g.id, name: g.name })}
+    onListe={() => setZustand({ art: "liste" })}
+    onAnsicht={() => setZustand({ ...zustand, art: "ansicht" })}
+    onEntwurf={() => setZustand({ ...zustand, art: "entwurf" })}
+    onAbmelden={abmelden} onAbgelaufen={abgelaufen} />;
   const gebaeude = zustand.art === "ansicht" || zustand.art === "entwurf" ? zustand : null;
   return (
     <div className="rahmen">

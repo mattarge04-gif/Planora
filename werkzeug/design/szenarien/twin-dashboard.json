@@ -1,0 +1,32 @@
+{
+  "beschreibung": "Teilaufgabe 5: Dashboard-Rahmen über der Szene. Übersicht, Technik-Modus (Geschoss der Zentrale), OG1 über die Geschosskarte, Profilmenü, Gebäudewahl, reduzierte Darstellung, fps.",
+  "fenster": [[1440, 900], [1920, 1080], [1280, 720]],
+  "schritte": [
+    { "klick": "Beispielgebaeude" },
+    { "knopf": "Digital Twin" },
+    { "warte": 7000 },
+    { "bild": "uebersicht" },
+    { "knopf": "Technik", "exakt": true },
+    { "warte": 3000 },
+    { "bild": "technik" },
+    { "knopf": "OG1 2 Einheiten" },
+    { "warte": 3000 },
+    { "bild": "og1" },
+    { "knopf": "Profil und Einstellungen" },
+    { "warte": 500 },
+    { "bild": "profilmenue" },
+    { "taste": "Escape" },
+    { "knopf": "Gebäude wählen" },
+    { "warte": 500 },
+    { "bild": "gebaeudewahl" },
+    { "taste": "Escape" },
+    { "taste": "Escape" },
+    { "warte": 2500 },
+    { "knopf": "Profil und Einstellungen" },
+    { "klick": "Reduzierte Darstellung" },
+    { "taste": "Escape" },
+    { "warte": 2500 },
+    { "bild": "reduziert" },
+    { "fps": 3000 }
+  ]
+}
