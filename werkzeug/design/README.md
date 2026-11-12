@@ -35,7 +35,7 @@ Die HTML-Datei bindet nur lokale Assets ein; JavaScript-Module vorher als klassi
 | `{ "warte": ms }` | warten |
 | `{ "bild": "name" }` | Screenshot |
 | `{ "rad": [x, y, delta] }` | Mausrad (negativ = hineinzoomen) |
-| `{ "ziehen": [x1, y1, x2, y2] }` | Ziehen (Kamera drehen) |
+| `{ "ziehen": [x1, y1, x2, y2], "maustaste": "middle" }` | Ziehen (links = drehen, `middle`/`right` = verschieben) |
 | `{ "maus": [x, y] }` / `{ "punkt": [x, y] }` | Hover / Klick an Position |
 | `{ "taste": "Escape" }` | Taste |
 | `{ "bewegung": "reduziert" }` / `"normal"` | `prefers-reduced-motion` simulieren |

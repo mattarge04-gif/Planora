@@ -10,7 +10,7 @@ import { huelle, type Bereich, type V3 } from "../szene2/huelle";
 import type { KatalogEintrag, Welt } from "../typen";
 import { Gebaeude3 } from "./Gebaeude3";
 import { Kulisse3 } from "./Kulisse3";
-import { ortBereich, einpassen, FIT_ANTEIL, type Freiraum, type SzenenZiel } from "./kamera";
+import { ortBereich, einpassen, FIT_ANTEIL, zielKorrektur, type Freiraum, type SzenenZiel } from "./kamera";
 import { kulisse } from "./kulisse";
 import { geschossSchnitt, kameraSeiten, POLAR_GRENZEN } from "./schnitt";
 import { Technik3 } from "./Technik3";
@@ -102,6 +102,8 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
   const kameraGeaendert = () => {
     const c = controls.current;
     if (!c) return;
+    const [dx, dy, dz] = zielKorrektur(c.target, sichtbar);
+    if (dx || dy || dz) { c.target.add(new THREE.Vector3(dx, dy, dz)); c.object.position.add(new THREE.Vector3(dx, dy, dz)); }
     const richtung = c.object.position.clone().sub(c.target).toArray() as V3;
     setKameraRichtung((alt) => kameraSeiten(richtung, alt));
   };
@@ -109,7 +111,10 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
   return <>
     {!reduziert && <SoftShadows size={TOKENS.licht.schattenFilterTexel} samples={SCHATTEN.samples} />}
     <OrbitControls ref={controls} makeDefault enableDamping={!weniger} zoomToCursor={false} maxPolarAngle={POLAR_GRENZEN.max} minPolarAngle={POLAR_GRENZEN.min}
-      onChange={kameraGeaendert} enablePan={false} />
+      onChange={kameraGeaendert} enablePan screenSpacePanning
+      // Maus: links drehen, Mitte/rechts verschieben, Rad zoomen. Laptop: Shift + Ziehen verschiebt (OrbitControls-Standard).
+      mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.PAN }}
+      touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }} />
     <Kamera3 welt={welt} fokusId={fokusId} bereich={sichtbar} freiraum={freiraum} repKey={repKey}
       auswahl={auswahl} ziel={ziel} darstellung={darstellung} weniger={weniger} />
     <TastaturKamera aktiv={tastatur} freiraum={freiraum} auswahlBereich={auswahlBereich} />

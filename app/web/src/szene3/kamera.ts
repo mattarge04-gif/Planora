@@ -14,6 +14,12 @@ export function tastaturSchritt(key: string, azimut: number, polar: number, zoom
   return null;
 }
 
+/** Verschieben darf das Modell nicht aus dem Bild tragen: das Ziel bleibt innerhalb des sichtbaren Gebäudebereichs. */
+export function zielKorrektur(ziel: { x: number; y: number; z: number }, b: Bereich): V3 {
+  const klemme = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v)) - v;
+  return [klemme(ziel.x, b.xMin, b.xMax), klemme(ziel.y, b.yMin, b.yMax), klemme(ziel.z, b.zMin, b.zMax)];
+}
+
 /** Blickrichtung von Ziel zu Kamera: isometrisch 3/4 (45 Grad gedreht, ca. 35 Grad Neigung). */
 export const ISO_RICHTUNG: V3 = (() => { const l = Math.sqrt(3); return [1 / l, 1 / l, 1 / l] as V3; })();
 export interface Freiraum { links: number; rechts: number; oben: number; unten: number }

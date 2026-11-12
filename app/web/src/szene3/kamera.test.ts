@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { einpassen, ISO_RICHTUNG } from "./kamera";
+import { einpassen, ISO_RICHTUNG, zielKorrektur } from "./kamera";
 import type { Bereich } from "../szene2/huelle";
 import { OrthographicCamera, Vector3 } from "three";
 
@@ -47,5 +47,16 @@ describe("einpassen", () => {
       expect(py).toBeGreaterThan(100); expect(py).toBeLessThan(700);
     }
     expect(e.position[1] - e.ziel[1]).toBeGreaterThan(e.position[0] - e.ziel[0]);
+  });
+});
+
+describe("zielKorrektur", () => {
+  const b: Bereich = { xMin: 0, xMax: 30, yMin: 0, yMax: 6, zMin: 0, zMax: 10 };
+  it("lässt ein Ziel innerhalb des Bereichs unverändert", () => {
+    expect(zielKorrektur({ x: 2, y: 3, z: 9 }, b)).toEqual([0, 0, 0]);
+  });
+  it("holt ein zu weit verschobenes Ziel an den Rand zurück", () => {
+    const [dx, , dz] = zielKorrektur({ x: 100, y: 3, z: -40 }, b);
+    expect(100 + dx).toBe(30); expect(-40 + dz).toBe(0);
   });
 });

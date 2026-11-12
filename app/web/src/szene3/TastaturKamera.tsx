@@ -1,7 +1,7 @@
 import { useThree } from "@react-three/fiber";
 import { useLayoutEffect } from "react";
 import type { OrbitControls } from "three-stdlib";
-import type { OrthographicCamera } from "three";
+import { Vector3, type OrthographicCamera } from "three";
 import type { Bereich } from "../szene2/huelle";
 import { TOKENS } from "../design/tokens";
 import { tastaturSchritt, zoomImFreiraum, type Freiraum } from "./kamera";
@@ -33,13 +33,22 @@ export function TastaturKamera({ aktiv, freiraum, auswahlBereich }: { aktiv: boo
     if (!aktiv || !controls) return;
     const el = gl.domElement, vorher = { tab: el.getAttribute("tabindex"), label: el.getAttribute("aria-label"), keys: el.getAttribute("aria-keyshortcuts"), outline: el.style.outline, offset: el.style.outlineOffset };
     el.tabIndex = 0;
-    el.setAttribute("aria-label", "Gebäudemodell: Pfeiltasten drehen, Plus und Minus vergrössern und verkleinern");
+    el.setAttribute("aria-label", "Gebäudemodell: Pfeiltasten drehen, Shift und Pfeiltasten verschieben, Plus und Minus vergrössern und verkleinern");
     el.setAttribute("aria-keyshortcuts", "ArrowLeft ArrowRight ArrowUp ArrowDown + -");
     const fokus = () => { if (el.matches(":focus-visible")) { el.style.outline = `2px solid ${TOKENS.farbe.eisAkzent}`; el.style.outlineOffset = "-2px"; } };
     const verlassen = () => { el.style.outline = vorher.outline; el.style.outlineOffset = vorher.offset; };
     const zeiger = () => el.focus({ preventScroll: true });
     const taste = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.altKey || e.metaKey) return;
+      if (e.shiftKey && e.key.startsWith("Arrow")) {
+        const cam = camera as OrthographicCamera, schritt = (cam.right - cam.left) / cam.zoom * 0.08;
+        const quer = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0, hoch = e.key === "ArrowUp" ? 1 : e.key === "ArrowDown" ? -1 : 0;
+        const d = new Vector3(quer * schritt, hoch * schritt, 0).applyQuaternion(cam.quaternion);
+        e.preventDefault(); e.stopPropagation(); controls.dispatchEvent({ type: "start", target: controls });
+        controls.target.add(d); cam.position.add(d); controls.update(); fokus();
+        controls.dispatchEvent({ type: "end", target: controls });
+        return;
+      }
       const schritt = tastaturSchritt(e.key, controls.getAzimuthalAngle(), controls.getPolarAngle(), camera.zoom);
       if (!schritt) return;
       e.preventDefault(); e.stopPropagation(); controls.dispatchEvent({ type: "start", target: controls });

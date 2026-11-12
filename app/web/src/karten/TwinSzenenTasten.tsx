@@ -59,6 +59,7 @@ export function TwinSzenenTasten({ name, geschosse, fokusId, onFokus, onTechnik,
         <span className="ui-sr">3D-Modell {name}. Tastenkürzel: </span>
         <span><kbd>←</kbd><kbd>→</kbd> Drehen</span>
         <span><kbd>↑</kbd><kbd>↓</kbd> Neigen</span>
+        <span><kbd>Shift</kbd>+<kbd>Pfeile</kbd> Verschieben</span>
         <span><kbd>+</kbd><kbd>−</kbd> Zoom</span>
         <span><kbd>Bild ↑</kbd><kbd>Bild ↓</kbd> Geschoss</span>
         <span><kbd>T</kbd> Technik</span>

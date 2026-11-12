@@ -85,8 +85,8 @@ try {
       else if (s.rad) { await page.mouse.move(s.rad[0] * breite, s.rad[1] * hoehe); await page.mouse.wheel(0, s.rad[2]); }
       else if (s.ziehen) {
         const [x1, y1, x2, y2] = s.ziehen;
-        await page.mouse.move(x1 * breite, y1 * hoehe); await page.mouse.down();
-        await page.mouse.move(x2 * breite, y2 * hoehe, { steps: 20 }); await page.mouse.up();
+        await page.mouse.move(x1 * breite, y1 * hoehe); await page.mouse.down({ button: s.maustaste ?? "left" });
+        await page.mouse.move(x2 * breite, y2 * hoehe, { steps: 20 }); await page.mouse.up({ button: s.maustaste ?? "left" });
       } else if (s.bild) {
         const datei = join(aus, `${s.bild}-${breite}x${hoehe}.png`);
         await page.screenshot({ path: datei });
