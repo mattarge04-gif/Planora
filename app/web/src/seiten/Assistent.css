@@ -181,3 +181,61 @@
 @media (prefers-reduced-motion: reduce) {
   .as *, .as *::before, .as *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* Schritt 1: Formkacheln, Geschosse */
+.as-reihe { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: end; }
+.as-reihe-unten { grid-template-columns: minmax(0, 160px) auto; justify-content: start; }
+.as-formen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.as-erzeuger { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.as-kachel { position: relative; display: grid; cursor: pointer; }
+.as-kachel input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.as-kachel-inhalt {
+  display: grid; justify-items: center; gap: 2px; padding: 12px 8px 10px; border-radius: var(--tw-radius-kachel); text-align: center;
+  background: #fff; box-shadow: inset 0 0 0 1px var(--tw-grau-1);
+  transition: box-shadow var(--tw-hover-ms) var(--tw-kurve), background-color var(--tw-hover-ms) var(--tw-kurve), transform 120ms var(--tw-kurve);
+}
+.as-kachel-zeile .as-kachel-inhalt { justify-items: start; text-align: left; padding: 10px 12px; }
+.as-kachel:hover .as-kachel-inhalt { box-shadow: inset 0 0 0 1px var(--tw-grau-2), var(--tw-schatten); }
+.as-kachel input:checked + .as-kachel-inhalt { background: var(--tw-eis); box-shadow: inset 0 0 0 1.5px var(--tw-eis-akzent); }
+.as-kachel input:focus-visible + .as-kachel-inhalt { outline: 2px solid var(--tw-eis-akzent); outline-offset: 2px; }
+.as-kachel input:disabled + .as-kachel-inhalt { cursor: default; background: var(--tw-flaeche-2); box-shadow: inset 0 0 0 1px var(--tw-grau-1); }
+.as-kachel input:disabled:checked + .as-kachel-inhalt { box-shadow: inset 0 0 0 1.5px var(--tw-grau-2); }
+.as-kachel-name { font-size: 13px; font-weight: 500; }
+.as-kachel-text { font-size: 12px; color: var(--tw-sekundaer); line-height: 1.35; }
+.as-kachel input:checked + .as-kachel-inhalt .as-kachel-text { color: var(--tw-sekundaer-eis); }
+.as-grundriss { width: 56px; height: 44px; margin-bottom: 4px; }
+.as-grundriss-flaeche { fill: var(--tw-grau-1); transition: fill var(--tw-hover-ms) var(--tw-kurve); }
+.as-grundriss-schatten { fill: rgb(31 38 48 / 0.08); }
+.as-kachel input:checked + .as-kachel-inhalt .as-grundriss-flaeche { fill: var(--tw-eis-akzent); }
+.as-stapel { display: flex; flex-wrap: wrap; gap: 4px; }
+.as-stapel-platte {
+  min-width: 44px; height: 24px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: 6px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+  background: #fff; box-shadow: inset 0 0 0 1px var(--tw-grau-1), 0 1px 2px rgb(31 38 48 / 0.05);
+}
+.as-stapel-eg { background: var(--tw-eis); box-shadow: inset 0 0 0 1px rgb(95 136 176 / 0.35); }
+.as-stapel-ug { background: var(--tw-flaeche-2); color: var(--tw-sekundaer-kachel); }
+
+/* Listen und Zeilen */
+.as-liste-roh { list-style: none; margin: 0; padding: 0; }
+.as-zeile { display: grid; gap: 6px; align-items: center; }
+.as-zeile-einheit { grid-template-columns: minmax(0, 1fr) minmax(0, 168px) 28px; }
+.as-zeile-abgabe { grid-template-columns: auto minmax(0, 1fr) minmax(0, 0.8fr) 72px auto 28px; }
+.as .as-textknopf-rand { box-shadow: inset 0 0 0 1px var(--tw-grau-1); background: #fff; color: var(--tw-text); }
+.as .as-textknopf-rand:hover:not(:disabled) { background: var(--tw-eis); box-shadow: inset 0 0 0 1px rgb(95 136 176 / 0.35); color: var(--tw-text); }
+.as-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tw-sekundaer); white-space: nowrap; cursor: pointer; }
+.as-check input { width: 14px; height: 14px; margin: 0; accent-color: var(--tw-text); }
+
+/* Schritt 3: Standard und Ausnahmen */
+.as-raster-standard { display: grid; gap: 8px; }
+.as-standard-zeile { display: grid; grid-template-columns: 140px auto; align-items: center; gap: 12px; }
+.as-ausnahmen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.as-ausnahme { display: grid; gap: 4px; font-size: 12px; color: var(--tw-sekundaer); }
+.as-ausnahme select { height: 28px; font-size: 12px; }
+.as-feld-schmal { max-width: 160px; }
+
+@media (max-width: 1360px) {
+  .as-formen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .as-zeile-abgabe { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) 28px; }
+  .as-zeile-abgabe input[type="number"] { grid-column: 2; }
+  .as-zeile-abgabe .as-check { grid-column: 3; }
+}
