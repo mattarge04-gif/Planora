@@ -96,3 +96,13 @@ describe("schlange", () => {
     expect(schlange({ x: 0, z: 0, breite: 4, tiefe: 3 }, 0, -1)).toEqual([]);
   });
 });
+
+describe("Katalog v2 (Pumpe als Zubehoer)", () => {
+  it("erkennt Erzeuger und Speicher ueber die ID, auch ohne Bereich zentrale", () => {
+    const w: Welt = { ...WELT, symbole: WELT.symbole.map((s) => ({ ...s })) };
+    const ohneBereich = KATALOG.map((k) => ({ ...k, bereich: k.bereich === "zentrale" ? "zubehoer" as const : k.bereich }));
+    const haupt = leitungen(w, ohneBereich).filter((l) => l.art === "haupt");
+    expect(haupt.length).toBeGreaterThan(0);
+    expect(haupt.length).toBe(leitungen(w, KATALOG).filter((l) => l.art === "haupt").length);
+  });
+});
