@@ -58,6 +58,15 @@ export interface Beschreibung {
   gruppen?: GruppeEingabe[];
   hinweise?: Hinweis[];
 }
+/** Vollstaendiger Spiegel der Backend-Beschreibung (Ein-/Ausgabeformat des Assistenten). */
+export interface BeschreibungEingabe {
+  gebaeudeId: string; stand: number;
+  geschosse?: { id: string; code: string }[]; // nur lesend
+  heizungStandard: Heizung;
+  einheiten: EinheitEingabe[]; bauteile: BauteilEingabe[];
+  gruppen?: GruppeEingabe[];
+  hinweise?: Hinweis[]; // nur lesend
+}
 export interface KatalogEintrag { id: string; name: string; bereich: "zentrale" | "verteilung" | "einheit" | "zubehoer"; masse?: [number, number, number] }
 export interface Katalog { version: number; eintraege: KatalogEintrag[] }
 export interface GebaeudeEintrag { id: string; name: string; liegenschaftId: string; liegenschaftName: string; geschosse: number }

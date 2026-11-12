@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { Ajv } from "ajv";
 import { BESCHREIBUNG_SCHEMA, HUELLE_SCHEMA, ENTWURF_SCHEMA } from "../src/welt/schema.js";
 
-// Fastify-Standard (ajv 8, strict) wie in server.ts: kein removeAdditional, kein coerceTypes
-const ajv = new Ajv({ removeAdditional: false, coerceTypes: false }) // Ajv-Standard strict, wie Fastify in server.ts;
+// Optionen gespiegelt aus app/src/server.ts (ajv.customOptions)
+const ajv = new Ajv({ removeAdditional: false, coerceTypes: false }); // gleiche customOptions wie server.ts
 const beschreibung = ajv.compile(BESCHREIBUNG_SCHEMA);
 const huelle = ajv.compile(HUELLE_SCHEMA);
 const entwurf = ajv.compile(ENTWURF_SCHEMA);
@@ -30,6 +30,17 @@ describe("BESCHREIBUNG_SCHEMA Gruppen und Ort", () => {
     expect(beschreibung({ ...basis(), bauteile: [bauteil({ ort: { vorBauteil: { bauteilIndex: 0 } } })] })).toBe(true);
     expect(beschreibung({ ...basis(), bauteile: [bauteil({ ort: null })] })).toBe(true);
     expect(beschreibung({ ...basis(), bauteile: [bauteil({ ort: { gruppe: { gruppeIndex: 0 }, vorBauteil: { bauteilIndex: 0 } } })] })).toBe(false);
+  });
+});
+
+describe("Verweise streng", () => {
+  it("Verweis mit ID und Index ungueltig", () => {
+    const g = (v: object) => ({ ...basis(), gruppen: [{ verteiler: v, nummer: 1, art: "beimisch", bezeichnung: "A", verbraucher: [] }] });
+    expect(beschreibung(g({ bauteilId: "00000000-0000-4000-8000-000000000001", bauteilIndex: 0 }))).toBe(false);
+    expect(beschreibung(g({ bauteilIndex: 0 }))).toBe(true);
+  });
+  it("leerer Ort ungueltig", () => {
+    expect(beschreibung({ ...basis(), bauteile: [bauteil({ ort: {} })] })).toBe(false);
   });
 });
 
