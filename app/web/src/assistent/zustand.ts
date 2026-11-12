@@ -144,12 +144,17 @@ export function naechsteNummer(einheiten: readonly ZEinheit[], basis: string): n
   return einheiten.reduce((m, e) => { const r = re.exec(e.bezeichnung); return r ? Math.max(m, Number(r[1])) : m; }, 0) + 1;
 }
 
+/** Ab Schritt 2 braucht es ein angelegtes Gebäude (Geschoss-IDs für Einheiten). */
+export const schrittErreichbar = (z: AssistentZustand, nr: SchrittNr) => nr === 1 || z.gebaeude.id !== null;
+
 // --- Reducer ---
 export type Aktion =
   | { typ: "laden"; zustand: AssistentZustand }
   | { typ: "schritt"; nr: SchrittNr } | { typ: "weiter" } | { typ: "zurueck" }
   | { typ: "huelleBearbeitbar"; wert: boolean }
-  | { typ: "gebaeude"; name?: string; grundform?: Grundform }
+  | { typ: "gebaeude"; name?: string; grundform?: Grundform; liegenschaftId?: string }
+  /** Kopfangaben aus Gebäudeliste/Welt (auch im Lesemodus). */
+  | { typ: "kopf"; name?: string; grundform?: Grundform; liegenschaftId?: string }
   | { typ: "geschosse"; ug: number; og: number }
   | { typ: "gebaeudeAngelegt"; id: string; stand: number; geschosse: { id: string; code: string }[] }
   | { typ: "einheitNeu"; geschoss: string; art: string; anzahl?: number; bezeichnung?: string }
@@ -291,13 +296,16 @@ function zentraleVerschieben(z: AssistentZustand, raum: string): AssistentZustan
 export function reduziere(z: AssistentZustand, a: Aktion): AssistentZustand {
   switch (a.typ) {
     case "laden": return a.zustand;
-    case "schritt": return { ...z, schritt: a.nr };
-    case "weiter": return z.schritt < 8 ? { ...z, schritt: (z.schritt + 1) as SchrittNr } : z;
+    case "schritt": return schrittErreichbar(z, a.nr) ? { ...z, schritt: a.nr } : z;
+    case "weiter": return z.schritt < 8 && schrittErreichbar(z, (z.schritt + 1) as SchrittNr) ? { ...z, schritt: (z.schritt + 1) as SchrittNr } : z;
     case "zurueck": return z.schritt > 1 ? { ...z, schritt: (z.schritt - 1) as SchrittNr } : z;
     case "huelleBearbeitbar": return { ...z, huelleBearbeitbar: a.wert };
     case "gebaeude":
       if (!z.huelleBearbeitbar) return z;
-      return { ...z, gebaeude: { ...z.gebaeude, ...(a.name !== undefined && { name: a.name }), ...(a.grundform && { grundform: a.grundform }) } };
+      return reduziere(z, { ...a, typ: "kopf" });
+    case "kopf":
+      return { ...z, gebaeude: { ...z.gebaeude, ...(a.name !== undefined && { name: a.name }), ...(a.grundform && { grundform: a.grundform }),
+        ...(a.liegenschaftId && { liegenschaftId: a.liegenschaftId }) } };
     case "geschosse": {
       if (!z.huelleBearbeitbar) return z;
       const alt = new Map(z.gebaeude.geschosse.map((g) => [g.code, g]));

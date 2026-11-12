@@ -26,7 +26,7 @@ export function loginFehlertext(status: number): string {
   return `Anmeldung fehlgeschlagen (Status ${status}).`;
 }
 
-async function anfrage<T>(methode: "GET" | "POST", pfad: string, body?: unknown): Promise<T> {
+async function anfrage<T>(methode: "GET" | "POST" | "PUT" | "DELETE", pfad: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["content-type"] = "application/json";
   if (methode !== "GET") headers["x-planora-request"] = "1";
@@ -42,3 +42,5 @@ async function anfrage<T>(methode: "GET" | "POST", pfad: string, body?: unknown)
 
 export const holeJson = <T,>(pfad: string) => anfrage<T>("GET", pfad);
 export const sendeJson = <T,>(pfad: string, body: unknown) => anfrage<T>("POST", pfad, body);
+export const ersetzeJson = <T,>(pfad: string, body: unknown) => anfrage<T>("PUT", pfad, body);
+export const loescheJson = <T = void,>(pfad: string) => anfrage<T>("DELETE", pfad);
