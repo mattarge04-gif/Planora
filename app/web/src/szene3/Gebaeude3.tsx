@@ -8,6 +8,7 @@ import { fensterAnWand, innenwaende, wandteile } from "./geometrie";
 import { Glasinstanzen, Quaderinstanzen } from "./Instanzen";
 import { rahmenFuer } from "./rahmen";
 import { geschossSchnitt, wandBleibt } from "./schnitt";
+import { GeschossGruppe, type Darstellung } from "./Bewegung";
 
 const PLATTE = 0.25;
 
@@ -25,8 +26,8 @@ function materialien() {
 }
 
 /** Datengetriebene, plastische Architektur; der Geschossschnitt verändert ausschliesslich Sichtbarkeit. */
-export function Gebaeude3({ welt, h, fokusId, kameraRichtung, schatten }: {
-  welt: Welt; h: Huelle; fokusId: string | null; kameraRichtung: V3; schatten: boolean;
+export function Gebaeude3({ welt, h, fokusId, kameraRichtung, schatten, darstellung }: {
+  welt: Welt; h: Huelle; fokusId: string | null; kameraRichtung: V3; schatten: boolean; darstellung?: Darstellung;
 }) {
   const m = useMemo(materialien, []);
   useEffect(() => () => Object.values(m).forEach((x) => x.dispose()), [m]);
@@ -55,7 +56,7 @@ export function Gebaeude3({ welt, h, fokusId, kameraRichtung, schatten }: {
     }));
   }, [h.aufbau]);
   return <group>
-    {geschosse.map((g) => <group key={g.id} name={`geschoss-${g.id}`}>
+    {geschosse.map((g) => <GeschossGruppe key={g.id} id={g.id} darstellung={darstellung}>
       {h.grundriss.map((r, i) => <RoundedBox key={i} args={[r.breite + 0.3, PLATTE, r.tiefe + 0.3]}
         radius={TOKENS.radius.platteM} smoothness={3} position={[r.x + r.breite / 2, g.yUnten - PLATTE / 2, r.z + r.tiefe / 2]}
         material={m.stirn} castShadow={schatten} receiveShadow />)}
@@ -69,8 +70,8 @@ export function Gebaeude3({ welt, h, fokusId, kameraRichtung, schatten }: {
       <Quaderinstanzen teile={g.rahmen} material={m.rahmen} schatten={schatten} />
       <Quaderinstanzen teile={g.baenke} material={m.wand} schatten={schatten} />
       <Glasinstanzen fenster={g.fenster} material={m.glas} />
-    </group>)}
-    {schnitt.dach && <group name="dach">
+    </GeschossGruppe>)}
+    {schnitt.dach && <GeschossGruppe id={schnitt.geschosse.at(-1)!.id} darstellung={darstellung}>
       {h.grundriss.map((r, i) => <RoundedBox key={i} args={[r.breite + 0.3, PLATTE, r.tiefe + 0.3]}
         radius={TOKENS.radius.platteM} smoothness={3} position={[r.x + r.breite / 2, h.bereich.yMax - PLATTE / 2, r.z + r.tiefe / 2]}
         material={m.dach} castShadow={schatten} receiveShadow />)}
@@ -85,6 +86,6 @@ export function Gebaeude3({ welt, h, fokusId, kameraRichtung, schatten }: {
           <boxGeometry args={[h.aufbau.groesse[0] + 0.15, 0.09, h.aufbau.groesse[2] + 0.15]} />
         </mesh>
       </group>}
-    </group>}
+    </GeschossGruppe>}
   </group>;
 }

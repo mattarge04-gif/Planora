@@ -3,18 +3,22 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
 import { type V3 } from "../szene2/huelle";
-import { schlange } from "../szene2/leitungen";
+import { schlange, geschossBeiY } from "../szene2/leitungen";
 import type { KatalogEintrag, Welt } from "../typen";
 import { Anlagen3 } from "./Anlagen3";
 import { durchgaenge, einheitVon, rohrnetz, type Huelse, type Rohrstueck } from "./netz";
 import { geschossSchnitt } from "./schnitt";
 import { anlagenDaten, anlageSichtbar, rohrAbschluesse, rohrSchnitt } from "./technik";
 import { bandGeometrie, huelsenGeometrie, rohrGeometrie } from "./technikGeometrie";
+import { GeschossGruppe, type Darstellung } from "./Bewegung";
+import type { Interaktion } from "./Interaktion";
+import { rohrGeschosse } from "./darstellung";
 
 const FLAECHE = new Set(["heizung.fbh_kreis", "heizung.tabs_feld"]);
 
-export function Technik3({ welt, katalog, fokusId, schatten, onModelle }: {
+export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstellung, interaktion, separiert = false }: {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; schatten: boolean; onModelle: () => void;
+  darstellung?: Darstellung; interaktion?: Interaktion; separiert?: boolean;
 }) {
   const [anschluesse, setAnschluesse] = useState<Record<string, V3>>({});
   const onModell = useCallback((pfad: string, anschluss: V3) => {
@@ -46,25 +50,36 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle }: {
         const g = schnitt.geschosse.find((x) => x.id === e.geschossId);
         if (!g || gesehen.has(e.id)) return [];
         gesehen.add(e.id);
-        return [{ punkte: schlange(e.rechteck, g.yUnten + 0.032, 1.2, 0.6), daten: { ...anlagenDaten(s), einheitId: e.id } }];
+        return [{ geschossId: g.id, punkte: schlange(e.rechteck, g.yUnten + 0.032, 1.2, 0.6), daten: { ...anlagenDaten(s), einheitId: e.id } }];
       });
     });
   }, [welt, schnitt]);
+  const sichtbar = darstellung?.sichtbar ?? schnitt.geschosse.map((g) => g.id);
+  const getrennt = separiert || !!darstellung?.bewegung || sichtbar.length !== schnitt.geschosse.length;
+  const rohre = useMemo(() => netz.rohre.flatMap((r) => rohrGeschosse(welt, r.punkte, sichtbar).map((t) => ({
+    ...t, stueck: { ...r, punkte: t.punkte, frei: t.endeGetrennt ? getrennt : r.frei }, anfangFrei: getrennt && t.anfangGetrennt,
+  }))), [netz, welt, sichtbar, getrennt]);
+  const huelsenGeschoss = (h: Huelse) => h.art === "decke"
+    ? [...welt.geschosse].sort((a, b) => Math.abs(a.yUnten - h.position[1]) - Math.abs(b.yUnten - h.position[1]))[0]?.id
+    : geschossBeiY(welt, h.position[1]);
   return <group name="technik">
-    <Anlagen3 symbole={symbole} schatten={schatten} onModell={onModell} />
-    {netz.rohre.map((r, i) => <Rohr key={i} stueck={r} schatten={schatten} />)}
-    {netz.huelsen.map((h, i) => <Durchgang key={i} huelse={h} schatten={schatten} />)}
-    {flaechen.map((f) => <Flaechenband key={f.daten.einheitId} {...f} />)}
-    {schatten && schnitt.fokus && <Technikkontakte key={`${schnitt.fokus.id}:${Object.keys(anschluesse).join(":")}`}
-      welt={welt} y={schnitt.fokus.yUnten} />}
+    {sichtbar.map((id) => <GeschossGruppe key={id} id={id} darstellung={darstellung}>
+      <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} onModell={onModell} interaktion={interaktion} />
+      {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} />)}
+      {netz.huelsen.filter((h) => huelsenGeschoss(h) === id).map((h, i) => <Durchgang key={i} huelse={h} schatten={schatten} />)}
+      {flaechen.filter((f) => f.geschossId === id).map((f) => <Flaechenband key={f.daten.einheitId} {...f} />)}
+      {schatten && !darstellung?.bewegung && schnitt.fokus?.id === id && <Technikkontakte key={`${id}:${Object.keys(anschluesse).join(":")}`}
+        welt={welt} y={schnitt.fokus.yUnten} />}
+    </GeschossGruppe>)}
   </group>;
 }
 
-function Rohr({ stueck, schatten }: { stueck: Rohrstueck; schatten: boolean }) {
+function Rohr({ stueck, schatten, anfangFrei = false }: { stueck: Rohrstueck; schatten: boolean; anfangFrei?: boolean }) {
   const geometrie = useMemo(() => rohrGeometrie(stueck), [stueck]);
   useEffect(() => () => geometrie?.dispose(), [geometrie]);
   if (!geometrie) return null;
-  const ende = stueck.frei ? rohrAbschluesse(stueck.punkte).slice(-1) : [];
+  const abschluesse = rohrAbschluesse(stueck.punkte);
+  const ende = [...(anfangFrei ? abschluesse.slice(0, 1) : []), ...(stueck.frei ? abschluesse.slice(-1) : [])];
   return <group userData={stueck.daten}>
     <mesh geometry={geometrie} userData={stueck.daten} castShadow={schatten} receiveShadow={schatten}>
       <meshStandardMaterial color={TOKENS.farbe.kooHeizung} {...TOKENS.material.leitung} />

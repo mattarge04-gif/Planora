@@ -1,9 +1,20 @@
 import type { Bereich, V3 } from "../szene2/huelle";
+import type { Camera, Vector3 } from "three";
 
 /** Blickrichtung von Ziel zu Kamera: isometrisch 3/4 (45 Grad gedreht, ca. 35 Grad Neigung). */
 export const ISO_RICHTUNG: V3 = (() => { const l = Math.sqrt(3); return [1 / l, 1 / l, 1 / l] as V3; })();
 export interface Freiraum { links: number; rechts: number; oben: number; unten: number }
 export interface Einpassung { ziel: V3; position: V3; zoom: number }
+export const FIT_ANTEIL = 0.7;
+export interface BildschirmPunkt { x: number; y: number }
+export function bildpunkt(camera: Camera, breite: number, hoehe: number, punkt: Vector3): BildschirmPunkt | null {
+  const p = punkt.clone().project(camera);
+  if (!Number.isFinite(p.x + p.y + p.z) || p.z < -1 || p.z > 1 || Math.abs(p.x) > 1 || Math.abs(p.y) > 1) return null;
+  return { x: Math.round((p.x + 1) * breite * 5) / 10, y: Math.round((1 - p.y) * hoehe * 5) / 10 };
+}
+export function punktImFreiraum(p: { x: number; y: number } | null, breite: number, hoehe: number, frei: Freiraum, rand = 12): boolean {
+  return !!p && p.x >= frei.links + rand && p.x <= breite - frei.rechts - rand && p.y >= frei.oben + rand && p.y <= hoehe - frei.unten - rand;
+}
 
 const kreuz = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const norm = (a: V3): V3 => { const l = Math.hypot(...a); return [a[0] / l, a[1] / l, a[2] / l]; };
