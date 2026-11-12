@@ -4,7 +4,7 @@
     {
       "x": 0,
       "z": 0,
-      "breite": 30,
+      "breite": 15,
       "tiefe": 15
     }
   ],
@@ -31,8 +31,8 @@
       "rechteck": {
         "x": 0,
         "z": 0,
-        "breite": 12,
-        "tiefe": 15
+        "breite": 9,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     },
@@ -42,10 +42,10 @@
       "bezeichnung": "Restaurant",
       "art": "gastro",
       "rechteck": {
-        "x": 12,
+        "x": 9,
         "z": 0,
-        "breite": 15,
-        "tiefe": 15
+        "breite": 6,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     },
@@ -55,10 +55,10 @@
       "bezeichnung": "Technik",
       "art": "technik",
       "rechteck": {
-        "x": 27,
-        "z": 0,
-        "breite": 3,
-        "tiefe": 15
+        "x": 0,
+        "z": 9,
+        "breite": 15,
+        "tiefe": 6
       },
       "quelle": "schematisch"
     },
@@ -71,7 +71,7 @@
         "x": 0,
         "z": 0,
         "breite": 15,
-        "tiefe": 15
+        "tiefe": 6
       },
       "quelle": "schematisch"
     },
@@ -81,10 +81,10 @@
       "bezeichnung": "Buero D",
       "art": "buero",
       "rechteck": {
-        "x": 15,
-        "z": 0,
+        "x": 0,
+        "z": 9,
         "breite": 15,
-        "tiefe": 15
+        "tiefe": 6
       },
       "quelle": "schematisch"
     }
@@ -102,9 +102,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 27.5,
+        "x": 4.1,
         "y": 0,
-        "z": 3.75
+        "z": 14.2
       },
       "versorgt": []
     },
@@ -120,9 +120,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 28.5,
+        "x": 2.65,
         "y": 0,
-        "z": 3.75
+        "z": 14.35
       },
       "versorgt": []
     },
@@ -138,9 +138,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 29.5,
+        "x": 1.1,
         "y": 0,
-        "z": 3.75
+        "z": 14.05
       },
       "versorgt": [
         "00000000-0000-4000-8000-000000000100",
@@ -162,9 +162,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 27.5,
+        "x": 1.1,
         "y": 0,
-        "z": 11.25
+        "z": 14.05
       },
       "versorgt": [],
       "ort": {
@@ -184,9 +184,9 @@
       "mengeUnbekannt": false,
       "status": "vorgeschlagen",
       "position": {
-        "x": 28.5,
+        "x": 1.1,
         "y": 0,
-        "z": 11.25
+        "z": 14.05
       },
       "versorgt": [],
       "ort": {
@@ -205,9 +205,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 29.5,
+        "x": 1.1,
         "y": 0,
-        "z": 11.25
+        "z": 14.05
       },
       "versorgt": [],
       "ort": {
@@ -226,9 +226,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 3,
+        "x": 2.25,
         "y": 0,
-        "z": 7.5
+        "z": 0.16
       },
       "versorgt": []
     },
@@ -244,9 +244,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 9,
+        "x": 6.75,
         "y": 0,
-        "z": 7.5
+        "z": 0.16
       },
       "versorgt": []
     },
@@ -262,9 +262,9 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 19.5,
+        "x": 12,
         "y": 0,
-        "z": 7.5
+        "z": 3
       },
       "versorgt": []
     },
@@ -282,7 +282,7 @@
       "position": {
         "x": 7.5,
         "y": 3.2,
-        "z": 7.5
+        "z": 3
       },
       "versorgt": []
     },
@@ -298,14 +298,27 @@
       "mengeUnbekannt": true,
       "status": "bestaetigt",
       "position": {
-        "x": 22.5,
+        "x": 7.5,
         "y": 3.2,
-        "z": 7.5
+        "z": 12
       },
       "versorgt": []
     }
   ],
-  "hinweise": [],
+  "hinweise": [
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000102"
+    },
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000103"
+    },
+    {
+      "code": "seitenverhaeltnis",
+      "bezug": "00000000-0000-4000-8000-000000000104"
+    }
+  ],
   "gruppen": [
     {
       "id": "00000000-0000-4000-8000-000000000300",
@@ -338,8 +351,8 @@
     }
   ],
   "steigzone": {
-    "x": 28.5,
-    "z": 7.5
+    "x": 0.3,
+    "z": 9.3
   },
-  "hash": "95932ebb3f9f6e3113649930cd3bad4b77d6d9826e726a8461eb25b8aa3638ec"
+  "hash": "85cb95c910b415f66faa4bfed267cf4781ae23982e39fa4999eefdcf66e80f32"
 }

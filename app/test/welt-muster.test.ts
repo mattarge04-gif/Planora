@@ -9,6 +9,7 @@ import { REGELWERK_V2 } from "../src/welt/regelwerk.v2.js";
 import { KATALOG_V2 } from "../src/welt/katalog.v2.js";
 import { pruefeHuelle, ladeBeschreibung, ladeHuelle } from "../src/welt/speicher.js";
 import { musterAnlegen } from "../src/welt/beispiel.js";
+import type { Rechteck } from "../src/welt/typen.js";
 
 const leer = (geschossIds: string[]): Bestand => ({
   geschossIds: new Set(geschossIds), einheitIds: new Set(), bauteilIds: new Set(), einheitenManuell: new Set(), bauteileManuell: new Set(), gruppeIds: new Set(),
@@ -68,6 +69,52 @@ describe("Mustergebaeude Stufe 1", () => {
     expect(m6.geschosse.map((g) => g.code)).toEqual(["UG1", "EG", "OG1"]);
   });
 
+  describe.each(ALLE_MUSTER.map((m) => [m.schluessel] as const))("Raumkomposition %s", (schluessel) => {
+    const w = weltVon(schluessel);
+    const { beschreibung } = musterGeneratorEingabe(ALLE_MUSTER.find((m) => m.schluessel === schluessel)!);
+    const rechteck = (id: string) => w.einheiten.find((e) => e.id === id)!.rechteck;
+    const schnitt = (a: Rechteck, b: Rechteck) =>
+      Math.max(0, Math.min(a.x + a.breite, b.x + b.breite) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.z + a.tiefe, b.z + b.tiefe) - Math.max(a.z, b.z));
+    it("Einheiten eines Geschosses ueberlappen nicht und liegen im Grundriss", () => {
+      for (const g of w.geschosse) {
+        const es = w.einheiten.filter((e) => e.geschossId === g.id).map((e) => e.rechteck);
+        for (let i = 0; i < es.length; i++) for (let j = i + 1; j < es.length; j++) expect(schnitt(es[i], es[j])).toBeLessThan(1e-3);
+        for (const r of es) expect(w.grundriss.reduce((s, x) => s + schnitt(x, r), 0)).toBeCloseTo(r.breite * r.tiefe, 2);
+      }
+    });
+    it("Symbole liegen in ihrer Einheit; Gruppenzubehoer am Verteiler", () => {
+      for (const s of w.symbole) {
+        const t = beschreibung.bauteile.find((x) => x.id === s.bauteilIds[0])!;
+        const r = rechteck(t.standort.einheitId!);
+        expect(s.position.x).toBeGreaterThanOrEqual(r.x);
+        expect(s.position.x).toBeLessThanOrEqual(r.x + r.breite);
+        expect(s.position.z).toBeGreaterThanOrEqual(r.z);
+        expect(s.position.z).toBeLessThanOrEqual(r.z + r.tiefe);
+      }
+      for (const g of w.gruppen!) for (const z of g.zubehoer)
+        expect(w.symbole.find((s) => s.schluessel === z)!.position).toEqual(w.symbole.find((s) => s.schluessel === g.verteiler)!.position);
+    });
+    it("Steigzone liegt im Grundriss", () => {
+      expect(w.steigzone).not.toBeNull();
+      expect(w.grundriss.some((r) => w.steigzone!.x >= r.x && w.steigzone!.x <= r.x + r.breite && w.steigzone!.z >= r.z && w.steigzone!.z <= r.z + r.tiefe)).toBe(true);
+    });
+  });
+
+  it("Steigzone: Mitte des Kerns (m6), Ecke der Zentrale zur Gebaeudemitte (m2)", () => {
+    const m6 = weltVon("m6-l-u-viele-gruppen");
+    const kern = m6.einheiten.find((e) => e.art === "kern")!.rechteck;
+    expect(m6.steigzone).toEqual({ x: Math.round((kern.x + kern.breite / 2) * 1000) / 1000, z: Math.round((kern.z + kern.tiefe / 2) * 1000) / 1000 });
+    const m2 = weltVon("m2-beispiel");
+    const t = m2.einheiten.find((e) => e.bezeichnung === "Technik")!.rechteck;
+    const ecken = [[t.x, t.z], [t.x + t.breite, t.z], [t.x, t.z + t.tiefe], [t.x + t.breite, t.z + t.tiefe]];
+    const naechste = Math.min(...ecken.map(([x, z]) => Math.hypot(x - m2.steigzone!.x, z - m2.steigzone!.z)));
+    expect(naechste).toBeCloseTo(0.3 * Math.SQRT2, 6);
+    const mitte = { x: m2.grundriss[0].breite / 2, z: m2.grundriss[0].tiefe / 2 };
+    const abstand = (x: number, z: number) => Math.hypot(x - mitte.x, z - mitte.z);
+    const ecke = ecken.find(([x, z]) => Math.hypot(x - m2.steigzone!.x, z - m2.steigzone!.z) < 0.5)!;
+    expect(abstand(ecke[0], ecke[1])).toBe(Math.min(...ecken.map(([x, z]) => abstand(x, z))));
+  });
+
   it("Geschoss-IDs sind deterministisch", () => {
     expect(musterGeschossIds(MUSTER[5])).toEqual(["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002", "00000000-0000-4000-8000-000000000003"]);
   });
@@ -85,7 +132,11 @@ describe("musterAnlegen (Entwicklungsdaten)", () => {
       for (const id of r.gebaeudeIds) {
         const h = (await ladeHuelle(c, id))!, b = (await ladeBeschreibung(c, id))!;
         expect(h.regelwerkVersion).toBe(2);
-        expect(weltErzeugen(h, b, REGELWERK_V2).gruppen!.length).toBeGreaterThan(0);
+        const w = weltErzeugen(h, b, REGELWERK_V2);
+        expect(w.gruppen!.length).toBeGreaterThan(0);
+        // abgeleitete Masse (Spec 4.5): Aussenmass des Grundrisses, nach dem Schreiben gespeichert
+        expect(h.breiteM).toBe(Math.max(...w.grundriss.map((r) => r.x + r.breite)));
+        expect(h.tiefeM).toBe(Math.max(...w.grundriss.map((r) => r.z + r.tiefe)));
       }
       const name = (await c.query("select name from liegenschaft where id=$1", [r.liegenschaftId])).rows[0].name;
       expect(name).toBe("Muster Stufe 1");

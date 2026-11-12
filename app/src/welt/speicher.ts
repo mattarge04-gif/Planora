@@ -1,6 +1,8 @@
 import type pg from "pg";
 import { geschossRang, type Katalog, type Regelwerk } from "./regelwerk.js";
 import { REGELWERK_V2 } from "./regelwerk.v2.js";
+import { weltErzeugen } from "./generator.js";
+import { abgeleiteteMasse } from "./generator.v2.js";
 import { pruefeBeschreibung, type Bestand } from "./pruefung.js";
 import { verteilerHinweise, wirksameHeizung } from "./heizung.js";
 import { HEIZ_ARTEN, type BauteilEingabe, type Beschreibung, type EinheitEingabe, type Fehler, type GruppeEingabe, type HeizArt, type Heizung, type Huelle, type HuelleGespeichert } from "./typen.js";
@@ -249,5 +251,17 @@ export async function schreibeBeschreibung(c: pg.ClientBase, gebaeudeId: string,
     [gebaeudeId, einheitIds])).rowCount ?? 0;
 
   await c.query("update gebaeude set stand=stand+1 where id=$1", [gebaeudeId]);
+  if (rw.version === 2) await speichereAbgeleiteteMasse(c, gebaeudeId, rw);
   return z;
+}
+
+/**
+ * Regelwerk v2: Breite/Tiefe sind Ergebnis des Generators (Spec 4.5) und werden nach dem Schreiben nachgefuehrt
+ * (Gebaeudeliste, Huelle lesen). Ausserhalb des zulaessigen Bereichs (5–200 m) bleibt der Wert leer.
+ */
+async function speichereAbgeleiteteMasse(c: pg.ClientBase, gebaeudeId: string, rw: Regelwerk): Promise<void> {
+  const h = (await ladeHuelle(c, gebaeudeId))!, b = (await ladeBeschreibung(c, gebaeudeId))!;
+  const { breiteM, tiefeM } = abgeleiteteMasse(weltErzeugen(h, b, rw));
+  const zulaessig = (v: number) => (v >= 5 && v <= 200 ? v : null);
+  await c.query("update gebaeude set breite_m=$2, tiefe_m=$3 where id=$1", [gebaeudeId, zulaessig(breiteM), zulaessig(tiefeM)]);
 }
