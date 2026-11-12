@@ -1,0 +1,18 @@
+.twin { position: fixed; inset: 0; overflow: hidden; background: var(--twin-grund); color: var(--twin-text); font: 13px var(--twin-schrift); }
+.twin > .szene { position: absolute; inset: 0; }
+.twin-kopf { position: absolute; top: 24px; left: 24px; right: 24px; display: flex; align-items: center; gap: 24px; pointer-events: none; }
+.twin-kopf > * { pointer-events: auto; }
+.twin-kopf h1 { margin: 2px 0 0; font-size: 22px; font-weight: 600; line-height: 1.3; }
+.twin-kopf p { margin: 0; color: var(--twin-sekundaer); font-size: 12px; }
+.twin button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; border: 0; color: var(--twin-text); }
+.twin-zurueck, .twin-geschosse { background: rgba(255,255,255,.85); backdrop-filter: blur(var(--twin-blur)); border-radius: var(--twin-radius); box-shadow: var(--twin-schatten); }
+.twin-reduziert { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--twin-sekundaer); font-size: 12px; }
+.twin-reduziert input { width: 16px; height: 16px; accent-color: var(--twin-fokus); }
+.twin-geschosse { position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; max-width: calc(100% - 32px); overflow-x: auto; padding: 6px; }
+.twin-geschosse > svg { flex: none; margin: 0 8px; color: var(--twin-sekundaer); }
+.twin-geschosse button { background: transparent; border-radius: 8px; padding: 8px 16px; white-space: nowrap; }
+.twin-geschosse button[aria-pressed="true"] { background: var(--twin-auswahl); font-weight: 600; }
+.twin button:focus-visible, .twin input:focus-visible { outline: 2px solid var(--twin-fokus); outline-offset: 3px; }
+.twin-hilfe { position: absolute; bottom: 16px; left: 16px; right: 16px; margin: 0; text-align: center; color: var(--twin-sekundaer); font-size: 12px; pointer-events: none; }
+.twin-meldung { position: absolute; top: 120px; left: 24px; right: 24px; text-align: center; }
+@media (max-width: 700px) { .twin-kopf { gap: 12px; flex-wrap: wrap; } .twin-kopf h1 { font-size: 18px; } .twin-reduziert { margin-left: 0; } }

@@ -1,0 +1,189 @@
+{
+  "nah-1280x720.png": {
+    "V_mean": 230.04,
+    "V_p95": 241.0,
+    "S_mean": 3.97,
+    "white_Vgt230_Slt25_pct": 84.09,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "nah-1440x900.png": {
+    "V_mean": 228.24,
+    "V_p95": 241.0,
+    "S_mean": 4.13,
+    "white_Vgt230_Slt25_pct": 80.16,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "nah-1920x1080.png": {
+    "V_mean": 228.34,
+    "V_p95": 241.0,
+    "S_mean": 4.07,
+    "white_Vgt230_Slt25_pct": 80.46,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "reduziert-1440x900.png": {
+    "V_mean": 235.52,
+    "V_p95": 248.0,
+    "S_mean": 4.09,
+    "white_Vgt230_Slt25_pct": 84.13,
+    "background_RGB_at90_90": [
+      243,
+      244,
+      246
+    ]
+  },
+  "reduziert-1920x1080.png": {
+    "V_mean": 235.77,
+    "V_p95": 248.0,
+    "S_mean": 4.02,
+    "white_Vgt230_Slt25_pct": 84.46,
+    "background_RGB_at90_90": [
+      243,
+      244,
+      246
+    ]
+  },
+  "schnitt-eg-1280x720.png": {
+    "V_mean": 235.2,
+    "V_p95": 240.0,
+    "S_mean": 3.71,
+    "white_Vgt230_Slt25_pct": 95.06,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "schnitt-eg-1440x900.png": {
+    "V_mean": 234.86,
+    "V_p95": 240.0,
+    "S_mean": 3.82,
+    "white_Vgt230_Slt25_pct": 94.16,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "schnitt-eg-1920x1080.png": {
+    "V_mean": 234.95,
+    "V_p95": 240.0,
+    "S_mean": 3.76,
+    "white_Vgt230_Slt25_pct": 94.43,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "schnitt-eg-gedreht-1280x720.png": {
+    "V_mean": 235.61,
+    "V_p95": 240.0,
+    "S_mean": 3.56,
+    "white_Vgt230_Slt25_pct": 95.57,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "schnitt-eg-gedreht-1440x900.png": {
+    "V_mean": 235.47,
+    "V_p95": 240.0,
+    "S_mean": 3.63,
+    "white_Vgt230_Slt25_pct": 94.95,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "schnitt-eg-gedreht-1920x1080.png": {
+    "V_mean": 235.51,
+    "V_p95": 240.0,
+    "S_mean": 3.56,
+    "white_Vgt230_Slt25_pct": 95.11,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "schnitt-og1-1280x720.png": {
+    "V_mean": 234.72,
+    "V_p95": 240.0,
+    "S_mean": 3.57,
+    "white_Vgt230_Slt25_pct": 94.16,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "schnitt-og1-1440x900.png": {
+    "V_mean": 234.25,
+    "V_p95": 240.0,
+    "S_mean": 3.63,
+    "white_Vgt230_Slt25_pct": 93.05,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "schnitt-og1-1920x1080.png": {
+    "V_mean": 234.34,
+    "V_p95": 240.0,
+    "S_mean": 3.57,
+    "white_Vgt230_Slt25_pct": 93.31,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "uebersicht-1280x720.png": {
+    "V_mean": 233.68,
+    "V_p95": 240.0,
+    "S_mean": 3.56,
+    "white_Vgt230_Slt25_pct": 92.29,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "uebersicht-1440x900.png": {
+    "V_mean": 232.88,
+    "V_p95": 240.0,
+    "S_mean": 3.6,
+    "white_Vgt230_Slt25_pct": 90.58,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  },
+  "uebersicht-1920x1080.png": {
+    "V_mean": 232.98,
+    "V_p95": 240.0,
+    "S_mean": 3.54,
+    "white_Vgt230_Slt25_pct": 90.88,
+    "background_RGB_at90_90": [
+      232,
+      233,
+      235
+    ]
+  }
+}

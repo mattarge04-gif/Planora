@@ -74,7 +74,7 @@ try {
     }
     async function schritt(s) {
       if (s.klick) await page.getByText(s.klick, { exact: s.exakt ?? false }).first().click();
-      else if (s.knopf) await page.getByRole("button", { name: s.knopf }).first().click();
+      else if (s.knopf) await page.getByRole("button", { name: s.knopf, exact: s.exakt ?? false }).first().click();
       else if (s.warte) await page.waitForTimeout(s.warte);
       else if (s.taste) await page.keyboard.press(s.taste);
       else if (s.maus) await page.mouse.move(s.maus[0] * breite, s.maus[1] * hoehe);
@@ -96,7 +96,13 @@ try {
           requestAnimationFrame(f);
         }), s.fps);
         await page.mouse.move(breite * 0.5, hoehe * 0.5); await page.mouse.down();
-        await page.mouse.move(breite * 0.62, hoehe * 0.47, { steps: Math.max(10, Math.round(s.fps / 30)) }); await page.mouse.up();
+        const start = Date.now();
+        do {
+          const anteil = Math.min(1, (Date.now() - start) / s.fps);
+          await page.mouse.move(breite * (0.5 + anteil * 0.12), hoehe * (0.5 - anteil * 0.03));
+          await page.waitForTimeout(16);
+        } while (Date.now() - start < s.fps);
+        await page.mouse.up();
         ansicht.fps.push(await zaehler);
       }
     }

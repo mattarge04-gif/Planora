@@ -46,3 +46,10 @@ Gescheiterte Ansaetze mit Beleg und Ursache. Neue Arbeiten pruefen sich gegen di
 ## F7 – "ae" statt echter Umlaute in UI-Texten (12.11.2026)
 
 - PO [F]: "nicht ae sondern ä". Regel: [prinzipien.md](prinzipien.md) Nr. 15.
+
+## F8 – VSM und akkumulierte Schatten erzeugen graue Flächen (12.11.2026)
+
+- Beleg: [Szene Runde 1](../abnahme/2026-11-12-redesign-szene/r1/uebersicht-1440x900.png), [korrigierte Runde 2](../abnahme/2026-11-12-redesign-szene/r2/uebersicht-1440x900.png).
+- Bild [F]: grosse graue Quadrat-/Dreiecksausläufer neben der Modellplatte; im reduzierten Modus ohne Schatten verschwinden sie.
+- Ursache [F]: Der installierte Three-VSM-Pfad behandelt auch `receiveShadow`-Objekte als Schattenwerfer. Dadurch kann die Empfängerebene von `AccumulativeShadows` selbst Schatten erzeugen. Im lokalen `WebGLShadowMap`-Code geprüft.
+- Korrektur [F]: BasicShadowMap mit drei-PCSS (`SoftShadows`) für die Sonne, akkumulierte Schatten für weiche Kontakte; dieselben GPU-Ansichten erneut geprüft. Filterweite in Texeln und Lichtquellenradius in Metern sind getrennte Tokens.

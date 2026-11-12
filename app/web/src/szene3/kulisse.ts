@@ -2,8 +2,8 @@ import type { Bereich, Quader, V3 } from "../szene2/huelle";
 
 /** Gestalterische Kulisse [A]: rein aus dem Bereich abgeleitet, deterministisch. Masse in m. */
 export const KULISSE = {
-  rand: 9, platteHoehe: 0.4, wegBreite: 2, wegAbstand: 1.5, wegHoehe: 0.04,
-  parkBreite: 2.5, parkTiefe: 5, parkAbstand: 3, parkHoehe: 0.02,
+  rand: 7, platteHoehe: 0.4, wegBreite: 2, wegAbstand: 1.5, wegHoehe: 0.04,
+  parkBreite: 2.5, parkTiefe: 5, parkAbstand: 1.5, parkHoehe: 0.02,
   baumAbstand: 6, baumHoehe: 4, baumRadius: 1.4, baumRand: 4,
 } as const;
 

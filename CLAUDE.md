@@ -19,6 +19,17 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 12.11.2026
 
+### Redesign durch Codex – aktueller Stand [F]
+
+Branch **`m2b2-redesign`**, aktueller Checkout; nicht wechseln oder pushen. Die Uebergabe `docs/superpowers/plans/2026-11-12-uebergabe-codex.md` ersetzt die aelteren M2b-Fortsetzungsangaben unten.
+
+- Teilaufgabe 1 abgeschlossen: PO waehlt **A – Architekturatelier**, mit geschossbezogenem Schnitt (oben alles weg, darunter sichtbar, gewaehlte Ebene oben offen und zwei kameraseitige Fassaden weg). Entscheid: `docs/design/entscheide/2026-11-12-redesign-digital-twin.md`; Regel 7 und Spec nachgefuehrt.
+- Teilaufgabe 2 abgeschlossen: gemeinsame `app/web/src/design/tokens.ts`; UI-/3D-Tokens und GPU-Uebersicht unter `docs/abnahme/2026-11-12-redesign-tokens/`.
+- Teilaufgabe 3 umgesetzt: neue Seite **Digital Twin**, parametrische Huelle/Kulisse, weiches Licht, Geschossschnitt, Kamerasteuerung, reduzierte Darstellung. **PO-Abnahme 1 offen**: `docs/abnahme/2026-11-12-redesign-szene/README.md`. Unabhaengige Kritik bereit mit P2-Restauflagen (Schattenkoernung, Tonwertunterschied normal/reduziert).
+- Web 63/63, Backend 417/417, beide Typpruefungen und Webbuild gruen. GPU RTX 3070 Ti / D3D11, 60 fps bei Drehung in 1440/1920/1280. Keine CSP-Verletzung; bekannte Bibliotheks-/Shaderwarnungen dokumentiert. Docker nicht wiederholt.
+- Weiter mit **Teilaufgabe 4 (GLB-Anlagen, Leitungen) erst nach PO-OK zu Abnahme 1**. Dashboard folgt in 5/6, Interaktionen in 7, Feinschliff in 8.
+- PO-Server 3000/54500 nicht stoppen/neustarten. Eigene Instanz 3100/54600 nach Pruefung gestoppt. Stash unveraendert als Material erhalten.
+
 ### Visueller Zielentwurf E40 [F]
 
 Prototyp auf `m2b1-sichtbarer-schnitt` umgesetzt (`app/web/src/szene2`, `karten`, `seiten/Entwurf.tsx`); [Screenshots und offene Punkte](docs/abnahme/2026-11-12-entwurf/README.md). PO-Korrekturrunde offen, keine visuelle Endabnahme vorher. Ansehen: `npm run entwicklung` in `app/`, Gebaeude -> "Entwurf". Masse/Farben [A], nur im Software-Rendering geprueft.

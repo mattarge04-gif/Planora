@@ -4,11 +4,13 @@ import { Login } from "./seiten/Login";
 import { Liste } from "./seiten/Liste";
 import { Ansicht } from "./seiten/Ansicht";
 import { Entwurf } from "./seiten/Entwurf";
+import { Twin } from "./seiten/Twin";
 
 type Zustand =
   | { art: "laden" } | { art: "login" } | { art: "liste" }
   | { art: "ansicht"; gebaeudeId: string; name: string }
-  | { art: "entwurf"; gebaeudeId: string; name: string };
+  | { art: "entwurf"; gebaeudeId: string; name: string }
+  | { art: "twin"; gebaeudeId: string; name: string };
 
 export function App() {
   const [zustand, setZustand] = useState<Zustand>({ art: "laden" });
@@ -21,6 +23,8 @@ export function App() {
   };
   if (zustand.art === "laden") return <p className="status">Laden …</p>;
   if (zustand.art === "login") return <Login onAngemeldet={() => setZustand({ art: "liste" })} />;
+  if (zustand.art === "twin") return <Twin gebaeudeId={zustand.gebaeudeId} name={zustand.name}
+    onZurueck={() => setZustand({ ...zustand, art: "ansicht" })} onAbgelaufen={abgelaufen} />;
   const gebaeude = zustand.art === "ansicht" || zustand.art === "entwurf" ? zustand : null;
   return (
     <div className="rahmen">
@@ -28,6 +32,7 @@ export function App() {
         <strong>Planora</strong>
         {gebaeude && <><button className="link" onClick={() => setZustand({ art: "liste" })}>← Gebaeude</button><span>{gebaeude.name}</span></>}
         {zustand.art === "ansicht" && <button className="link" onClick={() => setZustand({ ...zustand, art: "entwurf" })}>Entwurf</button>}
+        {zustand.art === "ansicht" && <button className="link" onClick={() => setZustand({ ...zustand, art: "twin" })}>Digital Twin</button>}
         {zustand.art === "entwurf" && <button className="link" onClick={() => setZustand({ ...zustand, art: "ansicht" })}>Bisherige Ansicht</button>}
         <span className="abstand" />
         <button className="link" onClick={abmelden}>Abmelden</button>

@@ -60,6 +60,12 @@ export const TOKENS = {
     sonneAzimutGrad: 225,
     sonneHoeheGrad: 50,
     schattenFrames: 64, // Einmal berechnen, danach einfrieren.
+    schattenDeckkraft: 0.45,
+    schattenRadiusM: 5,
+    schattenFilterTexel: 20,
+    schattenSamples: 12,
+    aoRadiusM: 1.1,
+    aoIntensitaet: 1.2,
   },
   bewegung: {
     hoverMs: 160,

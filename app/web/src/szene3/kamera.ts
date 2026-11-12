@@ -13,9 +13,10 @@ const punkt = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
  * Passt eine Orthokamera so ein, dass der Bereich `fuellung` (0..1) der freien Flaeche fuellt
  * (Ansicht minus Freiraum fuer Karten, in px) und in deren Mitte liegt. zoom = px pro Welteinheit.
  */
-export function einpassen(b: Bereich, breite: number, hoehe: number, frei: Freiraum, fuellung = 0.7): Einpassung {
-  const rechts = norm(kreuz([0, 1, 0], ISO_RICHTUNG));   // Bildschirm-rechts
-  const oben = kreuz(ISO_RICHTUNG, rechts);               // Bildschirm-oben
+export function einpassen(b: Bereich, breite: number, hoehe: number, frei: Freiraum, fuellung = 0.7, richtung: V3 = ISO_RICHTUNG): Einpassung {
+  const iso = norm(richtung);
+  const rechts = norm(kreuz([0, 1, 0], iso));   // Bildschirm-rechts
+  const oben = kreuz(iso, rechts);               // Bildschirm-oben
   const mitte: V3 = [(b.xMin + b.xMax) / 2, (b.yMin + b.yMax) / 2, (b.zMin + b.zMax) / 2];
   let r0 = Infinity, r1 = -Infinity, o0 = Infinity, o1 = -Infinity;
   for (const x of [b.xMin, b.xMax]) for (const y of [b.yMin, b.yMax]) for (const z of [b.zMin, b.zMax]) {
@@ -31,6 +32,6 @@ export function einpassen(b: Bereich, breite: number, hoehe: number, frei: Freir
   const sR = projMitteR - dxPx / zoom, sO = projMitteO - dyPx / zoom;
   const ziel: V3 = [mitte[0] + rechts[0] * sR + oben[0] * sO, mitte[1] + rechts[1] * sR + oben[1] * sO, mitte[2] + rechts[2] * sR + oben[2] * sO];
   const abstand = 200;
-  const position: V3 = [ziel[0] + ISO_RICHTUNG[0] * abstand, ziel[1] + ISO_RICHTUNG[1] * abstand, ziel[2] + ISO_RICHTUNG[2] * abstand];
+  const position: V3 = [ziel[0] + iso[0] * abstand, ziel[1] + iso[1] * abstand, ziel[2] + iso[2] * abstand];
   return { ziel, position, zoom };
 }
