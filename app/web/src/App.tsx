@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { holeJson, sendeJson } from "./api";
 import { Login } from "./seiten/Login";
 import { Liste } from "./seiten/Liste";
-import { Ansicht } from "./seiten/Ansicht";
-import { Entwurf } from "./seiten/Entwurf";
-import { Twin } from "./seiten/Twin";
+import { TOKENS } from "./design/tokens";
+
+const Twin = lazy(() => import("./seiten/Twin").then((modul) => ({ default: modul.Twin })));
 
 type Zustand =
   | { art: "laden" } | { art: "login" } | { art: "liste" }
-  | { art: "ansicht"; gebaeudeId: string; name: string }
-  | { art: "entwurf"; gebaeudeId: string; name: string }
   | { art: "twin"; gebaeudeId: string; name: string };
 
 export function App() {
@@ -23,30 +21,20 @@ export function App() {
   };
   if (zustand.art === "laden") return <p className="status">Laden …</p>;
   if (zustand.art === "login") return <Login onAngemeldet={() => setZustand({ art: "liste" })} />;
-  if (zustand.art === "twin") return <Twin gebaeudeId={zustand.gebaeudeId} name={zustand.name}
+  if (zustand.art === "twin") return <Suspense fallback={<div role="status" style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center",
+    background: TOKENS.farbe.grund, color: TOKENS.farbe.textSekundaer, fontFamily: TOKENS.typografie.familie, fontSize: TOKENS.typografie.groessePx.text }}>Digital Twin wird geladen …</div>}>
+    <Twin gebaeudeId={zustand.gebaeudeId} name={zustand.name}
     onGebaeude={(g) => setZustand({ art: "twin", gebaeudeId: g.id, name: g.name })}
     onListe={() => setZustand({ art: "liste" })}
-    onAnsicht={() => setZustand({ ...zustand, art: "ansicht" })}
-    onEntwurf={() => setZustand({ ...zustand, art: "entwurf" })}
-    onAbmelden={abmelden} onAbgelaufen={abgelaufen} />;
-  const gebaeude = zustand.art === "ansicht" || zustand.art === "entwurf" ? zustand : null;
+    onAbmelden={abmelden} onAbgelaufen={abgelaufen} /></Suspense>;
   return (
     <div className="rahmen">
       <header className="kopf">
         <strong>Planora</strong>
-        {gebaeude && <><button className="link" onClick={() => setZustand({ art: "liste" })}>← Gebaeude</button><span>{gebaeude.name}</span></>}
-        {zustand.art === "ansicht" && <button className="link" onClick={() => setZustand({ ...zustand, art: "entwurf" })}>Entwurf</button>}
-        {zustand.art === "ansicht" && <button className="link" onClick={() => setZustand({ ...zustand, art: "twin" })}>Digital Twin</button>}
-        {zustand.art === "entwurf" && <button className="link" onClick={() => setZustand({ ...zustand, art: "ansicht" })}>Bisherige Ansicht</button>}
         <span className="abstand" />
         <button className="link" onClick={abmelden}>Abmelden</button>
       </header>
-      {zustand.art === "liste" && <Liste onWahl={(g) => setZustand({ art: "ansicht", gebaeudeId: g.id, name: g.name })} onAbgelaufen={abgelaufen} />}
-      {zustand.art === "ansicht" && <Ansicht gebaeudeId={zustand.gebaeudeId} onAbgelaufen={abgelaufen} />}
-      {zustand.art === "entwurf" && (
-        <Entwurf gebaeudeId={zustand.gebaeudeId} name={zustand.name} onAbgelaufen={abgelaufen}
-          onZurAnsicht={() => setZustand({ ...zustand, art: "ansicht" })} />
-      )}
+      <Liste onWahl={(g) => setZustand({ art: "twin", gebaeudeId: g.id, name: g.name })} onAbgelaufen={abgelaufen} />
     </div>
   );
 }

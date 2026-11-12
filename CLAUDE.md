@@ -19,6 +19,15 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 12.11.2026
 
+### Fortsetzung nach erneutem Claude-Nutzungslimit [F]
+
+- Aktueller Checkout weiter `m2b2-redesign`, Teilaufgaben 4–7 inzwischen abgeschlossen; Abnahmen 1 und 2 freigegeben. Die älteren Rückgabeangaben unten sind historisch.
+- Teilaufgabe 8 durch Codex fortgesetzt: übernommene Zoom-/Beschnitt-/Nahkulissen-Korrekturen und Lazy-Loading, Tabellenfokus als ein Tab-Stopp sowie T-Rückmeldung integriert.
+- Vom PO im letzten Claude-Verlauf freigegebener Abbau umgesetzt: `Ansicht`, `Entwurf`, alte Szene und ausschliesslich alte Karten entfernt. Gebäude öffnen direkt im Digital Twin. `szene2/huelle.ts`, `szene2/leitungen.ts` und `panel/daten.ts` samt Tests bleiben gemeinsame Grundlagen.
+- Lizenztexte von 66 Produktionspaketen unter `app/web/public/lizenzen.txt`; fünf Pakete liefern keinen eigenen Text im installierten Paket. Vollständige Image-SBOM und menschliche Lieferfreigabe bleiben offen.
+- Aktueller Prüfstand und verbleibende Punkte: `docs/superpowers/plans/2026-11-12-teilaufgabe-8.md`. Kein Merge/Push ohne PO-Auftrag; PO-Server 3000/54500 nicht stoppen oder neu starten.
+- Abschlussprüfung: 172 Webtests, Typprüfung und Build grün; 48 echte GPU-Bilder, 60 fps je Fenster/Durchgang, unabhängige Bildkritik bereit für PO-Sichtung. Tabellen-/Tastaturfunktionen zusätzlich im Browser geprüft. Separate Testinstanz 3100/54600 wieder gestoppt.
+
 ### Redesign durch Codex – aktueller Stand [F]
 
 **Rueckgabe an Claude (12.11.2026):** `docs/superpowers/plans/2026-11-12-rueckgabe-an-claude.md` zuerst vollstaendig lesen. **PO-Abnahme 1 ist freigegeben** ("passt machen wir in 30 min weiter wegen dem nutzung guthaben"). Nach der gewuenschten Pause naechster Schritt: Teilaufgabe 4, GLB-Anlagen und Leitungen. Codex hat die Arbeit beendet; Claude uebernimmt.

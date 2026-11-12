@@ -5,13 +5,15 @@ interface Props {
   name: string; geschosse: GeschossZeile[]; fokusId: string | null;
   onFokus: (id: string | null) => void; onTechnik: () => void;
   separiert: boolean; onSeparieren: (s: boolean) => void;
+  /** Kurze sichtbare Rückmeldung zu einer Taste ohne sichtbare Wirkung (z. B. T im Technikmodus). */
+  meldung?: string | null;
 }
 
 /** Eigene Kürzel des Dashboards auf dem Szenen-Canvas (Szene3 `tastatur`: Pfeile drehen/neigen, +/− zoomen).
  * Ein einziger Tab-Stopp: der Canvas. Hier kommen Geschoss (Bild auf/ab), Technik, Separieren und Übersicht dazu. */
 export const EIGENE_KUERZEL = "PageUp PageDown Home 0 T S Escape";
 
-export function TwinSzenenTasten({ name, geschosse, fokusId, onFokus, onTechnik, separiert, onSeparieren }: Props) {
+export function TwinSzenenTasten({ name, geschosse, fokusId, onFokus, onTechnik, separiert, onSeparieren, meldung = null }: Props) {
   const [sichtbar, setSichtbar] = useState(false);
   const leiste = useRef<HTMLParagraphElement>(null);
   const stand = useRef({ geschosse, fokusId, onFokus, onTechnik, separiert, onSeparieren });
@@ -51,8 +53,9 @@ export function TwinSzenenTasten({ name, geschosse, fokusId, onFokus, onTechnik,
   }, []);
 
   return (
-    <div className={sichtbar ? "tw-szene-hinweis tw-sichtbar" : "tw-szene-hinweis"} aria-hidden={!sichtbar}>
-      <p id="tw-szene-kuerzel" ref={leiste} className="tw-kuerzel">
+    <div className={sichtbar ? "tw-szene-hinweis tw-sichtbar" : "tw-szene-hinweis"}>
+      {meldung && <p className="tw-tastenmeldung" aria-hidden="true">{meldung}</p>}
+      <p id="tw-szene-kuerzel" ref={leiste} className="tw-kuerzel" aria-hidden={!sichtbar}>
         <span className="ui-sr">3D-Modell {name}. Tastenkürzel: </span>
         <span><kbd>←</kbd><kbd>→</kbd> Drehen</span>
         <span><kbd>↑</kbd><kbd>↓</kbd> Neigen</span>

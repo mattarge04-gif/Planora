@@ -1,5 +1,5 @@
 import type { Bereich, V3 } from "../szene2/huelle";
-import type { Camera, Vector3 } from "three";
+import { Vector3, type Camera, type OrthographicCamera } from "three";
 import type { Welt } from "../typen";
 import { POLAR_GRENZEN } from "./schnitt";
 
@@ -35,6 +35,34 @@ export function bildpunkt(camera: Camera, breite: number, hoehe: number, punkt: 
 export function punktImFreiraum(p: { x: number; y: number } | null, breite: number, hoehe: number, frei: Freiraum, rand = 12): boolean {
   return !!p && p.x >= frei.links + rand && p.x <= breite - frei.rechts - rand && p.y >= frei.oben + rand && p.y <= hoehe - frei.unten - rand;
 }
+
+/** [A] Alle manuellen Zoomwege verankern die freie Mitte; eine Auswahl wird vollständig im Freiraum gehalten. */
+export function zoomImFreiraum(camera: OrthographicCamera, target: Vector3, breite: number, hoehe: number, frei: Freiraum, zoom: number, auswahl?: Bereich): void {
+  camera.updateMatrixWorld();
+  const richtung = camera.position.clone().sub(target).toArray() as V3;
+  if (auswahl) zoom = Math.min(zoom, einpassen(auswahl, breite, hoehe, frei, 0.9, richtung).zoom);
+  const ndc = new Vector3((frei.links - frei.rechts) / breite, (frei.unten - frei.oben) / hoehe, 0);
+  const vorher = ndc.clone().unproject(camera);
+  camera.zoom = Math.max(1e-6, zoom); camera.updateProjectionMatrix();
+  const versatz = vorher.sub(ndc.clone().unproject(camera));
+  camera.position.add(versatz); target.add(versatz); camera.updateMatrixWorld();
+  if (!auswahl) return;
+  const punkte = [];
+  for (const x of [auswahl.xMin, auswahl.xMax]) for (const y of [auswahl.yMin, auswahl.yMax]) for (const z of [auswahl.zMin, auswahl.zMax]) {
+    const p = new Vector3(x, y, z).project(camera);
+    punkte.push({ x: (p.x + 1) * breite / 2, y: (1 - p.y) * hoehe / 2 });
+  }
+  const x0 = Math.min(...punkte.map((p) => p.x)), x1 = Math.max(...punkte.map((p) => p.x));
+  const y0 = Math.min(...punkte.map((p) => p.y)), y1 = Math.max(...punkte.map((p) => p.y));
+  const dx = x0 < frei.links + 12 ? frei.links + 12 - x0 : x1 > breite - frei.rechts - 12 ? breite - frei.rechts - 12 - x1 : 0;
+  const dy = y0 < frei.oben + 12 ? frei.oben + 12 - y0 : y1 > hoehe - frei.unten - 12 ? hoehe - frei.unten - 12 - y1 : 0;
+  const korrektur = new Vector3().setFromMatrixColumn(camera.matrixWorld, 0).multiplyScalar(-dx / camera.zoom)
+    .addScaledVector(new Vector3().setFromMatrixColumn(camera.matrixWorld, 1), dy / camera.zoom);
+  camera.position.add(korrektur); target.add(korrektur); camera.updateMatrixWorld();
+}
+
+/** [A] Kulisse verschwindet ab doppeltem Geschoss-Fit-Zoom; 1.8-fach zum Wiedereinblenden verhindert Flackern. */
+export const nahZoom = (zoom: number, basis: number, vorher = false) => zoom / Math.max(basis, 1e-6) > (vorher ? 1.8 : 2);
 
 const kreuz = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const norm = (a: V3): V3 => { const l = Math.hypot(...a); return [a[0] / l, a[1] / l, a[2] / l]; };

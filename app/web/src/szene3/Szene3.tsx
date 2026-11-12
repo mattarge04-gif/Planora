@@ -10,7 +10,7 @@ import { huelle, type Bereich, type V3 } from "../szene2/huelle";
 import type { KatalogEintrag, Welt } from "../typen";
 import { Gebaeude3 } from "./Gebaeude3";
 import { Kulisse3 } from "./Kulisse3";
-import { ortBereich, type Freiraum, type SzenenZiel } from "./kamera";
+import { ortBereich, einpassen, FIT_ANTEIL, type Freiraum, type SzenenZiel } from "./kamera";
 import { kulisse } from "./kulisse";
 import { geschossSchnitt, kameraSeiten, POLAR_GRENZEN } from "./schnitt";
 import { Technik3 } from "./Technik3";
@@ -22,6 +22,8 @@ import { Kamera3 } from "./Kamera3";
 import { FreiraumSchnitt } from "./FreiraumSchnitt";
 import { HINTERGRUND, SCHATTEN, kontaktLichtZiel } from "./qualitaet";
 import { TastaturKamera } from "./TastaturKamera";
+import { NahKulisse } from "./NahKulisse";
+import { modellFuer } from "./technik";
 
 export interface Szene3Props {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; freiraum: Freiraum; reduziert: boolean;
@@ -79,6 +81,15 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
   const interaktion = useMemo(() => ({ auswahl, hover, lift, aktiv: !!onAuswahl || !!onHover || auswahl !== null,
     waehlen, schweben }), [auswahl, hover, onAuswahl, onHover, waehlen, schweben]);
   const gl = useThree((s) => s.gl);
+  const size = useThree((s) => s.size);
+  const basisZoom = useMemo(() => einpassen(sichtbar, size.width, size.height, freiraum, FIT_ANTEIL, fokusId ? [1, 1.45, 1] : [1, 1, 1]).zoom,
+    [sichtbar, size.width, size.height, freiraum, fokusId]);
+  const auswahlBereich = useCallback((): Bereich | undefined => {
+    const s = welt.symbole.find((s) => s.schluessel === auswahl), id = s ? geschossBeiY(welt, s.position.y) : null;
+    if (!s || !id || !sichtbarIds.includes(id)) return undefined;
+    const m = modellFuer(s.katalogId).masse, y = s.position.y + (aktuell.current[id] ?? 0) + (lift.current[s.schluessel] ?? 0);
+    return { xMin: s.position.x - m[0] / 2, xMax: s.position.x + m[0] / 2, yMin: y, yMax: y + m[1], zMin: s.position.z - m[2] / 2, zMax: s.position.z + m[2] / 2 };
+  }, [welt, auswahl, sichtbarIds, aktuell]);
   useEffect(() => {
     const verlassen = () => schweben(null);
     gl.domElement.addEventListener("pointerleave", verlassen);
@@ -97,22 +108,24 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
   const durchsichtig = (o: THREE.Object3D) => o instanceof THREE.Mesh && (Array.isArray(o.material) ? o.material.every((m) => m.transparent) : o.material.transparent);
   return <>
     {!reduziert && <SoftShadows size={TOKENS.licht.schattenFilterTexel} samples={SCHATTEN.samples} />}
-    <OrbitControls ref={controls} makeDefault enableDamping={!weniger} zoomToCursor maxPolarAngle={POLAR_GRENZEN.max} minPolarAngle={POLAR_GRENZEN.min}
+    <OrbitControls ref={controls} makeDefault enableDamping={!weniger} zoomToCursor={false} maxPolarAngle={POLAR_GRENZEN.max} minPolarAngle={POLAR_GRENZEN.min}
       onChange={kameraGeaendert} enablePan={false} />
     <Kamera3 welt={welt} fokusId={fokusId} bereich={sichtbar} freiraum={freiraum} repKey={repKey}
       auswahl={auswahl} ziel={ziel} darstellung={darstellung} weniger={weniger} />
-    <TastaturKamera aktiv={tastatur} />
+    <TastaturKamera aktiv={tastatur} freiraum={freiraum} auswahlBereich={auswahlBereich} />
     <InteraktionsBewegung welt={welt} interaktion={interaktion} darstellung={darstellung} weniger={weniger} onAuswahlPunkt={onAuswahlPunkt} />
     <Licht bereich={sichtbar} reduziert={reduziert} />
     <group onClick={(e) => { if (e.delta <= 4 && !durchsichtig(e.object)) { e.stopPropagation(); waehlen(null); } }}
       onPointerOver={interaktion.aktiv ? (e) => { if (!durchsichtig(e.object)) { e.stopPropagation(); schweben(null); } } : undefined}>
+      <FreiraumSchnitt freiraum={freiraum} nurUnten>
       <Gebaeude3 welt={welt} h={h} fokusId={fokusId} kameraRichtung={kameraRichtung} schatten={!reduziert} darstellung={darstellung} />
       <Technik3 welt={welt} katalog={katalog} fokusId={fokusId} schatten={!reduziert} onModelle={modelleGeladen}
         darstellung={darstellung} interaktion={interaktion} separiert={separiert} />
-      <FreiraumSchnitt freiraum={freiraum}><Kulisse3 bereich={h.bereich} schatten={!reduziert} /></FreiraumSchnitt>
       {!auswahl && ziel && <Ortsmarke welt={welt} ziel={ziel} darstellung={darstellung} />}
+      </FreiraumSchnitt>
+      <NahKulisse basisZoom={basisZoom}><FreiraumSchnitt freiraum={freiraum}><Kulisse3 bereich={h.bereich} schatten={!reduziert} /></FreiraumSchnitt></NahKulisse>
     </group>
-    {!reduziert && !bewegung && <FreiraumSchnitt key={schattenKey} freiraum={freiraum}><Bodenschatten bereich={h.bereich} /></FreiraumSchnitt>}
+    {!reduziert && !bewegung && <NahKulisse basisZoom={basisZoom}><FreiraumSchnitt key={schattenKey} freiraum={freiraum}><Bodenschatten bereich={h.bereich} /></FreiraumSchnitt></NahKulisse>}
     {!reduziert && <EffectComposer multisampling={4} enableNormalPass={false}>
       <N8AO aoRadius={TOKENS.licht.aoRadiusM} intensity={TOKENS.licht.aoIntensitaet} distanceFalloff={1} color={TOKENS.farbe.textSekundaer} />
       <ToneMapping mode={ToneMappingMode.NEUTRAL} />

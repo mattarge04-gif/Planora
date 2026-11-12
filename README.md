@@ -4,7 +4,7 @@ Software fuer die schematische 3D-Gebaeudewelt, technischen Bestand und zugeordn
 
 ## Hier weiterarbeiten
 
-**[Aktueller Fortschritt, offene Abnahmen und naechste Aufgaben](docs/superpowers/plans/2026-11-11-fortsetzung.md)** – gemeinsamer Fortsetzungsstand vom 11.11.2026.
+**[Aktueller Redesign-Abschluss und Prüfstand](docs/superpowers/plans/2026-11-12-teilaufgabe-8.md)** – Fortsetzung nach Claude-Nutzungslimit vom 12.11.2026. [Bisheriger Gesamtfortschritt](docs/superpowers/plans/2026-11-11-fortsetzung.md).
 
 - [Betriebsanleitung](betrieb/README.md)
 - [M1b-Integrationsbericht](docs/superpowers/plans/2026-11-10-m1b-integrationsbericht.md)
@@ -16,7 +16,7 @@ M1 ist technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen sind 
 
 ## Lokale Demo
 
-Der erste Schnitt ist funktional abgeschlossen; das endgueltige Erscheinungsbild folgt dem [visuellen Zielbild mit drei PO-Referenzen](docs/design/2026-11-12-visuelle-zielrichtung.md). [Screenshots und technischer Pruefstand](docs/abnahme/2026-11-12-m2b1/README.md).
+Gebäude öffnen direkt im Digital Twin mit Geschossschnitt, Technik, Anlagentabelle und Objektkarten. Die alten Seiten «Ansicht» und «Entwurf» sind nach PO-Freigabe entfernt. Das Erscheinungsbild folgt dem [visuellen Zielbild mit drei PO-Referenzen](docs/design/2026-11-12-visuelle-zielrichtung.md).
 
 Einmalig in `app/` und `app/web/` jeweils `npm ci` ausfuehren. Danach in `app/`: `npm run entwicklung`. Unter `http://localhost:3000` mit `admin@planora.invalid` und dem zufaelligen Passwort aus der Konsole anmelden, dann das Beispielgebaeude oeffnen. Der blaue Verteiler-Pin zeigt die versorgten Einheiten Restaurant und Buero C.
 

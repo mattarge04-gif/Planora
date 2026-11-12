@@ -1,4 +1,4 @@
-import { Bell, Building2, Check, ChevronDown, LogOut, PanelsTopLeft, PenLine, UserRound, LayoutList } from "lucide-react";
+import { Bell, Building2, Check, ChevronDown, LogOut, UserRound, LayoutList } from "lucide-react";
 import type { GebaeudeEintrag } from "../typen";
 import { Menue } from "./Menue";
 import "./ui.css";
@@ -18,8 +18,6 @@ interface Props {
   reduziert: boolean;
   onReduziert: (r: boolean) => void;
   onListe: () => void;
-  onAnsicht: () => void;
-  onEntwurf: () => void;
   onAbmelden: () => void;
 }
 
@@ -88,13 +86,6 @@ export function Kopfzeile(p: Props) {
               onClick={() => p.onReduziert(!p.reduziert)}>
               <span className="ui-eintrag-text"><span>Reduzierte Darstellung</span><small>Ohne Schatten und Tiefeneffekte</small></span>
               <span className="ui-schalter" aria-hidden="true" />
-            </button>
-            <span className="ui-trenner" role="separator" />
-            <button type="button" role="menuitem" className="ui-eintrag" onClick={() => { schliessen(); p.onAnsicht(); }}>
-              <PanelsTopLeft {...ICON} />Bisherige Ansicht
-            </button>
-            <button type="button" role="menuitem" className="ui-eintrag" onClick={() => { schliessen(); p.onEntwurf(); }}>
-              <PenLine {...ICON} />Entwurf
             </button>
             <span className="ui-trenner" role="separator" />
             <button type="button" role="menuitem" className="ui-eintrag" onClick={() => { schliessen(); p.onAbmelden(); }}>

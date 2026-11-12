@@ -1,0 +1,11 @@
+{
+  "zeit": "2026-11-12T17:42:28.835Z",
+  "fenster": "1280x720",
+  "checks": [
+    "8 Anlagen, genau ein Tab-Stopp; Ende/Pos1/Pfeil ab bewegen Fokus korrekt",
+    "Enter waehlt Anlage; T zeigt Rueckmeldung und setzt aria-live-Text",
+    "Profilmenue ohne Altansichten; Gebaeudeeinstieg direkt Digital Twin"
+  ],
+  "pageerrors": [],
+  "grenze": "DOM-Text geprueft, keine echte Screenreader-Ausgabe"
+}

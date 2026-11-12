@@ -8,7 +8,7 @@ interface Props {
 
 const STATUS = { bestaetigt: "Bestätigt", vorgeschlagen: "Vorgeschlagen" } as const;
 
-/** Anlagen-Tabelle mit Tabellenweg: ganze Zeile wählbar (Klick, Enter, Leertaste), Pfeile wechseln die Zeile. */
+/** Anlagen-Tabelle mit Tabellenweg als ein Tab-Stopp (Grid): Pfeile, Pos1, Ende bewegen; Enter/Leertaste oder Klick wählt. */
 export function TwinAnlagen({ anlagen, auswahl, fokusId, onWahl }: Props) {
   const rolle = useRef<HTMLDivElement>(null);
   const [rand, setRand] = useState({ oben: false, unten: false });
@@ -41,10 +41,17 @@ export function TwinAnlagen({ anlagen, auswahl, fokusId, onWahl }: Props) {
     else if (unten > el.scrollTop + el.clientHeight) el.scrollTo({ top: unten - el.clientHeight, behavior: weich ? "smooth" : "auto" });
   }, [auswahl]);
 
+  // Roving tabindex: genau eine Zeile ist Tab-Stopp (zuletzt fokussiert, sonst gewählt, sonst erste).
+  const [aktiv, setAktiv] = useState<string | null>(null);
+  const stopp = anlagen.some((a) => a.schluessel === aktiv) ? aktiv
+    : anlagen.some((a) => a.schluessel === auswahl) ? auswahl : anlagen[0]?.schluessel ?? null;
   const taste = (e: KeyboardEvent<HTMLTableRowElement>, a: AnlagenZeile) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onWahl(a); return; }
-    const ziel = e.key === "ArrowDown" ? e.currentTarget.nextElementSibling : e.key === "ArrowUp" ? e.currentTarget.previousElementSibling : null;
-    if (ziel instanceof HTMLElement) { e.preventDefault(); ziel.focus(); }
+    const zeilen = [...(e.currentTarget.parentElement?.children ?? [])] as HTMLElement[];
+    const i = zeilen.indexOf(e.currentTarget);
+    const ziel = e.key === "ArrowDown" ? zeilen[i + 1] : e.key === "ArrowUp" ? zeilen[i - 1]
+      : e.key === "Home" ? zeilen[0] : e.key === "End" ? zeilen[zeilen.length - 1] : undefined;
+    if (ziel) { e.preventDefault(); ziel.focus(); }
   };
 
   return (
@@ -60,12 +67,13 @@ export function TwinAnlagen({ anlagen, auswahl, fokusId, onWahl }: Props) {
       {anlagen.length === 0 ? <p className="tw-leer">Noch keine Anlagen erfasst.</p> :
         <div ref={rolle} onScroll={pruefen} role="region" aria-label="Anlagenliste"
           className={`tw-tabelle${rand.oben ? " tw-mehr-oben" : ""}${rand.unten ? " tw-mehr-unten" : ""}${fokusId ? " tw-gefiltert" : ""}`}>
-          <table>
+          <table role="grid" aria-label="Anlagen" aria-readonly="true">
             <thead><tr><th scope="col">Typ</th><th scope="col">Hersteller / Typ</th><th scope="col">Standort</th>
               <th scope="col" className="tw-zahl">Menge</th><th scope="col">Status</th></tr></thead>
             <tbody>
               {anlagen.map((a) => (
-                <tr key={a.schluessel} data-schluessel={a.schluessel} tabIndex={0} aria-current={a.schluessel === auswahl ? "true" : undefined}
+                <tr key={a.schluessel} data-schluessel={a.schluessel} tabIndex={a.schluessel === stopp ? 0 : -1}
+                  aria-selected={a.schluessel === auswahl} onFocus={() => setAktiv(a.schluessel)}
                   className={a.geschossId && a.geschossId === fokusId ? "tw-im-fokus" : undefined}
                   onClick={() => onWahl(a)} onKeyDown={(e) => taste(e, a)}>
                   <th scope="row">{a.name}</th>

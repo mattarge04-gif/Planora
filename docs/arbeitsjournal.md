@@ -3,6 +3,14 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-12 – Teilaufgabe 8 nach erneutem Claude-Nutzungslimit übernommen
+
+- [F] Letzten Auftrag aus Claudes lokalem Sitzungsverlauf rekonstruiert: Restauflagen Interaktionen abschliessen, vom PO freigegebene Altansichten entfernen, Lizenzhinweise und Dokumentation ergänzen, GPU-Prüfung. Orca-CLI war in dieser Sitzung nicht auf dem PATH.
+- [F] Vorhandene Änderungen an Zoom, Beschnitt, Nahkulisse, Lazy-Loading, Tabellenfokus und T-Rückmeldung übernommen. Vor dem Abbau: 186 Webtests und Build grün.
+- [F] Altansichten samt ausschliesslich alten Komponenten und 14 alten Tests entfernt. Gemeinsame Geometrie-, Leitungs- und Paneldatenmodule bleiben samt Tests erhalten. Gebäude öffnen direkt im Digital Twin.
+- [F] Nach dem Abbau: 172 Webtests, Typprüfung und Build grün. Drittanbietertexte von 66 Produktionspaketen beigelegt; fünf fehlende Pakettexte ausdrücklich gelistet, keine Lieferfreigabe behauptet.
+- [F] Weiterer Prüfstand und offene Punkte: [Teilaufgabe 8](superpowers/plans/2026-11-12-teilaufgabe-8.md). Kein Merge, Push oder Deployment.
+
 ## 2026-11-12 – Visueller Zielentwurf (E40) umgesetzt
 
 - [F] Prototyp nach Spec und Plan (6 Tasks) auf `m2b1-sichtbarer-schnitt`: plastische Uebersicht, Fokusmodus je Geschoss, schematische Leitungen, schwebende Karten. [Abnahmestand](abnahme/2026-11-12-entwurf/README.md).

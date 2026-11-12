@@ -164,10 +164,10 @@
 .tw-tabelle tbody tr > :last-child { border-radius: 0 var(--tw-radius-kachel) var(--tw-radius-kachel) 0; }
 .tw-tabelle tbody tr:hover { background: rgb(242 243 245 / 0.9); }
 .tw-tabelle tbody tr:focus-visible { box-shadow: inset 0 0 0 2px var(--tw-eis-akzent); }
-.tw-tabelle tbody tr[aria-current="true"] { background: var(--tw-eis); color: var(--tw-text); }
-.tw-tabelle tbody tr[aria-current="true"] > * { border-bottom-color: transparent; }
-.tw-tabelle tbody tr[aria-current="true"] .tw-fehlt { color: var(--tw-sekundaer-eis); }
-.tw-gefiltert tbody tr:not(.tw-im-fokus):not([aria-current="true"]) { color: var(--tw-sekundaer); }
+.tw-tabelle tbody tr[aria-selected="true"] { background: var(--tw-eis); color: var(--tw-text); }
+.tw-tabelle tbody tr[aria-selected="true"] > * { border-bottom-color: transparent; }
+.tw-tabelle tbody tr[aria-selected="true"] .tw-fehlt { color: var(--tw-sekundaer-eis); }
+.tw-gefiltert tbody tr:not(.tw-im-fokus):not([aria-selected="true"]) { color: var(--tw-sekundaer); }
 .tw-tabelle tbody th:first-child, .tw-tabelle thead th:first-child { padding-left: 12px; }
 .tw-tabelle .tw-zahl { text-align: right; width: 1%; }
 .tw-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
@@ -243,3 +243,11 @@
   .ui-chevron, .ui-schalter::after, .tw-balken > span { transition: none; }
   .tw-tabelle tbody tr { transition: none; }
 }
+
+/* Rückmeldung zu einer Taste ohne sichtbare Wirkung, über der Kürzelleiste */
+.tw-tastenmeldung {
+  position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); margin: 0; padding: 6px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 500; color: #fff; background: var(--tw-text); white-space: nowrap;
+  box-shadow: var(--tw-schatten); animation: tw-blende-ein var(--tw-hover-ms) var(--tw-kurve);
+}
+@keyframes tw-blende-ein { from { opacity: 0; } }

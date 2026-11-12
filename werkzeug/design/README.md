@@ -43,4 +43,4 @@ Die HTML-Datei bindet nur lokale Assets ein; JavaScript-Module vorher als klassi
 | `{ "fokus": "css" }` | erstes passendes Element fokussieren (Tastaturprüfung) |
 | `{ "fps": ms }` | fps waehrend einer Kameradrehung messen |
 
-Vorhanden: `entwurf.json` (bisheriger Prototyp), `twin.json` (Redesign-Seite, sobald vorhanden).
+Vorhanden: `twin.json` (Einstieg), `twin-dashboard.json` (Dashboard und Auswahl), `twin-rundgang.json` (Drehung und reduzierte Bewegung), `twin-schnitt.json` (Geschossschnitt), `twin-technik.json` (Technik und Nahzoom), `twin-feinschliff.json` (Zoom und Tastatur). Gebäude öffnen direkt im Digital Twin. Historische Bilder der entfernten Entwurf-Seite bleiben in `docs/abnahme/`.

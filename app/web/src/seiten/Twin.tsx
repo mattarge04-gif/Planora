@@ -66,11 +66,11 @@ interface OrtZiel { geschossId: string; position?: { x: number; y: number; z: nu
 interface Props {
   gebaeudeId: string; name: string;
   onGebaeude: (g: GebaeudeEintrag) => void;
-  onListe: () => void; onAnsicht: () => void; onEntwurf: () => void;
+  onListe: () => void;
   onAbmelden: () => void; onAbgelaufen: () => void;
 }
 
-export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwurf, onAbmelden, onAbgelaufen }: Props) {
+export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAbmelden, onAbgelaufen }: Props) {
   const [welt, setWelt] = useState<Welt | null>(null);
   const [beschreibung, setBeschreibung] = useState<Beschreibung | null>(null);
   const [katalog, setKatalog] = useState<Katalog | null>(null);
@@ -215,6 +215,21 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
     else if (v.separiert !== separiert) setAnsage(separiert ? "Geschosse separiert" : "Geschosse zusammengeführt");
   }, [auswahl, fokusId, separiert, karte, welt, geschossCode]);
 
+  /** Ansage auch bei gleichem Text erneut auslösen. */
+  const sage = (text: string) => { setAnsage(""); requestAnimationFrame(() => setAnsage(text)); };
+  const [tastenMeldung, setTastenMeldung] = useState<string | null>(null);
+  useEffect(() => {
+    if (!tastenMeldung) return;
+    const t = window.setTimeout(() => setTastenMeldung(null), 2400);
+    return () => window.clearTimeout(t);
+  }, [tastenMeldung]);
+  const technikTaste = () => {
+    if (fokusId) {
+      const text = `Bereits im Technikmodus, ${geschossCode(fokusId)}`;
+      setTastenMeldung(text); sage(text);
+    } else waehleModus("technik");
+  };
+
   const liegenschaft = liste?.find((g) => g.id === gebaeudeId)?.liegenschaftName ?? null;
 
   return (
@@ -226,7 +241,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
           gebaeudeId={gebaeudeId} gebaeudeName={name} gebaeude={liste} onGebaeude={onGebaeude}
           hinweise={daten ? daten.hinweise.length : null} onHinweise={zeigeHinweise}
           reduziert={reduziert} onReduziert={setReduziert}
-          onListe={onListe} onAnsicht={onAnsicht} onEntwurf={onEntwurf} onAbmelden={onAbmelden} />
+          onListe={onListe} onAbmelden={onAbmelden} />
 
         {(!webgl || fehler || !daten) && <div className="tw-meldung-platz">
           {!webgl && <p className="ui-glas tw-meldung" role="alert">3D-Darstellung nicht verfügbar. Dein Browser unterstützt WebGL 2 nicht.</p>}
@@ -245,7 +260,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
             onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} tastatur />}
           {bereit && <TwinSzenenTasten name={name} geschosse={daten.geschosse} fokusId={fokusId}
             onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
-            onTechnik={() => waehleModus("technik")} separiert={separiert} onSeparieren={setSepariert} />}
+            onTechnik={technikTaste} meldung={tastenMeldung} separiert={separiert} onSeparieren={setSepariert} />}
           <aside className="tw-rechts" ref={rechts} aria-label="Geschosse und Anlage">
             <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
               ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} />

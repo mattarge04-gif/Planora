@@ -1,13 +1,34 @@
 import { useThree } from "@react-three/fiber";
 import { useLayoutEffect } from "react";
 import type { OrbitControls } from "three-stdlib";
+import type { OrthographicCamera } from "three";
+import type { Bereich } from "../szene2/huelle";
 import { TOKENS } from "../design/tokens";
-import { tastaturSchritt } from "./kamera";
+import { tastaturSchritt, zoomImFreiraum, type Freiraum } from "./kamera";
 
 
-export function TastaturKamera({ aktiv }: { aktiv: boolean }) {
-  const { gl, camera, controls: raw } = useThree();
+export function TastaturKamera({ aktiv, freiraum, auswahlBereich }: { aktiv: boolean; freiraum: Freiraum; auswahlBereich: () => Bereich | undefined }) {
+  const { gl, camera, controls: raw, size } = useThree();
   const controls = raw as unknown as OrbitControls | null;
+  const zoomen = (zoom: number) => {
+    if (!controls) return;
+    zoomImFreiraum(camera as OrthographicCamera, controls.target, size.width, size.height, freiraum,
+      Math.max(controls.minZoom, Math.min(controls.maxZoom, zoom)), auswahlBereich());
+    controls.update();
+  };
+  useLayoutEffect(() => {
+    if (!controls) return;
+    const el = gl.domElement;
+    const rad = (e: WheelEvent) => {
+      if (!controls.enabled || !controls.enableZoom || !e.deltaY) return;
+      e.preventDefault(); e.stopImmediatePropagation(); controls.dispatchEvent({ type: "start", target: controls });
+      const faktor = 0.95 ** controls.zoomSpeed;
+      zoomen(camera.zoom * (e.deltaY < 0 ? 1 / faktor : faktor));
+      controls.dispatchEvent({ type: "end", target: controls });
+    };
+    el.addEventListener("wheel", rad, { capture: true, passive: false });
+    return () => el.removeEventListener("wheel", rad, { capture: true });
+  }, [controls, gl, camera, size.width, size.height, freiraum, auswahlBereich]);
   useLayoutEffect(() => {
     if (!aktiv || !controls) return;
     const el = gl.domElement, vorher = { tab: el.getAttribute("tabindex"), label: el.getAttribute("aria-label"), keys: el.getAttribute("aria-keyshortcuts"), outline: el.style.outline, offset: el.style.outlineOffset };
@@ -24,7 +45,7 @@ export function TastaturKamera({ aktiv }: { aktiv: boolean }) {
       e.preventDefault(); e.stopPropagation(); controls.dispatchEvent({ type: "start", target: controls });
       const damping = controls.enableDamping; controls.enableDamping = false;
       controls.setAzimuthalAngle(schritt.azimut); controls.setPolarAngle(schritt.polar);
-      camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, schritt.zoom)); camera.updateProjectionMatrix();
+      if (schritt.zoom !== camera.zoom) zoomen(schritt.zoom);
       controls.update(); controls.enableDamping = damping; fokus();
     };
     el.addEventListener("keydown", taste); el.addEventListener("pointerdown", zeiger); el.addEventListener("focus", fokus); el.addEventListener("blur", verlassen);
@@ -33,6 +54,6 @@ export function TastaturKamera({ aktiv }: { aktiv: boolean }) {
       for (const [name, wert] of [["tabindex", vorher.tab], ["aria-label", vorher.label], ["aria-keyshortcuts", vorher.keys]]) if (wert === null) el.removeAttribute(name!); else el.setAttribute(name!, wert!);
       verlassen();
     };
-  }, [aktiv, controls, gl, camera]);
+  }, [aktiv, controls, gl, camera, size.width, size.height, freiraum, auswahlBereich]);
   return null;
 }

@@ -3,7 +3,6 @@
   "fenster": [[1440, 900], [1920, 1080], [1280, 720]],
   "schritte": [
     { "klick": "Beispielgebaeude" },
-    { "knopf": "Digital Twin" },
     { "warte": 7000 },
     { "bild": "uebersicht" },
     { "rad": [0.5, 0.5, -500] },
