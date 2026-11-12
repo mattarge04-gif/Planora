@@ -504,3 +504,21 @@ export function bestueckungVon(z: AssistentZustand, gruppe: string): { katalogId
 export function unterverteilerVorschlaege(z: AssistentZustand): ZEinheit[] {
   return z.einheiten.filter((e) => wirksam(z, e).fbh === "ja" && (ERLAUBT[e.art] ?? []).includes(K.verteiler) && e.art !== "technik");
 }
+
+/** Verbraucher für die Checkliste in Schritt 5: Abgaben und Unterverteiler, geordnet nach Geschoss (oben zuerst) und Einheit. */
+export function verbraucherKandidaten(z: AssistentZustand): { geschoss: string; einheiten: { einheit: ZEinheit; teile: ZBauteil[] }[] }[] {
+  const unter = new Set(unterverteiler(z).map((t) => t.schluessel));
+  const geschosse = [...z.gebaeude.geschosse].sort((a, b) => geschossRang(b.code) - geschossRang(a.code));
+  return geschosse.map((g) => ({
+    geschoss: g.code,
+    einheiten: z.einheiten.filter((e) => e.geschoss === g.code).map((einheit) => ({
+      einheit,
+      teile: z.bauteile.filter((t) => (istAbgabe(t) || unter.has(t.schluessel)) && "einheit" in t.standort && t.standort.einheit === einheit.schluessel),
+    })).filter((x) => x.teile.length > 0),
+  })).filter((g) => g.einheiten.length > 0);
+}
+
+/** Bezugsgeräte für "Teil vor Bauteil X" (Schritt 7): Erzeuger, Speicher und Verteiler. */
+export function vorKandidaten(z: AssistentZustand): ZBauteil[] {
+  return z.bauteile.filter((t) => istZentralgeraet(t) || t.katalogId === K.verteiler);
+}

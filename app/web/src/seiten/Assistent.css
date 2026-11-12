@@ -239,3 +239,50 @@
   .as-zeile-abgabe input[type="number"] { grid-column: 2; }
   .as-zeile-abgabe .as-check { grid-column: 3; }
 }
+
+/* Schritt 5: Gruppen */
+.as-gruppe { gap: 14px; padding: 14px; }
+.as-gruppe .as-karte-kopf { gap: 10px; }
+.as input.as-gruppe-name { font-weight: 500; }
+.as-arten { margin: 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; min-width: 0; }
+.as-arten legend { margin-bottom: 6px; padding: 0; }
+.as-arten .as-kachel-inhalt { padding: 8px 10px; height: 100%; align-content: start; }
+.as-bestueckung { display: grid; gap: 4px; }
+.as-bestueckung > .as-label { margin-bottom: 2px; }
+.as-bestueckung > .as-schalter { margin-top: 6px; }
+.as-bestueckung-zeile { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 4px 0 10px; border-radius: var(--tw-radius-kachel); background: var(--tw-flaeche-2); }
+.as-bestueckung-zeile > span:first-child { font-size: 13px; }
+.as-bestueckung-zahl { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; }
+.as-bestueckung-zahl output { min-width: 22px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.as-gedimmt { color: var(--tw-sekundaer-kachel); }
+.as-badge-leise { background: var(--tw-flaeche-2); color: var(--tw-sekundaer-kachel); box-shadow: inset 0 0 0 1px var(--tw-grau-1); }
+.as-verbraucher { margin: 0; padding: 0; border: 0; display: grid; gap: 8px; min-width: 0; }
+.as-verbraucher legend { margin-bottom: 6px; padding: 0; display: flex; gap: 8px; align-items: baseline; }
+.as-verbraucher-geschoss { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: start; }
+.as-verbraucher-liste { display: grid; gap: 2px; }
+.as-check.as-verbraucher-eintrag { display: flex; width: 100%; padding: 5px 8px; border-radius: 6px; color: var(--tw-text); white-space: normal; }
+.as-verbraucher-eintrag:hover { background: rgb(31 38 48 / 0.04); }
+.as-verbraucher-text { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; min-width: 0; font-size: 13px; }
+.as-verbraucher-eintrag .as-badge { margin-left: auto; }
+
+/* Schritt 6: Unterverteiler */
+.as-uv { padding: 10px 12px; gap: 8px; }
+.as-uv-kopf { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.as-uv-name { font-size: 13px; font-weight: 500; }
+.as-uv-details { display: flex; align-items: end; gap: 16px; flex-wrap: wrap; padding-left: 46px; }
+.as-speisung { min-width: 220px; }
+
+/* Schritt 7: Teile */
+.as-zeile-teil { grid-template-columns: minmax(0, 0.8fr) auto minmax(0, 1.2fr) 28px; }
+
+/* Schritt 8: Prüfen */
+.as-zusammenfassung { margin: 0; display: grid; border-radius: var(--tw-radius-kachel); box-shadow: inset 0 0 0 1px var(--tw-grau-1); background: rgb(255 255 255 / 0.8); }
+.as-zusammenfassung-zeile { display: grid; grid-template-columns: 128px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 6px 8px 6px 12px; }
+.as-zusammenfassung-zeile + .as-zusammenfassung-zeile { border-top: 1px solid var(--tw-grau-1); }
+.as-zusammenfassung dt { color: var(--tw-sekundaer); font-size: 12px; }
+.as-zusammenfassung dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.as-hinweise { display: grid; gap: 4px; }
+.as-hinweis-zeile { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 6px 6px 10px; border-radius: var(--tw-radius-kachel); background: rgb(224 138 30 / 0.08); }
+.as-hinweis-zeile > svg { color: var(--tw-warnung); }
+.as-ok { margin: 0; display: flex; gap: 8px; align-items: center; color: var(--tw-text); }
+.as-ok svg { color: var(--tw-sekundaer); }
