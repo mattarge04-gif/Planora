@@ -1,3 +1,4 @@
+import { GRUPPEN_ARTEN } from "./typen.js";
 // JSON-Schemas fuer Fastify (ajv). Strukturfehler → 400; fachliche Regeln prueft pruefung.ts (→ 422).
 const UUID = { type: "string", pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" };
 const DREI = { type: "string", enum: ["ja", "nein", "unbekannt"] };
@@ -9,17 +10,23 @@ const RECHTECK = {
   properties: { x: KOORD, z: KOORD, breite: { type: "number", exclusiveMinimum: 0, maximum: 1000 }, tiefe: { type: "number", exclusiveMinimum: 0, maximum: 1000 } },
 };
 const VERWEIS = { type: "object", additionalProperties: false, minProperties: 1, maxProperties: 1, properties: { einheitId: UUID, einheitIndex: INDEX } };
+const BAUTEIL_VERWEIS = { type: "object", additionalProperties: false, minProperties: 1, maxProperties: 1, properties: { bauteilId: UUID, bauteilIndex: INDEX } };
+const GRUPPE_VERWEIS = { type: "object", additionalProperties: false, minProperties: 1, maxProperties: 1, properties: { gruppeId: UUID, gruppeIndex: INDEX } };
+const ORT = {
+  type: ["object", "null"], additionalProperties: false, oneOf: [{ type: "object", required: ["gruppe"] }, { type: "object", required: ["vorBauteil"] }, { type: "null" }],
+  properties: { gruppe: GRUPPE_VERWEIS, vorBauteil: BAUTEIL_VERWEIS },
+};
 const TEXT = { type: ["string", "null"], maxLength: 200 };
 
 export const ID_PARAMS = { type: "object", required: ["id"], properties: { id: UUID } };
 export const LID_PARAMS = { type: "object", required: ["lid"], properties: { lid: UUID } };
 
 export const HUELLE_SCHEMA = {
-  type: "object", additionalProperties: false, required: ["name", "grundform", "breiteM", "tiefeM", "geschosse"],
+  type: "object", additionalProperties: false, required: ["name", "grundform", "geschosse"],
   properties: {
     gebaeudeId: { type: "string" }, liegenschaftId: { type: "string" }, regelwerkVersion: { type: "integer" }, stand: { type: "integer" }, // Rueckgabefelder von GET, beim Schreiben ignoriert
     name: { type: "string", minLength: 1, maxLength: 200 },
-    grundform: { type: "string", enum: ["quader", "l_form", "u_form"] },
+    grundform: { type: "string", enum: ["quader", "quadrat", "l_form", "u_form"] },
     breiteM: { type: "number" }, tiefeM: { type: "number" },
     geschosse: { type: "array", maxItems: 50, items: {
       type: "object", additionalProperties: false, required: ["code"],
@@ -51,6 +58,19 @@ export const BESCHREIBUNG_SCHEMA = {
         hersteller: TEXT, typ: TEXT, baujahr: { type: ["integer", "null"], minimum: 1800, maximum: 2100 },
         positionManuell: { type: ["object", "null"], additionalProperties: false, required: ["x", "z"], properties: { x: KOORD, z: KOORD } },
         versorgt: { type: "array", maxItems: 2000, items: VERWEIS },
+        ort: ORT,
+      } } },
+    gruppen: { type: "array", maxItems: 500, items: {
+      type: "object", additionalProperties: false, required: ["verteiler", "nummer", "art", "bezeichnung", "verbraucher"],
+      properties: {
+        id: UUID, verteiler: BAUTEIL_VERWEIS, nummer: { type: "integer", minimum: 1, maximum: 99 },
+        art: { type: "string", enum: [...GRUPPEN_ARTEN] }, bezeichnung: { type: "string", minLength: 1, maxLength: 200 },
+        verbraucher: { type: "array", maxItems: 2000, items: BAUTEIL_VERWEIS },
       } } },
   },
+};
+
+export const ENTWURF_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["stand", "daten"],
+  properties: { stand: { type: "integer", minimum: 0 }, daten: { type: "object" } },
 };

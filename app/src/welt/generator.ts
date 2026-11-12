@@ -15,7 +15,7 @@ function verweisId(v: { einheitId?: string }): string {
 
 /** Teilrechtecke der Grundform; x entlang Breite, z entlang Tiefe. */
 export function grundriss(form: Grundform, breite: number, tiefe: number, anteil: number): Rechteck[] {
-  if (form === "quader") return [{ x: 0, z: 0, breite, tiefe }];
+  if (form === "quader" || form === "quadrat") return [{ x: 0, z: 0, breite, tiefe }];
   const riegel = { x: 0, z: 0, breite, tiefe: anteil * tiefe };
   const sb = anteil * breite, st = (1 - anteil) * tiefe;
   const links = { x: 0, z: anteil * tiefe, breite: sb, tiefe: st };
@@ -76,6 +76,7 @@ export function kanonisch(v: unknown): string {
 type Gruppe = { schluessel: string; geschossId: string; katalogId: string; hersteller: string | null; typ: string | null; zeilen: BauteilEingabe[] };
 
 export function weltErzeugen(h: HuelleGespeichert, b: Beschreibung, rw: Regelwerk): Welt {
+  if (h.breiteM === null || h.tiefeM === null) throw new Error("Masse fehlen (Regelwerk v1 setzt sie voraus)");
   const teile = grundriss(h.grundform, h.breiteM, h.tiefeM, rw.schenkelAnteil);
   // Bauteile direkt am Geschoss: Raster im groessten Teilrechteck (bei Gleichstand das erste, d.h. der Riegel)
   const geschossFlaeche = teile.reduce((m, r) => (r.breite * r.tiefe > m.breite * m.tiefe ? r : m), teile[0]);

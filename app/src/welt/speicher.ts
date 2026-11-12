@@ -17,7 +17,7 @@ export class FachFehler extends Error {
 export function pruefeHuelle(h: Huelle, rw: Regelwerk): Fehler[] {
   const f: Fehler[] = [];
   for (const [pfad, v] of [["breiteM", h.breiteM], ["tiefeM", h.tiefeM]] as const)
-    if (v < rw.masse.min || v > rw.masse.max) f.push({ pfad, code: "mass_ungueltig", meldung: `${rw.masse.min}–${rw.masse.max} m erwartet` });
+    if (v === undefined || v < rw.masse.min || v > rw.masse.max) f.push({ pfad, code: "mass_ungueltig", meldung: `${rw.masse.min}–${rw.masse.max} m erwartet` });
   if (h.geschosse.length === 0) f.push({ pfad: "geschosse", code: "geschoss_fehlt", meldung: "Mindestens ein Geschoss angeben" });
   const codes = new Set<string>();
   h.geschosse.forEach((g, i) => {
