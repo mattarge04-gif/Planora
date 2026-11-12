@@ -200,13 +200,15 @@ function Kamera({ bereich, zielY }: { bereich: Bereich; zielY: number }) {
   const steuerung = useRef<OrbitControls | null>(null);
   const ziel = useRef(zielY);
   ziel.current = zielY;
+  const groesse = useRef(size);
+  groesse.current = size;
   useEffect(() => {
     const r = radiusVon(bereich);
     const cx = (bereich.xMin + bereich.xMax) / 2, cz = (bereich.zMin + bereich.zMax) / 2, cy = ziel.current;
     const k = camera as THREE.OrthographicCamera;
     k.position.set(cx + r * 2, cy + r * 1.7, cz + r * 2);
     k.near = 0.1; k.far = r * 20;
-    k.zoom = Math.min(size.width, size.height) / (r * 2.2);
+    k.zoom = Math.min(groesse.current.width, groesse.current.height) / (r * 2.2);
     k.lookAt(cx, cy, cz);
     k.updateProjectionMatrix();
     const s = new OrbitControls(k, gl.domElement);
@@ -219,7 +221,7 @@ function Kamera({ bereich, zielY }: { bereich: Bereich; zielY: number }) {
     steuerung.current = s;
     invalidate();
     return () => { s.removeEventListener("change", neu); s.dispose(); steuerung.current = null; };
-  }, [bereich, camera, gl, size.width, size.height, invalidate]);
+  }, [bereich, camera, gl, invalidate]);
   useEffect(() => { invalidate(); }, [zielY, invalidate]);
   useFrame(() => {
     const s = steuerung.current;
@@ -255,7 +257,7 @@ function Anker({ punkt, ziel }: { punkt: V3 | null; ziel: RefObject<HTMLDivEleme
 
 /** Ambient Occlusion (GTAO) und Ausgabe; "reduziert" schaltet nur AO und Schatten ab. Prioritaet 1 uebernimmt das Rendern. */
 function Nachbearbeitung({ reduziert }: { reduziert: boolean }) {
-  const { gl, scene, camera, size } = useThree();
+  const { gl, scene, camera, size, invalidate } = useThree();
   const { composer, ao } = useMemo(() => {
     const c = new EffectComposer(gl);
     c.addPass(new RenderPass(scene, camera));
@@ -266,8 +268,7 @@ function Nachbearbeitung({ reduziert }: { reduziert: boolean }) {
     (ao as unknown as { render: (...a: unknown[]) => void }).render = (...a) => {
       const aus: THREE.Object3D[] = [];
       scene.traverse((o) => { if ((o as THREE.Sprite).isSprite && o.visible) { o.visible = false; aus.push(o); } });
-      zeichne(...a);
-      aus.forEach((o) => { o.visible = true; });
+      try { zeichne(...a); } finally { aus.forEach((o) => { o.visible = true; }); }
     };
     c.addPass(ao);
     c.addPass(new OutputPass());
@@ -278,6 +279,7 @@ function Nachbearbeitung({ reduziert }: { reduziert: boolean }) {
     composer.setSize(size.width, size.height);
   }, [composer, gl, size.width, size.height]);
   useEffect(() => () => composer.dispose(), [composer]);
+  useEffect(() => { invalidate(); }, [reduziert, invalidate]);
   useFrame(() => {
     ao.enabled = !reduziert; // gleicher Ausgabepfad (Tonwerte, Hintergrund), nur ohne AO
     composer.render();

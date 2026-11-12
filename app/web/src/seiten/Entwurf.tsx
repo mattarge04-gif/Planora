@@ -7,7 +7,11 @@ import type { Beschreibung, Katalog, Welt } from "../typen";
 interface Daten { welt: Welt; beschreibung: Beschreibung; katalog: Katalog }
 
 function webglVorhanden(): boolean {
-  try { return !!document.createElement("canvas").getContext("webgl2"); } catch { return false; }
+  try {
+    const gl = document.createElement("canvas").getContext("webgl2");
+    gl?.getExtension("WEBGL_lose_context")?.loseContext();
+    return !!gl;
+  } catch { return false; }
 }
 
 interface Props { gebaeudeId: string; name: string; onAbgelaufen?: () => void; onZurAnsicht: () => void }
@@ -18,6 +22,7 @@ export function Entwurf({ gebaeudeId, name, onAbgelaufen, onZurAnsicht }: Props)
   const [fokusId, setFokusId] = useState<string | null>(null);
   const [auswahl, setAuswahl] = useState<string | null>(null);
   const [reduziert, setReduziert] = useState(false);
+  const [webgl] = useState(webglVorhanden);
   const karteRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     setDaten(null); setFehler(null); setFokusId(null); setAuswahl(null);
@@ -30,7 +35,7 @@ export function Entwurf({ gebaeudeId, name, onAbgelaufen, onZurAnsicht }: Props)
       else setFehler(e.message);
     });
   }, [gebaeudeId, onAbgelaufen]);
-  if (!webglVorhanden()) {
+  if (!webgl) {
     return <p className="fehler" role="alert">3D-Darstellung nicht verfuegbar (WebGL fehlt). <button className="link" onClick={onZurAnsicht}>Bisherige Ansicht</button></p>;
   }
   if (fehler) return <p className="fehler" role="alert">{fehler}</p>;
