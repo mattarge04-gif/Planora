@@ -3,6 +3,44 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-13 – Stufe 1: Tracks abgeschlossen, integriert, Betreiber legt Gebaeude an
+
+### 1. Was gemacht wurde
+
+- [F] Abgebrochene Tracks fertig: A6 `530422c` (Steigzone, Hinweise `ohne_gruppe`/`gruppe_leer`, abgeleitete Masse v2); B4/B5 `43a5515`, `dc94655` (Assistent-Schritte 5–8, Tastatur, GPU-Szenario, 36 GPU-Bilder `abnahme/2026-11-12-assistent/`); C3/C4 `95536ea`, `4b1a03c` (Gruppenstock, Ort vor Bauteil, GLB `ventil_3weg`/`ventil_2weg`/`wmz` und Verteiler n1–n8 via Blender `design/modelle/anlagen.py`, Gruppenhervorhebung, Karte `TwinGruppe`, 57 GPU-Bilder `abnahme/2026-11-12-gruppen/`, 60 fps).
+- [F] Integration auf `m2c-interview`: Merges A `2a155d2`, C `f16ab79`, B `29e292a` ohne Konflikte; `npm run muster:welt` ohne Fixture-Diff. I1 `fe85d42` (Twin-Menue "Gebäude bearbeiten" oeffnet Assistent), Doku `f10d597`.
+- [F] `5b2bf4b`: `GET /api/struktur/liegenschaften`, Liegenschaftswahl ohne sichtbare Gebaeude, Meldung statt Fehler fuer Betreiber nach Anlegen, Entwicklungslogin `betreiber@planora.invalid` (Passwort zufaellig, im Startfenster). Per HTTP geprueft, nicht im Browser.
+- [F] Pruefstand: Backend 568/568, Web 251/251, Typpruefungen und Webbuild gruen.
+- [F] PO hat lokal gestartet und den Assistenten gesehen ("ist mal ein grosser Fortschritt") und den Push des Branches beauftragt (kein Merge nach `main`).
+
+### 2. Was inhaltlich gelernt wurde
+
+- [F] Ein Benutzer hat genau eine Rolle (`rolle_zuordnung.benutzer_id` Primaerschluessel); Admin hat kein `huelle.verwalten`. Deshalb braucht der Betreiber einen eigenen Weg zu den Liegenschaften, auch wenn ihm keine Gebaeude sichtbar sind (E38).
+- [A] Steigzone 0.3 m innerhalb der Zentrale-Ecke, Abschwaechung nicht gewaehlter Leitungen und Verteiler `n8` mit 12 608 Dreiecken / 256 kB (ueber Budget 8000 / 200 kB) sind ungeprueft.
+- [F] Sichtbare Maengel: Vorschau im Assistenten zoomt zu nah (`einpassen()` rechnet korrekt, Ursache offen); Hauptleitungen bilden Schleifen ueber der Zentrale; Gruppenauswahl faehrt nicht auf den Gruppenverlauf.
+
+### 3. Was ueber die Zusammenarbeit gelernt wurde
+
+- [F] Getrennte Worktrees je Track liessen sich ohne Konflikte zusammenfuehren; Reihenfolge A, C, B (Daten vor Darstellung vor Oberflaeche).
+- [A] Der PO testet selbst lokal und gibt knappe Rueckmeldung; ein startbarer Stand mit Login fuer jede Rolle ist dafuer wichtiger als Testzahlen.
+
+### 4. Was technisch Zeit spart
+
+- [F] PowerShell des PO blockiert `npm.ps1` -> `npm.cmd`, Befehle aus `app/`.
+- [F] Sackgasse: Entwicklungsstart auf Standardports 3000/54500 kollidiert mit dem laufenden PO-Server und stuerzt mit `undefined` ab [A, wahrscheinliche Ursache]. Eigene Ports via `$env:PLANORA_PORT`/`$env:PLANORA_PG_PORT`.
+- [F] Sackgasse: Testlauf mit `timeout` abbrechen kann die eingebettete PostgreSQL verwaist zuruecklassen. Am Ende lauschte auf 54800 ein nicht sichtbarer/beendbarer Prozess [?]. Tests nicht hart abbrechen; vor dem naechsten Start Port pruefen.
+
+### 5. Wo es weitergeht
+
+1. Vorschau-Zoom im Assistenten in laufender Instanz messen und beheben [A: Kamera nach Eingriff nicht neu eingepasst oder Zoom-Untergrenze].
+2. Hauptleitungen Erzeuger -> Speicher -> Verteiler ohne Schleifen fuehren.
+3. Gruppenauswahl: Kamera auf Gruppenverlauf, Umriss in Uebersicht staerker.
+4. I2: GPU-Bilder aller Muster, visual-critic-Gesamtrunde, PO-Sichtung.
+5. Annahmen oben pruefen; Doku-Nachtrag `00-kontext.md` (Masse ab Regelwerk v2, Liegenschaften-Endpunkt).
+6. Aufraeumen: Worktrees wt-a/b/c nach Push; untracked Ordner `wt-b-assistent/docs/design/kritiken/2026-11-12-assistent-r1/` loescht der PO.
+
+Details: [Integrationsstand](superpowers/plans/2026-11-13-stufe1-integration.md).
+
 ## 2026-11-12 – Stufe 1: Vertragsphase nach Claude-Stopp abgeschlossen
 
 - [F] Aktueller Branch `m2c-interview`, Implementierungsstand `c5a335e`; M2b bereits mit `ba3f339` nach `main` integriert. Ältere Einstiegsangaben korrigiert.

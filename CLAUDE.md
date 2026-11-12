@@ -19,10 +19,16 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 13.11.2026
 
-### Stufe 1 integriert [F]
+### Stufe 1 integriert, Branch gepusht [F]
 
-- Tracks A (Generator v2/Raumkomposition), C (Gruppenleitungen) und B (Web-Assistent) auf `m2c-interview` gemergt, plus I1 (Twin-Menue "Gebäude bearbeiten"). Backend 565/565, Web 251/251, Typpruefungen und Build gruen.
-- Einstieg und offene Punkte: `docs/superpowers/plans/2026-11-13-stufe1-integration.md`. Naechster Schritt: Vorschau-Zoom im Assistenten beheben, dann I2 (GPU-Bilder aller Muster, visual-critic, PO-Sichtung). Kein Push/Merge nach `main` ohne PO-Auftrag.
+- Tracks A (Generator v2/Raumkomposition, Merge `2a155d2`), C (Gruppenleitungen, `f16ab79`) und B (Web-Assistent, `29e292a`) auf `m2c-interview` gemergt, ohne Konflikte; `npm run muster:welt` ohne Fixture-Diff. I1 `fe85d42`: Twin-Kopfzeile "Gebäude bearbeiten" oeffnet den Assistenten.
+- `5b2bf4b`: `GET /api/struktur/liegenschaften` (ID+Name; Betreiber/Admin alle, sonst zugeordnete). Assistent waehlt Liegenschaft auch ohne sichtbare Gebaeude; Betreiber erhaelt nach Anlegen eine Meldung statt Fehler (E38: Betreiber legt Huelle an, Kunde erfasst Fachdaten). Entwicklungsstart legt zusaetzlich `betreiber@planora.invalid` an (Passwort zufaellig, steht im Startfenster). Per HTTP geprueft, nicht im Browser durchgeklickt.
+- Pruefstand: Backend 568/568, Web 251/251, beide Typpruefungen und Webbuild gruen.
+- PO hat lokal gestartet und den Assistenten gesehen ("ist mal ein grosser Fortschritt"). PO hat Push des Branches beauftragt; kein Merge nach `main`, kein Deployment.
+- Ein Benutzer hat genau eine Rolle (`rolle_zuordnung.benutzer_id` ist Primaerschluessel); Admin hat kein `huelle.verwalten`.
+- Lokal starten auf Windows: `npm.cmd` statt `npm` (PowerShell blockiert `npm.ps1`), Befehle aus `app/`. Laeuft der PO-Server auf 3000/54500, eigene Ports per `$env:PLANORA_PORT`/`$env:PLANORA_PG_PORT`.
+- Einstieg und offene Punkte: `docs/superpowers/plans/2026-11-13-stufe1-integration.md`. Naechster Schritt: Vorschau-Zoom im Assistenten beheben, dann I2 (GPU-Bilder aller Muster, visual-critic, PO-Sichtung).
+- [?] Auf Port 54800 lauschte am Sitzungsende ein nicht sichtbarer/beendbarer Prozess (vermutlich verwaiste eingebettete PostgreSQL aus einem Testlauf mit `timeout`) – beim naechsten Start pruefen.
 
 ### Aktueller Abschluss Stufe 1 nach Claude-Stopp [F]
 
@@ -105,11 +111,14 @@ Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Ges
 - Aufraeumen: Orca-Worktrees `m1-abnahme-a`/`-b` und Docker-Volumes `planora-b_*` (vom 10.11.) existieren noch.
 - [?] WSL-Gesamtabnahme auf dem gemergten main-Stand wiederholen?
 - [A] Regelwerk-v1-Werte (Default-Flaechen, Mengenbereiche, Erlaubt-Matrix) sind Annahme; PO-Freigabe vor M2b.
+- Aufraeumen nach Push: Worktrees `wt-a-generator`, `wt-b-assistent`, `wt-c-leitungen` (Branches gemergt); untracked Ordner `wt-b-assistent/docs/design/kritiken/2026-11-12-assistent-r1/` loescht der PO.
 - [?] Spec M2a Abschnitt 11 "Nachtrag nach Umsetzung": 400-Fehlerformat vor M2b vereinheitlichen, Regelwerk-v2-Guard im Generator, `aendereHuelle` ohne Stand-Pruefung u.a.
 
 ### Naechste Coding-Aufgabe
 
-PO-Korrekturrunde am Entwurf ([docs/abnahme/2026-11-12-entwurf/README.md](docs/abnahme/2026-11-12-entwurf/README.md)); danach alte Szene durch szene2 ersetzen und Explosion, Tabellenweg, Leistungsstufen anbinden. Regelwerk-v1 bleibt Annahme bis PO-Rueckmeldung. Einheitliches 400-Format ist in M2b-1 umgesetzt; weitere M2a-Nachtraege bleiben offen.
+**Aktuell (13.11.):** Vorschau-Zoom im Assistenten, Hauptleitungs-Schleifen ueber der Zentrale, Kamerafahrt auf Gruppenverlauf, danach I2 – Details in `docs/superpowers/plans/2026-11-13-stufe1-integration.md`.
+
+*Ueberholt (Stand 12.11.):* PO-Korrekturrunde am Entwurf ([docs/abnahme/2026-11-12-entwurf/README.md](docs/abnahme/2026-11-12-entwurf/README.md)); danach alte Szene durch szene2 ersetzen und Explosion, Tabellenweg, Leistungsstufen anbinden. Regelwerk-v1 bleibt Annahme bis PO-Rueckmeldung. Einheitliches 400-Format ist in M2b-1 umgesetzt; weitere M2a-Nachtraege bleiben offen.
 
 ## Antworten
 
