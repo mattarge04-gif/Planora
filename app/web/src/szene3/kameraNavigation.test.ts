@@ -70,11 +70,18 @@ describe("Kulisse an der Tabellenkante beschneiden", () => {
     for (const faktor of [1, 1.5, 2]) {
       const [x, y, b, t] = freiraumScissor(w, h, frei, faktor);
       expect(x / faktor).toBeGreaterThanOrEqual(frei.links + 11.5);
-      expect(y / faktor).toBeGreaterThanOrEqual(frei.unten + 11.5);
+      expect(y / faktor).toBeCloseTo(frei.unten, 0);
       expect((x + b) / faktor).toBeLessThanOrEqual(w - frei.rechts - 11.5);
       expect((y + t) / faktor).toBeLessThanOrEqual(h - frei.oben - 11.5);
       expect(b).toBeGreaterThan(0); expect(t).toBeGreaterThan(0);
     }
+  });
+  it("legt die untere Schnittkante genau auf die Tabellenoberkante ohne sichtbaren Zwischenraum", () => {
+    const [x, y, b, t] = freiraumScissor(1440, 900, frei);
+    expect(900 - y).toBe(900 - frei.unten);
+    expect(y).toBe(frei.unten);
+    expect(y + t).toBe(900 - frei.oben - 12);
+    expect(x).toBe(frei.links + 12); expect(x + b).toBe(1440 - frei.rechts - 12);
   });
   it("liefert bei überlappenden Karten keinen negativen WebGL-Ausschnitt", () => {
     expect(freiraumScissor(300, 200, frei).slice(2)).toEqual([0, 0]);

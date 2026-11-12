@@ -3,7 +3,7 @@ import { useLayoutEffect, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import { freiraumScissor, type Freiraum } from "./kamera";
 
-/** [A] Kulisse wird 12 CSS-px innerhalb aller Kartenränder beschnitten, auch während Nahfahrten und beim manuellen Zoom. */
+/** [A] Unten verdeckt die Tabellenkarte den Schnitt an ihrer Oberkante; seitlich/oben bleiben 12 CSS-px Abstand. */
 export function FreiraumSchnitt({ freiraum, children }: { freiraum: Freiraum; children: ReactNode }) {
   const ref = useRef<THREE.Group>(null);
   const { size } = useThree();

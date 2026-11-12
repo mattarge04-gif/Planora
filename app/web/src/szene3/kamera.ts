@@ -7,9 +7,9 @@ export const ISO_RICHTUNG: V3 = (() => { const l = Math.sqrt(3); return [1 / l, 
 export interface Freiraum { links: number; rechts: number; oben: number; unten: number }
 export interface Einpassung { ziel: V3; position: V3; zoom: number }
 export interface SzenenZiel { geschossId: string; position?: { x: number; y: number; z: number } }
-/** CSS-Kartenränder in WebGL-Koordinaten (Ursprung unten links); Faktor 1 für den logischen Hauptpuffer. */
+/** CSS-Kartenränder in WebGL-Koordinaten; unten schliesst die Kulisse direkt an die Tabellenoberkante an. */
 export function freiraumScissor(breite: number, hoehe: number, frei: Freiraum, faktor = 1, rand = 12): [number, number, number, number] {
-  const x = Math.min(breite, Math.max(0, frei.links + rand)), y = Math.min(hoehe, Math.max(0, frei.unten + rand));
+  const x = Math.min(breite, Math.max(0, frei.links + rand)), y = Math.min(hoehe, Math.max(0, frei.unten));
   return [Math.round(x * faktor), Math.round(y * faktor), Math.max(0, Math.floor((breite - x - frei.rechts - rand) * faktor)),
     Math.max(0, Math.floor((hoehe - y - frei.oben - rand) * faktor))];
 }
