@@ -91,4 +91,8 @@ describe("schlange", () => {
   it("zu kleines Rechteck ergibt keine Punkte", () => {
     expect(schlange({ x: 0, z: 0, breite: 0.8, tiefe: 3 }, 0)).toEqual([]);
   });
+  it("Abstand 0 oder negativ ergibt keine Punkte (keine Endlosschleife)", () => {
+    expect(schlange({ x: 0, z: 0, breite: 4, tiefe: 3 }, 0, 0)).toEqual([]);
+    expect(schlange({ x: 0, z: 0, breite: 4, tiefe: 3 }, 0, -1)).toEqual([]);
+  });
 });

@@ -63,7 +63,7 @@ function Gebaeude({ h, fokus, mat }: { h: Huelle; fokus: { yUnten: number } | nu
   const yMax = h.bereich.yMax;
   return (
     <>
-      <Quaderz q={h.platte} m={mat.platte} schatten={false} />
+      <Quaderz q={{ ...h.platte, mitte: [h.platte.mitte[0], h.platte.mitte[1] - 0.002, h.platte.mitte[2]] }} m={mat.platte} schatten={false} />
       {sichtbar.map((g) => {
         const geschnitten = !!fokus && gleich(g.yUnten, fokus.yUnten);
         const hoehe = geschnitten ? MASSE.bruestung : g.hoehe;
@@ -185,7 +185,9 @@ function Umgebung() {
   const { gl, scene, invalidate } = useThree();
   useEffect(() => {
     const pm = new THREE.PMREMGenerator(gl);
-    const env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    const raum = new RoomEnvironment();
+    const env = pm.fromScene(raum, 0.04).texture;
+    raum.dispose();
     scene.environment = env;
     scene.environmentIntensity = 0.45;
     pm.dispose();
@@ -260,7 +262,9 @@ function Anker({ punkt, ziel }: { punkt: V3 | null; ziel: RefObject<HTMLDivEleme
 function Nachbearbeitung({ reduziert }: { reduziert: boolean }) {
   const { gl, scene, camera, size, invalidate } = useThree();
   const { composer, ao } = useMemo(() => {
-    const c = new EffectComposer(gl);
+    const dpr = gl.getPixelRatio();
+    const ziel = new THREE.WebGLRenderTarget(Math.max(1, size.width * dpr), Math.max(1, size.height * dpr), { samples: 4, type: THREE.HalfFloatType });
+    const c = new EffectComposer(gl, ziel);
     c.addPass(new RenderPass(scene, camera));
     const ao = new GTAOPass(scene, camera, size.width, size.height);
     ao.blendIntensity = 1;
@@ -280,7 +284,7 @@ function Nachbearbeitung({ reduziert }: { reduziert: boolean }) {
     composer.setPixelRatio(gl.getPixelRatio());
     composer.setSize(size.width, size.height);
   }, [composer, gl, size.width, size.height]);
-  useEffect(() => () => composer.dispose(), [composer]);
+  useEffect(() => () => { ao.dispose(); composer.dispose(); }, [composer, ao]);
   useEffect(() => { invalidate(); }, [reduziert, invalidate]);
   useFrame(() => {
     ao.enabled = !reduziert; // gleicher Ausgabepfad (Tonwerte, Hintergrund), nur ohne AO

@@ -23,7 +23,7 @@ Prototyp auf `m2b1-sichtbarer-schnitt` umgesetzt (`app/web/src/szene2`, `karten`
 
 ### Fortsetzung nach Claude-Usage-Abbruch [F]
 
-Tagesabschluss: M2b-1 technisch fertig, keine visuelle Endabnahme. PO-Entscheid E40: [plastische Gebaeudeuebersicht, Technikansicht und Informationskarten nach drei Bildreferenzen](docs/design/2026-11-12-visuelle-zielrichtung.md). Naechste Sitzung beginnt mit dem visuellen Zielentwurf. Zusatzaufwand [A] +6–10 PT, Planungswert +8 PT. [Screenshots und Pruefstand](docs/abnahme/2026-11-12-m2b1/README.md) sind im Repo gesichert.
+Tagesabschluss: M2b-1 technisch fertig, keine visuelle Endabnahme. PO-Entscheid E40: [plastische Gebaeudeuebersicht, Technikansicht und Informationskarten nach drei Bildreferenzen](docs/design/2026-11-12-visuelle-zielrichtung.md). Der visuelle Zielentwurf ist erledigt (umgesetzt 12.11., siehe Block "Visueller Zielentwurf E40"). Zusatzaufwand [A] +6–10 PT, Planungswert +8 PT. [Screenshots und Pruefstand](docs/abnahme/2026-11-12-m2b1/README.md) sind im Repo gesichert.
 
 Aktueller Branch `m2b1-sichtbarer-schnitt`, Tasks 1–5 bereits committet (HEAD bei Uebernahme `376885d`). Tasks 6–7 durch Codex fortgesetzt: Docker-Frontend, Web-Lockfile im Dossier, lokaler Entwicklungsstart. Siehe aktuellen Eintrag im [Fortsetzungsstand](docs/superpowers/plans/2026-11-11-fortsetzung.md). Der erste sichtbare Schnitt existiert jetzt; aeltere Aussagen unten zu fehlendem Frontend sind damit ueberholt. Weitere M2b-Schritte bleiben offen. Lokale Demo: `npm run entwicklung` in `app/`.
 
@@ -51,7 +51,7 @@ Aktueller Branch `m2b1-sichtbarer-schnitt`, Tasks 1–5 bereits committet (HEAD 
 
 ### Das Kernproblem, richtig gefasst [F]
 
-M1 (Betriebsfundament), M2a (Datenkern) und M2b-1 (erster sichtbarer Schnitt) sind gebaut. Das Frontend unter `app/web/` liefert Login, Gebaeudeliste, 3D-Uebersicht und Seitenpanel. Geschossauswahl/Explosion, Tabellenweg und Erfassung fehlen weiterhin.
+M1 (Betriebsfundament), M2a (Datenkern) und M2b-1 (erster sichtbarer Schnitt) sind gebaut. Das Frontend unter `app/web/` liefert Login, Gebaeudeliste, 3D-Uebersicht und Seitenpanel. Geschossauswahl existiert als Fokus-Prototyp in der Seite "Entwurf"; Explosion, Tabellenweg und Erfassung fehlen weiterhin.
 
 ### Abbruchkriterium [A]
 
@@ -72,7 +72,7 @@ Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Ges
 
 ### Naechste Coding-Aufgabe
 
-Zuerst visuellen Zielentwurf nach E40 ausarbeiten; danach mit Geschossauswahl/Explosion, Tabellenweg und Leistungsstufen verbinden. Regelwerk-v1 bleibt Annahme bis PO-Rueckmeldung. Einheitliches 400-Format ist in M2b-1 umgesetzt; weitere M2a-Nachtraege bleiben offen.
+PO-Korrekturrunde am Entwurf ([docs/abnahme/2026-11-12-entwurf/README.md](docs/abnahme/2026-11-12-entwurf/README.md)); danach alte Szene durch szene2 ersetzen und Explosion, Tabellenweg, Leistungsstufen anbinden. Regelwerk-v1 bleibt Annahme bis PO-Rueckmeldung. Einheitliches 400-Format ist in M2b-1 umgesetzt; weitere M2a-Nachtraege bleiben offen.
 
 ## Antworten
 

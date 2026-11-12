@@ -33,9 +33,15 @@ Vergleich mit [Referenz 2](../../design/referenzen/02-gebaeude.png) und [Referen
 ## Offene Punkte fuer die PO-Korrekturrunde
 
 - [?] Weisser Auswahl-Umriss: im Prototyp entfallen, Auswahl = staerker leuchtendes Rot. Beibehalten oder nachruesten?
-- [A] Hauptleitung: jeder Verteiler haengt an der ersten Zentrale (nicht gespeichert).
+- [A] Hauptleitung: jeder Verteiler haengt an der Zentrale (nicht gespeichert); Zentrale = erstes Erzeuger-Symbol (Waermepumpe, Gas-/Oelkessel, Fernwaerme-Uebergabe) nach Schluessel, sonst erstes Zentrale-Symbol.
 - [A] Dachaufbau als schematischer Kasten ueber der Technik-Einheit.
 - [A] Alle Masse und Farbwerte (Fenster, Rohrradien, Boeden, Stimmungen, Licht).
 - [A] Alle Screenshots im Software-Rendering; auf echter GPU koennen Schatten/AO feiner wirken.
 - [F] Im Beispiel haengen alle EG-Leitungen am Verteiler; das Abblassen nicht betroffener Leitungen ist darum in `verteiler.png` kaum sichtbar.
 - [F] Die Bauteilkarte kann bei dieser Kamera die Zentrale verdecken.
+- [?] Raumbeschriftung ist klein und kontrastarm.
+- [A] Dachaufbau als einfacher Kasten statt "Kasten mit Gitter".
+- [A] Gleiche Bauteile sind nicht instanziert (Abweichung zu Spec §7).
+- [?] Auswahl eines Heizkoerpers/FBH blasst alle Leitungen ab (Leitungen enden an der Einheit).
+- [?] Hauptleitung liegt teilweise im Boden (Rohrradius 0.12 m vs. 0.05 m Hoehe).
+- [A] 60-fps-Ziel auf echtem Laptop ungeprueft.

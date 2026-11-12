@@ -69,6 +69,7 @@ export function leitungen(welt: Welt, katalog: KatalogEintrag[]): Leitung[] {
 
 /** Maeander fuer FBH/TABS: Bahnen entlang x im Abstand `abstand`, eingerueckt um `rand`. */
 export function schlange(r: Rechteck, y: number, abstand = 0.6, rand = 0.5): V3[] {
+  if (abstand <= 0) return [];
   const x0 = r.x + rand, x1 = r.x + r.breite - rand, z0 = r.z + rand, z1 = r.z + r.tiefe - rand;
   if (x1 <= x0 || z1 < z0) return [];
   const punkte: V3[] = [];

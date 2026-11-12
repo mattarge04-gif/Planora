@@ -14,7 +14,7 @@ Sichtbarer Ablauf geprueft: Login → Gebaeudeliste → 3D mit 2 Geschossen, 5 E
 
 Teststand: Backend 402/402, Frontend 19/19, beide Typpruefungen und Frontend-Build gruen. Docker erster Lauf: 27 bestanden, Update-Suite wegen unvollstaendigem Build-Kontext abgebrochen; korrigierter Update-Lauf 6/6 bestanden (207.73 s). Damit alle 33 Tests der aktiven Docker-Suites bestanden; Suite B separat nicht wiederholt. Abnahme-Skripte syntaktisch geprueft; komplette WSL-/CH-VM-Abnahme und SBOM-Neuerzeugung nicht wiederholt.
 
-Start: `npm run entwicklung` in `app/`; Passwort erscheint in der Konsole. Frische temporaere Beispieldaten pro Start, nur Loopback, kein Produktionsbetrieb. Nach M2b-1-Abnahme folgen Geschossauswahl/Explosion, Tabellenweg und Leistungsstufen; Erfassung bleibt M2c. Tagesabschluss: Commit und Push auf `m2b1-sichtbarer-schnitt` vom PO beauftragt; kein Merge oder Deployment. Naechste Sitzung: visueller Zielentwurf nach E40, siehe [Design-Nachtrag](../../design/2026-11-12-visuelle-zielrichtung.md), Zusatzaufwand [A] +6–10 PT (Planungswert +8 PT).
+Start: `npm run entwicklung` in `app/`; Passwort erscheint in der Konsole. Frische temporaere Beispieldaten pro Start, nur Loopback, kein Produktionsbetrieb. Nach M2b-1-Abnahme folgen Geschossauswahl/Explosion, Tabellenweg und Leistungsstufen; Erfassung bleibt M2c. Tagesabschluss: Commit und Push auf `m2b1-sichtbarer-schnitt` vom PO beauftragt; kein Merge oder Deployment. Visueller Zielentwurf nach E40: erledigt am 12.11. (siehe Eintrag oben und [Abnahme-Doku](../../abnahme/2026-11-12-entwurf/README.md)); Hintergrund siehe [Design-Nachtrag](../../design/2026-11-12-visuelle-zielrichtung.md), Zusatzaufwand [A] +6–10 PT (Planungswert +8 PT).
 
 ## Konsolidierung abgeschlossen
 
