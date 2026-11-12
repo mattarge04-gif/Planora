@@ -2,6 +2,7 @@
   "name": "planora-app",
   "version": "1.0.0",
   "scripts": {
+    "entwicklung": "npm --prefix web run build && tsx entwicklung/start.ts",
     "test": "vitest run",
     "migriere": "tsx src/db/migrator.ts",
     "welt:beispiel": "tsx src/welt/beispiel-cli.ts",

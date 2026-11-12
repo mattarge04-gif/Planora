@@ -2,6 +2,12 @@
 
 Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
 
+## E40 – Plastische 3D-Welt und ausgearbeitete Oberflaeche (PO, 2026-11-12)
+
+Der PO bestaetigt die Kombination seiner drei Bildreferenzen: Bild 2 fuer eine helle, plastische Gebaeudeuebersicht, Bild 3 fuer aufgeschnittene Geschoss-/Technikansichten mit erkennbaren Bauteilen und Versorgungsbeziehungen, Bild 1 fuer die Anordnung der Informationskarten und Navigation. M2b-1 ist ein funktionaler Schnitt, keine visuelle Endabnahme. Die einfache Quader-/Pin-Ansicht ist kein finales Erscheinungsbild. Schematisch und datengetrieben bleibt verbindlich; hochwertige Gestaltung ist damit vereinbar.
+
+Referenzen, naechster Schnitt und Schaetzannahmen: [Visuelle Zielrichtung](../design/2026-11-12-visuelle-zielrichtung.md). Zusatzaufwand [A]: **6–10 PT, Planungswert +8 PT**, zusaetzlich zum bisherigen Funktionsumfang, ohne Geschossauswahl/Explosion und grundlegenden Katalog doppelt zu zaehlen. Vollstaendige Innenausstattung und massgetreue Leitungsnetze sind nicht in dieser Schaetzung enthalten.
+
 ## E39 – Betrieb durch Planora, Alarm, Aufbewahrung, Lizenzmodell (PO, 2026-11-11)
 
 - Hosting: Planora stellt Server und Domain je Kunde; Kunde braucht keine eigene IT und erhaelt Zugang durch uns. Vorschlag Server: CH-VM 4 vCPU/8 GB/100+ GB, z. B. Infomaniak VPS Lite (CHF 18/Monat bei Jahresvertrag laut Anbieterseite 11.11.2026, vor Bestellung bestaetigen) [A]. [?] AVV/Lieferantenpruefung mit Siemens klaeren.

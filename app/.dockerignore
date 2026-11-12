@@ -1,5 +1,8 @@
-# Nur package*.json und src/ gehen in den Build-Kontext.
+# Nur package*.json, src/ und web/ (ohne node_modules/dist) gehen in den Build-Kontext.
 *
 !package.json
 !package-lock.json
 !src
+!web
+web/node_modules
+web/dist

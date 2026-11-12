@@ -30,4 +30,5 @@ writeFileSync(join(ziel, 'release.pub'), key.publicKey.export({type:'spki',forma
 const r = erzeugeRelease({version:'pb-abnahme',architektur:'amd64',images,migrationsVerzeichnis:join(repo,'app/src/db/migrationen'),modulmanifestVersion:'1',vonVersionen:[],schemaVorher:[]});
 writeFileSync(join(bundle, 'release.json'), JSON.stringify(signiereRelease(r, key.privateKey.export({type:'pkcs8',format:'pem'})), null, 2));
 cpSync(join(repo, 'app/package-lock.json'), join(ziel, 'package-lock.json'));
+cpSync(join(repo, 'app/web/package-lock.json'), join(ziel, 'package-lock-web.json'));
 console.log(JSON.stringify({ bundle, images: images.length }));

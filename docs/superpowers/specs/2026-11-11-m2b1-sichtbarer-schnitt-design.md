@@ -12,7 +12,7 @@ M2b wird in Schritten geliefert (PO 2026-11-11: "zuerst sichtbarer Schnitt"). M2
 
 Befund [F]: Es gibt noch kein Frontend (kein Vite-Projekt, keine Login-Seite; Caddy liefert nur die Wartungsseite). M2b-1 bringt das Frontend-Geruest mit.
 
-**Im Umfang:** Vite/React-Projekt `web/`, Login, Gebaeudeliste, 3D-Uebersicht nach ADR 0008 (Glas-Geschosse, Einheiten-Linien, Pins), Seitenpanel, Gebaeudeliste- und Katalog-Endpunkt, einheitliches 400-Fehlerformat, Auslieferung ueber Fastify, Docker-Build, Lizenz-Dossier.
+**Im Umfang:** Vite/React-Projekt `app/web/`, Login, Gebaeudeliste, 3D-Uebersicht nach ADR 0008 (Glas-Geschosse, Einheiten-Linien, Pins), Seitenpanel, Gebaeudeliste- und Katalog-Endpunkt, einheitliches 400-Fehlerformat, Auslieferung ueber Fastify, Docker-Build, Lizenz-Dossier.
 **Nicht im Umfang (spaetere M2b-Schritte bzw. M2c/M3/M7):** Geschossauswahl und Explosion, Tabellen-/2D-Weg, automatische Leistungsstufen, Tastaturbedienung im 3D, Bauteil-Modelle (GLB), Ampel, jede Erfassung/Bearbeitung im UI, Planora-Branding.
 
 **Gestaltung (PO 2026-11-11):** schlicht, aber sauber. Neutrale Farben, eine Systemschrift, eigene einfache Komponenten ohne UI-Bibliothek. Das 3D folgt E2/ADR 0008.
@@ -21,7 +21,7 @@ Befund [F]: Es gibt noch kein Frontend (kein Vite-Projekt, keine Login-Seite; Ca
 
 ## 2. Architektur (Ansatz A, PO-Go)
 
-- **Paket `web/`** im Repo: React 19 + Vite, eigene `package.json` und eigenes Lockfile, TypeScript strikt.
+- **Paket `app/web/`** im Docker-Build-Kontext `app/`: React 19 + Vite, eigene `package.json` und eigenes Lockfile, TypeScript strikt.
 - **Auslieferung durch Fastify** mit `@fastify/static`: `web/dist` unter `/`, SPA-Fallback auf `index.html` fuer unbekannte Nicht-API-Pfade. `/api/*` bleibt unberuehrt (unbekannte API-Pfade weiterhin 404 bzw. 501-Platzhalter).
 - **Ein Image, eine Version:** Docker-Stufe `web-bau` baut `web/`, Ergebnis nach `/app/web` im Laufzeit-Image. Caddy, Compose, Update und Restore bleiben unveraendert.
 - **Gleiche Herkunft** fuer Seite und API: Cookie-Sitzung und CSRF-Header (`x-planora-request: 1`, Origin) funktionieren wie bisher.
@@ -60,7 +60,7 @@ Kein Router-Paket; drei Zustaende in der App:
 2. **`GET /api/katalog/v1`** – `KATALOG_V1` (IDs, Namen, Bereich) fuer angemeldete Benutzer. Modul `katalog` existiert im Manifest [F].
 3. **Einheitliches 400-Format:** Schema-Fehler der Fastify-Routen werden als `{ fehler: [{ pfad, code: "struktur_ungueltig", meldung }] }` beantwortet (eigener Error-Handler fuer Validierungsfehler). Erledigt den offenen Punkt aus M2a-Spec §11. Better-Auth-Antworten bleiben unveraendert.
 4. **Statische Auslieferung:** Registrierung nur, wenn das Web-Verzeichnis existiert (Pfad per `PLANORA_WEB_DIR`, Default `/app/web` im Image). Header fuer HTML/Assets:
-   - `Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'` [A: `unsafe-inline` fuer Stil-Attribute von React; pruefen, ob verzichtbar]
+   - `Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'` (ohne `unsafe-inline`; React setzt Stile per CSSOM)
    - `index.html`: `Cache-Control: no-cache`; Dateien mit Hash im Namen: `Cache-Control: public, max-age=31536000, immutable`.
    - Wartungsmodus und Modul-Guard betreffen nur `/api` bzw. Caddy und bleiben unveraendert.
 
@@ -74,7 +74,7 @@ Kein Router-Paket; drei Zustaende in der App:
 | Fassade | Umriss je Teilrechteck als vertikale/horizontale Linien ueber alle Geschosse, eine `LineSegments` |
 | Einheiten | Rechtecke (`welt.einheiten[].rechteck`) als Linien auf der Platte; Bezeichnung als Text-Sprite (Canvas-Textur) |
 | Geschoss-Beschriftung | Text-Sprite seitlich: "<Code> · <Anzahl> Einheiten" |
-| Pins | ein `InstancedMesh` (Scheibe/kurzer Zylinder knapp ueber dem Boden) je Symbol aus `welt.symbole`; Farbe je Katalog-Bereich (Zentrale / Verteilung / Einheit, drei neutrale, gut unterscheidbare Toene); `vorgeschlagen` halbtransparent; ausgewaehlt hervorgehoben |
+| Pins | ein `InstancedMesh` (Scheibe/kurzer Zylinder knapp ueber dem Boden) je Symbol aus `welt.symbole`; Farbe je Katalog-Bereich (Zentrale / Verteilung / Einheit, drei neutrale, gut unterscheidbare Toene); `vorgeschlagen` aufgehellt (55 % zu Weiss), da ein InstancedMesh keine Deckkraft je Instanz kennt; ausgewaehlt hervorgehoben |
 
 **Kamera:** orthografisch, isometrisch (ca. 35° Neigung, 45° gedreht), beim Laden auf die Gebaeude-Bounding-Box eingepasst. `OrbitControls` mit Grenzen: keine Ansicht von unten, Zoom begrenzt; jede Aenderung loest `invalidate()` aus.
 
@@ -98,6 +98,8 @@ Die Panel-Daten entstehen in einer reinen Funktion aus Welt, Beschreibung und Ka
 
 ## 7. Build und Betrieb
 
+- Lokaler Start: `npm run entwicklung` in `app/` (embedded-postgres, Erstadmin, Beispieldaten; nicht im Image). Frische temporaere Datenbank pro Start.
+
 - `app/Dockerfile`: neue Stufe `web-bau` (Node-Image wie `bau`, `npm ci` + `npm run build` in `web/`), `COPY --from=web-bau /web/dist /app/web` ins Laufzeit-Image. Build-Kontext muss `web/` enthalten [A: Kontext und `.dockerignore` beim Planen pruefen].
 - **Lizenz-Dossier:** `src/betrieb/dossier.ts` nimmt heute genau ein `--lockfile` [F]. Erweiterung auf mehrere Lockfiles (app und web), damit die Frontend-Pakete im Dossier stehen.
 - Keine Aenderung an Caddyfile, Compose, Update, Backup, Restore.
@@ -106,7 +108,7 @@ Die Panel-Daten entstehen in einer reinen Funktion aus Welt, Beschreibung und Ka
 
 | Ebene | Inhalt | Ort |
 |---|---|---|
-| Frontend-Logik | Welt → Zeichendaten (Plattenpositionen, Linien je Einheit, Pin-Anzahl = Anzahl Symbole, Farben je Bereich, vorgeschlagen halbtransparent, Kamera-Einpassung); Panel-Daten (Zeilen, Namen, "Menge unbekannt", Versorgt-Namen, Hinweise) | `web/` Vitest, ohne Browser |
+| Frontend-Logik | Welt → Zeichendaten (Plattenpositionen, Linien je Einheit, Pin-Anzahl = Anzahl Symbole, Farben je Bereich, vorgeschlagen aufgehellt, Kamera-Einpassung); Panel-Daten (Zeilen, Namen, "Menge unbekannt", Versorgt-Namen, Hinweise) | `web/` Vitest, ohne Browser |
 | Backend | Gebaeudeliste nach Rechten (Leser mit/ohne Scope, Admin, Betreiber, fremde Liegenschaft); Katalog-Endpunkt (angemeldet 200, ohne Sitzung 401); 400-Format `{fehler}` mit `struktur_ungueltig`; Auslieferung (`/` → HTML mit CSP, `/gebaeude/x` → `index.html`, `/api/unbekannt` bleibt 404/501, Asset mit Hash → immutable); ohne Web-Verzeichnis keine Registrierung | `app/test`, `npm test` |
 | Docker | Image baut mit `web/`; `GET /` liefert HTML | `test:docker`, Erweiterung des bestehenden Smoke-Tests |
 | Sichtpruefung | Login → Liste → 3D → Klick auf Verteiler → Panel "versorgt: Restaurant, Buero C", Screenshot | einmalig per `playwright-cli`, nicht in der Suite |

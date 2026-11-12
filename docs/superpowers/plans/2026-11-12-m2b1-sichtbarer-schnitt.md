@@ -10,6 +10,18 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-11-m2b1-sichtbarer-schnitt-design.md`
 
+## Fortsetzung 12.11.2026
+
+Claude hat Tasks 1–5 committet (bis `376885d`) und Task 6 begonnen. Codex hat Task 6 vervollstaendigt und Task 7 umgesetzt. Die historischen Schritt-Checkboxen unten sind keine nachtraegliche Behauptung ausgefuehrter Red/Green-Schritte.
+
+- Backend: 402 Tests bestanden, Typpruefung bestanden.
+- Frontend: 19 Tests bestanden, Produktionsbuild bestanden (Vite meldet das grosse Three.js-Bundle).
+- Lokaler Entwicklungsstart und Sichtpruefung per Playwright bestanden: Login, Liste, 2 Geschosse / 5 Einheiten / 8 Symbole, Verteiler-Picking, Panel mit Restaurant (EG) und Buero C (OG1). Keine CSP-Verletzungen; erwartetes initiales 401 auf `/api/ich`, Three.Clock-Deprecation im R3F-Abhaengigkeitsbaum.
+- Task 6 ergaenzt: Der Docker-Update-Test kopiert jetzt auch `web/` ohne `node_modules`/`dist`; der erste Lauf fand hier den fehlenden Build-Kontext. Abnahme-Bundle und Dossier-Aufruf reichen das Web-Lockfile weiter.
+- Task 7 verwendet ein frisches temporaeres Datenverzeichnis statt rekursiv ein festes Verzeichnis zu loeschen. Startfehler schliessen Server, Pool und gestartetes PostgreSQL. Ports sind konfigurierbar, Produktion ist gesperrt.
+- Docker: erster Lauf 27 bestanden, Update-Suite wegen fehlendem Web-Kontext fehlgeschlagen; korrigierter Update-Lauf 6/6 bestanden (207.73 s). Damit alle 33 Tests der aktiven Docker-Suites bestanden; Suite B separat nicht wiederholt.
+- Tagesabschluss: Commit und Push auf dem Arbeitsbranch beauftragt, kein Merge oder produktives Deployment. E40 und [Design-Nachtrag](../../design/2026-11-12-visuelle-zielrichtung.md) sind der Einstieg fuer die naechste Sitzung; +6–10 PT Zusatzaufwand [A], Planungswert +8 PT. WSL-/CH-VM-Gesamtabnahme und vollstaendige SBOM-Neuerzeugung nicht wiederholt.
+
 ## Global Constraints
 
 - Sprache in Code, Kommentaren und UI-Texten: Deutsch (de-CH), kein Eszett, immer `ss`, Umlaute als ae/oe/ue.

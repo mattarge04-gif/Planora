@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { createReadStream, readFileSync, writeFileSync, rmSync, copyFileSync } from 'node:fs';
+import { createReadStream, readFileSync, writeFileSync, rmSync, copyFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { pathToFileURL } from 'node:url';
@@ -10,8 +10,10 @@ const docker = (...args) => execFileSync('docker', args, {encoding:'utf8',maxBuf
 const syft = 'anchore/syft@sha256:03215d0e98b661d0ecbc8575dbc14d65be1743b5de5df6410aecb7e80f95b060';
 const { pruefeRelease } = await import(pathToFileURL(join(quelle,'bundle/werkzeug/betrieb/release.js')));
 const release = pruefeRelease(readFileSync(join(quelle,'bundle/release.json'),'utf8'),readFileSync(join(quelle,'release.pub'),'utf8'));
-execFileSync('node',[join(quelle,'bundle/werkzeug/betrieb/dossier.js'),'--bundle',join(quelle,'bundle'),'--schluessel',join(quelle,'release.pub'),'--lockfile',join(quelle,'package-lock.json'),'--ausgabe',ziel]);
+const webLockfile = join(quelle, 'package-lock-web.json');
+execFileSync('node',[join(quelle,'bundle/werkzeug/betrieb/dossier.js'),'--bundle',join(quelle,'bundle'),'--schluessel',join(quelle,'release.pub'),'--lockfile',join(quelle,'package-lock.json'),...(existsSync(webLockfile) ? ['--lockfile-web',webLockfile] : []),'--ausgabe',ziel]);
 copyFileSync(join(quelle,'package-lock.json'),join(ziel,'package-lock.json'));
+if (existsSync(webLockfile)) copyFileSync(webLockfile, join(ziel, 'package-lock-web.json'));
 const ergebnisse = [];
 for (const img of release.images) {
   const name = `pb-lizenz-${img.dienst}`;

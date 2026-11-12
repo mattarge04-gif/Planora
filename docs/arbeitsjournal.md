@@ -3,6 +3,18 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-12 – M2b-1 nach Claude-Usage-Abbruch fortgesetzt
+
+- [F] Tagesabschluss vom PO beauftragt: Dokumentation, Commit und Push auf dem Arbeitsbranch; kein Merge/Deployment. Visuelle Endabnahme ausdruecklich offen.
+- [F] E40: PO bestaetigt Bild 2 fuer Gebaeude, Bild 3 fuer Technikansicht, Bild 1 fuer Informationskarten. [Referenzen und Zusatzaufwand](design/2026-11-12-visuelle-zielrichtung.md), [dauerhaft gesicherte Screenshots](abnahme/2026-11-12-m2b1/README.md).
+- [A] Zusatzaufwand +6–10 PT, Planungswert +8 PT, ohne bereits geplante Funktionen doppelt zu zaehlen. Naechste Sitzung: visueller Zielentwurf am Beispielgebaeude.
+
+- [F] Uebernahme auf `m2b1-sichtbarer-schnitt` bei `376885d`: Tasks 1–5 committet, Task 6 mit fuenf geaenderten Dateien begonnen.
+- [F] Docker-Frontend, Web-Lockfile im Lizenz-Dossier inklusive Abnahme-Aufruf und lokaler Demostart fertiggestellt. Der Update-Test kopiert jetzt auch `web/` in seinen Build-Kontext, ohne `node_modules` und `dist`.
+- [F] Demostart verwendet frische temporaere Daten, bereinigt laufende Dienste bei Startfehlern und lehnt Produktion/ungueltige Ports ab. Keine bestehenden Entwicklungsdaten werden geloescht.
+- [F] Backend 402 Tests, Frontend 19 Tests, Typpruefungen und Build bestanden. Browser: Login, Liste, 3D, Verteiler-Picking mit Restaurant (EG) und Buero C (OG1), keine CSP-Verletzungen. Docker-Stand im aktuellen Fortsetzungsplan.
+- [F] Keine WSL-/CH-VM-Gesamtabnahme, keine vollstaendige SBOM-Neuerzeugung, kein Merge/Deployment. README, Spec und Einstieg nachgefuehrt; Branch wird zum Tagesabschluss gepusht.
+
 ## 2026-11-11 – M2a Welt-Kern
 
 ### 1. Was gemacht wurde

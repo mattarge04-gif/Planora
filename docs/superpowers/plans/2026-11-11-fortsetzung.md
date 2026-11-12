@@ -2,6 +2,18 @@
 
 Einstieg fuer die naechste Sitzung. Historische Worker-Notizen und alte Stoppmeldungen ersetzen diesen Stand nicht. Der einzige Arbeitsbereich ist `C:/web agency/planora/Planora` auf `main`.
 
+## Aktueller Nachtrag 12.11.2026: M2b-1
+
+Aktuell wird auf Branch `m2b1-sichtbarer-schnitt` gearbeitet. Der Hinweis auf `main` oben beschreibt die fruehere Konsolidierung.
+
+Claude hat Tasks 1–5 des [M2b-1-Plans](2026-11-12-m2b1-sichtbarer-schnitt.md) committet und waehrend Task 6 das Usage-Limit erreicht. Codex hat Docker-Build/Smoke, Web-Lockfile im Dossier samt Abnahme-Aufruf und lokalen Demostart vervollstaendigt. Der Update-Test brauchte den neuen `web/`-Ordner auch in seinem separat kopierten Docker-Build-Kontext.
+
+Sichtbarer Ablauf geprueft: Login → Gebaeudeliste → 3D mit 2 Geschossen, 5 Einheiten, 8 Symbolen → Verteiler-Picking → Panel mit Restaurant (EG) und Buero C (OG1). Keine CSP-Verletzungen. Screenshots und Pruefstand dauerhaft unter [docs/abnahme/2026-11-12-m2b1](../../abnahme/2026-11-12-m2b1/README.md) gesichert.
+
+Teststand: Backend 402/402, Frontend 19/19, beide Typpruefungen und Frontend-Build gruen. Docker erster Lauf: 27 bestanden, Update-Suite wegen unvollstaendigem Build-Kontext abgebrochen; korrigierter Update-Lauf 6/6 bestanden (207.73 s). Damit alle 33 Tests der aktiven Docker-Suites bestanden; Suite B separat nicht wiederholt. Abnahme-Skripte syntaktisch geprueft; komplette WSL-/CH-VM-Abnahme und SBOM-Neuerzeugung nicht wiederholt.
+
+Start: `npm run entwicklung` in `app/`; Passwort erscheint in der Konsole. Frische temporaere Beispieldaten pro Start, nur Loopback, kein Produktionsbetrieb. Nach M2b-1-Abnahme folgen Geschossauswahl/Explosion, Tabellenweg und Leistungsstufen; Erfassung bleibt M2c. Tagesabschluss: Commit und Push auf `m2b1-sichtbarer-schnitt` vom PO beauftragt; kein Merge oder Deployment. Naechste Sitzung: visueller Zielentwurf nach E40, siehe [Design-Nachtrag](../../design/2026-11-12-visuelle-zielrichtung.md), Zusatzaufwand [A] +6–10 PT (Planungswert +8 PT).
+
 ## Konsolidierung abgeschlossen
 
 - Gesamten Entwicklungsstand einschliesslich `11d3b90` und E38-Dokumentation auf `main` zusammengefuehrt und mit `3605306` auf GitHub `origin/main` gepusht.
