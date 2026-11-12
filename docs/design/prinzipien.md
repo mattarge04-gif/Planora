@@ -13,7 +13,7 @@ Nur vom PO bestaetigte Regeln. Aenderungen nur nach ausdruecklicher PO-Bestaetig
 4. **Echte Raeumlichkeit:** solide Geschossplatten mit Dicke, glaubwuerdige Waende und Raumunterteilung, Anlagen als echte 3D-Objekte; schematisch, aber kein BIM-Detail noetig. *(PO-Brief)*
 5. **Licht:** weich, mit Umgebungslicht, gerichteter Sonne, Ambient Occlusion und weichen Kontaktschatten; Schatten dienen der raeumlichen Orientierung. *(PO-Brief)*
 6. **Kamera:** orthografisch, isometrische 3/4-Ansicht; Gebaeude fuellt ca. 65–75 % der freien Flaeche; weiche Kamerafahrten. *(PO-Brief)*
-7. **Geschossfokus bleibt hell:** uebrige Geschosse werden blasser/halbtransparent, keine Abdunkelung. *(PO, 12.11.2026)*
+7. **Geschossfokus als heller Schnitt:** Oberhalb des gewaehlten Geschosses entfallen alle Geschosse und das Dach; untere Geschosse einschliesslich vorhandener UG bleiben sichtbar. Das gewaehlte Geschoss ist oben offen, seine beiden zur Kamera gerichteten Aussenwaende entfallen fuer den Einblick von schraeg oben. Keine Abdunkelung. *(PO-Praezisierung zur Wahl von Ansatz A, 12.11.2026; Entscheid `entscheide/2026-11-12-redesign-digital-twin.md`)*
 
 ## Farbe und Material
 

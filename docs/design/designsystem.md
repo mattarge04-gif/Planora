@@ -1,7 +1,7 @@
 # Designsystem Planora – gemeinsame Sprache fuer UI und 3D
 
 Ziel: UI und 3D-Welt sehen aus wie aus einem Guss. Dieselben Farben, dieselbe Licht- und Schattenlogik, dieselben Radien-Verhaeltnisse, dieselbe Bewegung.
-Werte sind Arbeitswerte [A] bis zur PO-Abnahme des Redesigns; die Richtung folgt [prinzipien.md](prinzipien.md). Sobald das Redesign umgesetzt ist, ist die Code-Quelle `app/web/src/design/tokens.ts` (TypeScript, von UI **und** 3D importiert) und CSS-Variablen werden daraus abgeleitet. Bis dahin gilt diese Datei.
+Werte sind Arbeitswerte [A] bis zur PO-Abnahme des Redesigns; die Richtung folgt [prinzipien.md](prinzipien.md). Seit Teilaufgabe 2 ist die gemeinsame Code-Quelle `app/web/src/design/tokens.ts` (TypeScript fuer UI **und** 3D). Neue Szene und Dashboard binden sie in Teilaufgaben 3 und 5 ein; die bisherigen Ansichten sind noch nicht umgestellt. Die Tabellen unten erklaeren die Sprache; bei abweichenden Arbeitswerten gilt die Code-Quelle. [Tokenuebersicht und GPU-Pruefung](../abnahme/2026-11-12-redesign-tokens/README.md).
 
 ## 1. Farbe
 

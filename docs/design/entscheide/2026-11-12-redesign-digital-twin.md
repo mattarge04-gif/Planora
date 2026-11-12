@@ -1,6 +1,6 @@
 # Digital Twin – Wahl der Gestaltungsrichtung
 
-12.11.2026 · Teilaufgabe 1 · **Richtungswechsel, PO-Wahl offen**
+12.11.2026 · Teilaufgabe 1 · **Ansatz A gewählt, mit geschossbezogenem Schnitt**
 
 [F] Auftrag: [Brief](2026-11-12-redesign-brief.md), [Übergabe Abschnitt 4](../../superpowers/plans/2026-11-12-uebergabe-codex.md). Zwei eigenständige Gesamtansätze verbinden die Gebäudeszene mit dem Dashboard. Die Bilder sind lokale, statische Richtungsstudien bei 1440 × 900; sie sind keine implementierte Produktansicht und keine Funktionsabnahme. Produktcode, APIs und Datenbank bleiben unverändert.
 
@@ -100,4 +100,20 @@ node werkzeug/design/screenshot.mjs --datei docs/design/entscheide/2026-11-12-re
 
 ## PO-Entscheid
 
-[?] Offen: A oder B; konkrete Änderungswünsche können zur Wahl festgehalten werden. Teilaufgabe 2 beginnt nach dieser Wahl. Datum und Wortlaut werden vom Hauptagenten ergänzt.
+[F] 12.11.2026: Der PO wählt **A – Architekturatelier**, mit folgender Präzisierung des Schnitts:
+
+> ich denke wie a aber es soll geschnitten werden im sinne von:
+>
+> wenn ich 1og anwähle seh ich es von oben alles unterhalb also eg und ug zb bleibt aber alles oberhalb also die anderen ogs wird geschnitte und die 2 wände gegenüber mir kommen auch weg damit ich in das geschoss reinsehen kann
+
+Verbindliches Zielverhalten für Teilaufgaben 3 und 7:
+
+- Die Übersicht übernimmt Gebäudewirkung, Kulisse und Dashboard-Komposition von A.
+- Bei Geschossauswahl zeigt die Kamera das gewählte Geschoss von schräg oben. Alle höher liegenden Geschosse und das darüberliegende Dach werden vollständig ausgeblendet. Das ersetzt für diese Geschosse das bisher vorgesehene blasse Darstellen.
+- Die unteren Geschosse bleiben als Baukörper sichtbar, einschliesslich vorhandener Untergeschosse. Keine zusätzlichen Geschosse erfinden.
+- Das ausgewählte Geschoss ist oben offen; seine beiden zur Kamera gerichteten Aussenwände entfallen, sodass Innenräume und Anlagen sichtbar werden. Rückwärtige Aussenwände und Raumunterteilung bleiben zur Orientierung erhalten. Die Grundrissdaten werden durch den Darstellungsschnitt nicht verändert.
+- Alles bleibt hell; keine dunkle Fokusmaske. «Separieren» bleibt eine eigene Funktion.
+
+[A] «Die 2 Wände gegenüber mir» wird als die beiden dem Betrachter zugewandten Aussenwände verstanden. Die Kameraposition bestimmt die sichtbare Ecke; das genaue Verhalten bei freier Kameradrehung wird in Teilaufgabe 7 geprüft.
+
+Teilaufgabe 1 ist damit abgeschlossen. Teilaufgabe 2: gemeinsame Design-Tokens; Teilaufgabe 3: Gebäude, Licht und Schnittdarstellung bis Abnahme 1.

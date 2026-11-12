@@ -39,8 +39,8 @@ Alle Claude-Agenten sind gestoppt. Codex uebernimmt vollstaendig. Sprache de-CH,
 
 | # | Teilaufgabe | Ergebnis an PO | Status |
 |---|---|---|---|
-| 1 | **Richtung waehlen:** Art Director entwirft 2–3 Gesamtansaetze (Szene + Dashboard) als Bilder | PO waehlt Ansatz | Entwuerfe durch Codex erstellt; **PO-Wahl offen** – siehe Entscheiddatei |
-| 2 | Designsystem als Code: Tokens `app/web/src/design/tokens.ts` fuer UI und 3D | kurze Token-Uebersicht | offen |
+| 1 | **Richtung waehlen:** Art Director entwirft 2–3 Gesamtansaetze (Szene + Dashboard) als Bilder | PO waehlt Ansatz | **abgeschlossen:** A gewaehlt, geschossbezogener Schnitt gemäss Entscheiddatei |
+| 2 | Designsystem als Code: Tokens `app/web/src/design/tokens.ts` fuer UI und 3D | kurze Token-Uebersicht | **abgeschlossen:** Tokenquelle, GPU-Uebersicht 1440/1280, unabhaengige Kritik; Web55/55 und Build gruen |
 | 3 | Gebaeude-Szene: Huelle, Licht, Schatten, Kulisse, Kamera | Screenshots -> **Abnahme 1** | offen (Plan Schritt 1, Tasks 3–4; Stash als Material) |
 | 4 | Anlagen als GLB (Blender), Leitungen mit Boegen | Screenshots Technikansicht | offen |
 | 5 | Dashboard-Rahmen: Kopfzeile, Pill-Navigation, Kartenlayout | Screenshots | offen |

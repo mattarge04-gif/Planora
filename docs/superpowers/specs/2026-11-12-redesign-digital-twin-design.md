@@ -15,7 +15,7 @@ Referenzen (`docs/design/referenzen/`): **01-dashboard.png ist Hauptreferenz** (
 
 1. Vorgehen: Huelle parametrisch aus den Daten, Anlagen als GLB-Modelle aus Blender, Licht im Browser einmalig weich berechnet (Variante 1).
 2. Farben: Weiss mit verschiedenen Grautoenen, nur ganz leichte Blauakzente, damit die Koordinationsfarben (KOO) herausstechen. Heizung bleibt rot.
-3. Geschossfokus: alles bleibt hell, uebrige Geschosse werden blasser. Keine dunklen Flaechen.
+3. Geschossfokus (PO-Praezisierung nach Wahl von Ansatz A, 12.11.): alles bleibt hell. Oberhalb des gewaehlten Geschosses entfallen alle Geschosse und das Dach; darunter bleibt der Baukoerper sichtbar. Das gewaehlte Geschoss ist oben offen, seine beiden zur Kamera gerichteten Aussenwaende entfallen. Siehe `docs/design/entscheide/2026-11-12-redesign-digital-twin.md`.
 4. Umfang: Geschosse separieren (Explosion) und Dokumente-Bereich als Platzhalter gehoeren in diese Runde. 2D-Ansicht fuer schwache Geraete kommt spaeter.
 5. Abschnitte 3D-Welt, Dashboard und Technik/Vorgehen wie unten bestaetigt. Zwei Abnahmepunkte (nach Szene-Look, nach UI).
 
@@ -59,7 +59,7 @@ Referenzen (`docs/design/referenzen/`): **01-dashboard.png ist Hauptreferenz** (
 
 ### Fokus und Separieren
 
-- Fokus: gewaehltes Geschoss voll sichtbar (Waende geschnitten, Innenleben sichtbar); andere Geschosse halbtransparent hellgrau. Alles bleibt hell.
+- Fokus: gewaehltes Geschoss von schraeg oben einsehbar, ohne Decke und ohne die beiden zur Kamera gerichteten Aussenwaende. Hoehere Geschosse und Dach vollstaendig ausblenden; tiefere Geschosse einschliesslich vorhandener UG bleiben sichtbar. Rueckwaertige Aussenwaende und Raumunterteilung erhalten die Orientierung. Alles bleibt hell. Diese PO-Praezisierung ersetzt die fruehere Halbtransparenz-Regel fuer andere Geschosse.
 - Separieren: Schalter faehrt Geschosse senkrecht auseinander (je ca. halbe Geschosshoehe [A]), animiert.
 - Ein-/Ausblenden einzelner Geschosse.
 
