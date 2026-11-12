@@ -1,5 +1,5 @@
 // Design-Screenshots mit echter GPU (nur Entwicklung). Aufruf siehe werkzeug/design/README.md.
-// node werkzeug/design/screenshot.mjs --szenario <datei.json> --aus <ordner> [--port 3100] [--passwort <pw>]
+// node werkzeug/design/screenshot.mjs --szenario <datei.json> --aus <ordner> [--datei <lokales.html> | --port 3100] [--passwort <pw>]
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -36,13 +36,15 @@ function passwort() {
 const szenarioDatei = arg("szenario", join(hier, "szenarien", "twin.json"));
 const aus = resolve(arg("aus", join(hier, ".lauf", "bilder")));
 const port = arg("port", "3100");
+const lokaleDatei = arg("datei");
+if (lokaleDatei && !existsSync(resolve(lokaleDatei))) throw new Error(`Lokale HTML-Datei fehlt: ${lokaleDatei}`);
 const szenario = JSON.parse(readFileSync(szenarioDatei, "utf8"));
 mkdirSync(aus, { recursive: true });
 
 const { chromium } = await ladePlaywright();
 const browser = await chromium.launch({ headless: true, args: ["--use-angle=d3d11", "--ignore-gpu-blocklist"] });
 const bericht = { szenario: szenarioDatei, zeit: new Date().toISOString(), renderer: null, ansichten: [] };
-const pw = passwort();
+const pw = lokaleDatei ? null : passwort();
 
 try {
   for (const [breite, hoehe] of szenario.fenster ?? [[1440, 900]]) {
@@ -50,15 +52,18 @@ try {
     const meldungen = [];
     page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") meldungen.push(`${m.type()}: ${m.text()}`); });
     page.on("pageerror", (e) => meldungen.push(`pageerror: ${e.message}`));
-    await page.goto(`http://localhost:${port}`);
+    await page.goto(lokaleDatei ? pathToFileURL(resolve(lokaleDatei)).href : `http://localhost:${port}`);
+    await page.evaluate(() => document.fonts.ready);
     bericht.renderer ??= await page.evaluate(() => {
       const gl = document.createElement("canvas").getContext("webgl2");
       const ext = gl?.getExtension("WEBGL_debug_renderer_info");
       return gl ? (ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)) : "kein WebGL2";
     });
-    await page.fill("input[type=email]", szenario.benutzer ?? "admin@planora.invalid");
-    await page.fill("input[type=password]", pw);
-    await page.click("button[type=submit]");
+    if (!lokaleDatei) {
+      await page.fill("input[type=email]", szenario.benutzer ?? "admin@planora.invalid");
+      await page.fill("input[type=password]", pw);
+      await page.click("button[type=submit]");
+    }
     const ansicht = { fenster: `${breite}x${hoehe}`, bilder: [], fps: [], meldungen };
     for (const s of szenario.schritte) {
       try { await schritt(s); } catch (e) {

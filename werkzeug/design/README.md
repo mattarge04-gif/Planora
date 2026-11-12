@@ -14,6 +14,16 @@ bash werkzeug/design/instanz.sh stop             # immer am Ende
 - **Port 3000** (Server des PO) wird nie angefasst. Ports aenderbar ueber `PLANORA_DESIGN_PORT` / `PLANORA_DESIGN_PG_PORT`.
 - Laufzeitdateien in `werkzeug/design/.lauf/` (ignoriert).
 
+## Lokale Richtungsentwürfe
+
+Statische HTML-Mockups können ohne Server und Login geprüft werden. Auch hier wird dieselbe echte GPU verwendet:
+
+```bash
+node werkzeug/design/screenshot.mjs --datei docs/design/entscheide/2026-11-12-redesign/ansatz-a/index.html --szenario docs/design/entscheide/2026-11-12-redesign/ansatz-a/szenario.json --aus docs/design/entscheide/2026-11-12-redesign/pruefung-a
+```
+
+Die HTML-Datei bindet nur lokale Assets ein; JavaScript-Module vorher als klassisches Skript bündeln, damit `file://` ohne gelockerte Browsersicherheit funktioniert. Die Produktinstanz auf Port 3100 wird erst für die Umsetzung benötigt.
+
 ## Szenarien (`szenarien/*.json`)
 
 `fenster`: Liste `[breite, hoehe]`; je Fenster neue Seite mit Login. `schritte` (Koordinaten relativ 0..1):

@@ -1,0 +1,30 @@
+{
+  "ref01": {
+    "region": "reference screen content crop [160,289,1055,802]",
+    "brightness_mean": 231.5,
+    "brightness_p95": 254.0,
+    "saturation_mean": 24.71,
+    "white_fraction_v240_s20": 0.5634
+  },
+  "ref02": {
+    "region": "full image",
+    "brightness_mean": 230.28,
+    "brightness_p95": 254.0,
+    "saturation_mean": 29.78,
+    "white_fraction_v240_s20": 0.4302
+  },
+  "a": {
+    "region": "full image",
+    "brightness_mean": 246.56,
+    "brightness_p95": 255.0,
+    "saturation_mean": 4.68,
+    "white_fraction_v240_s20": 0.9149
+  },
+  "b": {
+    "region": "full image",
+    "brightness_mean": 243.2,
+    "brightness_p95": 255.0,
+    "saturation_mean": 7.35,
+    "white_fraction_v240_s20": 0.8185
+  }
+}

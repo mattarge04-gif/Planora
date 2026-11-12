@@ -1,0 +1,17 @@
+{
+  "szenario": "docs/design/entscheide/2026-11-12-redesign/ansatz-a/szenario.json",
+  "zeit": "2026-11-12T12:31:24.704Z",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002207) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "ansichten": [
+    {
+      "fenster": "1440x900",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-12-redesign-r1\\a\\ansatz-a-1440x900.png"
+      ],
+      "fps": [],
+      "meldungen": [
+        "warning: THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead."
+      ]
+    }
+  ]
+}
