@@ -1,4 +1,4 @@
-:root { --hg: #f4f5f7; --text: #1f2937; --linie: #d1d5db; --akzent: #2563eb; --fehler: #b91c1c; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text); background: var(--hg); }
+:root { --hg: #f4f5f7; --text: #1f2937; --linie: #d1d5db; --akzent: #2563eb; --fehler: #b91c1c; font-family: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text); background: var(--hg); }
 * { box-sizing: border-box; }
 body { margin: 0; }
 button { font: inherit; padding: 0.45rem 0.9rem; border: 1px solid var(--linie); border-radius: 6px; background: #fff; cursor: pointer; }
