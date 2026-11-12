@@ -36,8 +36,9 @@ const nachSchluessel = (a: WeltSymbol, b: WeltSymbol) => (a.schluessel < b.schlu
 export function leitungen(welt: Welt, katalog: KatalogEintrag[]): Leitung[] {
   const bereich = new Map(katalog.map((k) => [k.id, k.bereich]));
   const symbole = [...welt.symbole].sort(nachSchluessel);
+  // Katalog v2 fuehrt die Pumpe als Zubehoer: Erzeuger und Speicher werden deshalb ueber die ID erkannt, nicht ueber den Bereich.
   const zentralen = symbole.filter((s) => bereich.get(s.katalogId) === "zentrale");
-  const zentrale = zentralen.find((s) => ERZEUGER.has(s.katalogId)) ?? zentralen[0];
+  const zentrale = symbole.find((s) => ERZEUGER.has(s.katalogId)) ?? symbole.find((s) => s.katalogId === "heizung.speicher") ?? zentralen[0];
   const verteiler = symbole.filter((s) => bereich.get(s.katalogId) === "verteilung");
   const yUnten = new Map(welt.geschosse.map((g) => [g.id, g.yUnten]));
   const punkt = (s: WeltSymbol): V3 => [s.position.x, s.position.y + BODEN, s.position.z];

@@ -1,0 +1,363 @@
+{
+ "beschreibung": "Stufe 1 Track C4: Leitungen je Heizgruppe in den Mustergebäuden 2–6 – Übersicht, Technik (Geschoss der Zentrale), Nahaufnahme Verteiler mit Gruppenstöcken; Muster 3 Gruppenstock und Gruppenauswahl (Klickpunkt für 1440×900 bestimmt), Muster 4 Pumpe vor WP.",
+ "fenster": [
+  [
+   1440,
+   900
+  ],
+  [
+   1920,
+   1080
+  ],
+  [
+   1280,
+   720
+  ]
+ ],
+ "schritte": [
+  {
+   "klick": "Muster 2 Beispiel"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m2-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m2-technik"
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m2-zentrale"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "knopf": "Gebäude wählen"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "klick": "Muster 3 Zubehoer"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m3-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m3-technik"
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m3-zentrale"
+  },
+  {
+   "klick": "Durchgangsventil",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m3-gruppenstock"
+  },
+  {
+   "maus": [
+    0.508,
+    0.505
+   ]
+  },
+  {
+   "warte": 800
+  },
+  {
+   "bild": "m3-gruppe-hover"
+  },
+  {
+   "punkt": [
+    0.508,
+    0.505
+   ]
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m3-gruppe-gewaehlt"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "knopf": "Gebäude wählen"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "klick": "Muster 4 Pumpe vor WP"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m4-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m4-technik"
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m4-zentrale"
+  },
+  {
+   "klick": "Umwälzpumpe",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m4-pumpe-vor-wp"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "knopf": "Gebäude wählen"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "klick": "Muster 5 FBH ueber Geschosse"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m5-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m5-technik"
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m5-zentrale"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "knopf": "Gebäude wählen"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "klick": "Muster 6 L-Form viele Gruppen"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m6-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m6-technik"
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m6-zentrale"
+  },
+  {
+   "fps": 3000
+  }
+ ]
+}

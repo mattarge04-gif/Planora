@@ -1,8 +1,9 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { Box, CircleGauge, Cylinder, Fan, FileText, Flame, Heater, Split, Upload, Waves, Waypoints, X, type LucideIcon } from "lucide-react";
+import { Box, CircleGauge, Cylinder, Fan, FileText, Flame, Heater, Spline, Split, Upload, Waves, Waypoints, X, type LucideIcon } from "lucide-react";
 import type { IconSchluessel, ObjektKarte } from "../dashboard";
 import { useSpeicher, type Speicher } from "../ui/speicher";
 import type { BildschirmPunkt } from "../szene3/Interaktion";
+import type { GruppenKarte } from "./gruppenKarte";
 
 export const ANLAGEN_ICON: Record<IconSchluessel, LucideIcon> = {
   waermepumpe: Fan, kessel: Flame, fernwaerme: Waypoints, speicher: Cylinder, pumpe: CircleGauge,
@@ -48,6 +49,41 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef }: Props & { kartenR
         <h3>Dokumente</h3>
         <button type="button" disabled aria-label="Hochladen, folgt"><Upload size={14} strokeWidth={1.75} aria-hidden="true" />Hochladen<span className="tw-folgt">folgt</span></button>
         <p><FileText size={16} strokeWidth={1.75} aria-hidden="true" />Noch keine Dokumente</p>
+      </div>
+    </section>
+  );
+}
+
+/** Gruppenkarte rechts: Art, Bestückung und Verbraucher der gewählten Heizgruppe. */
+export function TwinGruppe({ karte, onSchliessen, kartenRef }: { karte: GruppenKarte; onSchliessen: () => void; kartenRef: RefObject<HTMLElement | null> }) {
+  return (
+    <section ref={kartenRef} className="ui-glas ui-karte tw-objekt" aria-labelledby="karte-gruppe">
+      <header className="tw-objekt-kopf">
+        <span className="tw-objekt-icon" aria-hidden="true"><Spline size={18} strokeWidth={1.75} /></span>
+        <div className="tw-objekt-titel">
+          <h2 id="karte-gruppe">{karte.titel}</h2>
+          <span className="tw-gruppe-art">Heizgruppe</span>
+        </div>
+        <button type="button" className="tw-schliessen" onClick={onSchliessen} aria-label="Gruppenkarte schliessen (Esc)">
+          <X size={16} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+      </header>
+      <dl className="tw-zeilen tw-objekt-daten">
+        <div><dt>Schaltung</dt><dd>{karte.art}</dd></div>
+        <div><dt>Verteiler</dt><dd>{karte.verteiler}</dd></div>
+      </dl>
+      <div className="tw-objekt-block">
+        <h3>Bestückung</h3>
+        {karte.bestueckung.length
+          ? <ul className="tw-versorgt">{karte.bestueckung.map((b) => <li key={b.name}>{b.menge > 1 ? `${b.menge} × ${b.name}` : b.name}</li>)}</ul>
+          : <p className="tw-gruppe-leer">Ohne Zubehör, reines Rohrstück</p>}
+      </div>
+      <div className="tw-objekt-block">
+        <h3>Verbraucher</h3>
+        {karte.verbraucher.length
+          ? <ul className="tw-versorgt tw-gruppe-verbraucher">{karte.verbraucher.map((v) => <li key={v.schluessel}>
+            <span>{v.name}</span>{v.ort && <span className="tw-gruppe-ort">{v.ort}</span>}</li>)}</ul>
+          : <p className="tw-gruppe-leer">Keine Verbraucher zugeteilt</p>}
       </div>
     </section>
   );

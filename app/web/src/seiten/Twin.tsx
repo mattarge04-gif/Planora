@@ -9,7 +9,8 @@ import { TwinGebaeude } from "../karten/TwinGebaeude";
 import { TwinHinweise } from "../karten/TwinHinweise";
 import { TwinGeschosse } from "../karten/TwinGeschosse";
 import { TwinAnlagen } from "../karten/TwinAnlagen";
-import { TwinObjekt, TwinVerbindung } from "../karten/TwinObjekt";
+import { TwinGruppe, TwinObjekt, TwinVerbindung } from "../karten/TwinObjekt";
+import { gruppenKarte, gruppenVon } from "../karten/gruppenKarte";
 import { TwinTooltip } from "../karten/TwinTooltip";
 import { TwinSzenenTasten } from "../karten/TwinSzenenTasten";
 import { speicher } from "../ui/speicher";
@@ -102,7 +103,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAbmelden, onAbge
     Promise.all([
       holeJson<Welt>(`/api/szene/gebaeude/${gebaeudeId}/welt`),
       holeJson<Beschreibung>(`/api/struktur/gebaeude/${gebaeudeId}/beschreibung`),
-      holeJson<Katalog>("/api/katalog/v1"),
+      holeJson<Katalog>("/api/katalog/v2"),
     ]).then(([w, b, k]) => {
       if (aktiv) { setWelt(w); setBeschreibung(b); setKatalog(k); }
     }, (e: Error) => {
@@ -175,10 +176,15 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAbmelden, onAbge
   };
   const karte = useMemo(() => welt && beschreibung && katalog && auswahl
     ? objektKarte(welt, beschreibung, katalog.eintraege, auswahl) : null, [welt, beschreibung, katalog, auswahl]);
+  const straenge = useMemo(() => welt && katalog ? gruppenVon(welt, katalog.eintraege) : [], [welt, katalog]);
+  const gruppe = useMemo(() => welt && katalog && auswahl && !karte
+    ? gruppenKarte(welt, katalog.eintraege, auswahl, straenge) : null, [welt, katalog, auswahl, karte, straenge]);
   const hoverName = useMemo(() => {
     const s = hover && welt?.symbole.find((x) => x.schluessel === hover);
-    return s ? anzeigeName(s.katalogId, katalog?.eintraege) : null;
-  }, [hover, welt, katalog]);
+    if (s) return anzeigeName(s.katalogId, katalog?.eintraege);
+    const g = hover && welt && katalog ? gruppenKarte(welt, katalog.eintraege, hover, straenge) : null;
+    return g ? `${g.titel} · ${g.art}` : null;
+  }, [hover, welt, katalog, straenge]);
   /** Ort öffnen: Geschoss einblenden und schneiden, dann Anlage wählen (falls bekannt). */
   const zumOrt = (ziel: Pick<Zielort, "geschossId" | "schluessel"> & { position?: Zielort["position"] }) => {
     setOrtZiel(!ziel.schluessel && ziel.geschossId
@@ -210,10 +216,11 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAbmelden, onAbge
     const v = vorher.current;
     vorher.current = { auswahl, fokusId, separiert, erst: false };
     if (v.erst || !welt) return;
-    if (v.auswahl !== auswahl) setAnsage(karte ? `${karte.name} gewählt, ${karte.standort}` : "Auswahl aufgehoben");
+    if (v.auswahl !== auswahl) setAnsage(karte ? `${karte.name} gewählt, ${karte.standort}`
+      : gruppe ? `Heizgruppe ${gruppe.titel} gewählt, ${gruppe.verbraucher.length} Verbraucher` : "Auswahl aufgehoben");
     else if (v.fokusId !== fokusId) setAnsage(fokusId ? `${geschossCode(fokusId)} geöffnet` : "Übersicht, Gebäude geschlossen");
     else if (v.separiert !== separiert) setAnsage(separiert ? "Geschosse separiert" : "Geschosse zusammengeführt");
-  }, [auswahl, fokusId, separiert, karte, welt, geschossCode]);
+  }, [auswahl, fokusId, separiert, karte, gruppe, welt, geschossCode]);
 
   /** Ansage auch bei gleichem Text erneut auslösen. */
   const sage = (text: string) => { setAnsage(""); requestAnimationFrame(() => setAnsage(text)); };
@@ -234,7 +241,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAbmelden, onAbge
 
   return (
     <main className="twin" style={stil} aria-label="Digital Twin">
-      {karte && <TwinVerbindung punkt={punkt} kartenRef={objektRef} />}
+      {(karte || gruppe) && <TwinVerbindung punkt={punkt} kartenRef={objektRef} />}
       {bereit && <TwinTooltip text={hoverName} />}
       <div className="tw-flaeche">
         <Kopfzeile modus={modus} modusAktiv={!!daten} onModus={waehleModus}
@@ -266,7 +273,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAbmelden, onAbge
               ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} />
             {karte
               ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={schliesseKarte} />
-              : <p className="tw-objekt-leer">Anlage im Modell oder in der Liste wählen, um Details zu sehen.</p>}
+              : gruppe ? <TwinGruppe key={gruppe.id} karte={gruppe} kartenRef={objektRef} onSchliessen={schliesseKarte} />
+              : <p className="tw-objekt-leer">Anlage oder Leitung im Modell wählen, um Details zu sehen.</p>}
           </aside>
           <div className="tw-unten" ref={unten}>
             <TwinAnlagen anlagen={daten.anlagen} auswahl={auswahl} fokusId={fokusId} onWahl={waehleZeile} />

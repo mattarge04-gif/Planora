@@ -23,7 +23,8 @@ import { FreiraumSchnitt } from "./FreiraumSchnitt";
 import { HINTERGRUND, SCHATTEN, kontaktLichtZiel } from "./qualitaet";
 import { TastaturKamera } from "./TastaturKamera";
 import { NahKulisse } from "./NahKulisse";
-import { modellFuer } from "./technik";
+import { modellVon } from "./technik";
+import { anzeigeWelt, gruppenVerbindungen } from "./gruppenNetz";
 
 export interface Szene3Props {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; freiraum: Freiraum; reduziert: boolean;
@@ -48,6 +49,8 @@ export function Szene3(props: Szene3Props) {
 function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblendet = KEINE_GESCHOSSE, separiert = false,
   auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt }: Szene3Props) {
   const h = useMemo(() => huelle(welt), [welt]);
+  /** Darstellungslage der Anlagen (Verteiler mit Gruppen, Teile in der Leitung) für Kamera und Auswahlpunkt. */
+  const anzeige = useMemo(() => anzeigeWelt(welt, katalog), [welt, katalog]);
   const [kameraRichtung, setKameraRichtung] = useState<V3>([1, 1, 1]);
   const controls = useRef<OrbitControlsImpl>(null);
   const [modellStand, setModellStand] = useState(0);
@@ -78,18 +81,25 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
   }, []);
   useEffect(() => () => { if (hoverRef.current) hoverCallback.current?.(null); }, []);
   const waehlen = useCallback((key: string | null) => onAuswahl?.(key), [onAuswahl]);
-  const interaktion = useMemo(() => ({ auswahl, hover, lift, aktiv: !!onAuswahl || !!onHover || auswahl !== null,
-    waehlen, schweben }), [auswahl, hover, onAuswahl, onHover, waehlen, schweben]);
+  // Heizgruppe unter dem Zeiger hat Vorrang vor der gewählten; hervorgehoben werden Rohr, Zubehör und Verbraucher.
+  const straenge = useMemo(() => gruppenVerbindungen(anzeige, katalog), [anzeige, katalog]);
+  const interaktion = useMemo(() => {
+    const finde = (k: string | null) => (k ? straenge.find((s) => s.gruppeId === k) : undefined);
+    const aktivGruppe = finde(hover) ?? finde(auswahl);
+    return { auswahl, hover, lift, aktiv: !!onAuswahl || !!onHover || auswahl !== null, waehlen, schweben,
+      gruppe: aktivGruppe?.gruppeId ?? null, betont: new Set(aktivGruppe ? [...aktivGruppe.zubehoer, ...aktivGruppe.verbraucher] : []),
+      anker: finde(auswahl)?.verteiler ?? null };
+  }, [auswahl, hover, onAuswahl, onHover, waehlen, schweben, straenge]);
   const gl = useThree((s) => s.gl);
   const size = useThree((s) => s.size);
   const basisZoom = useMemo(() => einpassen(sichtbar, size.width, size.height, freiraum, FIT_ANTEIL, fokusId ? [1, 1.45, 1] : [1, 1, 1]).zoom,
     [sichtbar, size.width, size.height, freiraum, fokusId]);
   const auswahlBereich = useCallback((): Bereich | undefined => {
-    const s = welt.symbole.find((s) => s.schluessel === auswahl), id = s ? geschossBeiY(welt, s.position.y) : null;
+    const s = anzeige.symbole.find((s) => s.schluessel === auswahl), id = s ? geschossBeiY(welt, s.position.y) : null;
     if (!s || !id || !sichtbarIds.includes(id)) return undefined;
-    const m = modellFuer(s.katalogId).masse, y = s.position.y + (aktuell.current[id] ?? 0) + (lift.current[s.schluessel] ?? 0);
+    const m = modellVon(s, katalog).masse, y = s.position.y + (aktuell.current[id] ?? 0) + (lift.current[s.schluessel] ?? 0);
     return { xMin: s.position.x - m[0] / 2, xMax: s.position.x + m[0] / 2, yMin: y, yMax: y + m[1], zMin: s.position.z - m[2] / 2, zMax: s.position.z + m[2] / 2 };
-  }, [welt, auswahl, sichtbarIds, aktuell]);
+  }, [welt, anzeige, katalog, auswahl, sichtbarIds, aktuell]);
   useEffect(() => {
     const verlassen = () => schweben(null);
     gl.domElement.addEventListener("pointerleave", verlassen);
@@ -115,10 +125,10 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       // Maus: links drehen, Mitte/rechts verschieben, Rad zoomen. Laptop: Shift + Ziehen verschiebt (OrbitControls-Standard).
       mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.PAN }}
       touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }} />
-    <Kamera3 welt={welt} fokusId={fokusId} bereich={sichtbar} freiraum={freiraum} repKey={repKey}
+    <Kamera3 welt={anzeige} fokusId={fokusId} bereich={sichtbar} freiraum={freiraum} repKey={repKey}
       auswahl={auswahl} ziel={ziel} darstellung={darstellung} weniger={weniger} />
     <TastaturKamera aktiv={tastatur} freiraum={freiraum} auswahlBereich={auswahlBereich} />
-    <InteraktionsBewegung welt={welt} interaktion={interaktion} darstellung={darstellung} weniger={weniger} onAuswahlPunkt={onAuswahlPunkt} />
+    <InteraktionsBewegung welt={anzeige} interaktion={interaktion} darstellung={darstellung} weniger={weniger} onAuswahlPunkt={onAuswahlPunkt} />
     <Licht bereich={sichtbar} reduziert={reduziert} />
     <group onClick={(e) => { if (e.delta <= 4 && !durchsichtig(e.object)) { e.stopPropagation(); waehlen(null); } }}
       onPointerOver={interaktion.aktiv ? (e) => { if (!durchsichtig(e.object)) { e.stopPropagation(); schweben(null); } } : undefined}>
