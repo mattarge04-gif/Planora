@@ -17,6 +17,8 @@ export interface Interaktion {
   betont?: ReadonlySet<string>;
   /** Hervorgehobene Heizgruppe (Rohre mit dieser `gruppeId`). */
   gruppe?: string | null;
+  /** Anlage, an der die Karte einer gewählten Gruppe andockt (Verteiler der Gruppe). */
+  anker?: string | null;
   waehlen: (key: string | null) => void; schweben: (key: string | null) => void;
 }
 
@@ -43,7 +45,7 @@ export function InteraktionsBewegung({ welt, interaktion, darstellung, weniger, 
   }, -2);
   useFrame(() => {
     if (!callback.current) { letzter.current = undefined; return; }
-    const s = welt.symbole.find((s) => s.schluessel === interaktion.auswahl);
+    const s = welt.symbole.find((s) => s.schluessel === (interaktion.anker ?? interaktion.auswahl));
     const id = s ? geschossBeiY(welt, s.position.y) : null;
     let punkt: BildschirmPunkt | null = null;
     if (s && id && darstellung.sichtbar.includes(id)) {

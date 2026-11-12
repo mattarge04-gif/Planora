@@ -551,6 +551,105 @@ def fbh_kreis():
     anschluss(-0.262, yb, 0.06)
 
 
+
+# ---------------------------------------------------------------------------
+# Gruppenzubehoer (Stufe 1, Track C4): Teile in einer senkrechten Leitung.
+# Rohrachse senkrecht durch den Ursprung, Rohrenden bei z = 0 und z = H (glTF y = 0 / y = H),
+# Stellantrieb bzw. Rechenwerk nach vorn (-Y = glTF +Z). anschluss = unteres Rohrende.
+# Rohrradius 0.02 wie der Gruppenstock (ROHR.stock in app/web/src/szene3/technik.ts).
+# ---------------------------------------------------------------------------
+
+R_STOCK = 0.02
+
+
+def _leitungsstueck(h, manschetten=(0.03,)):
+    """Durchgehendes Rohrstueck mit Verschraubungen und KOO-Manschetten an beiden Enden."""
+    zyl(R_STOCK, h, (0, 0, h / 2), "detail", n=20)
+    for z in (0.011, h - 0.011):
+        zyl(R_STOCK * 1.35, 0.022, (0, 0, z), "detail", n=6, fase=0.003)
+    for z in manschetten:
+        for zz in (z, h - z):
+            zyl(R_STOCK * 1.14, 0.03, (0, 0, zz + (0.012 if zz < h / 2 else -0.012)), "koo", n=20, fase=0.004)
+
+
+def ventil_3weg():
+    # 0.2 x 0.25 x 0.2 – Mischventil: Gehaeuse auf der Leitung, dritter Weg nach rechts, Stellantrieb vorn
+    h = 0.25
+    _leitungsstueck(h)
+    kasten(0.085, 0.085, 0.1, 0, 0, h / 2 - 0.05, 0.02, "detail")                       # Ventilgehaeuse
+    zyl(0.05, 0.012, (0, 0, h / 2 + 0.05), "detail", n=6, fase=0.002)                   # Mutter oben
+    zyl(0.05, 0.012, (0, 0, h / 2 - 0.05), "detail", n=6, fase=0.002)                   # Mutter unten
+    stutzen(0.0425, 0, h / 2, 0.055, R_STOCK, "X", 1, koo=True)                         # dritter Weg (Bypass)
+    zyl(0.014, 0.03, (0, -0.055, h / 2), "detail", "Y", n=16)                           # Spindelhals
+    kasten(0.11, 0.075, 0.1, 0, -0.105, h / 2 - 0.05, 0.018, "gehaeuse")                # Stellantrieb
+    kasten(0.11, 0.004, 0.012, 0, -0.143, h / 2 + 0.03, 0.002, "detail", segmente=1)    # Fuge Deckel
+    zyl(0.016, 0.006, (0.03, -0.144, h / 2 - 0.015), "dunkel", "Y", n=20)               # Stellungsanzeige
+    kasten(0.034, 0.004, 0.008, -0.025, -0.144, h / 2 - 0.02, 0.002, "dunkel", segmente=1)  # Skala
+    anschluss(0.0, 0.0, 0.0)
+
+
+def ventil_2weg():
+    # 0.15 x 0.25 x 0.15 – Durchgangsventil mit Stellantrieb vorn
+    h = 0.25
+    _leitungsstueck(h)
+    zyl(0.042, 0.09, (0, 0, h / 2), "detail", n=24, fase=0.012)                         # Ventilkoerper
+    for z in (h / 2 - 0.05, h / 2 + 0.05):
+        zyl(0.046, 0.012, (0, 0, z), "detail", n=6, fase=0.002)
+    zyl(0.013, 0.03, (0, -0.05, h / 2), "detail", "Y", n=16)                            # Spindelhals
+    kasten(0.11, 0.06, 0.085, 0, -0.092, h / 2 - 0.0425, 0.016, "gehaeuse")              # Stellantrieb
+    zyl(0.014, 0.006, (0, -0.123, h / 2 + 0.008), "dunkel", "Y", n=20)                  # Stellungsanzeige
+    kasten(0.06, 0.004, 0.006, 0, -0.123, h / 2 - 0.028, 0.002, "detail", segmente=1)
+    anschluss(0.0, 0.0, 0.0)
+
+
+def wmz():
+    # 0.25 x 0.2 x 0.15 – Waermezaehler: Volumenmessteil auf der Leitung, Rechenwerk vorn mit Display
+    h = 0.2
+    _leitungsstueck(h, manschetten=(0.026,))
+    zyl(0.036, 0.1, (0, 0, h / 2), "detail", n=24, fase=0.01)                           # Messteil
+    for z in (h / 2 - 0.05, h / 2 + 0.05):
+        zyl(0.04, 0.01, (0, 0, z), "detail", n=6, fase=0.002)
+    kasten(0.05, 0.04, 0.04, 0, -0.045, h / 2 - 0.02, 0.008, "detail")                  # Konsole
+    kasten(0.2, 0.05, 0.13, 0, -0.09, h / 2 - 0.065, 0.016, "gehaeuse")                 # Rechenwerk
+    anzeige(-0.035, -0.116, h / 2 + 0.02, 0.08, 0.035)                                  # Display
+    for i, x in enumerate((0.045, 0.07)):
+        zyl(0.008, 0.004, (x, -0.117, h / 2 + 0.02), "detail", "Y", n=12)               # Tasten
+    typenschild(0.0, -0.116, h / 2 - 0.035, 0.12, 0.03)
+    # Fuehlerkabel zum Rohr (Ruecklauf-/Vorlauffuehler schematisch)
+    rohr([(0.1, -0.09, h / 2 - 0.05), (0.1, -0.09, 0.03), (0.1, -0.02, 0.03), (0.025, -0.02, 0.03)], 0.004, "dunkel", biegung=0.012, n=8)
+    anschluss(0.0, 0.0, 0.0)
+
+
+def verteiler_reihe(k):
+    """Verteiler mit k Gruppenabgaengen (Modellreihe heizung.verteiler.n<k>, Stufe 1).
+    Abgaenge im Abstand 0.34 m mittig, Laenge = max(0.9, (k-1)*0.34+0.6) – identisch zu verteilerLaenge()
+    in app/web/src/szene3/technik.ts. Abgang oben bei z = 1.0, y = -0.02 (glTF 0.02)."""
+    laenge = max(0.9, (k - 1) * 0.34 + 0.6)
+    halb = laenge / 2
+    xs = [(i - (k - 1) / 2) * 0.34 for i in range(k)]
+    for x in (-halb + 0.12, halb - 0.12):
+        kasten(0.05, 0.05, 0.98, x, 0.115, 0.0, 0.01, "detail")                  # Konsolenstuetze
+        kasten(0.1, 0.3, 0.012, x, 0.0, 0.0, 0.004, "detail", segmente=1)        # Fussplatte
+        for z in (0.62, 0.36):
+            kasten(0.05, 0.13, 0.04, x, 0.04, z - 0.02, 0.008, "detail")          # Ausleger
+    for z, warm in ((0.62, True), (0.36, False)):
+        kasten(laenge - 0.08, 0.1, 0.1, 0, -0.02, z - 0.05, 0.03, "gehaeuse")    # Balken (isoliert)
+        for s in (-1, 1):
+            zyl(0.035, 0.03, (s * (halb - 0.025), -0.02, z), "detail", "X", n=24, fase=0.008)
+        if warm:
+            zyl(0.028, 0.012, (-halb + 0.12, -0.077, z), "detail", "Y", n=24, fase=0.003)
+            zyl(0.022, 0.006, (-halb + 0.12, -0.085, z), "dunkel", "Y", n=24)
+        for x in xs:
+            if warm:
+                zyl(0.02, 0.33, (x, -0.02, z + 0.05 + 0.165), "detail", n=16)
+                zyl(0.0225, 0.06, (x, -0.02, 0.97), "koo", n=16, fase=0.004)
+                kugelhahn((x, -0.02, 0.76), 0.02, "Z", hebel="koo")
+            else:
+                zyl(0.02, z - 0.05 - 0.02, (x, -0.02, (z - 0.05 + 0.02) / 2), "detail", n=16)
+                kugelhahn((x, -0.02, 0.2), 0.02, "Z", hebel="gehaeuse")
+                zyl(0.03, 0.012, (x, -0.02, 0.006), "detail", n=16, fase=0.003)
+    anschluss(-halb, -0.02, 0.62)
+
 MODELLE = {
     "heizung.waermepumpe": (waermepumpe, (1.0, 1.2, 0.6)),
     "heizung.gaskessel": (gaskessel, (0.6, 1.6, 0.6)),
@@ -561,7 +660,13 @@ MODELLE = {
     "heizung.verteiler": (verteiler, (1.2, 1.0, 0.3)),
     "heizung.heizkoerper": (heizkoerper, (1.0, 0.65, 0.12)),
     "heizung.fbh_kreis": (fbh_kreis, (0.6, 0.8, 0.15)),
+    "heizung.ventil_3weg": (ventil_3weg, (0.2, 0.25, 0.2)),
+    "heizung.ventil_2weg": (ventil_2weg, (0.15, 0.25, 0.15)),
+    "heizung.wmz": (wmz, (0.25, 0.2, 0.15)),
 }
+# Verteiler mit Gruppen: Modellreihe 1..8 Abgaenge (nicht in der Uebersicht)
+for _k in range(1, 9):
+    MODELLE[f"heizung.verteiler.n{_k}"] = ((lambda k=_k: verteiler_reihe(k)), (max(0.9, (_k - 1) * 0.34 + 0.6), 1.0, 0.3))
 
 
 # ---------------------------------------------------------------------------
@@ -775,6 +880,8 @@ def uebersicht():
     x = 0.0
     objs = []
     for katalog_id, (_, masse) in MODELLE.items():
+        if ".n" in katalog_id:
+            continue
         pfad = os.path.join(ZIEL_GLB, katalog_id + ".glb")
         vorher = set(bpy.data.objects)
         bpy.ops.import_scene.gltf(filepath=pfad)

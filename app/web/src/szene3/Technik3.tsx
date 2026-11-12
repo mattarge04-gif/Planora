@@ -1,5 +1,5 @@
 import { AccumulativeShadows, RandomizedLight } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
@@ -76,7 +76,7 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
       <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} />
       {kappen.filter((k) => geschossBeiY(welt, k.symbol.position.y) === id).map((k, i) =>
         <VerteilerKappe key={`kappe-${i}`} {...k} interaktion={interaktion} schatten={schatten} />)}
-      {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} />)}
+      {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} interaktion={interaktion} />)}
       {netz.huelsen.filter((h) => huelsenGeschoss(h) === id).map((h, i) => <Durchgang key={i} huelse={h} schatten={schatten} />)}
       {flaechen.filter((f) => f.geschossId === id).map((f) => <Flaechenband key={f.daten.einheitId} {...f} />)}
       {schatten && !darstellung?.bewegung && schnitt.fokus?.id === id && <Technikkontakte key={`${id}:${Object.keys(anschluesse).join(":")}`}
@@ -95,16 +95,35 @@ function VerteilerKappe({ symbol, position, interaktion, schatten }: { symbol: W
   </mesh>;
 }
 
-function Rohr({ stueck, schatten, anfangFrei = false }: { stueck: Rohrstueck; schatten: boolean; anfangFrei?: boolean }) {
+/** Umrisszuschlag einer hervorgehobenen Gruppenleitung [A], Meter. */
+const ROHR_UMRISS = 0.012;
+/** Übrige Leitungen treten bei hervorgehobener Gruppe zurück [A]: KOO-Rot stark zum hellen Grau gemischt. */
+const ROHR_GEDIMMT = new THREE.Color(TOKENS.farbe.kooHeizung).lerp(new THREE.Color(TOKENS.farbe.grau1), 0.72).getStyle();
+
+function Rohr({ stueck, schatten, anfangFrei = false, interaktion }: { stueck: Rohrstueck; schatten: boolean; anfangFrei?: boolean; interaktion?: Interaktion }) {
   const geometrie = useMemo(() => rohrGeometrie(stueck), [stueck]);
   useEffect(() => () => geometrie?.dispose(), [geometrie]);
+  const gruppeId = stueck.daten.gruppeId;
+  const aktiv = !!gruppeId && interaktion?.gruppe === gruppeId;
+  const gedimmt = !!interaktion?.gruppe && !aktiv;
+  const umriss = useMemo(() => aktiv ? rohrGeometrie({ ...stueck, radius: stueck.radius + ROHR_UMRISS,
+    startRadius: stueck.startRadius + ROHR_UMRISS, endRadius: stueck.endRadius + ROHR_UMRISS }) : null, [aktiv, stueck]);
+  useEffect(() => () => umriss?.dispose(), [umriss]);
   if (!geometrie) return null;
   const abschluesse = rohrAbschluesse(stueck.punkte);
   const ende = [...(anfangFrei ? abschluesse.slice(0, 1) : []), ...(stueck.frei ? abschluesse.slice(-1) : [])];
+  const ereignisse = gruppeId && interaktion?.aktiv ? {
+    onPointerOver: (e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); interaktion.schweben(gruppeId); },
+    onPointerOut: () => interaktion.schweben(null),
+    onClick: (e: ThreeEvent<MouseEvent>) => { if (e.delta <= 4) { e.stopPropagation(); interaktion.waehlen(gruppeId); } },
+  } : {};
   return <group userData={stueck.daten}>
-    <mesh geometry={geometrie} userData={stueck.daten} castShadow={schatten} receiveShadow={schatten}>
-      <meshStandardMaterial color={TOKENS.farbe.kooHeizung} {...TOKENS.material.leitung} />
+    <mesh geometry={geometrie} userData={stueck.daten} castShadow={schatten} receiveShadow={schatten} {...ereignisse}>
+      <meshStandardMaterial color={gedimmt ? ROHR_GEDIMMT : TOKENS.farbe.kooHeizung} {...TOKENS.material.leitung} />
     </mesh>
+    {umriss && <mesh geometry={umriss} raycast={() => {}} userData={{ umriss: gruppeId }}>
+      <meshBasicMaterial color={TOKENS.farbe.eisAkzent} side={THREE.BackSide} />
+    </mesh>}
     {ende.map((a, i) => <mesh key={i} position={a.position} userData={{ ...stueck.daten, abschluss: true }}
       quaternion={new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...a.richtung))}
       castShadow={schatten} receiveShadow={schatten}>

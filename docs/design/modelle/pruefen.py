@@ -25,7 +25,28 @@ ZIELE = {
     "heizung.verteiler": (1.2, 1.0, 0.3),
     "heizung.heizkoerper": (1.0, 0.65, 0.12),
     "heizung.fbh_kreis": (0.6, 0.8, 0.15),
+    "heizung.ventil_3weg": (0.2, 0.25, 0.2),
+    "heizung.ventil_2weg": (0.15, 0.25, 0.15),
+    "heizung.wmz": (0.25, 0.2, 0.15),
 }
+# Verteiler mit Gruppen (Modellreihe, Laenge wie verteilerLaenge() in szene3/technik.ts)
+for _k in range(1, 9):
+    ZIELE[f"heizung.verteiler.n{_k}"] = (max(0.9, (_k - 1) * 0.34 + 0.6), 1.0, 0.3)
+# Teile in der Leitung: Rohrachse statt Grundflaechenmitte im Ursprung (anschluss = unteres Rohrende bei 0, 0, 0)
+INLINE = {"heizung.ventil_3weg", "heizung.ventil_2weg", "heizung.wmz"}
+
+
+def max_dreiecke(katalog_id):
+    """Verteiler-Reihe: Budget waechst mit der Anzahl Abgaenge (je Abgang zwei Kugelhaehne)."""
+    if katalog_id.startswith("heizung.verteiler.n"):
+        return MAX_DREIECKE + 1400 * max(0, int(katalog_id.rsplit("n", 1)[1]) - 4)
+    return MAX_DREIECKE
+
+
+def max_bytes(katalog_id):
+    if katalog_id.startswith("heizung.verteiler.n"):
+        return MAX_BYTES + 30 * 1000 * max(0, int(katalog_id.rsplit("n", 1)[1]) - 4)
+    return MAX_BYTES
 TOLERANZ = 0.05
 MATERIALIEN = {"gehaeuse", "detail", "dunkel", "koo"}
 MAX_DREIECKE = 8000
@@ -118,7 +139,12 @@ def pruefe(katalog_id):
     if abs(lo[1]) > 0.005:
         fehler.append(f"Unterkante y={lo[1]:.3f}")
     mitte_x, mitte_z = (lo[0] + hi[0]) / 2, (lo[2] + hi[2]) / 2
-    if abs(mitte_x) > TOLERANZ or abs(mitte_z) > TOLERANZ:
+    if katalog_id in INLINE:
+        if anschluss is None or max(abs(anschluss[0]), abs(anschluss[1]), abs(anschluss[2])) > 0.001:
+            fehler.append("Rohrachse/anschluss nicht im Ursprung")
+        if abs(hi[1] - ziel[1]) > 0.001:
+            fehler.append(f"Rohrende oben y={hi[1]:.3f} statt {ziel[1]:.2f}")
+    elif abs(mitte_x) > TOLERANZ or abs(mitte_z) > TOLERANZ:
         fehler.append(f"Ursprung nicht mittig ({mitte_x:.3f}, {mitte_z:.3f})")
     namen = {m.get("name") for m in g.get("materials", [])}
     if not MATERIALIEN.issubset(namen):
@@ -130,9 +156,9 @@ def pruefe(katalog_id):
         fehler.append("kein Teil mit Material koo")
     if anschluss is None:
         fehler.append("Empty 'anschluss' fehlt")
-    if dreiecke >= MAX_DREIECKE:
+    if dreiecke >= max_dreiecke(katalog_id):
         fehler.append(f"{dreiecke} Dreiecke")
-    if groesse >= MAX_BYTES:
+    if groesse >= max_bytes(katalog_id):
         fehler.append(f"{groesse} B")
     for schluessel in ("extensionsUsed", "images", "textures"):
         if g.get(schluessel):

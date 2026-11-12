@@ -24,7 +24,7 @@ import { HINTERGRUND, SCHATTEN, kontaktLichtZiel } from "./qualitaet";
 import { TastaturKamera } from "./TastaturKamera";
 import { NahKulisse } from "./NahKulisse";
 import { modellVon } from "./technik";
-import { anzeigeWelt } from "./gruppenNetz";
+import { anzeigeWelt, gruppenVerbindungen } from "./gruppenNetz";
 
 export interface Szene3Props {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; freiraum: Freiraum; reduziert: boolean;
@@ -81,8 +81,15 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
   }, []);
   useEffect(() => () => { if (hoverRef.current) hoverCallback.current?.(null); }, []);
   const waehlen = useCallback((key: string | null) => onAuswahl?.(key), [onAuswahl]);
-  const interaktion = useMemo(() => ({ auswahl, hover, lift, aktiv: !!onAuswahl || !!onHover || auswahl !== null,
-    waehlen, schweben }), [auswahl, hover, onAuswahl, onHover, waehlen, schweben]);
+  // Heizgruppe unter dem Zeiger hat Vorrang vor der gewählten; hervorgehoben werden Rohr, Zubehör und Verbraucher.
+  const straenge = useMemo(() => gruppenVerbindungen(anzeige, katalog), [anzeige, katalog]);
+  const interaktion = useMemo(() => {
+    const finde = (k: string | null) => (k ? straenge.find((s) => s.gruppeId === k) : undefined);
+    const aktivGruppe = finde(hover) ?? finde(auswahl);
+    return { auswahl, hover, lift, aktiv: !!onAuswahl || !!onHover || auswahl !== null, waehlen, schweben,
+      gruppe: aktivGruppe?.gruppeId ?? null, betont: new Set(aktivGruppe ? [...aktivGruppe.zubehoer, ...aktivGruppe.verbraucher] : []),
+      anker: finde(auswahl)?.verteiler ?? null };
+  }, [auswahl, hover, onAuswahl, onHover, waehlen, schweben, straenge]);
   const gl = useThree((s) => s.gl);
   const size = useThree((s) => s.size);
   const basisZoom = useMemo(() => einpassen(sichtbar, size.width, size.height, freiraum, FIT_ANTEIL, fokusId ? [1, 1.45, 1] : [1, 1, 1]).zoom,

@@ -48,3 +48,9 @@ Geprüft: 9, bestanden: 9. Geprüft wird: Bounding-Box gegen Zielmass (±5 cm), 
 - `anschluss`-Lage: Wärmepumpe, Kessel oben (Vor-/Rücklaufstutzen); Speicher vorn am oberen Vorlaufstutzen (z = +0.49); Fernwärme, Heizkörper und FBH-Schrank **unten** (Rohrgruppe bzw. Zuleitung zum Boden, y = 0.05–0.08); Pumpe am rechten Rohrende; Verteiler am linken Balkenende (Vorlauf). Falls Codex die Leitungen einheitlich oben andocken will, nur die `anschluss(...)`-Zeile im Skript anpassen.
 - Wärmepumpe als Kompaktgerät mit sichtbarem Lüfter (Lesbarkeit aus Distanz), nicht als glattes Innengerät.
 - `heizung.tabs_feld` nutzt laut Vertrag `heizung.fbh_kreis.glb` (Zuordnung im Code), keine eigene Datei.
+
+## Stufe 1, Track C4 (12.11.2026): Gruppenzubehör und Verteiler-Reihe
+
+- Neu im selben Skript: `heizung.ventil_3weg`, `heizung.ventil_2weg`, `heizung.wmz` (Teile in einer senkrechten Leitung: Rohrachse durch den Ursprung, Rohrenden bei y = 0 und y = H, `anschluss` = unteres Rohrende, Stellantrieb/Rechenwerk nach vorn +Z, Rohrradius 0.02 wie `ROHR.stock`) und `heizung.verteiler.n1` … `n8` (Verteiler mit k Gruppenabgängen im Abstand 0.34 m, Länge wie `verteilerLaenge()` in `szene3/technik.ts`).
+- `pruefen.py`: 20/20 bestanden. Für die drei Leitungsteile wird statt der Grundflächenmitte die Rohrachse im Ursprung geprüft (Antrieb vorn verschiebt die Bounding-Box). Verteiler-Reihe mit wachsendem Budget (+1400 Dreiecke, +30 kB je Abgang über 4); `n8` = 12 608 Dreiecke, 256 kB [A].
+- Masse aus Katalog v2 (`masse`) innerhalb ±5 cm; Ventile schmaler als der Katalogwert (0.15 statt 0.20 bzw. 0.11 statt 0.15 m).
