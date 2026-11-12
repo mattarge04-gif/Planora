@@ -16,7 +16,7 @@ export function TwinAnlagen({ anlagen, auswahl, fokusId, onWahl }: Props) {
   const pruefen = () => {
     const el = rolle.current;
     if (!el) return;
-    const neu = { oben: el.scrollTop > 2, unten: el.scrollTop + el.clientHeight < el.scrollHeight - 2 };
+    const neu = { oben: el.scrollTop > 1, unten: el.scrollTop + el.clientHeight < el.scrollHeight - 1 };
     setRand((alt) => alt.oben === neu.oben && alt.unten === neu.unten ? alt : neu);
   };
   useEffect(() => {

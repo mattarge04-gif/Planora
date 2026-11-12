@@ -9,12 +9,12 @@ export function bewegungsAnteil(ms: number, dauerMs: number, weniger = false): n
   return 1 - (1 - t) ** 3;
 }
 
-/** [A] Jedes höhere Geschoss erhält zusätzlich die halbe Höhe des darunterliegenden Geschosses. */
+/** [A] Jedes höhere Geschoss erhält zusätzlich 0.8 × die Höhe des darunterliegenden Geschosses, auch im Fokus. */
 export function separationsOffsets(welt: Welt, separiert = false): Record<string, number> {
   let versatz = 0;
   return Object.fromEntries([...welt.geschosse].sort((a, b) => a.yUnten - b.yUnten || a.id.localeCompare(b.id)).map((g) => {
     const offset = separiert ? versatz : 0;
-    versatz += g.hoehe / 2;
+    versatz += g.hoehe * 0.8;
     return [g.id, offset];
   }));
 }

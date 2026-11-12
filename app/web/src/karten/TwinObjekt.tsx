@@ -35,7 +35,7 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef }: Props & { kartenR
         </button>
       </header>
       <dl className="tw-zeilen tw-objekt-daten">
-        <div><dt>Hersteller / Typ</dt><dd className={karte.herstellerTyp ? undefined : "tw-fehlt"}>{karte.herstellerTyp ?? "Nicht erfasst"}</dd></div>
+        <div><dt>Hersteller / Typ</dt><dd>{karte.herstellerTyp ?? <span className="tw-fehlt" title="Nicht erfasst" aria-label="Nicht erfasst">–</span>}</dd></div>
         <div><dt>Standort</dt><dd>{karte.standort}</dd></div>
         <div><dt>Menge</dt><dd>{karte.menge}</dd></div>
         <div><dt>{karte.bauteilIds.length > 1 ? "Bauteil-IDs" : "Bauteil-ID"}</dt><dd className="tw-id" title={karte.bauteilIds.join(", ")}>{kurzId(karte.bauteilIds)}</dd></div>
@@ -53,7 +53,7 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef }: Props & { kartenR
   );
 }
 
-/** Dünne Verbindungslinie von der Karte zum Objekt (grau-2, 1 px). Rendert nur bei Punktänderung. */
+/** Dünne Verbindungslinie von der Karte zum Objekt (Graphit 55 %, 1 px, weisser Halo). Rendert nur bei Punktänderung. */
 export function TwinVerbindung({ punkt, kartenRef }: { punkt: Speicher<BildschirmPunkt | null>; kartenRef: RefObject<HTMLElement | null> }) {
   const p = useSpeicher(punkt);
   const [, neu] = useState(0);
@@ -73,8 +73,9 @@ export function TwinVerbindung({ punkt, kartenRef }: { punkt: Speicher<Bildschir
   if (!pfad.current || !p) return null;
   return (
     <svg className="tw-verbindung" aria-hidden="true">
-      <path d={pfad.current} />
-      <circle cx={p.x} cy={p.y} r={3.5} />
+      <path className="tw-halo" d={pfad.current} />
+      <path className="tw-strich-linie" d={pfad.current} />
+      <circle cx={p.x} cy={p.y} r={4} />
     </svg>
   );
 }

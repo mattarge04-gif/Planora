@@ -23,8 +23,9 @@ describe("Separieren und Sichtbarkeit", () => {
     expect(bewegungsAnteil(0, 750, true)).toBe(1);
     expect(bewegungsAnteil(0, 0)).toBe(1);
   });
-  it("summiert halbe Geschosshöhen in Höhenreihenfolge und belässt das unterste Geschoss am Ort", () => {
-    expect(separationsOffsets(welt, true)).toEqual({ ug: 0, eg: 1.5, og: 3.1 });
+  it("summiert 0.8-fache Geschosshöhen in Höhenreihenfolge und belässt das unterste Geschoss am Ort", () => {
+    const offsets = separationsOffsets(welt, true);
+    expect(offsets.ug).toBe(0); expect(offsets.eg).toBeCloseTo(2.4); expect(offsets.og).toBeCloseTo(4.96);
     expect(separationsOffsets(welt)).toEqual({ ug: 0, eg: 0, og: 0 });
     expect(separationsOffsets({ ...welt, geschosse: [] }, true)).toEqual({});
     expect(separationsOffsets({ ...welt, geschosse: [welt.geschosse[0]] }, true)).toEqual({ og: 0 });
@@ -40,7 +41,8 @@ describe("Separieren und Sichtbarkeit", () => {
   });
   it("passt ausschliesslich die sichtbaren Gebäudegeschosse ein, mit Separation und Plattendicke", () => {
     const b = gebaeudeBereich(welt, bereich, ["eg", "og"], separationsOffsets(welt, true));
-    expect(b).toMatchObject({ yMin: 1.25, yMax: 9.9, xMin: -0.15, xMax: 30.15 });
+    expect(b.yMin).toBeCloseTo(2.15); expect(b.yMax).toBeCloseTo(11.76);
+    expect(b).toMatchObject({ xMin: -0.15, xMax: 30.15 });
     expect(gebaeudeBereich(welt, bereich, [], {}).yMax).toBe(-3);
   });
   it("trennt Steigleitungen an Geschossgrenzen und behält alle sichtbaren Anschlusswege", () => {

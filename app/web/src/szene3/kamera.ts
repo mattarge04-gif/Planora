@@ -1,10 +1,18 @@
 import type { Bereich, V3 } from "../szene2/huelle";
 import type { Camera, Vector3 } from "three";
+import type { Welt } from "../typen";
 
 /** Blickrichtung von Ziel zu Kamera: isometrisch 3/4 (45 Grad gedreht, ca. 35 Grad Neigung). */
 export const ISO_RICHTUNG: V3 = (() => { const l = Math.sqrt(3); return [1 / l, 1 / l, 1 / l] as V3; })();
 export interface Freiraum { links: number; rechts: number; oben: number; unten: number }
 export interface Einpassung { ziel: V3; position: V3; zoom: number }
+export interface SzenenZiel { geschossId: string; position?: { x: number; y: number; z: number } }
+/** CSS-Kartenränder in WebGL-Koordinaten (Ursprung unten links); Faktor 1 für den logischen Hauptpuffer. */
+export function freiraumScissor(breite: number, hoehe: number, frei: Freiraum, faktor = 1, rand = 12): [number, number, number, number] {
+  const x = Math.min(breite, Math.max(0, frei.links + rand)), y = Math.min(hoehe, Math.max(0, frei.unten + rand));
+  return [Math.round(x * faktor), Math.round(y * faktor), Math.max(0, Math.floor((breite - x - frei.rechts - rand) * faktor)),
+    Math.max(0, Math.floor((hoehe - y - frei.oben - rand) * faktor))];
+}
 export const FIT_ANTEIL = 0.7;
 export interface BildschirmPunkt { x: number; y: number }
 export function bildpunkt(camera: Camera, breite: number, hoehe: number, punkt: Vector3): BildschirmPunkt | null {
@@ -19,6 +27,30 @@ export function punktImFreiraum(p: { x: number; y: number } | null, breite: numb
 const kreuz = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const norm = (a: V3): V3 => { const l = Math.hypot(...a); return [a[0] / l, a[1] / l, a[2] / l]; };
 const punkt = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+/** [A] 96 px Zielgrösse lässt Umriss und Details erkennen; mindestens 60 px bei ausreichend grossem Freiraum. */
+export function anlageEinpassen(b: Bereich, breite: number, hoehe: number, frei: Freiraum, richtung: V3): Einpassung {
+  const iso = norm(richtung), rechts = norm(kreuz([0, 1, 0], iso)), oben = kreuz(iso, rechts);
+  const d: V3 = [b.xMax - b.xMin, b.yMax - b.yMin, b.zMax - b.zMin];
+  const span = (achse: V3) => d.reduce((summe, v, i) => summe + Math.abs(achse[i]) * v, 0);
+  const zielZoom = 96 / Math.max(span(rechts), span(oben), 1e-6);
+  const passend = einpassen(b, breite, hoehe, frei, 0.8, richtung);
+  const zoom = Math.min(zielZoom, passend.zoom);
+  return einpassen(b, breite, hoehe, frei, 0.8 * zoom / passend.zoom, richtung);
+}
+
+export function ortBereich(welt: Welt, ziel: SzenenZiel, offsets: Record<string, number>): Bereich | null {
+  const g = welt.geschosse.find((g) => g.id === ziel.geschossId);
+  if (!g) return null;
+  const y = (ziel.position?.y ?? g.yUnten) + (offsets[g.id] ?? 0);
+  if (ziel.position) {
+    // [A] Ortsziele ohne Anlage erhalten ein sechs Meter breites Umfeld; keine erfundene Anlage.
+    return { xMin: ziel.position.x - 3, xMax: ziel.position.x + 3, zMin: ziel.position.z - 3, zMax: ziel.position.z + 3, yMin: y, yMax: y + 1 };
+  }
+  if (!welt.grundriss.length) return null;
+  return { xMin: Math.min(...welt.grundriss.map((r) => r.x)), xMax: Math.max(...welt.grundriss.map((r) => r.x + r.breite)),
+    zMin: Math.min(...welt.grundriss.map((r) => r.z)), zMax: Math.max(...welt.grundriss.map((r) => r.z + r.tiefe)), yMin: y, yMax: y + g.hoehe };
+}
 
 /**
  * Passt eine Orthokamera so ein, dass der Bereich `fuellung` (0..1) der freien Flaeche fuellt

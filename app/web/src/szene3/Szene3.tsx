@@ -1,8 +1,8 @@
 import { AccumulativeShadows, Environment, Lightformer, OrbitControls, RandomizedLight, SoftShadows } from "@react-three/drei";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { EffectComposer, N8AO, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
@@ -10,19 +10,21 @@ import { huelle, type Bereich, type V3 } from "../szene2/huelle";
 import type { KatalogEintrag, Welt } from "../typen";
 import { Gebaeude3 } from "./Gebaeude3";
 import { Kulisse3 } from "./Kulisse3";
-import { einpassen, FIT_ANTEIL, punktImFreiraum, bildpunkt, type Einpassung, type Freiraum } from "./kamera";
+import { ortBereich, type Freiraum, type SzenenZiel } from "./kamera";
 import { kulisse } from "./kulisse";
 import { geschossSchnitt } from "./schnitt";
 import { Technik3 } from "./Technik3";
-import { useGeschossBewegung, useWenigerBewegung, type Darstellung } from "./Bewegung";
+import { GeschossGruppe, useGeschossBewegung, useWenigerBewegung } from "./Bewegung";
 import { gebaeudeBereich, separationsOffsets, sichtbareGeschosse } from "./darstellung";
 import { InteraktionsBewegung, type BildschirmPunkt } from "./Interaktion";
 import { geschossBeiY } from "../szene2/leitungen";
-import { modellFuer } from "./technik";
+import { Kamera3 } from "./Kamera3";
+import { FreiraumSchnitt } from "./FreiraumSchnitt";
 
 export interface Szene3Props {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; freiraum: Freiraum; reduziert: boolean;
   ausgeblendet?: string[]; separiert?: boolean; auswahl?: string | null;
+  ziel?: SzenenZiel | null;
   onAuswahl?: (schluessel: string | null) => void; onHover?: (schluessel: string | null) => void;
   onAuswahlPunkt?: (punkt: BildschirmPunkt | null) => void;
 }
@@ -38,7 +40,7 @@ export function Szene3(props: Szene3Props) {
 }
 
 function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblendet = KEINE_GESCHOSSE, separiert = false,
-  auswahl = null, onAuswahl, onHover, onAuswahlPunkt }: Szene3Props) {
+  auswahl = null, ziel, onAuswahl, onHover, onAuswahlPunkt }: Szene3Props) {
   const h = useMemo(() => huelle(welt), [welt]);
   const [kameraRichtung, setKameraRichtung] = useState<V3>([1, 1, 1]);
   const controls = useRef<OrbitControlsImpl>(null);
@@ -95,8 +97,8 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
     {!reduziert && <SoftShadows size={TOKENS.licht.schattenFilterTexel} samples={TOKENS.licht.schattenSamples} />}
     <OrbitControls ref={controls} makeDefault enableDamping zoomToCursor maxPolarAngle={Math.PI / 2 - 0.12} minPolarAngle={0.15}
       onChange={kameraGeaendert} enablePan={false} />
-    <Kamera welt={welt} fokusId={fokusId} bereich={sichtbar} freiraum={freiraum} repKey={repKey}
-      auswahl={auswahl} darstellung={darstellung} weniger={weniger} />
+    <Kamera3 welt={welt} fokusId={fokusId} bereich={sichtbar} freiraum={freiraum} repKey={repKey}
+      auswahl={auswahl} ziel={ziel} darstellung={darstellung} weniger={weniger} />
     <InteraktionsBewegung welt={welt} interaktion={interaktion} darstellung={darstellung} weniger={weniger} onAuswahlPunkt={onAuswahlPunkt} />
     <Licht bereich={sichtbar} reduziert={reduziert} />
     <group onClick={(e) => { if (e.delta <= 4 && !durchsichtig(e.object)) { e.stopPropagation(); waehlen(null); } }}
@@ -104,9 +106,10 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       <Gebaeude3 welt={welt} h={h} fokusId={fokusId} kameraRichtung={kameraRichtung} schatten={!reduziert} darstellung={darstellung} />
       <Technik3 welt={welt} katalog={katalog} fokusId={fokusId} schatten={!reduziert} onModelle={modelleGeladen}
         darstellung={darstellung} interaktion={interaktion} separiert={separiert} />
-      <Kulisse3 bereich={h.bereich} schatten={!reduziert} />
+      <FreiraumSchnitt freiraum={freiraum}><Kulisse3 bereich={h.bereich} schatten={!reduziert} /></FreiraumSchnitt>
+      {!auswahl && ziel && <Ortsmarke welt={welt} ziel={ziel} darstellung={darstellung} />}
     </group>
-    {!reduziert && !bewegung && <Bodenschatten key={schattenKey} bereich={h.bereich} />}
+    {!reduziert && !bewegung && <FreiraumSchnitt key={schattenKey} freiraum={freiraum}><Bodenschatten bereich={h.bereich} /></FreiraumSchnitt>}
     {!reduziert && <EffectComposer multisampling={4} enableNormalPass={false}>
       <N8AO aoRadius={TOKENS.licht.aoRadiusM} intensity={TOKENS.licht.aoIntensitaet} distanceFalloff={1} color={TOKENS.farbe.textSekundaer} />
       <ToneMapping mode={ToneMappingMode.NEUTRAL} />
@@ -114,69 +117,17 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
   </>;
 }
 
-function Kamera({ welt, fokusId, bereich, freiraum, repKey, auswahl, darstellung, weniger }: {
-  welt: Welt; fokusId: string | null; bereich: Bereich; freiraum: Freiraum; repKey: string; auswahl: string | null; darstellung: Darstellung; weniger: boolean;
-}) {
-  const camera = useThree((s) => s.camera) as THREE.OrthographicCamera;
-  const size = useThree((s) => s.size);
-  const controls = useThree((s) => s.controls) as unknown as OrbitControlsImpl | null;
-  const ziel = useRef<Einpassung | null>(null);
-  const bewegt = useRef(false);
-  const erste = useRef(true);
-  const stand = useRef({ welt, fokusId, repKey });
-  useEffect(() => {
-    if (!controls) return;
-    const start = () => { bewegt.current = true; ziel.current = null; };
-    controls.addEventListener("start", start);
-    return () => controls.removeEventListener("start", start);
-  }, [controls]);
-  const { links, rechts, oben, unten } = freiraum;
-  useLayoutEffect(() => {
-    if (!controls || !size.width || !size.height) return;
-    const auswahlNeu = stand.current.welt !== welt || stand.current.fokusId !== fokusId || stand.current.repKey !== repKey;
-    if (bewegt.current && !auswahlNeu) return;
-    const e = einpassen(bereich, size.width, size.height, { links, rechts, oben, unten }, FIT_ANTEIL, fokusId ? [1, 1.45, 1] : [1, 1, 1]);
-    stand.current = { welt, fokusId, repKey }; bewegt.current = false;
-    if (erste.current || weniger) {
-      camera.position.set(...e.position); camera.zoom = e.zoom; controls.target.set(...e.ziel);
-      camera.lookAt(...e.ziel); camera.updateProjectionMatrix(); controls.update(); ziel.current = null; erste.current = false;
-    } else ziel.current = e;
-  }, [controls, camera, welt, fokusId, bereich, size.width, size.height, links, rechts, oben, unten, weniger, repKey]);
-  useEffect(() => {
-    if (!controls || !auswahl) return;
-    const s = welt.symbole.find((s) => s.schluessel === auswahl), id = s ? geschossBeiY(welt, s.position.y) : null;
-    if (!s || !id || !darstellung.sichtbar.includes(id)) return;
-    const m = modellFuer(s.katalogId).masse, y = s.position.y + (darstellung.offsets[id] ?? 0);
-    camera.updateMatrixWorld();
-    const punkt = bildpunkt(camera, size.width, size.height, new THREE.Vector3(s.position.x, y + m[1] / 2, s.position.z));
-    // [A] Auswahl verschiebt die Kamera nur, wenn das Anlagenzentrum ausserhalb des Freiraums liegt; kein unnötiges Heranzoomen.
-    if (punktImFreiraum(punkt, size.width, size.height, freiraum)) return;
-    const richtung = camera.position.clone().sub(controls.target).toArray() as V3;
-    const b: Bereich = { xMin: s.position.x - m[0] / 2, xMax: s.position.x + m[0] / 2, yMin: y, yMax: y + m[1], zMin: s.position.z - m[2] / 2, zMax: s.position.z + m[2] / 2 };
-    const e = einpassen(b, size.width, size.height, freiraum, FIT_ANTEIL, richtung);
-    const zoom = Math.min(camera.zoom, e.zoom);
-    // Freiraum-Zentrierung hängt vom tatsächlichen Zoom ab.
-    const mitte = new THREE.Vector3(s.position.x, y + m[1] / 2, s.position.z);
-    const rechtsV = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), obenV = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
-    const zielPunkt = mitte.addScaledVector(rechtsV, -(links - rechts) / (2 * zoom)).addScaledVector(obenV, -(unten - oben) / (2 * zoom));
-    const position = zielPunkt.clone().add(camera.position.clone().sub(controls.target));
-    const neu = { ziel: zielPunkt.toArray() as V3, position: position.toArray() as V3, zoom };
-    if (weniger) {
-      camera.position.copy(position); controls.target.copy(zielPunkt); camera.zoom = zoom; camera.lookAt(zielPunkt); camera.updateProjectionMatrix(); controls.update(); ziel.current = null;
-    } else ziel.current = neu;
-  }, [auswahl, controls]);
-  const p = useMemo(() => new THREE.Vector3(), []), t = useMemo(() => new THREE.Vector3(), []);
-  useFrame((_, dt) => {
-    const e = ziel.current;
-    if (!e || !controls) return;
-    const alpha = 1 - Math.exp(-Math.min(dt, 0.1) * 6 / (TOKENS.bewegung.kameraMs / 1000));
-    p.set(...e.position); t.set(...e.ziel);
-    camera.position.lerp(p, alpha); controls.target.lerp(t, alpha); camera.zoom += (e.zoom - camera.zoom) * alpha;
-    camera.updateProjectionMatrix(); controls.update();
-    if (camera.position.distanceToSquared(p) < 0.0001 && Math.abs(camera.zoom - e.zoom) < 0.001) ziel.current = null;
-  });
-  return null;
+function Ortsmarke({ welt, ziel, darstellung }: { welt: Welt; ziel: SzenenZiel; darstellung: import("./Bewegung").Darstellung }) {
+  const b = ortBereich(welt, ziel, {});
+  if (!b || !darstellung.sichtbar.includes(ziel.geschossId)) return null;
+  return <GeschossGruppe id={ziel.geschossId} darstellung={darstellung}>
+    <mesh position={[(b.xMin + b.xMax) / 2, b.yMin + 0.045, (b.zMin + b.zMax) / 2]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => {}}>
+      <torusGeometry args={[0.35, 0.035, 8, 32]} />
+      <meshBasicMaterial color={TOKENS.farbe.eisAkzent} />
+    </mesh>
+  </GeschossGruppe>;
 }
+
 
 function sonnenPosition(): V3 {
   const azimut = THREE.MathUtils.degToRad(TOKENS.licht.sonneAzimutGrad);

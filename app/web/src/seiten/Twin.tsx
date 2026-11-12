@@ -55,6 +55,8 @@ const stil = {
 
 const FREIRAUM_START: Freiraum = { links: 368, rechts: 336, oben: 72, unten: 260 };
 
+interface OrtZiel { geschossId: string; position?: { x: number; y: number; z: number } }
+
 interface Props {
   gebaeudeId: string; name: string;
   onGebaeude: (g: GebaeudeEintrag) => void;
@@ -75,6 +77,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
   const [ausgeblendet, setAusgeblendet] = useState<string[]>([]);
   const [separiert, setSepariert] = useState(false);
   const [auswahl, setAuswahl] = useState<string | null>(null);
+  // «Zum Ort» ohne Anlage: Zielpunkt für die Kamera (Szene3-Prop `ziel`, von Codex vorgesehen).
+  const [ortZiel, setOrtZiel] = useState<OrtZiel | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const [punkt] = useState(() => speicher<BildschirmPunkt | null>(null));
   const links = useRef<HTMLDivElement>(null);
@@ -88,7 +92,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
   useEffect(() => {
     let aktiv = true;
     setWelt(null); setBeschreibung(null); setKatalog(null); setFehler(null); setFokusId(null);
-    setAuswahl(null); setAusgeblendet([]); setSepariert(false);
+    setAuswahl(null); setAusgeblendet([]); setSepariert(false); setOrtZiel(null);
     Promise.all([
       holeJson<Welt>(`/api/szene/gebaeude/${gebaeudeId}/welt`),
       holeJson<Beschreibung>(`/api/struktur/gebaeude/${gebaeudeId}/beschreibung`),
@@ -115,6 +119,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
     // Esc schliesst zuerst die Anlagenkarte, danach den Geschossschnitt.
     const taste = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      setOrtZiel(null);
       if (auswahlRef.current) setAuswahl(null); else setFokusId(null);
     };
     window.addEventListener("keydown", taste);
@@ -154,7 +159,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
   }, [welt, beschreibung, katalog]);
 
   const modus: Modus = fokusId === null ? "uebersicht" : "technik";
-  const waehleModus = (m: Modus) => setFokusId(m === "uebersicht" ? null : fokusId ?? daten?.technikId ?? null);
+  const waehleModus = (m: Modus) => { setOrtZiel(null); setFokusId(m === "uebersicht" ? null : fokusId ?? daten?.technikId ?? null); };
   const geschossCode = useCallback((id: string) => welt?.geschosse.find((g) => g.id === id)?.code ?? "Geschoss", [welt]);
   const zeigeHinweise = () => {
     const k = hinweisKarte.current;
@@ -169,7 +174,9 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
     return s ? anzeigeName(s.katalogId, katalog?.eintraege) : null;
   }, [hover, welt, katalog]);
   /** Ort öffnen: Geschoss einblenden und schneiden, dann Anlage wählen (falls bekannt). */
-  const zumOrt = (ziel: Pick<Zielort, "geschossId" | "schluessel">) => {
+  const zumOrt = (ziel: Pick<Zielort, "geschossId" | "schluessel"> & { position?: Zielort["position"] }) => {
+    setOrtZiel(!ziel.schluessel && ziel.geschossId
+      ? { geschossId: ziel.geschossId, ...(ziel.position ? { position: ziel.position } : {}) } : null);
     if (ziel.geschossId) {
       const g = ziel.geschossId;
       setAusgeblendet((a) => a.filter((x) => x !== g));
@@ -177,6 +184,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
     }
     setAuswahl(ziel.schluessel);
   };
+  const waehle3d = useCallback((s: string | null) => { setOrtZiel(null); setAuswahl(s); }, []);
   const waehleZeile = (a: AnlagenZeile) => zumOrt({ geschossId: a.geschossId, schluessel: a.schluessel });
   const ausblenden = (id: string) => setAusgeblendet((a) => a.includes(id) ? a.filter((x) => x !== id) : [...a, id]);
   const punktSetzen = useCallback((p: BildschirmPunkt | null) => punkt.setzen(p), [punkt]);
@@ -186,7 +194,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
     <main className="twin" style={stil} aria-label="Digital Twin">
       {bereit && <Szene3 welt={welt!} katalog={katalog!.eintraege} fokusId={fokusId} reduziert={reduziert} freiraum={freiraum}
         ausgeblendet={ausgeblendet} separiert={separiert} auswahl={auswahl}
-        onAuswahl={setAuswahl} onHover={setHover} onAuswahlPunkt={punktSetzen} />}
+        onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} />}
       {karte && <TwinVerbindung punkt={punkt} kartenRef={objektRef} />}
       {bereit && <TwinTooltip text={hoverName} />}
       <div className="tw-flaeche">
@@ -208,7 +216,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onAnsicht, onEntwu
             <TwinHinweise ref={hinweisKarte} hinweise={daten.hinweise} geschossCode={geschossCode} onZiel={zumOrt} />
           </div>
           <div className="tw-rechts" ref={rechts}>
-            <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={setFokusId}
+            <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
               ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} />
             {karte
               ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={() => setAuswahl(null)} />
