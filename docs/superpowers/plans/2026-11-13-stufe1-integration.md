@@ -17,7 +17,7 @@ Pruefstand nach `5b2bf4b`: Backend 568/568 (nach Integration 565), Web 251/251, 
 ## Offen
 
 1. **Vorschau im Assistenten zu nah [F, Ursache offen]:** Gebaeude ragt bei 1280/1440 unter das Formular, auch bei 1920 deutlich mehr als `FIT_ANTEIL` 0.7 des Freiraums. `einpassen()` rechnet korrekt; Verdacht [A]: Kamera nach Benutzer-/Werkzeug-Eingriff nicht neu eingepasst, oder Zoom-Untergrenze in `Kamera3`/`Bewegung`. In laufender Instanz messen.
-2. Hauptleitungen Erzeuger -> Speicher -> Verteiler bilden Schleifen ueber der Zentrale (alte `kantenNetz`-Fuehrung), sichtbar in `docs/abnahme/2026-11-12-gruppen/*-zentrale-*`.
+2. **In Arbeit (Leitungsrouter, Plan `2026-11-13-leitungsrouter.md`):** Hauptleitungen Erzeuger -> Speicher -> Verteiler bilden Schleifen ueber der Zentrale (alte `kantenNetz`-Fuehrung), sichtbar in `docs/abnahme/2026-11-12-gruppen/*-zentrale-*`.
 3. Gruppenauswahl: Kamera faehrt auf Geschossansicht statt auf Gruppenverlauf; Umriss in Uebersicht schwach.
 4. visual-critic-Gesamtrunde (I2) und GPU-Bilder aller Muster nach Integration; danach PO-Sichtung.
 5. Annahmen pruefen: Steigzone 0.3 m innerhalb der Zentrale-Ecke; Verteiler `n8` 12 608 Dreiecke / 256 kB (ueber bisherigem Budget 8000 / 200 kB); Abschwaechung nicht gewaehlter Leitungen.

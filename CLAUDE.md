@@ -19,6 +19,15 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 13.11.2026
 
+### Leitungsrouter (13.11. abends) [F]
+
+- PO-Entscheid: Hauptleitungs-Schleifen (Offen-Punkt 2) per neuem Router fuer **alle** Leitungen loesen, Ansatz C (Trasse + A*-Rueckfall + Pruefer), ein Rohr je Verbindung endgueltig, Rohr ueber Geraet bei >= 0.15 m Luft erlaubt.
+- Spec `docs/superpowers/specs/2026-11-13-leitungsrouter-design.md`, Plan `docs/superpowers/plans/2026-11-13-leitungsrouter.md` (10 Tasks, Fortsetzungsstand am Ende).
+- T1–T5 fertig und geprueft (T2/T4/T5 durch Codex via Orca). T6 Router `155e365` nach Fixrunde gruen (Web 313/313, Zufallstests ohne harte Befunde); scoped Re-Review offen, dann T7 (Einbau) -> Zwischenbild Zentrale an PO.
+- Ist-Messung alte Fuehrung (7 Muster + 200 Zufallswelten): 3247 Abstandsverletzungen, 99 Rueckwaertslaeufe.
+- [A] Verbraucheranschluesse gleicher Ebene >= 0.3 m auseinander; Grundriss-Kreuzung auf Ausweichebene ist weicher Befund (0 in Mustern, <= 1 % Zufallswelten).
+- Einstieg naechste Sitzung: "weiter mit Leitungsrouter". Protokoll mit allen Entscheiden lokal in `.superpowers/sdd/2026-11-13-leitungsrouter/progress.md` (git-ignoriert).
+
 ### Stufe 1 integriert, Branch gepusht [F]
 
 - Tracks A (Generator v2/Raumkomposition, Merge `2a155d2`), C (Gruppenleitungen, `f16ab79`) und B (Web-Assistent, `29e292a`) auf `m2c-interview` gemergt, ohne Konflikte; `npm run muster:welt` ohne Fixture-Diff. I1 `fe85d42`: Twin-Kopfzeile "Gebäude bearbeiten" oeffnet den Assistenten.
@@ -116,7 +125,7 @@ Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Ges
 
 ### Naechste Coding-Aufgabe
 
-**Aktuell (13.11.):** Vorschau-Zoom im Assistenten, Hauptleitungs-Schleifen ueber der Zentrale, Kamerafahrt auf Gruppenverlauf, danach I2 – Details in `docs/superpowers/plans/2026-11-13-stufe1-integration.md`.
+**Aktuell (13.11. abends):** Leitungsrouter T6-Re-Review, T7–T10 (siehe Plan). Danach Vorschau-Zoom im Assistenten, Kamerafahrt auf Gruppenverlauf, danach I2 – Details in `docs/superpowers/plans/2026-11-13-stufe1-integration.md`.
 
 *Ueberholt (Stand 12.11.):* PO-Korrekturrunde am Entwurf ([docs/abnahme/2026-11-12-entwurf/README.md](docs/abnahme/2026-11-12-entwurf/README.md)); danach alte Szene durch szene2 ersetzen und Explosion, Tabellenweg, Leistungsstufen anbinden. Regelwerk-v1 bleibt Annahme bis PO-Rueckmeldung. Einheitliches 400-Format ist in M2b-1 umgesetzt; weitere M2a-Nachtraege bleiben offen.
 
