@@ -5,6 +5,10 @@ import { GRENZEN, ROUTER, type Koerper, type V3 } from "./typen";
 
 export interface Gitter { x0: number; z0: number; nx: number; nz: number; innen: Uint8Array }
 const Z = ROUTER.zelle;
+const EPS = 1e-9;
+const PUNKTE: [number, number][] = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+const liegtIn = (r: Welt["grundriss"], x: number, z: number) =>
+  r.some((q) => x >= q.x - EPS && x <= q.x + q.breite + EPS && z >= q.z - EPS && z <= q.z + q.tiefe + EPS);
 
 export function gitterFuer(welt: Welt): Gitter {
   const r = welt.grundriss;
@@ -13,7 +17,8 @@ export function gitterFuer(welt: Welt): Gitter {
   const innen = new Uint8Array(nx * nz), m = ROUTER.aussenRand;
   for (let k = 0; k < nz; k++) for (let i = 0; i < nx; i++) {
     const x = x0 + (i + 0.5) * Z, z = z0 + (k + 0.5) * Z;
-    if (r.some((q) => x >= q.x + m && x <= q.x + q.breite - m && z >= q.z + m && z <= q.z + q.tiefe - m)) innen[k * nx + i] = 1;
+    // Aussenrand am Gesamtumriss: alle acht Punkte im Abstand m muessen in der Vereinigung der Rechtecke liegen.
+    if (PUNKTE.every(([dx, dz]) => liegtIn(r, x + dx * m, z + dz * m))) innen[k * nx + i] = 1;
   }
   return { x0, z0, nx, nz, innen };
 }

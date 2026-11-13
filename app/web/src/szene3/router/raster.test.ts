@@ -51,4 +51,12 @@ describe("raster", () => {
     expect(b.frei(2.8, i1, k1, "n")).toBe(false);
     expect(b.frei(2.8, i2, k2, "n")).toBe(true);
   });
+  it("Aussenrand gilt am Gesamtumriss, nicht je Rechteck", () => {
+    const w2: Welt = { ...welt, grundriss: [{ x: 0, z: 0, breite: 3, tiefe: 2 }, { x: 3, z: 0, breite: 3, tiefe: 2 }] };
+    const g = gitterFuer(w2);
+    const [i, k] = zelleVon(g, 3.0, 1), [a, b] = zelleVon(g, 0.05, 1), [c, d] = zelleVon(g, 3.0, 0.05);
+    expect(g.innen[k * g.nx + i]).toBe(1);
+    expect(g.innen[b * g.nx + a]).toBe(0);
+    expect(g.innen[d * g.nx + c]).toBe(0);
+  });
 });
