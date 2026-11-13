@@ -1542,6 +1542,17 @@ Import: `import { leitungsHinweise } from "../szene3/router/hinweise";`
 
 (Task 1, Step 9: Ist-Befunde je Regel vor Umbau; Task 8, Step 2: Laufzeit und Kreuzungsquote nach Umbau.)
 
+**Task 1, Step 9 – Ist-Befunde vor Umbau** (7 Muster-Fixtures plus 200 Zufallswelten, Seeds 1–200; Befehl `npm.cmd test -- src/szene3/router/messung.test.ts`):
+
+| Regel | Befunde |
+|---|---|
+| abstand | 3385 |
+| selbst | 423 |
+| rueckwaerts | 99 |
+| kreuzung (weich) | 27 |
+| durch_geraet | 1 |
+| schraeg, boegen, zyklus, kein_weg | 0 |
+
 ## Selbstpruefung gegen Spec
 
 | Spec | Task |
