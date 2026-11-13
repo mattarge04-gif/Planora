@@ -1583,6 +1583,6 @@ Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (
 ## Fortsetzung (Stand 13.11.2026, Sitzungsende wegen Nutzungslimit)
 
 - Fertig und geprueft: T1 Pruefer (`6e5cf62`), T2 Topologie (`8de1f01`, Codex), T3 Raster (`9798d4b`), T4 A* (`5e056c9`, Codex), T5 Trasse (`975c97f`, Codex).
-- T6 Router: Commit `6e7b892`, Review **nicht bestanden** (500 Zufallsstraenge: 467 mit harten Befunden). Fixrunde 1 lief bei Sitzungsende (Befunde C1/C2/I1/I2/M3/M4 in `.superpowers/sdd/2026-11-13-leitungsrouter/task-6-review.md`). Pruefen: `git log` auf Commit "Leitungsrouter T6: Abzweige und Einrasten ohne Konflikte"; fehlt er, Fixrunde neu starten. Danach scoped Re-Review, dann T7.
+- T6 Router: Fixrunde 1 committet (`155e365`, Web 313/313, Zufallstests 500 Straenge + 1000 Wege ohne harte Befunde; Mindestabstand Anschluesse 0.3 m [A]). **Offen: scoped Re-Review gegen task-6-review.md**, danach T7.
 - Protokoll mit allen Entscheiden (Ruling-Zeilen): `.superpowers/sdd/2026-11-13-leitungsrouter/progress.md` (git-ignoriert, lokal).
 - Codex-Worker (Orca, Worktree `router-t2-t5`) hat T2, T4, T5 geliefert; seine Commits sind per cherry-pick uebernommen.
