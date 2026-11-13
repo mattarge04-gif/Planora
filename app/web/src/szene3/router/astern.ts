@@ -49,6 +49,7 @@ export function suchen(b: Belegung, start: Zelle, ziel: Zelle | null, istZiel: (
   const id = (e: number, i: number, k: number, r: number) => (((e * nz + k) * nx + i) * 5 + r);
   const n = ne * nz * nx * 5;
   const g = new Float64Array(n).fill(Infinity), von = new Int32Array(n).fill(-1);
+  const fertig = new Uint8Array(n);
   // Auch auf der Vorzugsspur darf die Heuristik die verbleibenden Kosten nicht ueberschaetzen.
   const h = (i: number, k: number) => (ziel ? (Math.abs(i - ziel.i) + Math.abs(k - ziel.k)) * Z * (vorzug ? ROUTER.spurFaktor : 1) : 0);
   const istStartOderZiel = (i: number, k: number) => (i === start.i && k === start.k) || (!!ziel && i === ziel.i && k === ziel.k);
@@ -63,6 +64,9 @@ export function suchen(b: Belegung, start: Zelle, ziel: Zelle | null, istZiel: (
   g[s0] = 0; heap.push(h(start.i, start.k), s0);
   while (!heap.leer) {
     const s = heap.pop();
+    // Die konsistente Heuristik erlaubt, abgeschlossene Zustaende nur einmal zu expandieren.
+    if (fertig[s]) continue;
+    fertig[s] = 1;
     const r = s % 5, rest = (s - r) / 5, i = rest % nx, rest2 = (rest - i) / nx, k = rest2 % nz, e = (rest2 - k) / nz;
     const zelle = { y: ebenen[e], i, k };
     if (istZiel(zelle) && e === e0) {

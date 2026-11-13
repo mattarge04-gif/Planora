@@ -27,7 +27,31 @@ describe("suchen", () => {
   it("bevorzugt die eigene Spur", () => {
     const b = new Belegung(welt), s = zelle(b, 1, 1), z = zelle(b, 5, 3.5);
     const w = suchen(b, s, z, ziel(z), "n", [2.8, 2.55], { achse: 0, wert: 2.5 })!;
-    expect(w.some((c) => Math.abs(b.gitter.z0 + (c.k + 0.5) * 0.09 - 2.5) < 0.05)).toBe(true);
+    const ohneVorzug = suchen(b, s, z, ziel(z), "n", [2.8, 2.55])!;
+    const laengsterSpurlauf = (weg: Zelle[]) => {
+      let lauf = 0, maximum = 0;
+      for (const c of weg) {
+        lauf = Math.abs(b.gitter.z0 + (c.k + 0.5) * 0.09 - 2.5) < 0.05 ? lauf + 1 : 0;
+        maximum = Math.max(maximum, lauf);
+      }
+      return maximum;
+    };
+    expect(laengsterSpurlauf(w)).toBeGreaterThanOrEqual(20);
+    expect(laengsterSpurlauf(ohneVorzug)).toBeLessThan(20);
+  });
+  it("prueft jede Zelle hoechstens einmal je Ankunftsrichtung", () => {
+    const b = new Belegung({ ...welt, grundriss: [{ x: 0, z: 0, breite: 1.8, tiefe: 1.8 }] });
+    const s = zelle(b, 0.5, 0.5), besuche = new Map<string, number>();
+    const w = suchen(b, s, null, (c) => {
+      const key = `${c.i}:${c.k}`;
+      besuche.set(key, (besuche.get(key) ?? 0) + 1);
+      return false;
+    }, "n", [2.8]);
+    expect(w).toBeNull();
+    expect(besuche.size).toBeGreaterThan(1);
+    for (const [key, anzahl] of besuche) {
+      expect(anzahl).toBeLessThanOrEqual(key === `${s.i}:${s.k}` ? 5 : 4);
+    }
   });
   it("Mehrfachziel: endet auf eigenem Netz", () => {
     const b = new Belegung(welt);
