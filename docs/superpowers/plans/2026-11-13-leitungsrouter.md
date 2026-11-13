@@ -1579,3 +1579,10 @@ Vor Pruefer-Korrektur (oben): selbst 423 war zu 97 % Fehlalarm durch Nullstuecke
 | 8 Zwischenstand Zentrale an PO | nach T7 (Bilder m3/m4 Zentrale vorab zeigen) |
 
 Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (Ausweichebene) ist ein **weicher** Befund mit Grenze 1 % der Zufallswelten und 0 in allen Mustern. Grund: Bei festen Geraetepositionen kann eine kreuzungsfreie Fuehrung auf einer einzigen Ebene geometrisch unmoeglich sein (z. B. eingeschlossener Anschluss). Wird dem PO mit dem Zwischenstand gemeldet.
+
+## Fortsetzung (Stand 13.11.2026, Sitzungsende wegen Nutzungslimit)
+
+- Fertig und geprueft: T1 Pruefer (`6e5cf62`), T2 Topologie (`8de1f01`, Codex), T3 Raster (`9798d4b`), T4 A* (`5e056c9`, Codex), T5 Trasse (`975c97f`, Codex).
+- T6 Router: Commit `6e7b892`, Review **nicht bestanden** (500 Zufallsstraenge: 467 mit harten Befunden). Fixrunde 1 lief bei Sitzungsende (Befunde C1/C2/I1/I2/M3/M4 in `.superpowers/sdd/2026-11-13-leitungsrouter/task-6-review.md`). Pruefen: `git log` auf Commit "Leitungsrouter T6: Abzweige und Einrasten ohne Konflikte"; fehlt er, Fixrunde neu starten. Danach scoped Re-Review, dann T7.
+- Protokoll mit allen Entscheiden (Ruling-Zeilen): `.superpowers/sdd/2026-11-13-leitungsrouter/progress.md` (git-ignoriert, lokal).
+- Codex-Worker (Orca, Worktree `router-t2-t5`) hat T2, T4, T5 geliefert; seine Commits sind per cherry-pick uebernommen.
