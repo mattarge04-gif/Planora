@@ -54,4 +54,21 @@ describe("pruefen", () => {
   it("doppelt gefuehrte Strecke im selben Netz: abstand", () => {
     expect(regeln(pruefen([L("a", "n1", [[0, 2.8, 0], [4, 2.8, 0]]), L("b", "n1", [[1, 2.8, 0], [3, 2.8, 0]])], []))).toEqual(["abstand"]);
   });
+  it("selbst: U-Haken, der sich auf sich selbst zurueckfaltet", () => {
+    expect(regeln(pruefen([L("a", "n1", [[0, 0, 0], [0, 0, 2], [0.02, 0, 2], [0.02, 0, 0]])], []))).toEqual(["selbst"]);
+  });
+  it("normaler Winkel mit doppeltem Punkt: kein selbst", () => {
+    expect(pruefen([L("a", "n1", [[0, 0, 0], [0, 0, 2], [0, 0, 2], [3, 0, 2], [3, 0, 4]])], [])).toEqual([]);
+  });
+  it("Nullstueck am Anfang/Ende und mitten im Strang ist unschaedlich", () => {
+    expect(pruefen([L("a", "n1", [[0, 0, 0], [0, 0, 0], [2, 0, 0], [2, 0, 0]])], [])).toEqual([]);
+  });
+  it("Wende ueber ein Nullstueck hinweg wird erkannt", () => {
+    expect(regeln(pruefen([L("a", "n1", [[0, 0, 0], [2, 0, 0], [2, 0, 0], [1, 0, 0]])], []))).toContain("rueckwaerts");
+  });
+  it("Adapter und Lauf derselben Verbindung am gemeinsamen Endpunkt: kein Befund", () => {
+    const adapter = L("ad", "n1", [[0, 0, 0], [0, 1, 0]], 0.018);
+    const lauf = L("lauf", "n1", [[0, 1, 0], [0, 1, 3]], 0.045);
+    expect(pruefen([adapter, lauf], [])).toEqual([]);
+  });
 });

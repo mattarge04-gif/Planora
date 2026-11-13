@@ -1553,6 +1553,17 @@ Import: `import { leitungsHinweise } from "../szene3/router/hinweise";`
 | durch_geraet | 1 |
 | schraeg, boegen, zyklus, kein_weg | 0 |
 
+Vor Pruefer-Korrektur (oben): selbst 423 war zu 97 % Fehlalarm durch Nullstuecke (doppelte Punkte). Nach Korrektur (Nullstuecke entfernt, `d < radius` unveraendert):
+
+| Regel | Befunde |
+|---|---|
+| abstand | 3247 |
+| rueckwaerts | 99 |
+| kreuzung (weich) | 27 |
+| selbst | 7 |
+| durch_geraet | 1 |
+| schraeg, boegen, zyklus, kein_weg | 0 |
+
 ## Selbstpruefung gegen Spec
 
 | Spec | Task |

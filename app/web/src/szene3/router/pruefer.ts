@@ -19,7 +19,14 @@ function imNahbereich(p: V3, l: PruefLeitung, m: PruefLeitung, koerper: Koerper[
     && p.every((x, i) => x >= k.min[i] - n && x <= k.max[i] + n));
 }
 
-export function pruefen(leitungen: PruefLeitung[], koerper: Koerper[]): Befund[] {
+/** Entfernt aufeinanderfolgende gleiche Punkte (Nullstuecke), damit Index-Nachbarn geometrische Nachbarn sind. */
+function ohneNullstuecke(l: PruefLeitung): PruefLeitung {
+  const punkte = l.punkte.filter((q, i) => i === 0 || Math.hypot(q[0] - l.punkte[i - 1][0], q[1] - l.punkte[i - 1][1], q[2] - l.punkte[i - 1][2]) >= EPS);
+  return { ...l, punkte };
+}
+
+export function pruefen(roh: PruefLeitung[], koerper: Koerper[]): Befund[] {
+  const leitungen = roh.map(ohneNullstuecke);
   const befunde: Befund[] = [];
   const hart = (regel: Befund["regel"], ids: string[], ort: V3) => befunde.push({ regel, leitungen: ids, ort, hart: true });
   for (const l of leitungen) {
