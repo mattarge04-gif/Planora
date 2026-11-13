@@ -48,7 +48,12 @@ export function zufallsWelt(seed: number): Welt {
     for (let k = 0, n = 1 + Math.floor(r() * 3); k < n; k++) {
       const e = wahl(raeume), g = geschosse.find((x) => x.id === e.geschossId)!;
       const key = `HK${++hk}`;
-      symbole.push(sym(key, "heizkoerper", e.rechteck.x + 0.8 + r() * (e.rechteck.breite - 1.6), g.yUnten, e.rechteck.z + 0.2));
+      // [A] Anschluesse auf demselben Geschoss mindestens 0.3 m auseinander (reale Heizkoerper ~1 m breit); x neu ziehen.
+      const z = e.rechteck.z + 0.2;
+      let x = e.rechteck.x + 0.8 + r() * (e.rechteck.breite - 1.6);
+      for (let versuch = 0; versuch < 100 && symbole.some((s) => s.katalogId === "heizung.heizkoerper" && s.position.y === g.yUnten
+        && Math.hypot(s.position.x - x, s.position.z - z) < 0.3); versuch++) x = e.rechteck.x + 0.8 + r() * (e.rechteck.breite - 1.6);
+      symbole.push(sym(key, "heizkoerper", x, g.yUnten, z));
       verbraucher.push(key);
     }
     gruppen.push({ id: `gr${i}`, verteiler: "V", nummer: i, art: "ungeregelt", bezeichnung: `Gruppe ${i}`, verbraucher, zubehoer: [] });

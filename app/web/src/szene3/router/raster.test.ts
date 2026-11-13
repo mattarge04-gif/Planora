@@ -28,7 +28,9 @@ describe("raster", () => {
     const g = b.gitter, [i, k] = zelleVon(g, 1.5, 1);
     expect(b.frei(2.8, i, k, "n2")).toBe(false);
     expect(b.frei(2.8, i, k + 1, "n2")).toBe(false);
-    expect(b.frei(2.8, i, k + 2, "n2")).toBe(true);
+    // Sperrabstand 0.225 m zur Rohrachse z = 1: Zellmitte k+2 (z 1.215) gesperrt, k+3 (z 1.305) frei.
+    expect(b.frei(2.8, i, k + 2, "n2")).toBe(false);
+    expect(b.frei(2.8, i, k + 3, "n2")).toBe(true);
     expect(b.frei(2.8, i, k, "n1")).toBe(true);
     expect(b.eigen(2.8, i, k, "n1")).toBe(true);
     expect(b.frei(2.55, i, k, "n2")).toBe(true);

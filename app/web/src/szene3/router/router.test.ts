@@ -4,6 +4,7 @@ import { LeitungsRouter } from "./router";
 import { pruefen } from "./pruefer";
 import { TEST_KATALOG } from "./testKatalog";
 import type { V3 } from "./typen";
+import { zufall } from "./zufallsWelt";
 
 const welt: Welt = { regelwerkVersion: 2, hash: "r", grundriss: [{ x: 0, z: 0, breite: 10, tiefe: 6 }], hinweise: [], symbole: [], einheiten: [],
   geschosse: [{ id: "eg", code: "EG", yUnten: 0, hoehe: 3.2 }, { id: "og", code: "OG1", yUnten: 3.2, hoehe: 3.2 }], steigzone: { x: 1, z: 1 } };
@@ -37,5 +38,36 @@ describe("LeitungsRouter", () => {
     const w = r.weg([2, 2.8, 3], [8, 2.8, 3], "n");
     expect(w.length).toBeGreaterThanOrEqual(2);
     expect(r.befunde.map((b) => b.regel)).toContain("kein_weg");
+  });
+
+  it("Zufall: 1000 Wege ohne harte Befunde (Radius bis 0.07)", () => {
+    const r = zufall(61), p = (): V3 => [+(0.3 + r() * 9.4).toFixed(3), 2.8, +(0.3 + r() * 5.4).toFixed(3)];
+    const fehler: unknown[] = [];
+    for (let n = 0; n < 1000; n++) {
+      const ro = new LeitungsRouter(welt, TEST_KATALOG), a = p(), b = n % 4 === 0 ? [+(a[0] + (r() - 0.5) * 0.1).toFixed(3), 2.8, p()[2]] as V3 : p();
+      const w = ro.weg(a, b, "n");
+      const f = pruefen([{ id: "w", netz: "n", punkte: w, radius: 0.07, enden: [] }], []).filter((x) => x.hart);
+      if (f.length || String(w[0]) !== String(a) || String(w.at(-1)) !== String(b)) fehler.push({ a, b, w, f });
+    }
+    expect(fehler.slice(0, 2)).toEqual([]);
+  });
+  it("Zufall: 500 Straenge ueber EG/OG ohne harte Befunde", () => {
+    const r = zufall(23), p = (y: number): V3 => [+(0.3 + r() * 9.4).toFixed(3), y, +(0.3 + r() * 5.4).toFixed(3)];
+    const fehler: unknown[] = [];
+    for (let n = 0; n < 500; n++) {
+      const ro = new LeitungsRouter(welt, TEST_KATALOG), start = p(2.8);
+      // [A] Anschluesse auf derselben Ebene liegen mindestens 0.3 m auseinander (Heizkoerper ~1 m breit); naeher ist ein Generatorartefakt.
+      const ziele: { schluessel: string; punkt: V3 }[] = [];
+      for (let j = 0, n = 2 + Math.floor(r() * 3); j < n; j++) {
+        const y = r() < 0.5 ? 2.8 : 6;
+        let q = p(y);
+        while (ziele.some((z) => z.punkt[1] === y && Math.hypot(z.punkt[0] - q[0], z.punkt[2] - q[2]) < 0.3)) q = p(y);
+        ziele.push({ schluessel: `hk${j}`, punkt: q });
+      }
+      const baum = ro.strang(start, ziele, Math.floor(r() * 3), { x: 1, z: 1 }, "g");
+      const f = pruefen(baum.segmente.map((s, i) => L(`s${i}`, "g", s)), []).filter((x) => x.hart);
+      if (f.length) fehler.push({ start, ziele: ziele.map((z) => z.punkt), segmente: baum.segmente, f });
+    }
+    expect(fehler.length, JSON.stringify(fehler.slice(0, 3))).toBe(0);
   });
 });
