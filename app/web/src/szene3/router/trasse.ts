@@ -1,10 +1,10 @@
 import type { Rechteck } from "../../typen";
 import type { V3 } from "../../szene2/huelle";
 import { SPUR } from "../gruppenNetz";
+import { ROUTER } from "./typen";
 
 export interface Lage { achse: 0 | 2; wand: number; innen: 1 | -1 }
 export interface Auftrag { netz: string; von: number; bis: number }
-const TRASSE_WAND = 0.3; // [A] = ROUTER.trasseWand, wird beim Zusammenfuehren auf ROUTER umgestellt.
 const EPS = 1e-6;
 const vergleich = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
@@ -15,7 +15,7 @@ export function trassenLage(raum: Rechteck, punkte: V3[]): Lage {
   const summe = (w: number) => punkte.reduce((s, p) => s + Math.abs(p[q] - w), 0);
   return summe(w2) < summe(w1) - EPS ? { achse, wand: w2, innen: -1 } : { achse, wand: w1, innen: 1 };
 }
-export const spurWert = (l: Lage, index: number) => +(l.wand + l.innen * (TRASSE_WAND + index * SPUR)).toFixed(6);
+export const spurWert = (l: Lage, index: number) => +(l.wand + l.innen * (ROUTER.trasseWand + index * SPUR)).toFixed(6);
 
 /**
  * Left-Edge fuer einseitige Anschluesse: Intervalle nach Laenge absteigend; umfassende Intervalle liegen wandnah,
