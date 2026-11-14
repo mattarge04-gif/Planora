@@ -3,6 +3,28 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-14 – Leitungsrouter T6–T8 (Pause in T8)
+
+### 1. Was gemacht wurde
+
+- [F] T6 Re-Review abgeschlossen, Fixrunde 2 `52229c4`. T7 Einbau `64df567` + Fixrunde `fafd06e`: alle 7 Muster ohne Befund, Web 326/326.
+- [F] T8 Zwischenstand `d1f6764`, `96e5216`, `5e3eec7`: Laufzeit 1.05 s -> ~230 ms je Welt, Hinweis im Twin, Boegen je Geschoss, realistischer Zufallsgenerator. 13/300 Zufallswelten noch mit harten Befunden.
+- [F] Ausfuehrung durch Claude-Subagenten (Implementierer, Reviewer, Re-Reviewer je Task); Ledger lokal unter `.superpowers/sdd/2026-11-13-leitungsrouter/`.
+
+### 2. Was inhaltlich gelernt wurde
+
+- [F] Die alten Adapter (`anschlussFuehrung`) erzeugten allein harte Befunde (Wende im Verteileradapter, Speicheradapter ausserhalb des Grundrisses, Zuleitung durch Aussenwand). Entscheid: Adapter nur noch senkrecht, Router fuehrt den Rest.
+- [F] PO-Entscheid "Annahmen anpassen": max. 6 Boegen je Geschoss statt je Verbindung; Zentrale im Zufallsgenerator mit 0.8 m Geraeteabstand [A]; Kreuzungsschwelle nach Messung; ~230 ms je Welt akzeptiert (Spec-Ziel war 50 ms).
+- [F] Ebenenwechsel-Kosten 25 schlagen 3 in allen Messgroessen (weniger harte Befunde und Kreuzungen).
+
+### 3. Was ueber die Zusammenarbeit gelernt wurde
+
+- [F] Der PO entscheidet bei Annahmekonflikten schnell, wenn drei Optionen mit Aufwand vorliegen.
+
+### 4. Was technisch Zeit spart
+
+- [F] Zufallstest nur mit `PLANORA_ZUFALL=<n>`; ohne Variable uebersprungen (sonst Standardsuite > 7 min).
+
 ## 2026-11-13 – Stufe 1: Tracks abgeschlossen, integriert, Betreiber legt Gebaeude an
 
 ### 1. Was gemacht wurde

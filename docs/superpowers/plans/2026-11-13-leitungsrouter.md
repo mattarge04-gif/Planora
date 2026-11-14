@@ -1586,3 +1586,16 @@ Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (
 - T6 Router: Fixrunde 1 committet (`155e365`, Web 313/313, Zufallstests 500 Straenge + 1000 Wege ohne harte Befunde; Mindestabstand Anschluesse 0.3 m [A]). **Offen: scoped Re-Review gegen task-6-review.md**, danach T7.
 - Protokoll mit allen Entscheiden (Ruling-Zeilen): `.superpowers/sdd/2026-11-13-leitungsrouter/progress.md` (git-ignoriert, lokal).
 - Codex-Worker (Orca, Worktree `router-t2-t5`) hat T2, T4, T5 geliefert; seine Commits sind per cherry-pick uebernommen.
+
+## Fortsetzung (Stand 14.11.2026, Pause auf PO-Wunsch)
+
+- T6 fertig: Re-Review Fixrunde 1 ok; Fixrunde 2 `52229c4` (Trassenspur fuer Strang-Teilnetze `netz~schluessel`).
+- T7 fertig und geprueft: `64df567` + Fixrunde `fafd06e`. Alle 7 Muster 0 Befunde, Web 326/326.
+  - Entscheid: Adapter = Stutzen + senkrechter Teil; waagrechte Stuecke fuehrt der Router (Spec 5).
+  - Ebenenwechsel 25 statt 3 [A]; in T8 gemessen besser als 3.
+  - Paarweiser Sperrabstand `sperrabstand(r, gegen)`; Anschluss-Rueckfall ist harter Befund; Rohrnetz in Technik3 eigenes useMemo.
+- T8 **in Arbeit**, nicht reviewt: `d1f6764` (Laufzeit 1.05 s -> ~230 ms je Welt, m6u 15 s -> 0.3 s, Ausgabe bitgleich), `96e5216` (Hinweis "Leitungsführung unsauber" im Twin), `5e3eec7` (Zwischenstand).
+  - PO-Entscheid 14.11. "Annahmen anpassen": Boegen je Geschoss (Teilung an senkrechten Stuecken >= 1.0 m [A]); Zufallsgenerator Zentrale 7x6 m, 0.8 m Geraeteabstand, Steigzone 0.6 m frei [A]; Kreuzungsschwelle = Messwert aufgerundet + 2 Prozentpunkte; ~230 ms akzeptiert.
+  - Letzte Messung 300 Welten: 13 mit harten Befunden (4.3 %, vorher 139). Web 329 ok / 3 uebersprungen, tsc gruen.
+- **Naechste Schritte T8:** Rest-Seeds beheben (163, 127, 76, 148 u.a.: Abstand gleiche Gruppe, Anschluss-Strang, 7–9 Boegen je Abschnitt); Regressionstests neu seeden (alte Seeds 76/88 uebersprungen); 2000er-Lauf `PLANORA_ZUFALL=2000`; Schwelle setzen, `runIf` entfernen oder Default festlegen; Spec 5.5/9 und Global Constraints nachfuehren. Danach Review T8, T9 (alte Fuehrung entfernen), T10 (GPU-Bilder, PO-Sichtung).
+- Details: `.superpowers/sdd/2026-11-13-leitungsrouter/task-8-report.md` (Abschnitt "Zwischenstand Pause 14.11.") und Ledger `progress.md` (beide git-ignoriert, lokal).

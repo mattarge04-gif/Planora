@@ -17,9 +17,16 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 **Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
 
-## 0b. Stand – zuletzt aktualisiert 13.11.2026
+## 0b. Stand – zuletzt aktualisiert 14.11.2026
 
-### Leitungsrouter (13.11. abends) [F]
+### Leitungsrouter (14.11., Pause) [F]
+
+- T6 und T7 fertig und geprueft (`52229c4`, `64df567`, `fafd06e`): Router fuehrt Haupt- und Gruppennetz, alle 7 Muster ohne Befund, Web 326/326. Entscheid: Adapter nur Stutzen + senkrecht, Waagrechtes macht der Router; Ebenenwechsel 25 [A].
+- T8 in Arbeit, nicht reviewt (`d1f6764`, `96e5216`, `5e3eec7`): Laufzeit ~230 ms/Welt (vorher 1.05 s), Hinweis "Leitungsführung unsauber" im Twin. PO-Entscheid 14.11. "Annahmen anpassen": Boegen je Geschoss, realistischer Zufallsgenerator, Kreuzungsschwelle nach Messung, 230 ms akzeptiert. Letzte Messung 13/300 Welten mit harten Befunden.
+- Einstieg: "weiter mit Leitungsrouter" -> `docs/superpowers/plans/2026-11-13-leitungsrouter.md`, Abschnitt "Fortsetzung (Stand 14.11.2026)". Danach T9, T10 (GPU-Bilder an PO).
+- Branch `m2c-interview` am 14.11. auf PO-Auftrag gepusht; kein Merge nach `main`.
+
+### Leitungsrouter (13.11. abends) [F, ueberholt durch 14.11.]
 
 - PO-Entscheid: Hauptleitungs-Schleifen (Offen-Punkt 2) per neuem Router fuer **alle** Leitungen loesen, Ansatz C (Trasse + A*-Rueckfall + Pruefer), ein Rohr je Verbindung endgueltig, Rohr ueber Geraet bei >= 0.15 m Luft erlaubt.
 - Spec `docs/superpowers/specs/2026-11-13-leitungsrouter-design.md`, Plan `docs/superpowers/plans/2026-11-13-leitungsrouter.md` (10 Tasks, Fortsetzungsstand am Ende).
