@@ -127,7 +127,7 @@ Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Ges
 - Aufraeumen: Orca-Worktrees `m1-abnahme-a`/`-b` und Docker-Volumes `planora-b_*` (vom 10.11.) existieren noch.
 - [?] WSL-Gesamtabnahme auf dem gemergten main-Stand wiederholen?
 - [A] Regelwerk-v1-Werte (Default-Flaechen, Mengenbereiche, Erlaubt-Matrix) sind Annahme; PO-Freigabe vor M2b.
-- Aufraeumen nach Push: Worktrees `wt-a-generator`, `wt-b-assistent`, `wt-c-leitungen` (Branches gemergt); untracked Ordner `wt-b-assistent/docs/design/kritiken/2026-11-12-assistent-r1/` loescht der PO.
+- Erledigt 14.11.: Worktrees `wt-a-generator`, `wt-b-assistent`, `wt-c-leitungen` entfernt (Branches bleiben). Offen: Orca-Worktree `router-t2-t5` (Commits per cherry-pick uebernommen).
 - [?] Spec M2a Abschnitt 11 "Nachtrag nach Umsetzung": 400-Fehlerformat vor M2b vereinheitlichen, Regelwerk-v2-Guard im Generator, `aendereHuelle` ohne Stand-Pruefung u.a.
 
 ### Naechste Coding-Aufgabe
