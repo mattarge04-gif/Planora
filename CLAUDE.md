@@ -124,7 +124,7 @@ Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Ges
 - [?] Rechtekette Entwickler -> Firma (juristisch).
 - [?] Vertrag/AVV mit Siemens, Lieferantenpruefung.
 - [?] Braucht das Backup-Image das anonyme `VOLUME /var/lib/postgresql`?
-- Aufraeumen: Orca-Worktrees `m1-abnahme-a`/`-b` und Docker-Volumes `planora-b_*` (vom 10.11.) existieren noch.
+- Aufraeumen: Orca-Worktrees `m1-abnahme-a`/`-b` existieren nicht mehr (14.11. geprueft). Docker-Volumes `planora-b_*` (vom 10.11.) ungeprueft – Docker lief nicht.
 - [?] WSL-Gesamtabnahme auf dem gemergten main-Stand wiederholen?
 - [A] Regelwerk-v1-Werte (Default-Flaechen, Mengenbereiche, Erlaubt-Matrix) sind Annahme; PO-Freigabe vor M2b.
 - Erledigt 14.11.: Worktrees `wt-a-generator`, `wt-b-assistent`, `wt-c-leitungen` entfernt (Branches bleiben). Offen: Orca-Worktree `router-t2-t5` (Commits per cherry-pick uebernommen).
@@ -132,7 +132,7 @@ Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Ges
 
 ### Naechste Coding-Aufgabe
 
-**Aktuell (13.11. abends):** Leitungsrouter T6-Re-Review, T7–T10 (siehe Plan). Danach Vorschau-Zoom im Assistenten, Kamerafahrt auf Gruppenverlauf, danach I2 – Details in `docs/superpowers/plans/2026-11-13-stufe1-integration.md`.
+**Aktuell (14.11.):** Leitungsrouter T8 abschliessen (Rest-Seeds, 2000er-Lauf, Review), dann T9–T10 (siehe Plan, Abschnitt "Fortsetzung (Stand 14.11.2026)"). Danach Vorschau-Zoom im Assistenten, Kamerafahrt auf Gruppenverlauf, danach I2 – Details in `docs/superpowers/plans/2026-11-13-stufe1-integration.md`.
 
 *Ueberholt (Stand 12.11.):* PO-Korrekturrunde am Entwurf ([docs/abnahme/2026-11-12-entwurf/README.md](docs/abnahme/2026-11-12-entwurf/README.md)); danach alte Szene durch szene2 ersetzen und Explosion, Tabellenweg, Leistungsstufen anbinden. Regelwerk-v1 bleibt Annahme bis PO-Rueckmeldung. Einheitliches 400-Format ist in M2b-1 umgesetzt; weitere M2a-Nachtraege bleiben offen.
 
