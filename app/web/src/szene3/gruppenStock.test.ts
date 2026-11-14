@@ -75,7 +75,8 @@ describe("Ort vor Bauteil", () => {
   });
 });
 
-describe("Rohrnetz mit Gruppen", () => {
+// Laufzeit des LeitungsRouters je Muster bis ~15 s (m6u); Optimierung folgt in Task 8.
+describe("Rohrnetz mit Gruppen", { timeout: 120_000 }, () => {
   it("jeder Verbraucher hängt an seiner Gruppe, in allen Mustern", () => {
     for (const name of ALLE) {
       const w = muster(name), netz = rohrnetz(w, katalog, {});

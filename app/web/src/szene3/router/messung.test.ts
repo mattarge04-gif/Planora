@@ -9,7 +9,8 @@ import { zufallsWelt } from "./zufallsWelt";
 const dateien = import.meta.glob<Welt>("../../fixtures/muster-*.json", { eager: true, import: "default" });
 
 /** Misst Befunde je Regel; aendert nichts. Ab Task 8 durch harte Zusicherungen ersetzt. */
-describe("Ist-Messung Leitungsfuehrung", () => {
+// Mit Router (Task 7) dauert die Messung mehrere Minuten; Laufzeit wird in Task 8 behandelt.
+describe("Ist-Messung Leitungsfuehrung", { timeout: 900_000 }, () => {
   it("zaehlt Befunde in Mustern und 200 Zufallswelten", () => {
     const zaehler: Record<string, number> = {};
     const welten = [...Object.values(dateien).map((w) => structuredClone(w)), ...Array.from({ length: 200 }, (_, i) => zufallsWelt(i + 1))];

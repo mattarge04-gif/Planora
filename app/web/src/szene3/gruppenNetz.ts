@@ -1,7 +1,12 @@
 import type { V3 } from "../szene2/huelle";
 import { geschossBeiY } from "../szene2/leitungen";
 import type { GruppenArt, KatalogEintrag, Rechteck, Welt, WeltSymbol } from "../typen";
-import { einheitVon, kantenNetz, verbindungen, type Rohrstueck } from "./netz";
+import { einheitVon, kantenNetz, steigBereich, verbindungen, type Rohrstueck, type Verbindung } from "./netz";
+import { routerAnschluss } from "./router/anschluss";
+import { geraeteKoerper } from "./router/koerper";
+import { LeitungsRouter } from "./router/router";
+import { alsBaum } from "./router/topologie";
+import { GRENZEN } from "./router/typen";
 import { anschlussFuehrung, anschlussLokal, deckenLauf, inlineLaenge, modellFuer, ROHR, verteilerAbgang, verteilerModell, type AnzeigeSymbol } from "./technik";
 
 /** Ein Rohr je Gruppe (Spec 6): Abgang am Verteiler, Gruppenstock, Strang mit T-Abzweigen. */
@@ -256,10 +261,13 @@ export function gruppenStock(abgang: V3, teile: StockEingabe[], yLeitung: number
   return { teile: ergebnis, oben: y - fuge + 0.04 };
 }
 
-/** Teil «vor Bauteil X»: auf dem längsten senkrechten Stück der Anschlussleitung von X, mittig gestapelt. */
+/**
+ * Teil «vor Bauteil X»: auf dem längsten senkrechten Stück der Anschlussleitung von X, mittig gestapelt.
+ * `adapter`: tatsächliche Anschlussleitung (Weltkoordinaten, z. B. aus routerAnschluss); sonst bisherige Führung.
+ */
 export function ortVorBauteil(bezug: WeltSymbol, lokal: V3, laufY: number, raum: Rechteck | undefined, katalogId: string, menge: number,
-  katalog?: KatalogEintrag[]): { mitten: V3[]; laenge: number } {
-  const f = anschlussFuehrung([], { symbol: bezug, lokal }, ROHR.verteil, raum, laufY - bezug.position.y);
+  katalog?: KatalogEintrag[], adapter?: V3[]): { mitten: V3[]; laenge: number } {
+  const f = { adapter: adapter ?? anschlussFuehrung([], { symbol: bezug, lokal }, ROHR.verteil, raum, laufY - bezug.position.y).adapter };
   let best: [V3, V3] | null = null;
   for (let i = 1; i < f.adapter.length; i++) {
     const a = f.adapter[i - 1], b = f.adapter[i];
@@ -302,11 +310,17 @@ export function anzeigeWelt(welt: Welt, katalog: KatalogEintrag[], anschluesse: 
     const teile = st.zubehoer.flatMap((k) => { const s = symbole.get(k); return s ? [{ schluessel: k, katalogId: s.katalogId, menge: s.mengeSumme }] : []; });
     for (const t of gruppenStock(abgang, teile, deckenLauf(g), katalog).teile) setzen(t.schluessel, t.mitten, t.laenge);
   }
+  const haupt = new Set(verbindungen(welt, katalog).filter((v) => v.art === "haupt").flatMap((v) => [v.von, v.nach]));
   for (const s of symbole.values()) {
     if (!s.ort || !("vorBauteil" in s.ort)) continue;
     const bezug = symbole.get(s.ort.vorBauteil), g = bezug && geschossVon(welt, bezug.position.y);
     if (!bezug || !g || bezug.inline) continue;
-    const p = ortVorBauteil(bezug, anschlussLokal(bezug, anschluesse, katalog), deckenLauf(g), einheitVon(welt, bezug)?.rechteck, s.katalogId, s.mengeSumme, katalog);
+    // Dieselbe Anschlussleitung wie im Rohrnetz (routerAnschluss), damit das Teil auf ihr sitzt und sie dort unterbricht.
+    const lokalB = anschlussLokal(bezug, anschluesse, katalog), raum = einheitVon(welt, bezug)?.rechteck;
+    const radius = haupt.has(bezug.schluessel) ? ROHR.haupt : ROHR.verteil;
+    const koerper = geraeteKoerper({ ...welt, symbole: [...symbole.values()].filter((x) => !x.inline && !(x.ort && "vorBauteil" in x.ort)) }, katalog);
+    const adapter = routerAnschluss(bezug, lokalB, radius, deckenLauf(g), raum, koerper, steigBereich(welt, katalog), katalog).punkte;
+    const p = ortVorBauteil(bezug, lokalB, deckenLauf(g), raum, s.katalogId, s.mengeSumme, katalog, adapter);
     setzen(s.schluessel, p.mitten, p.laenge);
   }
   return { ...welt, symbole: welt.symbole.map((s) => symbole.get(s.schluessel)!) };
@@ -318,7 +332,7 @@ export function anzeigeWelt(welt: Welt, katalog: KatalogEintrag[], anschluesse: 
 
 const STUMMEL = 0.22;
 
-/** Spur je Strang, global eindeutig. Je Verteiler so geordnet, dass die rechtwinkligen Läufe verschachtelt bleiben. */
+/** Spur je Strang, global eindeutig. Je Verteiler so geordnet, dass die rechtwinkligen Läufe verschachtelt bleiben (Steigzone siehe unten). */
 export function spuren(welt: Welt, straenge: GruppenStrang[]): Map<string, number> {
   const ergebnis = new Map<string, number>();
   const verteiler = [...new Set(straenge.map((s) => s.verteiler))].sort(vergleich);
@@ -332,7 +346,24 @@ export function spuren(welt: Welt, straenge: GruppenStrang[]): Map<string, numbe
       const x = t ? t.position.x : e ? e.rechteck.x + e.rechteck.breite / 2 : v?.position.x ?? 0;
       return sum + Math.sign(x - (v?.position.x ?? 0));
     }, 0);
+    // Straenge ueber Geschosse laufen zur Steigzone; dort steigt Spur o bei (x + o*SPUR, z + o*SPUR). Verschachtelt
+    // (ohne Kreuzung) bleiben die Laeufe, wenn der zur Steigzone hin vorderste Abgang zuerst abbiegt: bei Steigzone
+    // in +z die kleinste Spur, in -z die groesste.
+    const geschossVonV = v && geschossBeiY(welt, v.position.y);
+    const steigt = (s: GruppenStrang) => s.verbraucher.some((k) => {
+      const t = welt.symbole.find((x) => x.schluessel === k);
+      const g = t ? geschossBeiY(welt, t.position.y) : welt.einheiten.find((e) => e.id === k)?.geschossId;
+      return g !== undefined && g !== geschossVonV;
+    });
+    const steiger = welt.steigzone && v ? eigene.filter(steigt) : [];
     eigene.forEach((s, i) => ergebnis.set(s.gruppeId, basis + (richtung <= 0 ? eigene.length - 1 - i : i)));
+    if (steiger.length > 1 && v && welt.steigzone) {
+      // Die Spurnummern der steigenden Straenge bleiben dieselben, nur ihre Zuordnung folgt der Verschachtelung.
+      const nummern = steiger.map((s) => ergebnis.get(s.gruppeId)!).sort((a, b) => a - b);
+      const vorne = welt.steigzone.x < v.position.x ? steiger : [...steiger].reverse();
+      const folge = welt.steigzone.z >= v.position.z ? vorne : [...vorne].reverse();
+      folge.forEach((s, i) => ergebnis.set(s.gruppeId, nummern[i]));
+    }
     basis += eigene.length;
   }
   return ergebnis;
@@ -355,15 +386,24 @@ function ausschneiden(stuecke: Rohrstueck[], mitte: V3, laenge: number): Rohrstu
   });
 }
 
-/** Rohrnetz einer Welt mit Gruppen: Hauptleitungen wie bisher, je Gruppe Abgang, Stock, Strang, T-Abzweige, Anschlüsse. */
-export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>): Rohrstueck[] {
+/**
+ * Rohrnetz einer Welt mit Gruppen: Hauptleitungen, je Gruppe Abgang, Stock, Strang, T-Abzweige, Anschlüsse; Läufe über den
+ * LeitungsRouter (Spec 2026-11-13). `router` muss die Anzeigewelt kennen; `vorrang`: Gruppen, die zuerst verlegt werden.
+ */
+export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>, router?: LeitungsRouter, vorrang: string[] = []): Rohrstueck[] {
   const welt = anzeigeWelt(weltEingabe, katalog, anschluesse);
+  const r = router ?? new LeitungsRouter(welt, katalog);
   const straenge = gruppenVerbindungen(welt, katalog);
   const symbol = new Map(welt.symbole.map((s) => [s.schluessel, s as AnzeigeSymbol]));
-  const unterverteiler = new Set(straenge.flatMap((s) => s.verbraucher).filter((k) => symbol.get(k)?.katalogId === "heizung.verteiler"));
-  const haupt = verbindungen(welt, katalog).filter((v) => v.art === "haupt" && !unterverteiler.has(v.nach) && !unterverteiler.has(v.von));
-  let stuecke = kantenNetz(welt, katalog, anschluesse, haupt);
-  const ebenen = new Map(welt.geschosse.map((g) => [g.id, deckenLauf(g)]));
+  // Gruppenkanten zuerst: ein Unterverteiler mit Gruppe erhält nie zusätzlich eine Hauptleitung.
+  const topologie = alsBaum([...straenge.flatMap((s) => s.verbraucher.map((v) => ({ von: s.verteiler, nach: v, art: "verteil" as const }))),
+    ...verbindungen(welt, katalog).filter((v) => v.art === "haupt")]);
+  const gruppenZiel = new Set(straenge.flatMap((s) => s.verbraucher));
+  // Hauptkante zu einem Verbraucher einer Gruppe (Unterverteiler) verwirft alsBaum still, weil die Gruppe ihn speist;
+  // das ersetzt den frueheren Filter `unterverteiler` (Hauptkanten von/zu Unterverteilern mit Gruppe). Nur echte Zyklen sind Befunde.
+  for (const k of topologie.verworfen.filter((k) => k.art === "haupt" && !gruppenZiel.has(k.nach))) r.befunde.push({ regel: "zyklus", leitungen: [`${k.von}>${k.nach}`], ort: [0, 0, 0], hart: true });
+  const haupt = topologie.kanten.filter((k) => k.art === "haupt") as Verbindung[];
+  const koerper = geraeteKoerper(welt, katalog), steig = steigBereich(welt, katalog);
   const spur = spuren(welt, straenge);
   const anzahl = new Map<string, number>();
   for (const s of straenge) anzahl.set(s.verteiler, (anzahl.get(s.verteiler) ?? 0) + 1);
@@ -389,10 +429,9 @@ export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], an
       const gt = geschossVon(welt, t.position.y);
       if (!gt) continue;
       const lauf = deckenLauf(gt);
-      const f = anschlussFuehrung([], { symbol: t, lokal: anschlussLokal(t, anschluesse, katalog) }, ROHR.verteil, einheitVon(welt, t)?.rechteck, lauf - t.position.y, abgang[2]);
-      // Bis zum ersten Punkt auf der Leitungsebene; den waagrechten Stummel setzt der Strang passend zur Ankunftsrichtung.
-      const i = f.adapter.findIndex((p) => Math.abs(p[1] - lauf) < 1e-6);
-      const riser = i < 0 ? f.adapter.slice(0, -1) : f.adapter.slice(0, i + 1);
+      // Stutzen, noetigenfalls Stummel, senkrecht bis zur Leitungsebene; den Rest verlegt der Strang (Router).
+      const f = routerAnschluss(t, anschlussLokal(t, anschluesse, katalog), ROHR.verteil, lauf, einheitVon(welt, t)?.rechteck, koerper, steig, katalog);
+      const riser = f.punkte;
       const stutzen = t.katalogId === "heizung.verteiler" ? 0.035 : t.katalogId === "heizung.waermepumpe" ? 0.026 : ROHR.anschluss;
       anschluss[key] = { riser, stutzen, radius: f.adapterRadius, boden: t.position.y, bauteilIds: t.bauteilIds };
       ziele.push({ schluessel: key, punkt: riser.at(-1)! });
@@ -401,17 +440,24 @@ export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], an
     const oben = Math.min(gruppenStock(abgang, teile, yL, katalog).oben, yL - 0.05);
     return [{ st, v, yL, abgang, anschluss, ziele, freieZiele, oben, start: [abgang[0], yL, abgang[2]] as V3 }];
   });
-  const fest = (x: (typeof vorbereitet)[number]) => [[x.abgang, x.start], ...Object.values(x.anschluss).map((a) => a.riser)];
-  const verlegt: { gruppeId: string; segmente: V3[][] }[] = [];
+  const fest = (x: (typeof vorbereitet)[number]): V3[][] => [[x.abgang, x.start], ...Object.values(x.anschluss).map((a) => a.riser)];
+  // Feste Gruppenteile vor den Hauptleitungen belegen: Hauptlaeufe fuehren nicht ueber Abgaenge und Anschluesse.
+  for (const x of vorbereitet) for (const p of fest(x)) r.vorbelegen(p, x.st.gruppeId, ROHR.verteil);
+  // Spuren fuer Haupt- und Gruppenleitungen in einer Zuteilung (kantenNetz ruft spurenFestlegen).
+  let stuecke = kantenNetz(welt, katalog, anschluesse, haupt, r, vorbereitet.map((x) => {
+    const ziel = x.ziele.find((z) => Math.abs(z.punkt[1] - x.start[1]) < 1e-3)?.punkt
+      ?? (welt.steigzone ? [welt.steigzone.x, x.start[1], welt.steigzone.z] as V3 : x.start);
+    return { netz: x.st.gruppeId, a: x.start, b: ziel };
+  }));
+  // Gruppen mit Vorrang zuerst, in der Reihenfolge von `vorrang`; die uebrigen wie bisher.
+  const rang = (id: string) => { const i = vorrang.indexOf(id); return i < 0 ? vorrang.length : i; };
+  const reihe = [...vorbereitet].sort((a, b) => rang(a.st.gruppeId) - rang(b.st.gruppeId));
 
-  // Durchgang 2: Stränge nacheinander, fremde Leitungen sind Hindernisse.
-  for (const x of vorbereitet) {
+  // Durchgang 2: Stränge nacheinander über den Router (belegte Zellen fremder Netze sind gesperrt).
+  for (const x of reihe) {
     const { st, v, abgang, anschluss, ziele, freieZiele, oben, start } = x;
     const daten = (nach: string, bauteilIds: string[]) => ({ art: "verteil" as const, von: st.verteiler, nach, bauteilIds, gruppeId: st.gruppeId });
-    const hindernisse = [...stuecke.map((r) => r.punkte), ...vorbereitet.filter((y) => y !== x).flatMap(fest),
-      ...verlegt.filter((y) => y.gruppeId !== st.gruppeId).flatMap((y) => y.segmente)];
-    const baum = strangBaum(start, ziele, spur.get(st.gruppeId) ?? 0, welt.steigzone ?? null, ebenen, hindernisse);
-    verlegt.push({ gruppeId: st.gruppeId, segmente: baum.segmente });
+    const baum = r.strang(start, ziele, spur.get(st.gruppeId) ?? 0, welt.steigzone ?? null, st.gruppeId);
 
     // Stock: dünnes Rohr durch das Zubehör, dann Übergang auf die Verteilleitung mit tangentialem Stummel.
     let stummel: V3 = start;
@@ -439,7 +485,9 @@ export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], an
         const p = a.punkte, q = p[p.length - 2], r = p[p.length - 1];
         const k = [0, 2].find((i) => Math.abs(r[i] - q[i]) > EPS);
         if (k !== undefined && Math.abs(r[1] - q[1]) < EPS) {
-          ende = [...r] as V3; ende[k] -= Math.sign(r[k] - q[k]) * Math.min(STUMMEL, Math.abs(r[k] - q[k]) / 2);
+          // Der Stummel gehoert zum Anschlussrohr; zum T-Punkt bleibt mindestens der Rohrabstand (2 Verteilrohre + Fuge).
+          const rest = Math.max(Math.abs(r[k] - q[k]) / 2, 2 * ROHR.verteil + GRENZEN.fuge);
+          ende = [...r] as V3; ende[k] -= Math.sign(r[k] - q[k]) * Math.max(0, Math.min(STUMMEL, Math.abs(r[k] - q[k]) - rest));
           p[p.length - 1] = ende;
         }
       }

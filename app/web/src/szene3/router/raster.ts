@@ -33,6 +33,12 @@ export function ebenenFuer(welt: Welt): Map<string, number[]> {
 const ek = (y: number) => Math.round(y * 1000);
 /** Sperrabstand von Zellmitten zur Rohrgeometrie: zwei Hauptrohr-Radien, Fuge und eine halbe Zelle Einrastversatz [A]. */
 export const SPERRABSTAND = 2 * ROHR.haupt + GRENZEN.fuge + Z / 2;
+/**
+ * Sperrabstand fuer ein Rohr mit Radius r: zwei Radien dieses Rohrs, Fuge, halbe Zelle [A]. Hauptleitungen werden vor
+ * den Gruppen verlegt; duennere Rohre halten so den vollen Abstand zu dickeren, und parallele Gruppenrohre passen im
+ * Spurabstand (SPUR 0.18) nebeneinander, etwa an der Steigzone.
+ */
+export const sperrabstand = (r: number) => 2 * r + GRENZEN.fuge + Z / 2;
 
 export class Belegung {
   readonly gitter: Gitter;
@@ -50,8 +56,8 @@ export class Belegung {
     s.add(netz); this.sperre.set(key, s);
   }
   /** Sperrt alle Zellen, deren Mitte naeher als SPERRABSTAND an der Strecke a-b (im Grundriss) liegt. */
-  private sperrenUm(y: number, a: [number, number], b: [number, number], netz: string) {
-    const R = SPERRABSTAND, g = this.gitter;
+  private sperrenUm(y: number, a: [number, number], b: [number, number], netz: string, R = SPERRABSTAND) {
+    const g = this.gitter;
     const [i0, k0] = zelleVon(g, Math.min(a[0], b[0]) - R, Math.min(a[1], b[1]) - R);
     const [i1, k1] = zelleVon(g, Math.max(a[0], b[0]) + R, Math.max(a[1], b[1]) + R);
     for (let i = i0; i <= i1; i++) for (let k = k0; k <= k1; k++) {
@@ -66,22 +72,28 @@ export class Belegung {
    * der tatsaechlichen Geometrie (Laeufe sind nach dem Einrasten bis eine halbe Zelle verschoben), die Achse bleibt
    * auf der gerasterten Zelle markiert.
    */
-  belegen(punkte: V3[], netz: string) {
+  belegen(punkte: V3[], netz: string, radius: number = ROHR.haupt) {
+    const R = sperrabstand(radius);
     for (let n = 1; n < punkte.length; n++) {
       const a = punkte[n - 1], b = punkte[n];
       if (Math.abs(a[1] - b[1]) > 1e-6 && Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[2] - b[2]) < 1e-6) {
         const [i, k] = zelleVon(this.gitter, a[0], a[2]);
         const lo = Math.min(a[1], b[1]) - ROHR.haupt, hi = Math.max(a[1], b[1]) + ROHR.haupt;
         for (const y of this.ebenen) if (y >= lo && y <= hi) {
-          this.sperrenUm(y, [a[0], a[2]], [a[0], a[2]], netz);
+          this.sperrenUm(y, [a[0], a[2]], [a[0], a[2]], netz, R);
           this.sperrSet(y, i, k, netz); this.achse.set(this.key(y, i, k), netz);
         }
         continue;
       }
       if (Math.abs(a[1] - b[1]) > 1e-6) continue;
       const y = this.ebenen.find((e) => Math.abs(e - a[1]) < 0.01);
-      if (y === undefined) continue;
-      this.sperrenUm(y, [a[0], a[2]], [b[0], b[2]], netz);
+      if (y === undefined) {
+        // Waagrechtes Stueck ausserhalb der Leitungsebenen (Anschluss auf Stutzenhoehe, z. B. am Boden darueber):
+        // auf Ebenen naeher als 0.5 m nur die Zellen der Achse sperren, damit kein Lauf es im Grundriss kreuzt.
+        for (const e of this.ebenen) if (Math.abs(e - a[1]) < 0.5) this.sperrenUm(e, [a[0], a[2]], [b[0], b[2]], netz, Z * 0.75);
+        continue;
+      }
+      this.sperrenUm(y, [a[0], a[2]], [b[0], b[2]], netz, R);
       const [i0, k0] = zelleVon(this.gitter, a[0], a[2]), [i1, k1] = zelleVon(this.gitter, b[0], b[2]);
       const schritte = Math.max(Math.abs(i1 - i0), Math.abs(k1 - k0));
       for (let s = 0; s <= schritte; s++) {
@@ -91,9 +103,9 @@ export class Belegung {
     }
   }
   /** Reserviert die Umgebung eines Punktes (Sperrabstand) auf seiner Ebene, z. B. fuer einen spaeteren Anschluss. */
-  reservieren(p: V3, name: string) {
+  reservieren(p: V3, name: string, radius: number = ROHR.haupt) {
     const y = this.ebenen.find((e) => Math.abs(e - p[1]) < 0.01);
-    if (y !== undefined) this.sperrenUm(y, [p[0], p[2]], [p[0], p[2]], name);
+    if (y !== undefined) this.sperrenUm(y, [p[0], p[2]], [p[0], p[2]], name, sperrabstand(radius));
   }
   /** Geraete sperren eine Ebene nur, wenn darueber weniger als 0.15 m Luft bleibt (Spec 9, PO-bestaetigt). */
   geraete(koerper: Koerper[]) {
@@ -117,12 +129,14 @@ export class Belegung {
       }
     }
   }
-  frei(y: number, i: number, k: number, netz: string): boolean {
-    if (i < 0 || k < 0 || i >= this.gitter.nx || k >= this.gitter.nz || !this.gitter.innen[k * this.gitter.nx + i]) return false;
+  /** `rand`: Zellen im Aussenrand zulassen (Anfahrt an einen Anschluss, der selbst im Rand liegt). */
+  frei(y: number, i: number, k: number, netz: string, rand = false): boolean {
+    if (i < 0 || k < 0 || i >= this.gitter.nx || k >= this.gitter.nz || (!rand && !this.innen(i, k))) return false;
     const s = this.sperre.get(this.key(y, i, k));
     // Teilnetz `netz~x` darf Zellen seines Netzes `netz` mitbenutzen (Abzweige eines Strangs mit eigener Reservierung).
     return !s || [...s].every((n) => n === netz || netz.startsWith(`${n}~`));
   }
+  innen(i: number, k: number): boolean { return !!this.gitter.innen[k * this.gitter.nx + i]; }
   eigen(y: number, i: number, k: number, netz: string): boolean { return this.achse.get(this.key(y, i, k)) === netz; }
   zusatz(y: number, i: number, k: number): number { return this.kosten.get(this.key(y, i, k)) ?? 0; }
 }

@@ -3,7 +3,13 @@ import { geschossBeiY, leitungen } from "../szene2/leitungen";
 import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
 import { innenwaende } from "./geometrie";
 import { anschlussFuehrung, anschlussLokal, deckenLauf, ROHR, verteilerAbgang } from "./technik";
-import { gruppenRohrnetz } from "./gruppenNetz";
+import { anzeigeWelt, bereinigen, ersatzGruppeId, gruppenRohrnetz, gruppenVerbindungen, SPUR } from "./gruppenNetz";
+import { LeitungsRouter } from "./router/router";
+import { alsBaum } from "./router/topologie";
+import { geraeteKoerper } from "./router/koerper";
+import { alsPrueflinien, pruefen } from "./router/pruefer";
+import { ROUTER, type Befund } from "./router/typen";
+import { routerAnschluss, type SteigBereich } from "./router/anschluss";
 
 const ERZEUGER = new Set(["heizung.waermepumpe", "heizung.gaskessel", "heizung.oelkessel", "heizung.fernwaerme_uebergabe"]);
 const ABGABE = new Set(["heizung.heizkoerper", "heizung.fbh_kreis", "heizung.tabs_feld"]);
@@ -58,19 +64,69 @@ export function verbindungen(welt: Welt, katalog: KatalogEintrag[]): Verbindung[
 }
 const abstand = (a: WeltSymbol, b: WeltSymbol) => Math.hypot(a.position.x - b.position.x, a.position.y - b.position.y, a.position.z - b.position.z);
 
-/** v1: alle Verbindungen einzeln; v2 (mit Gruppen): Hauptleitungen wie bisher, Verteilung je Gruppe (gruppenNetz). */
-export function rohrnetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>): Rohrstueck[] {
-  if (welt.gruppen) return gruppenRohrnetz(welt, katalog, anschluesse);
-  return kantenNetz(welt, katalog, anschluesse, verbindungen(welt, katalog)).map((r) =>
-    r.daten.art === "verteil" ? { ...r, daten: { ...r.daten, gruppeId: `ersatz:${r.daten.von}>${r.daten.nach}` } } : r);
+/** Steigzone samt Spurversatz aller Straenge (Spur 0..n-1, siehe gruppenNetz.spuren und LeitungsRouter.strang). */
+export function steigBereich(welt: Welt, katalog: KatalogEintrag[]): SteigBereich | null {
+  if (!welt.steigzone) return null;
+  const n = gruppenVerbindungen(welt, katalog).length;
+  return { x: welt.steigzone.x, z: welt.steigzone.z, laenge: SPUR * Math.max(0, n - 1) };
 }
 
-/** Bisherige Führung je Verbindung: Anschlussstück an beiden Enden, rechtwinkliger Lauf auf der Leitungsebene. */
-export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>, kanten: Verbindung[]): Rohrstueck[] {
+/** v1: alle Verbindungen einzeln; v2: Hauptleitungen und Gruppenstraenge. Beide ueber den LeitungsRouter (Spec 2026-11-13). */
+export function rohrnetzMitBefunden(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>): { stuecke: Rohrstueck[]; befunde: Befund[] } {
+  let vorrang: string[] = [];
+  let best: { stuecke: Rohrstueck[]; befunde: Befund[] } | null = null;
+  // v2: Router und Pruefer sehen die Anzeigewelt (Zubehoer im Gruppenstock ist Teil der Leitung, kein Hindernis).
+  const sicht = welt.gruppen ? anzeigeWelt(welt, katalog, anschluesse) : welt;
+  const koerper = geraeteKoerper(sicht, katalog);
+  const wert = (b: Befund[]) => b.filter((x) => x.hart).length * 1000 + b.length;
+  for (let runde = 0; runde < ROUTER.runden; runde++) {
+    let stuecke: Rohrstueck[];
+    const router = new LeitungsRouter(sicht, katalog);
+    if (welt.gruppen) stuecke = gruppenRohrnetz(welt, katalog, anschluesse, router, vorrang);
+    else {
+      const baum = alsBaum(verbindungen(welt, katalog));
+      for (const k of baum.verworfen) router.befunde.push({ regel: "zyklus", leitungen: [`${k.von}>${k.nach}`], ort: [0, 0, 0], hart: true });
+      stuecke = kantenNetz(welt, katalog, anschluesse, baum.kanten as Verbindung[], router).map((r) =>
+        r.daten.art === "verteil" ? { ...r, daten: { ...r.daten, gruppeId: ersatzGruppeId(r.daten.von, r.daten.nach) } } : r);
+    }
+    const linien = alsPrueflinien(stuecke);
+    const pruefung = pruefen(linien, koerper);
+    const befunde = [...router.befunde, ...pruefung];
+    if (!best || wert(befunde) < wert(best.befunde)) best = { stuecke, befunde };
+    if (!befunde.length || !welt.gruppen) break;
+    // Ausreissen und neu verlegen (Spec 5.4): gescheiterte Gruppen und bei Konflikten zweier Leitungen die spaeter
+    // verlegte zuerst (Rohrstuecke liegen in Verlegereihenfolge), hoechstens ROUTER.runden Runden; die beste Runde gilt.
+    const netzVon = new Map(linien.map((l) => [l.id, l.netz]));
+    const index = new Map(linien.map((l, i) => [l.id, i]));
+    const neu = [...router.befunde.filter((b) => b.regel === "kein_weg").flatMap((b) => b.leitungen),
+      ...pruefung.filter((b) => b.leitungen.length === 2).map((b) => [...b.leitungen].sort((x, y) => index.get(y)! - index.get(x)!)[0])
+        .map((id) => netzVon.get(id)!)].filter((n) => n && n !== "haupt");
+    if (!neu.length) break;
+    vorrang = [...new Set([...neu, ...vorrang])];
+  }
+  return best!;
+}
+export function rohrnetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>): Rohrstueck[] {
+  return rohrnetzMitBefunden(welt, katalog, anschluesse).stuecke;
+}
+
+/**
+ * Fuehrung je Verbindung: Anschlussstueck an beiden Enden, Lauf ueber den LeitungsRouter (ohne Router: bisherige Schablone).
+ * `weitereSpuren`: Auftraege weiterer Netze (Gruppen) fuer dieselbe Trassenzuteilung.
+ */
+export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>, kanten: Verbindung[], router?: LeitungsRouter,
+  weitereSpuren: { netz: string; a: V3; b: V3 }[] = []): Rohrstueck[] {
   const stuecke: Rohrstueck[] = [];
   const adapterSchluessel = new Set<string>();
   const naechsterAbgang = new Map<string, number>();
-  for (const v of kanten) {
+  // Im Router hat jede Hauptverbindung ein eigenes Teilnetz `haupt~von>nach`: fremde Hauptlaeufe halten den Rohrabstand
+  // (der Pruefer fasst alle Hauptleitungen zu einem Netz zusammen und erlaubt Beruehrung nur am T-Abzweig oder an
+  // gemeinsamen Punkten). Ein Anschluss, den mehrere Hauptverbindungen teilen (z. B. Speicher), gehoert zu `haupt`.
+  const netzVon = (v: Verbindung) => (v.art === "haupt" ? `haupt~${v.von}>${v.nach}` : ersatzGruppeId(v.von, v.nach));
+  const koerper = router ? geraeteKoerper(welt, katalog) : [];
+  const steig = steigBereich(welt, katalog);
+  // Durchgang 1: Adapter je Verbindung (Reihenfolge wie bisher, damit Verteilerabgaenge gleich nummeriert bleiben).
+  const vorbereitet = kanten.map((v) => {
     const radius = ROHR[v.art];
     const adapter: Rohrstueck[] = [];
     const lage = (key: string): number | undefined => {
@@ -92,26 +148,63 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
       }
       const g = welt.geschosse.find((g) => g.id === geschossBeiY(welt, s.position.y));
       const laufY = g ? deckenLauf(g) - s.position.y : ROHR.durchgangHoehe;
-      const f = anschlussFuehrung([], { symbol: s, lokal: lokal as V3 }, radius, einheitVon(welt, s)?.rechteck, laufY, lage(key === v.von ? v.nach : v.von));
       const stutzen = s.katalogId === "heizung.verteiler" ? ausgang ? 0.02 : 0.035 : s.katalogId === "heizung.waermepumpe" ? 0.026 : ROHR.anschluss;
+      if (router) {
+        // Mit Router: Stutzen, noetigenfalls kurzer Stummel, senkrecht bis zur Leitungsebene; den Rest verlegt der Router.
+        const f = routerAnschluss(s, lokal as V3, radius, s.position.y + laufY, einheitVon(welt, s)?.rechteck, koerper, steig, katalog);
+        adapter.push({ punkte: f.punkte, radius: f.adapterRadius, startRadius: stutzen, endRadius: radius, boden: s.position.y,
+          daten: { ...v, bauteilIds: s.bauteilIds }, frei: false });
+        return f.punkte.at(-1)!;
+      }
+      const f = anschlussFuehrung([], { symbol: s, lokal: lokal as V3 }, radius, einheitVon(welt, s)?.rechteck, laufY, lage(key === v.von ? v.nach : v.von));
       adapter.push({ punkte: f.adapter, radius: f.adapterRadius, startRadius: stutzen, endRadius: radius, boden: s.position.y,
         daten: { ...v, bauteilIds: s.bauteilIds }, frei: false });
       return f.adapter.at(-1)!;
     };
     const a = endpunkt(v.von, true), b = endpunkt(v.nach);
+    return { v, radius, adapter, a, b };
+  });
+  // Anschluesse gehoeren zum Netz ihrer Verbindung: fremde Laeufe halten Abstand, der eigene Lauf beginnt am Kopf.
+  const adapterKey = (r: Rohrstueck) => JSON.stringify(r.punkte);
+  const geteilt = new Map<string, number>();
+  for (const x of vorbereitet) for (const r of x.adapter) geteilt.set(adapterKey(r), (geteilt.get(adapterKey(r)) ?? 0) + 1);
+  if (router) for (const x of vorbereitet) for (const r of x.adapter) {
+    const netz = (geteilt.get(adapterKey(r)) ?? 0) > 1 ? netzVon(x.v).split("~")[0] : netzVon(x.v);
+    router.vorbelegen(r.punkte, netz, Math.max(r.radius, r.endRadius));
+  }
+  router?.spurenFestlegen([...vorbereitet.filter((x) => x.a && x.b).map((x) => ({ netz: netzVon(x.v), a: x.a!, b: x.b! })), ...weitereSpuren]);
+  // Durchgang 2: Wege.
+  for (const { v, radius, adapter, a, b } of vorbereitet) {
     if (!a || !b) continue;
-    const richtung = (p: V3) => {
-      const abgang = adapter.find((r) => r.punkte.at(-1) === p);
-      return abgang ? Math.sign(p[2] - abgang.punkte[abgang.punkte.length - 2][2]) || 1 : 1;
-    };
-    const sa = richtung(a), sb = richtung(b);
-    // Zeigen beide Abgänge aufeinander zu, treffen sie sich in der Mitte statt hinter dem Ziel zu wenden.
-    const zugewandt = sa !== sb && (b[2] - a[2]) * sa > 0.3;
-    const z = zugewandt ? (a[2] + b[2]) / 2 : sa > 0 ? Math.max(a[2], b[2]) + 0.4 : Math.min(a[2], b[2]) - 0.4;
-    let punkte: V3[] = [a, [a[0], a[1], z], [a[0], b[1], z], [b[0], b[1], z], b];
-    if (sa !== sb && !zugewandt) {
-      const x = Math.min(a[0], b[0]) - 0.8, az = a[2] + sa * 0.4, bz = b[2] + sb * 0.4;
-      punkte = [a, [a[0], a[1], az], [x, a[1], az], [x, b[1], az], [x, b[1], bz], [b[0], b[1], bz], b];
+    let punkte: V3[];
+    if (router && Math.abs(a[1] - b[1]) < 0.01) {
+      // Richtung des letzten Adapterstuecks an a bzw. b: der Lauf setzt es fort, statt ueber es zurueckzulaufen.
+      const abgang = (p: V3): V3 | undefined => {
+        const q = adapter.find((r) => r.punkte.at(-1) === p)?.punkte;
+        return q && q.length >= 2 ? [p[0] - q[q.length - 2][0], p[1] - q[q.length - 2][1], p[2] - q[q.length - 2][2]] : undefined;
+      };
+      punkte = router.weg(a, b, netzVon(v), radius, { a: abgang(a), b: abgang(b) });
+      // Am geteilten Anschluss (Kopf gehoert zu `haupt`) bleibt die Umgebung fuer die andere Hauptverbindung offen.
+      const kopf = adapter.filter((r) => (geteilt.get(adapterKey(r)) ?? 0) > 1).map((r) => r.punkte.at(-1)!);
+      router.belegen(punkte, netzVon(v), radius, kopf, netzVon(v).split("~")[0]);
+    } else if (router) {
+      // Endpunkte auf verschiedenen Hoehen (Leitung ueber Geschosse): Strang mit Steigleitung in der Steigzone.
+      const baum = router.strang(a, [{ schluessel: v.nach, punkt: b }], 0, welt.steigzone ?? null, netzVon(v));
+      punkte = bereinigen(baum.segmente.flat());
+    } else {
+      // Bisherige Schablone: nur noch ohne Router.
+      const richtung = (p: V3) => {
+        const abgang = adapter.find((r) => r.punkte.at(-1) === p);
+        return abgang ? Math.sign(p[2] - abgang.punkte[abgang.punkte.length - 2][2]) || 1 : 1;
+      };
+      const sa = richtung(a), sb = richtung(b);
+      const zugewandt = sa !== sb && (b[2] - a[2]) * sa > 0.3;
+      const z = zugewandt ? (a[2] + b[2]) / 2 : sa > 0 ? Math.max(a[2], b[2]) + 0.4 : Math.min(a[2], b[2]) - 0.4;
+      punkte = [a, [a[0], a[1], z], [a[0], b[1], z], [b[0], b[1], z], b];
+      if (sa !== sb && !zugewandt) {
+        const x = Math.min(a[0], b[0]) - 0.8, az = a[2] + sa * 0.4, bz = b[2] + sb * 0.4;
+        punkte = [a, [a[0], a[1], az], [x, a[1], az], [x, b[1], az], [x, b[1], bz], [b[0], b[1], bz], b];
+      }
     }
     const neueAdapter = adapter.filter((r) => {
       const key = JSON.stringify([r.punkte, r.radius, r.endRadius]);

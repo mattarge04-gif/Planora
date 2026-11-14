@@ -39,8 +39,11 @@ class Heap {
  * A* auf dem Raster. Zustand: Ebene, Zelle, Richtung (0..3, 4 = keine). Kosten in Metern:
  * Schritt Zelle mal Spurfaktor auf eigener Spur, Bogen, Ebenenwechsel (nicht in Start-/Zielzelle), Wandzuschlag.
  * Start- und Zielzelle gelten immer als frei (Anschluesse liegen oft am Rand eines Geraetes).
+ * `richtung`: Abgangsrichtung am Start (0..3 wie DI/DK; kein Rueckwaertsschritt, Abbiegen kostet einen Bogen) und
+ * verbotene Ankunftsrichtung am Ziel (der Lauf darf nicht ueber das Anschlussstueck zurueck auf das Ziel laufen).
  */
-export function suchen(b: Belegung, start: Zelle, ziel: Zelle | null, istZiel: (z: Zelle) => boolean, netz: string, ebenen: number[], vorzug?: Vorzug): Zelle[] | null {
+export function suchen(b: Belegung, start: Zelle, ziel: Zelle | null, istZiel: (z: Zelle) => boolean, netz: string, ebenen: number[], vorzug?: Vorzug,
+  richtung: { start?: number; zielVerbot?: number } = {}): Zelle[] | null {
   const { nx, nz } = b.gitter, ne = ebenen.length, Z = ROUTER.zelle;
   const imRaster = (z: Zelle) => Number.isInteger(z.i) && Number.isInteger(z.k) && z.i >= 0 && z.k >= 0 && z.i < nx && z.k < nz;
   if (!imRaster(start) || (ziel && !imRaster(ziel))) return null;
@@ -53,14 +56,20 @@ export function suchen(b: Belegung, start: Zelle, ziel: Zelle | null, istZiel: (
   // Auch auf der Vorzugsspur darf die Heuristik die verbleibenden Kosten nicht ueberschaetzen.
   const h = (i: number, k: number) => (ziel ? (Math.abs(i - ziel.i) + Math.abs(k - ziel.k)) * Z * (vorzug ? ROUTER.spurFaktor : 1) : 0);
   const istStartOderZiel = (i: number, k: number) => (i === start.i && k === start.k) || (!!ziel && i === ziel.i && k === ziel.k);
-  const frei = (e: number, i: number, k: number) => istStartOderZiel(i, k) || b.frei(ebenen[e], i, k, netz);
+  // Liegt ein Anschluss selbst im Aussenrand (Adapter an der Fassade), darf die Anfahrt die Randzellen bis zum Inneren nutzen.
+  const RAND = Math.ceil(ROUTER.aussenRand / Z);
+  const imRand = (c: Zelle | null): c is Zelle => !!c && !b.innen(c.i, c.k);
+  const randStart = imRand(start), randZiel = imRand(ziel);
+  const nahRandEnde = (i: number, k: number) => (randStart && Math.max(Math.abs(i - start.i), Math.abs(k - start.k)) <= RAND)
+    || (randZiel && Math.max(Math.abs(i - ziel!.i), Math.abs(k - ziel!.k)) <= RAND);
+  const frei = (e: number, i: number, k: number) => istStartOderZiel(i, k) || b.frei(ebenen[e], i, k, netz, nahRandEnde(i, k));
   const aufSpur = (i: number, k: number) => {
     if (!vorzug) return false;
     const [x, z] = mitteVon(b.gitter, i, k);
     return Math.abs((vorzug.achse === 0 ? z : x) - vorzug.wert) < Z / 2 + 1e-9;
   };
   const heap = new Heap();
-  const s0 = id(e0, start.i, start.k, 4);
+  const s0 = id(e0, start.i, start.k, richtung.start ?? 4);
   g[s0] = 0; heap.push(h(start.i, start.k), s0);
   while (!heap.leer) {
     const s = heap.pop();
@@ -79,6 +88,7 @@ export function suchen(b: Belegung, start: Zelle, ziel: Zelle | null, istZiel: (
       const ii = i + DI[d], kk = k + DK[d];
       if (ii < 0 || kk < 0 || ii >= nx || kk >= nz || !frei(e, ii, kk)) continue;
       if (r !== 4 && DI[d] === -DI[r] && DK[d] === -DK[r]) continue;
+      if (d === richtung.zielVerbot && ziel && ii === ziel.i && kk === ziel.k) continue;
       const kosten = Z * (aufSpur(ii, kk) ? ROUTER.spurFaktor : 1) + (r !== 4 && r !== d ? ROUTER.bogen : 0) + b.zusatz(ebenen[e], ii, kk);
       const t = id(e, ii, kk, d);
       if (gs + kosten < g[t]) { g[t] = gs + kosten; von[t] = s; heap.push(g[t] + h(ii, kk), t); }

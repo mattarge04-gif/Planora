@@ -4,9 +4,10 @@ import { bereinigen, type StrangBaum, type StrangZiel, SPUR } from "../gruppenNe
 import { suchen, type Vorzug, type Zelle } from "./astern";
 import { geraeteKoerper } from "./koerper";
 import { pruefen } from "./pruefer";
-import { Belegung, ebenenFuer, mitteVon, zelleVon } from "./raster";
+import { Belegung, ebenenFuer, mitteVon, sperrabstand, zelleVon } from "./raster";
 import { spurenZuteilen, spurWert, trassenLage, type Lage } from "./trasse";
 import { ROHR } from "../technik";
+import { boegen, segAbstand } from "./geometrie";
 import { GRENZEN, ROUTER, type Befund, type PruefLeitung, type V3 } from "./typen";
 
 const EPS = 1e-6;
@@ -56,11 +57,21 @@ export function ohneKurzstuecke(eingabe: V3[], radius: number = ROHR.haupt): V3[
   return p;
 }
 
+/** Waagrechte Richtung als Index der A*-Schritte (0: +x, 1: -x, 2: +z, 3: -z); undefined ohne eindeutige Achse. */
+function rasterRichtung(d?: V3): number | undefined {
+  if (!d || Math.abs(d[1]) > EPS) return undefined;
+  if (Math.abs(d[0]) > EPS && Math.abs(d[2]) < EPS) return d[0] > 0 ? 0 : 1;
+  if (Math.abs(d[2]) > EPS && Math.abs(d[0]) < EPS) return d[2] > 0 ? 2 : 3;
+  return undefined;
+}
+
 export class LeitungsRouter {
   readonly befunde: Befund[] = [];
   private b: Belegung;
   private ebenen: Map<string, number[]>;
   private eigene = new Map<string, V3[][]>();
+  /** Alle vor- und verlegten Stuecke (auch ausserhalb der Leitungsebenen, z. B. Stummel auf Stutzenhoehe). */
+  private alle: V3[][] = [];
   private spur = new Map<string, Vorzug>();
   private zentrale: { geschossId: string; lage: Lage | null } | null = null;
 
@@ -82,9 +93,28 @@ export class LeitungsRouter {
     return this.ebenen.get(geschossBeiY(this.welt, y) ?? "") ?? [y];
   }
 
-  vorbelegen(punkte: V3[], netz: string) { this.b.belegen(punkte, netz); }
-  belegen(punkte: V3[], netz: string) {
-    this.b.belegen(punkte, netz);
+  /** `radius`: Rohrradius fuer den Sperrabstand (Vorgabe Hauptrohr). */
+  vorbelegen(punkte: V3[], netz: string, radius: number = ROHR.haupt) { this.b.belegen(punkte, netz, radius); this.alle.push(punkte); }
+  /**
+   * `offen`: Endpunkte, an denen ein Anschluss mit anderen Verbindungen geteilt wird; das End- bzw. Anfangsstueck wird
+   * dort auf Sperrabstand plus eine Zelle nur fuer `basis` belegt (Teilnetze von `basis` duerfen hinein).
+   */
+  belegen(punkte: V3[], netz: string, radius: number = ROHR.haupt, offen: V3[] = [], basis: string = netz) {
+    this.alle.push(punkte);
+    const nah = (p: V3) => offen.some((q) => Math.abs(q[0] - p[0]) < EPS && Math.abs(q[1] - p[1]) < EPS && Math.abs(q[2] - p[2]) < EPS);
+    const L = sperrabstand(radius) + ROUTER.zelle;
+    let rest = punkte;
+    const schneiden = (von: V3, nach: V3): V3 => {
+      const d = Math.hypot(nach[0] - von[0], nach[1] - von[1], nach[2] - von[2]), t = Math.min(1, L / Math.max(d, EPS));
+      return [von[0] + (nach[0] - von[0]) * t, von[1] + (nach[1] - von[1]) * t, von[2] + (nach[2] - von[2]) * t];
+    };
+    if (rest.length >= 2 && nah(rest[0])) {
+      const c = schneiden(rest[0], rest[1]); this.b.belegen([rest[0], c], basis, radius); rest = [c, ...rest.slice(1)];
+    }
+    if (rest.length >= 2 && nah(rest.at(-1)!)) {
+      const c = schneiden(rest.at(-1)!, rest.at(-2)!); this.b.belegen([c, rest.at(-1)!], basis, radius); rest = [...rest.slice(0, -1), c];
+    }
+    this.b.belegen(rest, netz, radius);
     const l = this.eigene.get(netz) ?? []; l.push(punkte); this.eigene.set(netz, l);
   }
 
@@ -139,14 +169,76 @@ export class LeitungsRouter {
     return ohneKurzstuecke([a, ...p.slice(1, n), b], radius);
   }
 
-  /** `radius`: Rohrradius, unter dem kurze Zwischenstuecke entfernt werden (Vorgabe Hauptrohr). */
-  weg(a: V3, b: V3, netz: string, radius: number = ROHR.haupt): V3[] {
+  /**
+   * Spart Boegen nach dem Einrasten: Versatz (Z: zwei gleich gerichtete Stuecke mit kurzem Querstueck) wird durch
+   * Verschieben eines Nachbarstuecks auf die Querlage des anderen begradigt, ein Haken (Hin- und Rueckstueck um ein
+   * Querstueck) durch Verschieben des Querstuecks. Nur innere Punkte bewegen sich; angenommen wird eine Variante nur,
+   * wenn alle ihre Zellen fuer das Netz frei sind, sie befundfrei ist, weniger Boegen hat und nicht weniger Laenge auf
+   * der Trassenspur des Netzes.
+   */
+  private glaetten(eingabe: V3[], netz: string, radius: number, spurHalten = true, durch: string = netz): V3[] {
+    let p = eingabe;
+    const vorzug = spurHalten ? this.spurFuer(netz) : undefined;
+    const aufSpur = (w: V3[]) => !vorzug ? 0 : w.slice(1).reduce((m, q, n) => {
+      const a = w[n], quer = vorzug.achse === 0 ? 2 : 0;
+      const entlang = Math.abs(a[quer] - q[quer]) < EPS && Math.abs(a[1] - q[1]) < EPS;
+      return m + (entlang && Math.abs(a[quer] - vorzug.wert) < ROUTER.zelle / 2 + EPS ? Math.abs(q[vorzug.achse] - a[vorzug.achse]) : 0);
+    }, 0);
+    const waag = (u: V3, v: V3) => Math.abs(u[1] - v[1]) < EPS && (Math.abs(u[0] - v[0]) > EPS) !== (Math.abs(u[2] - v[2]) > EPS);
+    const achse = (u: V3, v: V3): 0 | 2 => (Math.abs(u[0] - v[0]) > EPS ? 0 : 2);
+    const zellenFrei = (w: V3[]) => w.slice(1).every((q, n) => {
+      const a = w[n];
+      if (!waag(a, q)) return true;
+      const [i0, k0] = zelleVon(this.b.gitter, a[0], a[2]), [i1, k1] = zelleVon(this.b.gitter, q[0], q[2]);
+      for (let i = Math.min(i0, i1); i <= Math.max(i0, i1); i++) for (let k = Math.min(k0, k1); k <= Math.max(k0, k1); k++) {
+        const ende = (i === i0 && k === k0 && n === 0) || (i === i1 && k === k1 && n === w.length - 2);
+        if (!ende && !this.b.frei(a[1], i, k, durch)) return false;
+      }
+      return true;
+    });
+    for (let runde = 0; runde < 10; runde++) {
+      let besser: V3[] | null = null;
+      for (let i = 1; i + 2 < p.length && !besser; i++) {
+        const [a, b, c, d] = [p[i - 1], p[i], p[i + 1], p[i + 2]];
+        if (!waag(a, b) || !waag(b, c) || !waag(c, d)) continue;
+        const k = achse(a, b), q = achse(b, c);
+        if (k === q || achse(c, d) !== k) continue;
+        const kandidaten: V3[][] = [];
+        const setze = (idx: number[], ax: 0 | 2, wert: number) => {
+          const w = p.map((v) => [...v] as V3); for (const j of idx) w[j][ax] = wert; return w;
+        };
+        if (Math.sign(b[k] - a[k]) === Math.sign(d[k] - c[k])) {
+          // Versatz: Stueck c-d auf die Querlage von b legen (d innen, danach ein Stueck entlang q) oder a-b auf die von c.
+          if (i + 3 < p.length && waag(d, p[i + 3]) && achse(d, p[i + 3]) === q) kandidaten.push(setze([i + 1, i + 2], q, b[q]));
+          if (i - 2 >= 0 && waag(p[i - 2], a) && achse(p[i - 2], a) === q) kandidaten.push(setze([i - 1, i], q, c[q]));
+        } else {
+          // Haken: Querstueck auf das Ende des einen Laengsstuecks legen, das andere entfaellt.
+          kandidaten.push(setze([i, i + 1], k, d[k]), setze([i, i + 1], k, a[k]));
+        }
+        for (const roh of kandidaten) {
+          const w = bereinigen(roh);
+          if (w.length >= 2 && boegen(w) < boegen(p) && aufSpur(w) >= aufSpur(p) - 1e-6 && zellenFrei(w) && this.befundfrei(w, netz, radius)) { besser = w; break; }
+        }
+      }
+      if (!besser) break;
+      p = besser;
+    }
+    return p;
+  }
+
+  /**
+   * `radius`: Rohrradius, unter dem kurze Zwischenstuecke entfernt werden (Vorgabe Hauptrohr).
+   * `abgang`: Richtung der waagrechten Anschlussstuecke, die in a enden bzw. in b enden (Adapter); der Lauf setzt sie
+   * fort und fuehrt nicht ueber sie zurueck.
+   */
+  weg(a: V3, b: V3, netz: string, radius: number = ROHR.haupt, abgang: { a?: V3; b?: V3 } = {}): V3[] {
     const ebenen = this.ebenenBei(a[1]);
     const [ia, ka] = zelleVon(this.b.gitter, a[0], a[2]), [ib, kb] = zelleVon(this.b.gitter, b[0], b[2]);
     const start = { y: ebenen.find((y) => Math.abs(y - a[1]) < 0.01) ?? a[1], i: ia, k: ka }, ziel = { y: start.y, i: ib, k: kb };
     if (ia === ib && ka === kb) return bereinigen([a, [b[0], a[1], a[2]], b]);
-    const z = suchen(this.b, start, ziel, (c) => c.i === ib && c.k === kb && c.y === start.y, netz, ebenen, this.spurFuer(netz));
-    if (z) return this.alsPunkte(z, a, b, radius);
+    const z = suchen(this.b, start, ziel, (c) => c.i === ib && c.k === kb && c.y === start.y, netz, ebenen, this.spurFuer(netz),
+      { start: rasterRichtung(abgang.a), zielVerbot: rasterRichtung(abgang.b) });
+    if (z) return this.glaetten(this.alsPunkte(z, a, b, radius), netz, radius);
     this.befunde.push({ regel: "kein_weg", leitungen: [netz.split("~")[0]], ort: a, hart: true });
     return bereinigen([a, [a[0], a[1], b[2]], [b[0], a[1], b[2]], b]);
   }
@@ -216,10 +308,13 @@ export class LeitungsRouter {
   private zulaessig(w: V3[], y: number, netz: string, radius: number, durch: string): boolean {
     if (w.length < 2) return false;
     const u = w.at(-1)!, [iu, ku] = zelleVon(this.b.gitter, u[0], u[2]);
+    // Liegt u im Aussenrand, darf der Stich die Randzellen bis zum Inneren nutzen (wie in suchen).
+    const rand = !this.b.innen(iu, ku), RAND = Math.ceil(ROUTER.aussenRand / ROUTER.zelle);
     for (let n = 1; n < w.length; n++) {
       const [i0, k0] = zelleVon(this.b.gitter, w[n - 1][0], w[n - 1][2]), [i1, k1] = zelleVon(this.b.gitter, w[n][0], w[n][2]);
       for (let i = Math.min(i0, i1); i <= Math.max(i0, i1); i++) for (let k = Math.min(k0, k1); k <= Math.max(k0, k1); k++) {
-        if (!(i === iu && k === ku) && !this.b.frei(y, i, k, durch)) return false;
+        const nah = rand && Math.max(Math.abs(i - iu), Math.abs(k - ku)) <= RAND;
+        if (!(i === iu && k === ku) && !this.b.frei(y, i, k, durch, nah)) return false;
       }
     }
     // Kein Stichstueck laeuft parallel naeher als der Rohrabstand an einem eigenen Stueck entlang.
@@ -247,10 +342,32 @@ export class LeitungsRouter {
     return !pruefen([linie("neu", w), ...eigene], []).some((f) => f.hart && f.leitungen.includes("neu"));
   }
 
+  /**
+   * Lage der Steigleitung: Vorzugslage (Steigzone plus Spurversatz), sonst quer zur Spurdiagonale in Zellschritten
+   * versetzt, bis die senkrechte Leitung ueber den ganzen Hoehenbereich Abstand zu allen bisherigen Stuecken haelt
+   * (auch zu Stummeln auf Stutzenhoehe, die keine Leitungsebene belegen) und ihre Zellen frei sind.
+   */
+  private steigLage(x0: number, z0: number, start: V3, ziele: StrangZiel[], netz: string): [number, number] {
+    const ys = [start[1], ...ziele.map((z) => z.punkt[1])];
+    const lo = Math.min(...ys), hi = Math.max(...ys);
+    if (hi - lo < 1e-3) return [x0, z0];
+    const grenze = sperrabstand(ROHR.verteil);
+    const ok = (x: number, z: number) => {
+      const [i, k] = zelleVon(this.b.gitter, x, z);
+      if (this.ebenen.size && ys.some((y) => !this.b.frei(this.ebenenBei(y).find((e) => Math.abs(e - y) < 0.01) ?? y, i, k, netz))) return false;
+      return !this.alle.some((s) => s.slice(1).some((q, n) => segAbstand([x, lo, z], [x, hi, z], s[n], q).d < grenze));
+    };
+    for (let k = 0; k <= 6; k++) for (const d of k ? [k, -k] : [0]) {
+      const x = x0 + d * ROUTER.zelle, z = z0 - d * ROUTER.zelle;
+      if (ok(x, z)) return [x, z];
+    }
+    return [x0, z0];
+  }
+
   /** Gruppenstrang (Ersatz fuer strangBaum): entferntestes Ziel zuerst, weitere als T-Abzweig; Geschosswechsel in der Steigzone. */
   strang(start: V3, ziele: StrangZiel[], spur: number, steigzone: { x: number; z: number } | null, netz: string): StrangBaum {
     const o = spur * SPUR;
-    const steig: [number, number] = steigzone ? [steigzone.x + o, steigzone.z + o] : [start[0], start[2]];
+    const steig: [number, number] = steigzone ? this.steigLage(steigzone.x + o, steigzone.z + o, start, ziele, netz) : [start[0], start[2]];
     const gleich = (a: number, b: number) => Math.abs(a - b) < 1e-3;
     const kosten = (u: V3) => gleich(u[1], start[1]) ? Math.abs(u[0] - start[0]) + Math.abs(u[2] - start[2])
       : Math.abs(start[0] - steig[0]) + Math.abs(start[2] - steig[1]) + Math.abs(u[1] - start[1]) + Math.abs(u[0] - steig[0]) + Math.abs(u[2] - steig[1]);
@@ -259,7 +376,7 @@ export class LeitungsRouter {
     const steigSegmente = () => segmente.flatMap((s) => s.slice(1).map((q, n) => [s[n], q] as [V3, V3]))
       .filter(([a, b]) => Math.abs(a[0] - b[0]) < EPS && Math.abs(a[2] - b[2]) < EPS && Math.abs(a[1] - b[1]) > EPS && gleich(a[0], steig[0]) && gleich(a[2], steig[1]));
     // Jedes Ziel reserviert seine Umgebung; nur der eigene Abzweig (Teilnetz netz~schluessel) darf hinein.
-    for (const { schluessel, punkt } of sortiert) this.b.reservieren(punkt, `${netz}~${schluessel}`);
+    for (const { schluessel, punkt } of sortiert) this.b.reservieren(punkt, `${netz}~${schluessel}`, ROHR.verteil);
     for (const { schluessel, punkt: u } of sortiert) {
       const durch = `${netz}~${schluessel}`;
       let punkte: V3[] | null = null;
@@ -279,14 +396,16 @@ export class LeitungsRouter {
             const vorlauf = segmente.some((s) => s.some((p) => gleich(p[1], start[1]))) ? this.wegZumNetz(fuss, netz, ROHR.verteil, durch) ?? this.weg(start, fuss, durch, ROHR.verteil) : this.weg(start, fuss, durch, ROHR.verteil);
             anfang = [...vorlauf, kopf];
           }
-          this.vorbelegen(bereinigen(anfang), netz);
+          this.vorbelegen(bereinigen(anfang), netz, ROHR.verteil);
           const rest = this.weg(kopf, u, durch, ROHR.verteil);
           // Kurzstueck an der Steigleitung entfernen, aber nur, wenn das Ergebnis mit dem eigenen Netz befundfrei bleibt.
           const roh = bereinigen([...anfang, ...rest.slice(1)]), glatt = ohneKurzstuecke(roh, ROHR.verteil);
           punkte = this.befundfrei(glatt, netz, ROHR.verteil) || !this.befundfrei(roh, netz, ROHR.verteil) ? glatt : roh;
         }
       }
-      this.belegen(punkte, netz);
+      // Ueber dem Bogenlimit darf die Begradigung die Trassenspur verlassen (Pruefregel boegen hat Vorrang).
+      if (boegen(punkte) > GRENZEN.maxBoegen) punkte = this.glaetten(punkte, netz, ROHR.verteil, false, durch);
+      this.belegen(punkte, netz, ROHR.verteil);
       if (punkte.length >= 2) segmente.push(punkte);
       abzweige.push({ schluessel, punkte });
     }

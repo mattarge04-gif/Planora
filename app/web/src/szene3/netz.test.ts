@@ -4,6 +4,8 @@ import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
 import { durchgaenge, freieVerteilerAbgaenge, rohrnetz, verbindungen } from "./netz";
 import { bandGeometrie, huelsenGeometrie, rohrGeometrie } from "./technikGeometrie";
 import { ROHR, rohrPfad } from "./technik";
+import { geraeteKoerper } from "./router/koerper";
+import { alsPrueflinien, pruefen } from "./router/pruefer";
 
 const s = (key: string, id: string, x: number, y: number, z: number, versorgt: string[] = []): WeltSymbol => ({
   schluessel: key, katalogId: `heizung.${id}`, position: { x, y, z }, versorgt,
@@ -64,15 +66,16 @@ describe("Geschlossenes Techniknetz", () => {
       expect(n.some((r) => r !== adapter && r.punkte.some((q) => q.every((v, i) => v === ende[i])))).toBe(true);
     }
   });
-  it("schliesst Anschlussstücke und Hauptrohre auf derselben Tangente an", () => {
+  // Ersetzt "schliesst Anschlussstücke und Hauptrohre auf derselben Tangente an" (Schablonenform mit waagrechtem Abgangsstummel):
+  // Anschlüsse steigen senkrecht auf die Leitungsebene, dort beginnt bzw. endet ein Hauptrohr (Leitungsrouter, Spec 5.3).
+  it("Anschlussstücke enden senkrecht auf der Leitungsebene in einem Hauptrohr", () => {
     const n = rohrnetz(welt, katalog, anschluesse);
-    for (const adapter of n.filter((r) => r.radius < r.endRadius)) {
-      const ende = adapter.punkte.at(-1)!, davor = adapter.punkte.at(-2)!;
-      const tangent = new THREE.Vector3(...ende).sub(new THREE.Vector3(...davor)).normalize();
-      const haupt = n.find((r) => r.radius === r.endRadius && [r.punkte[0], r.punkte.at(-1)!].some((p) => p.every((x, i) => x === ende[i])))!;
-      const punkte = haupt.punkte[0].every((x, i) => x === ende[i]) ? haupt.punkte : [...haupt.punkte].reverse();
-      const nachbar = punkte.slice(1).find((p) => p.some((x, i) => x !== ende[i]))!;
-      expect(Math.abs(tangent.dot(new THREE.Vector3(...nachbar).sub(new THREE.Vector3(...ende)).normalize()))).toBeCloseTo(1);
+    const adapter = n.filter((r) => r.radius < r.endRadius);
+    expect(adapter.length).toBeGreaterThan(0);
+    for (const r of adapter) {
+      const ende = r.punkte.at(-1)!, davor = r.punkte.at(-2)!;
+      expect(ende[0] === davor[0] && ende[2] === davor[2] && ende[1] > davor[1]).toBe(true);
+      expect(n.some((h) => h.radius === h.endRadius && [h.punkte[0], h.punkte.at(-1)!].some((p) => p.every((x, i) => x === ende[i])))).toBe(true);
     }
   });
   it("führt Raumdurchgänge unter der Decke (0.40 m unter Geschossoberkante) und die wandnahe Verteilerzuleitung direkt auf Balkenhöhe durch die Wand", () => {
@@ -93,15 +96,14 @@ describe("Geschlossenes Techniknetz", () => {
     const kappen = freieVerteilerAbgaenge(welt, katalog);
     expect(kappen).toHaveLength(1); expect(kappen[0].position[0]).toBeCloseTo(28.11);
   });
-  it("belässt am Verteiler-Eingang einen geraden Rohrquerschnitt und zeigt die Hülse auch auf Zentraleseite", () => {
+  // Ersetzt "belässt am Verteiler-Eingang einen geraden Rohrquerschnitt und zeigt die Hülse auch auf Zentraleseite" (wandnahe
+  // Zuleitung auf Balkenhöhe durch die Wand, Schablonenform): Eingang am Stutzen, Netz ohne harte Prüfbefunde.
+  it("Verteiler-Eingang am Stutzen, Netz ohne harte Prüfbefunde", () => {
     const n = rohrnetz(welt, katalog, anschluesse);
     const eingang = n.find((r) => r.daten.nach === "v" && r.daten.bauteilIds.length === 1 && r.daten.bauteilIds[0] === "bauteil-v")!;
     expect(eingang.punkte[0]).toEqual([27.15, 0.62, 11.27]);
-    expect(eingang.punkte[1][1]).toBe(0.62); expect(eingang.punkte[1][2]).toBe(11.27);
     expect(eingang.radius).toBe(ROHR.haupt); expect(eingang.startRadius).toBe(0.035);
-    const h = durchgaenge(welt, eingang.punkte, eingang.radius).filter((h) => h.art === "wand");
-    expect(h.some((h) => h.position[0] > 27.13 && h.normale[0] === 1)).toBe(true);
-    expect(h.some((h) => h.position[0] < 26.87 && h.normale[0] === -1)).toBe(true);
+    expect(pruefen(alsPrueflinien(n), geraeteKoerper(welt, katalog)).filter((b) => b.hart)).toEqual([]);
   });
   it("hält Verteilerbögen zylindrisch und reduziert nur kurz direkt am Stutzen", () => {
     const n = rohrnetz(welt, katalog, anschluesse);
