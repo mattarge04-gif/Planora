@@ -1599,3 +1599,9 @@ Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (
   - Letzte Messung 300 Welten: 13 mit harten Befunden (4.3 %, vorher 139). Web 329 ok / 3 uebersprungen, tsc gruen.
 - **Naechste Schritte T8:** Rest-Seeds beheben (163, 127, 76, 148 u.a.: Abstand gleiche Gruppe, Anschluss-Strang, 7–9 Boegen je Abschnitt); Regressionstests neu seeden (alte Seeds 76/88 uebersprungen); 2000er-Lauf `PLANORA_ZUFALL=2000`; Schwelle setzen, `runIf` entfernen oder Default festlegen; Spec 5.5/9 und Global Constraints nachfuehren. Danach Review T8, T9 (alte Fuehrung entfernen), T10 (GPU-Bilder, PO-Sichtung).
 - Details: `.superpowers/sdd/2026-11-13-leitungsrouter/task-8-report.md` (Abschnitt "Zwischenstand Pause 14.11.") und Ledger `progress.md` (beide git-ignoriert, lokal).
+
+### PO-Rueckmeldung 14.11. aus dem Browser (in T8–T10 beachten)
+
+- **Boegen nicht richtig dargestellt [F]:** Rohrbogen an Richtungswechseln sehen noch nicht wie echte Bogenformstuecke aus. Darstellung in `szene3` (Rohrgeometrie aus `Rohrstueck.punkte`) pruefen; in T10 gezielt GPU-Nahbilder.
+- **T-Stuecke nicht richtig dargestellt [F]:** Abzweige haben kein sichtbares T-Formstueck. Gleiche Stelle; T10.
+- **Steigleitungen gehen teils durch andere FBH-Verteilerkasten [F]:** Harter Fehler, den der Pruefer melden muesste (`durch_geraet`). Vermutete Ursachen [A]: FBH-Verteiler/Unterverteiler fehlt in `geraeteKoerper`, Koerper zu klein, oder die Partner-Ausnahme (Pruefer nimmt Endgeraete aus, `routerAnschluss` alle Partner) greift zu weit. Zuerst in einem Muster reproduzieren, dann Regressionstest; gehoert in T8 vor das Review.
