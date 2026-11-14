@@ -26,6 +26,12 @@ Pruefstand nach `5b2bf4b`: Backend 568/568 (nach Integration 565), Web 251/251, 
 8. [?] Port 54800: am Sitzungsende lauschte ein nicht sichtbarer/beendbarer Prozess (PID 17248), vermutlich verwaiste eingebettete PostgreSQL nach Testlauf mit `timeout` [A]. Beim naechsten Start pruefen.
 9. Betreiber-Ablauf im Browser durchklicken (bisher nur HTTP).
 
+### PO-Rueckmeldung 14.11. (spaeter umsetzen, nicht jetzt)
+
+10. **Vorschau abgeschnitten [F]:** Im Assistenten (Schritt 1 Gebaeude, Buero Muster, 2 UG + 2 OG) ist das Gebaeude rechts angeschnitten; Kulisse/Grundstueck ragt aus dem Bild. Gehoert zu Punkt 1 (Vorschau-Zoom).
+11. **Hinweise "seitenverhaeltnis" unverstaendlich [F]:** Schritt 8 zeigt 8 Hinweise "Hinweis seitenverhaeltnis zu «…»" (Kern, Technik, Gastro, Wohnungen). Ursache: Raumkomposition (`app/src/welt/raum/reihen.ts:108`) meldet Einheiten, deren Rechteck laengs/quer > `seitenMax` wird. Offen: (a) Text ist Rohcode statt verstaendlicher Satz, (b) ob der Hinweis fuer den Kunden ueberhaupt sinnvoll ist oder intern bleibt bzw. das Layout selbst besser verteilen sollte.
+12. **Heizungserfassung zu aufwendig [F, PO nicht zufrieden]:** Ablauf mit Auswaehlen dauert zu lange; Erfassung je Geschoss ist zu muehsam. PO vermutet einfachere Wege. Vor Umsetzung Brainstorming mit PO (z. B. Standard fuer ganzes Gebaeude mit Ausnahmen, Vorlagen je Nutzung, Geschosse kopieren) [A, Ideen nicht abgestimmt].
+
 ## Lokal starten [F]
 
 - PowerShell des PO blockiert `npm.ps1` -> `npm.cmd` verwenden, Befehle aus `app/`.
