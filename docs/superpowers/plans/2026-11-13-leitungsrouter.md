@@ -1604,4 +1604,4 @@ Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (
 
 - **Boegen nicht richtig dargestellt [F]:** Rohrbogen an Richtungswechseln sehen noch nicht wie echte Bogenformstuecke aus. Darstellung in `szene3` (Rohrgeometrie aus `Rohrstueck.punkte`) pruefen; in T10 gezielt GPU-Nahbilder.
 - **T-Stuecke nicht richtig dargestellt [F]:** Abzweige haben kein sichtbares T-Formstueck. Gleiche Stelle; T10.
-- **Steigleitungen gehen teils durch andere FBH-Verteilerkasten [F]:** Harter Fehler, den der Pruefer melden muesste (`durch_geraet`). Vermutete Ursachen [A]: FBH-Verteiler/Unterverteiler fehlt in `geraeteKoerper`, Koerper zu klein, oder die Partner-Ausnahme (Pruefer nimmt Endgeraete aus, `routerAnschluss` alle Partner) greift zu weit. Zuerst in einem Muster reproduzieren, dann Regressionstest; gehoert in T8 vor das Review.
+- **FBH-Verteilerkasten zu transparent [F, korrigiert]:** Steigleitungen gehen NICHT durch die Kasten; die Kasten sind so durchsichtig, dass es beim Hineinschauen so wirkt. Darstellung (Material/Transparenz der FBH-Verteiler in szene3) in T10 pruefen.
