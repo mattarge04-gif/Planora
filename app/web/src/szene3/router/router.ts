@@ -583,7 +583,17 @@ export class LeitungsRouter {
             anfang = [e, kopf];
           } else {
             const fuss: V3 = [steig[0], start[1], steig[1]];
-            const vorlauf = segmente.some((s) => s.some((p) => gleich(p[1], start[1]))) ? this.wegZumNetz(fuss, netz, ROHR.verteil, durch) ?? this.weg(start, fuss, durch, ROHR.verteil) : this.weg(start, fuss, durch, ROHR.verteil);
+            let vorlauf = segmente.some((s) => s.some((p) => gleich(p[1], start[1]))) ? this.wegZumNetz(fuss, netz, ROHR.verteil, durch) ?? this.weg(start, fuss, durch, ROHR.verteil) : this.weg(start, fuss, durch, ROHR.verteil);
+            // Bogenlimit im unteren Abschnitt (Fixrunde 1): erst ohne Spur begradigen, dann mit Fassadenabstand neu suchen.
+            const bv = (w: V3[]) => Math.max(...boegenJeAbschnitt(w));
+            if (bv(vorlauf) > GRENZEN.maxBoegen) {
+              const glatt = this.glaetten(vorlauf, netz, ROHR.verteil, false, durch);
+              if (bv(glatt) < bv(vorlauf)) vorlauf = glatt;
+            }
+            if (bv(vorlauf) > GRENZEN.maxBoegen) {
+              const neu = this.wegFassade(vorlauf[0], fuss, durch, netz, ROHR.verteil);
+              if (neu && bv(neu) < bv(vorlauf) && this.befundfrei(neu, netz, ROHR.verteil)) vorlauf = neu;
+            }
             anfang = [...vorlauf, kopf];
           }
           this.vorbelegen(bereinigen(anfang), netz, ROHR.verteil);

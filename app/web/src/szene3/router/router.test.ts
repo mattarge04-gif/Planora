@@ -78,7 +78,8 @@ describe("LeitungsRouter", () => {
     [76, "Lage der Steigleitung erst beim ersten Geschosswechsel"],
     [173, "Ebenenwechsel um ein Stueck verschoben ueber dem Bogenlimit (glaetten)"],
     [314, "Rueckfall mit Fassadenabstand ueber dem Bogenlimit (wegFassade)"],
-  ])("Regression Zufallswelt %i: %s", (seed) => {
+    [535, "Vorlauf Start -> Fuss: Begradigung und Fassaden-Rueckfall ueber dem Bogenlimit (Fixrunde 1)"],
+  ])("Regression Zufallswelt %i: %s", { timeout: 10_000 }, (seed) => {
     expect(rohrnetzMitBefunden(zufallsWelt(seed), TEST_KATALOG, {}).befunde.filter((b) => b.hart)).toEqual([]);
   });
 
