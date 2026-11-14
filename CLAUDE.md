@@ -19,11 +19,12 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 14.11.2026
 
-### Leitungsrouter (14.11., Pause) [F]
+### Leitungsrouter (14.11., Tagesabschluss) [F]
 
 - T6 und T7 fertig und geprueft (`52229c4`, `64df567`, `fafd06e`): Router fuehrt Haupt- und Gruppennetz, alle 7 Muster ohne Befund, Web 326/326. Entscheid: Adapter nur Stutzen + senkrecht, Waagrechtes macht der Router; Ebenenwechsel 25 [A].
 - T8 abgeschlossen (Review Approved mit Bedingung, Fixrunde 1; `d1f6764`, `96e5216`, `5e3eec7`, `b2de316`): Laufzeit ~230 ms/Welt (vorher 1.05 s), Hinweis "Leitungsführung unsauber" im Twin. PO-Entscheid 14.11. "Annahmen anpassen": Boegen je Geschoss, realistischer Zufallsgenerator, Kreuzungsschwelle nach Messung, 230 ms akzeptiert. Endstand 2000 Zufallswelten: 42 mit harten Befunden (2.1 %), bekannte Luecke (Controller-Entscheid); Kreuzungen 39.6 %, Schwelle 42 %.
-- Einstieg: "weiter mit Leitungsrouter" -> `docs/superpowers/plans/2026-11-13-leitungsrouter.md`, Abschnitt "Fortsetzung (Stand 14.11.2026)". Danach T9, T10 (GPU-Bilder an PO).
+- T9 (alte Fuehrung entfernen) gestartet und auf PO-Wunsch abgebrochen, nichts committet; neu starten. Entscheide dazu: auch Schablonen-`else` in `kantenNetz` entfernen (Router Pflicht); Sonderfaelle im Router NICHT zusammenfassen (braeuchte neue 2000er-Messung).
+- Einstieg: "weiter mit Leitungsrouter" -> `docs/superpowers/plans/2026-11-13-leitungsrouter.md`, Abschnitt "Tagesabschluss 14.11.2026". Naechstes: T9, dann T10 (GPU-Bilder an PO), dann Gesamtreview.
 - Branch `m2c-interview` am 14.11. auf PO-Auftrag gepusht; kein Merge nach `main`.
 - PO-Rueckmeldung 14.11. aus dem Browser, spaeter umsetzen: Router-Plan Abschnitt "PO-Rueckmeldung 14.11." (Boegen und T-Stuecke nicht als Formstuecke dargestellt, FBH-Kasten zu transparent) und `docs/superpowers/plans/2026-11-13-stufe1-integration.md` Punkte 10–13 (Vorschau abgeschnitten, Hinweis `seitenverhaeltnis` unverstaendlich, Heizungserfassung je Geschoss zu aufwendig -> Brainstorming mit PO, Test-Liegenschaften in lokaler DB aufraeumen).
 

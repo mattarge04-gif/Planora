@@ -1607,3 +1607,13 @@ Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (
 - **Boegen nicht richtig dargestellt [F]:** Rohrbogen an Richtungswechseln sehen noch nicht wie echte Bogenformstuecke aus. Darstellung in `szene3` (Rohrgeometrie aus `Rohrstueck.punkte`) pruefen; in T10 gezielt GPU-Nahbilder.
 - **T-Stuecke nicht richtig dargestellt [F]:** Abzweige haben kein sichtbares T-Formstueck. Gleiche Stelle; T10.
 - **FBH-Verteilerkasten zu transparent [F, korrigiert]:** Steigleitungen gehen NICHT durch die Kasten; die Kasten sind so durchsichtig, dass es beim Hineinschauen so wirkt. Darstellung (Material/Transparenz der FBH-Verteiler in szene3) in T10 pruefen.
+
+## Tagesabschluss 14.11.2026
+
+- T1–T8 fertig und geprueft. T8 Endstand `5393657`: Web 345/345, tsc und build gruen; 2000er-Lauf 42 Welten mit harten Befunden (2.1 %) als bekannte Luecke, Kreuzungen 39.6 % (Schwelle 42 %), 235 ms Mittel.
+- T9 gestartet und abgebrochen, nichts committet. Neu starten mit diesen Entscheiden:
+  - Zusaetzlich den Schablonen-`else`-Zweig in `kantenNetz` entfernen (Router Pflicht, Spec 6).
+  - Router-Sonderfaelle NICHT zusammenfassen (T8-Review M5, bleibt fuer das Gesamtreview).
+  - `einbau.test.ts` und `zufall.test.ts` unveraendert gruen.
+- Danach T10 (GPU-Bilder inkl. PO-Punkte Boegen, T-Stuecke, FBH-Kasten; Musterpunkte gegen T7-Bilder vergleichen), dann Gesamtreview des Branches.
+- Offene Kleinpunkte fuer das Gesamtreview (Ledger, lokal): Grenzfalltests Boegen-Teilung 0.99/1.0 m; doppeltes Routing Twin/Technik3 (Hinweis mit `{}` statt GLB-Anschluessen); globale A*-Puffer bleiben belegt (6–45 MB); `korridor` setzt Verteiler entlang x voraus; Seed 297 und die uebrigen 41 Restwelten.
