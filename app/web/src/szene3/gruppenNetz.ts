@@ -496,7 +496,12 @@ export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], an
         if (k !== undefined && Math.abs(r[1] - q[1]) < EPS) {
           // Der Stummel gehoert zum Anschlussrohr; zum T-Punkt bleibt mindestens der Rohrabstand (2 Verteilrohre + Fuge).
           const rest = Math.max(Math.abs(r[k] - q[k]) / 2, 2 * ROHR.verteil + GRENZEN.fuge);
-          ende = [...r] as V3; ende[k] -= Math.sign(r[k] - q[k]) * Math.max(0, Math.min(STUMMEL, Math.abs(r[k] - q[k]) - rest));
+          // Beginnt ein anderer Abzweig (T-Punkt) auf diesem Stueck, bleibt das Strangende den Rohrabstand hinter ihm (Task 8).
+          const quer = k === 0 ? 2 : 0;
+          const tPunkte = baum.abzweige.filter((b) => b !== a && b.punkte.length >= 2).map((b) => b.punkte[0])
+            .filter((t) => Math.abs(t[1] - r[1]) < EPS && Math.abs(t[quer] - r[quer]) < EPS && (t[k] - q[k]) * (r[k] - t[k]) >= -EPS);
+          const frei = Math.min(...tPunkte.map((t) => Math.abs(r[k] - t[k]) - (2 * ROHR.verteil + GRENZEN.fuge)));
+          ende = [...r] as V3; ende[k] -= Math.sign(r[k] - q[k]) * Math.max(0, Math.min(STUMMEL, Math.abs(r[k] - q[k]) - rest, frei));
           p[p.length - 1] = ende;
         }
       }

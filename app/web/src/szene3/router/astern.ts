@@ -78,7 +78,7 @@ function puffern(n: number, zellen: number) {
  * Zellen dieses Netzes nur nahe Start und Ziel benutzen (Rueckfall-Abzweig ohne Parallellauf, LeitungsRouter.wegStreng).
  */
 export function suchen(b: Belegung, start: Zelle, ziel: Zelle | null, istZiel: (z: Zelle) => boolean, netz: string, ebenen: number[], vorzug?: Vorzug,
-  optionen: { startVerbote?: number[]; streng?: string } = {}): Zelle[] | null {
+  optionen: { startVerbote?: number[]; streng?: string; fassade?: boolean } = {}): Zelle[] | null {
   const { nx, nz } = b.gitter, ne = ebenen.length, Z = ROUTER.zelle;
   const imRaster = (z: Zelle) => Number.isInteger(z.i) && Number.isInteger(z.k) && z.i >= 0 && z.k >= 0 && z.i < nx && z.k < nz;
   if (!imRaster(start) || (ziel && !imRaster(ziel))) return null;
@@ -97,12 +97,13 @@ export function suchen(b: Belegung, start: Zelle, ziel: Zelle | null, istZiel: (
   const h = (i: number, k: number) => (ziel ? (Math.abs(i - zi) + Math.abs(k - zk)) * Z * hf : 0);
   const istStartOderZiel = (i: number, k: number) => (i === start.i && k === start.k) || (i === zi && k === zk);
   // Liegt ein Anschluss selbst im Aussenrand (Adapter an der Fassade), darf die Anfahrt die Randzellen bis zum Inneren nutzen.
-  const RAND = Math.ceil(ROUTER.aussenRand / Z);
-  const imRand = (c: Zelle | null): c is Zelle => !!c && !b.innen(c.i, c.k);
+  // `fassade`: Laeufe halten ROUTER.fassade zur Aussenwand (nicht hinter den Heizkoerperanschluessen entlang).
+  const innen = optionen.fassade ? b.innenFassade : b.gitter.innen;
+  const RAND = Math.ceil((optionen.fassade ? ROUTER.fassade : ROUTER.aussenRand) / Z);
+  const imRand = (c: Zelle | null): c is Zelle => !!c && !innen[c.k * nx + c.i];
   const randStart = imRand(start), randZiel = imRand(ziel);
   const nahRandEnde = (i: number, k: number) => (randStart && Math.max(Math.abs(i - start.i), Math.abs(k - start.k)) <= RAND)
     || (randZiel && Math.max(Math.abs(i - zi), Math.abs(k - zk)) <= RAND);
-  const innen = b.gitter.innen;
   // `streng`: Zellen dieses Netzes (eigener Strang) nur nahe Start und Ziel benutzen (Rueckfall ohne Parallellauf).
   const streng = optionen.streng, NAH = 3;
   const nahEnde = (i: number, k: number) => Math.max(Math.abs(i - start.i), Math.abs(k - start.k)) <= NAH

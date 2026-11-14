@@ -271,6 +271,20 @@ export class LeitungsRouter {
           if (w.length >= 2 && boegen(w) < boegen(p) && aufSpur(w) >= aufSpur(p) - 1e-6 && zellenFrei(w) && this.befundfrei(w, netz, radius)) { besser = w; break; }
         }
       }
+      // Ueber dem Bogenlimit (ohne Spur): kurzen Ebenenwechsel (Ausweichen) um ein Stueck vor- oder zurueckschieben, wenn
+      // das einen Bogen spart; der A* rechnet den Ebenenwechsel ohne Bogenkosten (Task 8). Enden bleiben waagrecht.
+      for (let i = 2; !spurHalten && !besser && i + 2 < p.length; i++) {
+        const v1 = p[i], v2 = p[i + 1], vor = p[i - 1], nach = p[i + 2];
+        if (Math.abs(v1[0] - v2[0]) > EPS || Math.abs(v1[2] - v2[2]) > EPS || Math.abs(v1[1] - v2[1]) >= GRENZEN.steigleitung) continue;
+        // Zurueck: Wechsel am vorherigen Eckpunkt, das Stueck vor->v1 laeuft auf der neuen Hoehe.
+        const kandidaten: V3[][] = [[...p.slice(0, i), [vor[0], v2[1], vor[2]], v2, ...p.slice(i + 2)]];
+        // Vor: Wechsel am naechsten Eckpunkt, das Stueck v2->nach laeuft noch auf der alten Hoehe (nicht am letzten Punkt).
+        if (i + 2 < p.length - 1) kandidaten.push([...p.slice(0, i + 1), [nach[0], v1[1], nach[2]], ...p.slice(i + 2)]);
+        for (const roh of kandidaten) {
+          const w = bereinigen(roh);
+          if (w.length >= 2 && boegen(w) < boegen(p) && zellenFrei(w) && this.befundfrei(w, netz, radius)) { besser = w; break; }
+        }
+      }
       if (!besser) break;
       p = besser;
     }
@@ -287,6 +301,17 @@ export class LeitungsRouter {
     if (z) return this.glaetten(this.alsPunkte(z, a, b, radius), netz, radius);
     this.befunde.push({ regel: "kein_weg", leitungen: [netz.split("~")[0]], ort: a, hart: true });
     return bereinigen([a, [a[0], a[1], b[2]], [b[0], a[1], b[2]], b]);
+  }
+
+  /** Weg mit Fassadenabstand ROUTER.fassade (Rueckfall ueber dem Bogenlimit); null ohne Weg, ohne Befund (Task 8). */
+  private wegFassade(a: V3, b: V3, durch: string, basis: string, radius: number): V3[] | null {
+    const ebenen = this.ebenenBei(a[1]);
+    const [ia, ka] = zelleVon(this.b.gitter, a[0], a[2]), [ib, kb] = zelleVon(this.b.gitter, b[0], b[2]);
+    const y = ebenen.find((e) => Math.abs(e - a[1]) < 0.01);
+    if (y === undefined || (ia === ib && ka === kb)) return null;
+    const z = suchen(this.b, { y, i: ia, k: ka }, { y, i: ib, k: kb }, (c) => c.i === ib && c.k === kb && c.y === y, durch, ebenen,
+      this.spurFuer(durch), { fassade: true });
+    return z ? this.glaetten(this.alsPunkte(z, a, b, radius), basis, radius, false, durch) : null;
   }
 
   /**
@@ -404,8 +429,8 @@ export class LeitungsRouter {
     return this.befundfrei(w, netz, radius);
   }
 
-  /** Keine harten Pruefbefunde der Polylinie w mit sich selbst oder mit dem bisher verlegten eigenen Netz. */
-  private befundfrei(w: V3[], netz: string, radius: number, mitVorbelegten = false): boolean {
+  /** Keine harten Pruefbefunde der Polylinie w mit sich selbst, dem bisher verlegten eigenen Netz und (Vorgabe) seinen vorbelegten Teilen. */
+  private befundfrei(w: V3[], netz: string, radius: number, mitVorbelegten = true): boolean {
     const linie = (id: string, punkte: V3[]): PruefLeitung => ({ id, netz, punkte, radius, enden: [] });
     const vor = mitVorbelegten ? [...this.vor].filter(([k]) => k === netz || k.startsWith(`${netz}~`)).flatMap(([, v]) => v) : [];
     const eigene = [...this.eigeneVon(netz), ...vor].map((s, n) => linie(`e${n}`, s));
@@ -439,6 +464,23 @@ export class LeitungsRouter {
       p = Math.abs(ende - b[k]) < EPS ? p.slice(1) : [t, ...p.slice(1)];
     }
     return p.length >= 2 ? p : w;
+  }
+
+  /**
+   * Kurzer Versatz direkt nach einem T-Punkt (kuerzer als der Rohrabstand), danach ein senkrechtes Stueck und ein Lauf in
+   * dieselbe Richtung: den senkrechten Wechsel so weit verschieben, dass der Versatz den Rohrabstand erreicht (Task 8).
+   */
+  private versatzStrecken(w: V3[], radius: number): V3[] {
+    if (w.length < 4) return w;
+    const [a, b, c, d] = w, abstand = 2 * radius + GRENZEN.fuge + 0.005;
+    const waag = (u: V3, v: V3) => Math.abs(u[1] - v[1]) < EPS;
+    if (!waag(a, b) || waag(b, c) || !waag(c, d) || Math.abs(b[0] - c[0]) > EPS || Math.abs(b[2] - c[2]) > EPS) return w;
+    const k: 0 | 2 = Math.abs(a[0] - b[0]) > EPS ? 0 : 2, q: 0 | 2 = k === 0 ? 2 : 0, r = Math.sign(b[k] - a[k]);
+    if (Math.abs(b[k] - a[k]) >= abstand || Math.abs(c[q] - d[q]) > EPS || Math.sign(d[k] - c[k]) !== r) return w;
+    const ziel = a[k] + r * abstand;
+    if ((d[k] - ziel) * r <= EPS) return w;
+    const b2: V3 = [...b], c2: V3 = [...c]; b2[k] = ziel; c2[k] = ziel;
+    return [a, b2, c2, ...w.slice(3)];
   }
 
   /**
@@ -507,7 +549,7 @@ export class LeitungsRouter {
   /** Gruppenstrang (Ersatz fuer strangBaum): entferntestes Ziel zuerst, weitere als T-Abzweig; Geschosswechsel in der Steigzone. */
   strang(start: V3, ziele: StrangZiel[], spur: number, steigzone: { x: number; z: number } | null, netz: string): StrangBaum {
     const o = spur * SPUR;
-    const steig: [number, number] = steigzone ? this.steigLage(steigzone.x + o, steigzone.z + o, start, ziele, netz) : [start[0], start[2]];
+    let steig: [number, number] = steigzone ? this.steigLage(steigzone.x + o, steigzone.z + o, start, ziele, netz) : [start[0], start[2]];
     const gleich = (a: number, b: number) => Math.abs(a - b) < 1e-3;
     const kosten = (u: V3) => gleich(u[1], start[1]) ? Math.abs(u[0] - start[0]) + Math.abs(u[2] - start[2])
       : Math.abs(start[0] - steig[0]) + Math.abs(start[2] - steig[1]) + Math.abs(u[1] - start[1]) + Math.abs(u[0] - steig[0]) + Math.abs(u[2] - steig[1]);
@@ -530,6 +572,8 @@ export class LeitungsRouter {
             if (streng && this.befundfrei(streng, netz, ROHR.verteil)) punkte = streng;
           }
         } else {
+          // Erste Steigleitung des Strangs: Lage erst jetzt bestimmen, damit schon verlegte Abzweige Abstand halten (Task 8).
+          if (steigzone && !steigSegmente().length) steig = this.steigLage(steigzone.x + o, steigzone.z + o, start, ziele, netz);
           const kopf: V3 = [steig[0], u[1], steig[1]];
           const st = steigSegmente();
           let anfang: V3[];
@@ -554,11 +598,18 @@ export class LeitungsRouter {
             const rest = this.wegStreng(kopf, u, durch, netz, ROHR.verteil), streng = rest && zusammen(rest);
             if (streng && this.befundfrei(streng, netz, ROHR.verteil)) punkte = streng;
           }
+          // Ueber dem Bogenlimit: Lauf ab dem Kopf mit Fassadenabstand neu suchen (wie unten fuer Abzweige auf einer Ebene).
+          const zuViel = (w: V3[]) => Math.max(...boegenJeAbschnitt(w));
+          if (zuViel(punkte) > GRENZEN.maxBoegen) {
+            const rest = this.wegFassade(kopf, u, durch, netz, ROHR.verteil), neu = rest && zusammen(rest);
+            if (neu && zuViel(neu) < zuViel(punkte) && this.befundfrei(neu, netz, ROHR.verteil)) punkte = neu;
+          }
         }
       }
       // Laeuft der Abzweig am Anfang deckungsgleich auf dem eigenen Strang, beginnt er erst dort, wo er ihn verlaesst (T-Abzweig).
       if (segmente.length) {
-        const kurz = this.ohneGemeinsamenAnfang(punkte, netz);
+        let kurz = this.ohneGemeinsamenAnfang(punkte, netz);
+        if (kurz !== punkte && !this.befundfrei(kurz, netz, ROHR.verteil)) kurz = this.versatzStrecken(kurz, ROHR.verteil);
         if (kurz !== punkte && this.befundfrei(kurz, netz, ROHR.verteil)) punkte = kurz;
         // Kreuzt der Abzweig den eigenen Strang, beginnt er am letzten Kreuzungspunkt (T-Abzweig).
         if (!this.befundfrei(punkte, netz, ROHR.verteil)) {
@@ -567,7 +618,14 @@ export class LeitungsRouter {
         }
       }
       // Ueber dem Bogenlimit darf die Begradigung die Trassenspur verlassen (Pruefregel boegen hat Vorrang).
-      if (Math.max(...boegenJeAbschnitt(punkte)) > GRENZEN.maxBoegen) punkte = this.glaetten(punkte, netz, ROHR.verteil, false, durch);
+      const maxBoegen = (w: V3[]) => Math.max(...boegenJeAbschnitt(w));
+      if (maxBoegen(punkte) > GRENZEN.maxBoegen) punkte = this.glaetten(punkte, netz, ROHR.verteil, false, durch);
+      // Noch ueber dem Limit, Abzweig auf einer Ebene: neu suchen mit Fassadenabstand ROUTER.fassade [A] (kein Lauf
+      // hinter den Heizkoerperanschluessen mit Haken um fremde Steigleitungen), nur wenn weniger Boegen und befundfrei.
+      if (maxBoegen(punkte) > GRENZEN.maxBoegen && gleich(punkte[0][1], u[1])) {
+        const neu = this.wegFassade(punkte[0], u, durch, netz, ROHR.verteil);
+        if (neu && maxBoegen(neu) < maxBoegen(punkte) && this.befundfrei(neu, netz, ROHR.verteil)) punkte = neu;
+      }
       this.belegen(punkte, netz, ROHR.verteil);
       if (punkte.length >= 2) segmente.push(punkte);
       abzweige.push({ schluessel, punkte });

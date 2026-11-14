@@ -10,11 +10,11 @@ const PUNKTE: [number, number][] = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1
 const liegtIn = (r: Welt["grundriss"], x: number, z: number) =>
   r.some((q) => x >= q.x - EPS && x <= q.x + q.breite + EPS && z >= q.z - EPS && z <= q.z + q.tiefe + EPS);
 
-export function gitterFuer(welt: Welt): Gitter {
+export function gitterFuer(welt: Welt, m: number = ROUTER.aussenRand): Gitter {
   const r = welt.grundriss;
   const x0 = Math.min(...r.map((q) => q.x)), z0 = Math.min(...r.map((q) => q.z));
   const nx = Math.ceil((Math.max(...r.map((q) => q.x + q.breite)) - x0) / Z), nz = Math.ceil((Math.max(...r.map((q) => q.z + q.tiefe)) - z0) / Z);
-  const innen = new Uint8Array(nx * nz), m = ROUTER.aussenRand;
+  const innen = new Uint8Array(nx * nz);
   for (let k = 0; k < nz; k++) for (let i = 0; i < nx; i++) {
     const x = x0 + (i + 0.5) * Z, z = z0 + (k + 0.5) * Z;
     // Aussenrand am Gesamtumriss: alle acht Punkte im Abstand m muessen in der Vereinigung der Rechtecke liegen.
@@ -44,6 +44,8 @@ export const sperrabstand = (r: number, gegen: number = r) => r + gegen + GRENZE
 export class Belegung {
   readonly gitter: Gitter;
   readonly ebenen: number[];
+  /** Innenmaske mit groesserem Fassadenabstand ROUTER.fassade (Rueckfall ueber dem Bogenlimit, Task 8). */
+  readonly innenFassade: Uint8Array;
   /** Zellen je Ebene (nx * nz); Zellindex = Ebene * flaeche + k * nx + i. */
   private readonly flaeche: number;
   private readonly ebeneIndex = new Map<number, number>();
@@ -53,6 +55,7 @@ export class Belegung {
   private kosten: Float64Array;
   constructor(welt: Welt) {
     this.gitter = gitterFuer(welt);
+    this.innenFassade = gitterFuer(welt, ROUTER.fassade).innen;
     this.ebenen = [...ebenenFuer(welt).values()].flat().sort((a, b) => a - b);
     this.ebenen.forEach((y, n) => this.ebeneIndex.set(ek(y), n));
     this.flaeche = this.gitter.nx * this.gitter.nz;

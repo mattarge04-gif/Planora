@@ -61,15 +61,25 @@ describe("LeitungsRouter", () => {
     expect(r.befunde.map((b) => b.regel)).toContain("kein_weg");
   });
 
-  // Seed gilt fuer den alten Generator; nach Generatorwechsel (PO 14.11.) neuen isolierenden Seed waehlen (offen).
-  it.skip("Regression Zufallswelt 76: Anschluss-Steigleitung sperrt die Ausweichebene auch fuer den eigenen Strang", () => {
-    // Ohne LeitungsRouter.anschlussSperren lief der Strang auf der Ausweichebene dicht an der eigenen Steigleitung vorbei (abstand).
-    expect(rohrnetzMitBefunden(zufallsWelt(76), TEST_KATALOG, {}).befunde.filter((b) => b.hart)).toEqual([]);
-  });
-  // Seed gilt fuer den alten Generator; nach Generatorwechsel (PO 14.11.) neuen isolierenden Seed waehlen (offen).
-  it.skip("Regression Zufallswelt 88: Rueckfall-Abzweig laeuft nicht auf dem eigenen Strang", () => {
-    // Ohne wegStreng lief der Rueckfall ab dem Strangstart deckungsgleich auf einem eigenen Abzweig (abstand im selben Netz).
-    expect(rohrnetzMitBefunden(zufallsWelt(88), TEST_KATALOG, {}).befunde.filter((b) => b.hart)).toEqual([]);
+  // Regressionen aus den Zufallswelten (Task 8): je Router-Korrektur eine Welt, die ohne die Korrektur harte Befunde
+  // hat (isoliert geprueft, Generator nach PO-Entscheid 14.11.).
+  it.each([
+    [8, "Anschluss-Steigleitung sperrt die Ausweichebene auch fuer den eigenen Strang (anschlussSperren)"],
+    [27, "strenger Rueckfall-Abzweig ohne Parallellauf auf dem eigenen Strang (wegStreng)"],
+    [5, "geteilter Anschluss gibt die Polylinie ueber Eckpunkte frei (belegen offen)"],
+    [30, "deckungsgleicher Anfang wird T-Abzweig (ohneGemeinsamenAnfang)"],
+    [223, "kurzer Versatz nach dem T-Punkt auf Rohrabstand gestreckt (versatzStrecken)"],
+    [53, "Abzweig beginnt an der letzten Kreuzung des eigenen Strangs (abLetzterKreuzung)"],
+    [64, "Hauptleitungen untereinander nachgebessert (hauptNachbessern)"],
+    [55, "Abgangskorridor je Strangstart (korridor)"],
+    [901, "Strangstarts waehrend der Hauptleitungen frei (startsFreihalten)"],
+    [148, "befundfrei prueft die vorbelegten Teile des eigenen Netzes mit"],
+    [163, "Stummelkuerzung am Ziel schneidet keinen T-Punkt ab"],
+    [76, "Lage der Steigleitung erst beim ersten Geschosswechsel"],
+    [173, "Ebenenwechsel um ein Stueck verschoben ueber dem Bogenlimit (glaetten)"],
+    [314, "Rueckfall mit Fassadenabstand ueber dem Bogenlimit (wegFassade)"],
+  ])("Regression Zufallswelt %i: %s", (seed) => {
+    expect(rohrnetzMitBefunden(zufallsWelt(seed), TEST_KATALOG, {}).befunde.filter((b) => b.hart)).toEqual([]);
   });
 
   it("Zufall: 1000 Wege ohne harte Befunde (Radius bis 0.07)", () => {
