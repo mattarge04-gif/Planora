@@ -16,6 +16,7 @@ import { TwinSzenenTasten } from "../karten/TwinSzenenTasten";
 import { speicher } from "../ui/speicher";
 import type { BildschirmPunkt } from "../szene3/Interaktion";
 import { anlagenZeilen, anzeigeName, geschossListe, hinweisListe, kennzahlen, objektKarte, zentraleGeschoss, type AnlagenZeile, type Zielort } from "../dashboard";
+import { leitungsHinweise } from "../szene3/router/hinweise";
 import "./Twin.css";
 
 function webglVorhanden(): boolean {
@@ -152,6 +153,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
     return () => { ro.disconnect(); window.removeEventListener("resize", messen); };
   }, [bereit, !!(welt && beschreibung && katalog)]);
 
+  // Automatische Leitungsfuehrung pruefen (routet selbst): nur bei geaenderter Welt bzw. geaendertem Katalog.
+  const leitungsHinweis = useMemo(() => (welt && katalog ? leitungsHinweise(welt, katalog.eintraege) : []), [welt, katalog]);
   const daten = useMemo(() => {
     if (!welt || !beschreibung || !katalog) return null;
     const geschosse = geschossListe(welt);
@@ -161,10 +164,10 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
       .sort((x, y) => (hoehe.get(x.a.geschossId ?? "") ?? 0) - (hoehe.get(y.a.geschossId ?? "") ?? 0) || x.i - y.i).map((x) => x.a);
     return {
       zahlen: kennzahlen(welt, beschreibung), geschosse, anlagen,
-      hinweise: hinweisListe(welt, beschreibung),
+      hinweise: [...hinweisListe(welt, beschreibung), ...leitungsHinweis],
       technikId: zentraleGeschoss(welt),
     };
-  }, [welt, beschreibung, katalog]);
+  }, [welt, beschreibung, katalog, leitungsHinweis]);
 
   const modus: Modus = fokusId === null ? "uebersicht" : "technik";
   const waehleModus = (m: Modus) => { setOrtZiel(null); setFokusId(m === "uebersicht" ? null : fokusId ?? daten?.technikId ?? null); };
