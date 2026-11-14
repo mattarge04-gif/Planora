@@ -88,6 +88,11 @@ export class LeitungsRouter {
     const l = this.eigene.get(netz) ?? []; l.push(punkte); this.eigene.set(netz, l);
   }
 
+  /** Trassenspur eines Netzes; Teilnetze `netz~schluessel` (Strang) erben die Spur des Basisnetzes. */
+  private spurFuer(netz: string): Vorzug | undefined {
+    return this.spur.get(netz) ?? this.spur.get(netz.split("~")[0]);
+  }
+
   /** Spuren der Trasse fuer Leitungen auf dem Zentrale-Geschoss (Spec 5.3). */
   spurenFestlegen(auftraege: { netz: string; a: V3; b: V3 }[]) {
     const z = this.zentrale;
@@ -102,7 +107,7 @@ export class LeitungsRouter {
    * Zellpfad -> Eckpunkte, Enden exakt auf a/b eingerastet (Versatz hoechstens eine halbe Zelle).
    * Das erste und letzte waagrechte Stueck wird quer auf den Anker verschoben (samt anschliessender Steigstuecke),
    * die Zellmitte am Ende entfaellt, damit kein Rueckwaertsstueck entsteht. Ein gerader Zellpfad mit querem Versatz
-   * zwischen a und b erhaelt in der Mitte einen kleinen Versatz.
+   * zwischen a und b erhaelt am Ende ein L (kein Versatz in der Mitte).
    */
   private alsPunkte(zellen: Zelle[], a: V3, b: V3, radius: number): V3[] {
     const p = bereinigen(zellen.map((c) => { const [x, z] = mitteVon(this.b.gitter, c.i, c.k); return [x, c.y, z] as V3; }));
@@ -140,7 +145,7 @@ export class LeitungsRouter {
     const [ia, ka] = zelleVon(this.b.gitter, a[0], a[2]), [ib, kb] = zelleVon(this.b.gitter, b[0], b[2]);
     const start = { y: ebenen.find((y) => Math.abs(y - a[1]) < 0.01) ?? a[1], i: ia, k: ka }, ziel = { y: start.y, i: ib, k: kb };
     if (ia === ib && ka === kb) return bereinigen([a, [b[0], a[1], a[2]], b]);
-    const z = suchen(this.b, start, ziel, (c) => c.i === ib && c.k === kb && c.y === start.y, netz, ebenen, this.spur.get(netz));
+    const z = suchen(this.b, start, ziel, (c) => c.i === ib && c.k === kb && c.y === start.y, netz, ebenen, this.spurFuer(netz));
     if (z) return this.alsPunkte(z, a, b, radius);
     this.befunde.push({ regel: "kein_weg", leitungen: [netz.split("~")[0]], ort: a, hart: true });
     return bereinigen([a, [a[0], a[1], b[2]], [b[0], a[1], b[2]], b]);
@@ -188,7 +193,7 @@ export class LeitungsRouter {
     // Rueckfall A*: Ziel sind eigene Achszellen mit ABSTAND + Zelle zu allen Eckpunkten.
     const [i, k] = zelleVon(this.b.gitter, u[0], u[2]);
     const fern = (c: Zelle) => { const [x, z] = mitteVon(this.b.gitter, c.i, c.k); return ecken.every((e) => Math.hypot(e[0] - x, e[2] - z) >= ABSTAND + ROUTER.zelle); };
-    const z = suchen(this.b, { y, i, k }, null, (c) => c.y === y && this.b.eigen(c.y, c.i, c.k, netz) && fern(c), durch, ebenen, this.spur.get(netz));
+    const z = suchen(this.b, { y, i, k }, null, (c) => c.y === y && this.b.eigen(c.y, c.i, c.k, netz) && fern(c), durch, ebenen, this.spurFuer(netz));
     if (!z) return null;
     const ende = z.at(-1)!;
     let [ex, ez] = mitteVon(this.b.gitter, ende.i, ende.k);

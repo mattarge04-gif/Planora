@@ -31,6 +31,15 @@ describe("LeitungsRouter", () => {
     expect(baum.segmente.flat().some((p) => Math.abs(p[0] - 1) < 1e-6 && Math.abs(p[2] - 1) < 1e-6 && p[1] > 5)).toBe(true);
     expect(baum.abzweige.map((a) => a.schluessel).sort()).toEqual(["hk1", "hk2"]);
   });
+  it("Teilnetz netz~schluessel erbt die Trassenspur des Basisnetzes", () => {
+    const r = new LeitungsRouter(welt, TEST_KATALOG);
+    // Spur wie von spurenFestlegen unter der Gruppen-ID abgelegt (Test setzt sie direkt, die Welt hat keine Zentrale).
+    (r as unknown as { spur: Map<string, { achse: 0 | 2; wert: number }> }).spur.set("g", { achse: 0, wert: 3 });
+    const mit = r.weg([1, 2.8, 2.8], [9, 2.8, 2.8], "g~hk1");
+    const ohne = new LeitungsRouter(welt, TEST_KATALOG).weg([1, 2.8, 2.8], [9, 2.8, 2.8], "g~hk1");
+    expect(mit.some((p) => Math.abs(p[2] - 3) < 0.06)).toBe(true);
+    expect(ohne.some((p) => Math.abs(p[2] - 3) < 0.06)).toBe(false);
+  });
   it("blockierter Weg erzeugt Befund kein_weg und trotzdem eine Polylinie", () => {
     const r = new LeitungsRouter(welt, TEST_KATALOG);
     for (const y of [2.8, 2.55]) r.vorbelegen([[5, y, 0.05], [5, y, 5.95]], "sperre");
