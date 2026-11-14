@@ -1,4 +1,4 @@
-import type { V3 } from "./typen";
+import { GRENZEN, type V3 } from "./typen";
 
 const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
@@ -55,6 +55,22 @@ export function boegen(punkte: V3[]): number {
     if (richtungen.at(-1) !== r) richtungen.push(r);
   }
   return Math.max(0, richtungen.length - 1);
+}
+
+/**
+ * Boegen je Geschossabschnitt (PO-Entscheid 14.11.): Die Polylinie wird an jeder Steigleitung geteilt, d. h. an jedem
+ * senkrechten Stueck ab GRENZEN.steigleitung (1.0 m [A]). Die Steigleitung selbst und ihre beiden Uebergangsboegen
+ * gehoeren zu keinem Abschnitt. Kurze senkrechte Stuecke (Ausweichen 0.25 m, Stutzenversatz) bleiben im Abschnitt und
+ * zaehlen mit. Ergebnis: Bogenzahl je Abschnitt (mindestens ein Abschnitt).
+ */
+export function boegenJeAbschnitt(punkte: V3[]): number[] {
+  const abschnitte: V3[][] = [[]];
+  for (let i = 0; i < punkte.length; i++) {
+    const p = punkte[i], q = punkte[i + 1];
+    abschnitte.at(-1)!.push(p);
+    if (q && Math.abs(p[0] - q[0]) < EPS && Math.abs(p[2] - q[2]) < EPS && Math.abs(p[1] - q[1]) >= GRENZEN.steigleitung) abschnitte.push([]);
+  }
+  return abschnitte.map(boegen);
 }
 
 /** Schneiden sich die Grundriss-Projektionen zweier waagrechter, zueinander senkrechter Strecken im Inneren? */

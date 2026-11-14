@@ -195,6 +195,8 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
     if (router && Math.abs(a[1] - b[1]) < 0.01) {
       // Anschluesse (routerAnschluss) enden senkrecht auf der Leitungsebene; eine waagrechte Abgangsrichtung gibt es nicht.
       punkte = router.weg(a, b, netzVon(v), radius);
+      // Hauptleitungen untereinander: kein Parallellauf am geteilten Anschluss (Task 8).
+      if (v.art === "haupt") punkte = router.hauptNachbessern(a, b, punkte, netzVon(v), radius);
       // Am geteilten Anschluss (Kopf gehoert zu `haupt`) bleibt die Umgebung fuer die andere Hauptverbindung offen.
       const kopf = adapter.filter((r) => (geteilt.get(adapterKey(r)) ?? 0) > 1).map((r) => r.punkte.at(-1)!);
       router.belegen(punkte, netzVon(v), radius, kopf, netzVon(v).split("~")[0]);

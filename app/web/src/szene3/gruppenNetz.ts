@@ -448,12 +448,16 @@ export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], an
   // Feste Gruppenteile vor den Hauptleitungen belegen: Hauptlaeufe fuehren nicht ueber Abgaenge und Anschluesse. Weil
   // danach noch Hauptrohre folgen, sperren sie gegen den Hauptrohrradius (Sperrabstand paarweise, raster.sperrabstand).
   for (const x of vorbereitet) for (const p of fest(x)) { r.vorbelegen(p, x.st.gruppeId, ROHR.verteil, ROHR.haupt); r.anschlussSperren(p, x.st.gruppeId, ROHR.verteil, ROHR.haupt); }
+  for (const x of vorbereitet) r.korridor(x.start, x.st.gruppeId);
+  // Hauptlaeufe schliessen keinen Strangstart ein (vorlaeufige Sperre nur waehrend kantenNetz).
+  r.startsFreihalten(vorbereitet.map((x) => x.start));
   // Spuren fuer Haupt- und Gruppenleitungen in einer Zuteilung (kantenNetz ruft spurenFestlegen).
   let stuecke = kantenNetz(welt, katalog, anschluesse, haupt, r, vorbereitet.map((x) => {
     const ziel = x.ziele.find((z) => Math.abs(z.punkt[1] - x.start[1]) < 1e-3)?.punkt
       ?? (welt.steigzone ? [welt.steigzone.x, x.start[1], welt.steigzone.z] as V3 : x.start);
     return { netz: x.st.gruppeId, a: x.start, b: ziel };
   }));
+  r.startsFreigeben();
   // Gruppen mit Vorrang zuerst, in der Reihenfolge von `vorrang`; die uebrigen wie bisher.
   const rang = (id: string) => { const i = vorrang.indexOf(id); return i < 0 ? vorrang.length : i; };
   const reihe = [...vorbereitet].sort((a, b) => rang(a.st.gruppeId) - rang(b.st.gruppeId));

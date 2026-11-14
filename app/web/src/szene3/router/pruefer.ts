@@ -1,5 +1,5 @@
 import type { Rohrstueck } from "../netz";
-import { achsen, boegen, EPS, kreuztImGrundriss, schneidetQuader, segAbstand } from "./geometrie";
+import { achsen, boegenJeAbschnitt, EPS, kreuztImGrundriss, schneidetQuader, segAbstand } from "./geometrie";
 import { GRENZEN, type Befund, type Koerper, type PruefLeitung, type V3 } from "./typen";
 
 const schluessel = (p: V3) => p.map((x) => x.toFixed(4)).join(":");
@@ -37,7 +37,8 @@ export function pruefen(roh: PruefLeitung[], koerper: Koerper[]): Befund[] {
       if (u.length === 1 && v.length === 1 && u[0] === v[0]
         && Math.sign(p[i - 1][u[0]] - p[i - 2][u[0]]) !== Math.sign(p[i][u[0]] - p[i - 1][u[0]])) hart("rueckwaerts", [l.id], p[i - 1]);
     }
-    if (boegen(p) > GRENZEN.maxBoegen) hart("boegen", [l.id], p[0]);
+    // Boegen je Geschossabschnitt (PO 14.11.): Steigleitungen teilen die Leitung (geometrie.boegenJeAbschnitt).
+    if (Math.max(...boegenJeAbschnitt(p)) > GRENZEN.maxBoegen) hart("boegen", [l.id], p[0]);
     for (let i = 1; i < p.length; i++) for (let j = i + 2; j < p.length; j++) {
       if (segAbstand(p[i - 1], p[i], p[j - 1], p[j]).d < l.radius - EPS) hart("selbst", [l.id], p[i]);
     }

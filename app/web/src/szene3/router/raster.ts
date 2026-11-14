@@ -120,6 +120,25 @@ export class Belegung {
     const y = this.ebenen.find((e) => Math.abs(e - p[1]) < 0.01);
     if (y !== undefined) this.sperrenUm(y, [p[0], p[2]], [p[0], p[2]], name, sperrabstand(radius));
   }
+  /** Sperrt die Zellen im Umkreis R um p auf seiner Ebene unter `name` (vorlaeufig, siehe freigeben). */
+  sperrenBei(p: V3, name: string, R: number) {
+    const y = this.ebenen.find((e) => Math.abs(e - p[1]) < 0.01);
+    if (y !== undefined) this.sperrenUm(y, [p[0], p[2]], [p[0], p[2]], name, R);
+  }
+  /** Sperrt die Zellen im Umkreis R um die waagrechte Strecke a-b auf ihrer Ebene unter `name`. */
+  sperrenStrecke(a: V3, b: V3, name: string, R: number) {
+    const y = this.ebenen.find((e) => Math.abs(e - a[1]) < 0.01);
+    if (y !== undefined) this.sperrenUm(y, [a[0], a[2]], [b[0], b[2]], name, R);
+  }
+  /** Entfernt den Namen aus allen Zellen (vorlaeufige Sperren). */
+  freigeben(name: string) {
+    for (let i = 0; i < this.sperre.length; i++) {
+      const s = this.sperre[i];
+      if (!s) continue;
+      const n = s.indexOf(name);
+      if (n >= 0) { s.splice(n, 1); if (!s.length) this.sperre[i] = undefined; }
+    }
+  }
   /** Geraete sperren eine Ebene nur, wenn darueber weniger als 0.15 m Luft bleibt (Spec 9, PO-bestaetigt). */
   geraete(koerper: Koerper[]) {
     for (const k of koerper) for (const y of this.ebenen) {

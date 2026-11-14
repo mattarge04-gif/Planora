@@ -1,4 +1,5 @@
 import type { Welt, WeltGruppe, WeltSymbol } from "../../typen";
+import { SPUR } from "../gruppenNetz";
 import { verteilerLaenge } from "../technik";
 
 /** mulberry32: reproduzierbarer Zufall aus einem Startwert. */
@@ -13,8 +14,19 @@ const sym = (schluessel: string, id: string, x: number, y: number, z: number): W
 });
 
 /**
- * Zufallswelt fuer Router-Tests: 20 x 12 m, 1–4 Geschosse, Zentrale 6 x 5 m im EG mit WP, Speicher, Verteiler an
- * zufaelligen, ueberlappungsfreien Orten; 1–6 Gruppen mit je 1–3 Heizkoerpern in zufaelligen Einheiten.
+ * Zufallswelt fuer Router-Tests: 20 x 12 m, 1–4 Geschosse, Zentrale 7 x 6 m im EG mit WP, Speicher, Verteiler an
+ * zufaelligen Orten mit Wand-, Wartungs- und Steigzonenabstand (ZENTRALE); 1–6 Gruppen mit je 1–3 Heizkoerpern in
+ * zufaelligen Einheiten.
+ */
+/**
+ * Belegbare Zentrale [A] (PO-Entscheid 14.11.: Generator realistisch): Raum 7 x 6 m; 0.5 m zur Wand (Anschluesse und
+ * Rohrfuehrung hinter den Geraeten); 0.8 m zwischen Geraeten (Wartungs- und Bedienabstand, Herstellerangaben typisch
+ * 0.5–1.0 m); Steigzone samt Spurdiagonale mit 0.6 m freigehalten. Bis 6 Gruppen passt der Verteiler (2.3 m) so in
+ * jeder Ziehung.
+ */
+export const ZENTRALE = { breite: 7, tiefe: 6, wand: 0.5, geraete: 0.8, steigzone: 0.6 } as const;
+const STEIGZONE = { x: 5.6, z: 4.6 };
+/**
  */
 export function zufallsWelt(seed: number): Welt {
   const r = zufall(seed), wahl = <T,>(xs: T[]) => xs[Math.floor(r() * xs.length)];
@@ -23,22 +35,26 @@ export function zufallsWelt(seed: number): Welt {
   const einheiten: Welt["einheiten"] = [];
   for (const g of geschosse) {
     const teile = g.id === "g0"
-      ? [{ id: "technik", x: 0, z: 0, b: 6, t: 5 }, { id: "g0-flur", x: 0, z: 5, b: 6, t: 7 }, { id: "g0-a", x: 6, z: 0, b: 7, t: 12 }, { id: "g0-b", x: 13, z: 0, b: 7, t: 12 }]
+      ? [{ id: "technik", x: 0, z: 0, b: ZENTRALE.breite, t: ZENTRALE.tiefe }, { id: "g0-flur", x: 0, z: ZENTRALE.tiefe, b: ZENTRALE.breite, t: 12 - ZENTRALE.tiefe },
+        { id: "g0-a", x: ZENTRALE.breite, z: 0, b: 13 - ZENTRALE.breite, t: 12 }, { id: "g0-b", x: 13, z: 0, b: 7, t: 12 }]
       : [{ id: `${g.id}-a`, x: 0, z: 0, b: 7, t: 12 }, { id: `${g.id}-b`, x: 7, z: 0, b: 7, t: 12 }, { id: `${g.id}-c`, x: 14, z: 0, b: 6, t: 12 }];
     for (const e of teile) einheiten.push({ id: e.id, geschossId: g.id, bezeichnung: e.id, art: e.id === "technik" ? "technik" : "buero",
       rechteck: { x: e.x, z: e.z, breite: e.b, tiefe: e.t }, quelle: "schematisch" });
   }
-  // Zentrale-Geraete per Verwerfungsstichprobe, 0.3 m Wandabstand, 0.4 m untereinander [A].
+  // Zentrale-Geraete per Verwerfungsstichprobe mit den Abstaenden aus ZENTRALE [A].
+  const { breite: B, tiefe: T, wand: W, geraete: A, steigzone: S } = ZENTRALE, L = SPUR * (nGruppen - 1);
   const geraete: { key: string; id: string; b: number; t: number }[] = [
     { key: "WP", id: "waermepumpe", b: 1, t: 0.6 }, { key: "SP", id: "speicher", b: 0.9, t: 0.9 }, { key: "V", id: "verteiler", b: verteilerLaenge(nGruppen), t: 0.3 }];
   const gesetzt: { x: number; z: number; b: number; t: number }[] = [];
   const symbole: WeltSymbol[] = [];
   for (const g of geraete) {
     for (let versuch = 0; versuch < 500; versuch++) {
-      const x = 0.3 + g.b / 2 + r() * (6 - 0.6 - g.b), z = 0.3 + g.t / 2 + r() * (5 - 0.6 - g.t);
-      if (gesetzt.some((o) => Math.abs(o.x - x) < (o.b + g.b) / 2 + 0.4 && Math.abs(o.z - z) < (o.t + g.t) / 2 + 0.4)) continue;
+      const x = W + g.b / 2 + r() * (B - 2 * W - g.b), z = W + g.t / 2 + r() * (T - 2 * W - g.t);
+      if (gesetzt.some((o) => Math.abs(o.x - x) < (o.b + g.b) / 2 + A && Math.abs(o.z - z) < (o.t + g.t) / 2 + A)) continue;
+      if (x + g.b / 2 > STEIGZONE.x - S && x - g.b / 2 < STEIGZONE.x + L + S && z + g.t / 2 > STEIGZONE.z - S && z - g.t / 2 < STEIGZONE.z + L + S) continue;
       gesetzt.push({ x, z, b: g.b, t: g.t }); symbole.push(sym(g.key, g.id, x, 0, z)); break;
     }
+    if (!symbole.some((s) => s.schluessel === g.key)) throw new Error(`zufallsWelt ${seed}: ${g.key} nicht platzierbar`);
   }
   const raeume = einheiten.filter((e) => e.id !== "technik");
   const gruppen: WeltGruppe[] = [];
@@ -59,5 +75,5 @@ export function zufallsWelt(seed: number): Welt {
     gruppen.push({ id: `gr${i}`, verteiler: "V", nummer: i, art: "ungeregelt", bezeichnung: `Gruppe ${i}`, verbraucher, zubehoer: [] });
   }
   return { regelwerkVersion: 2, hash: `zufall-${seed}`, grundriss: [{ x: 0, z: 0, breite: 20, tiefe: 12 }], hinweise: [],
-    geschosse, einheiten, symbole, gruppen, steigzone: { x: 5.5, z: 4.5 } };
+    geschosse, einheiten, symbole, gruppen, steigzone: { ...STEIGZONE } };
 }

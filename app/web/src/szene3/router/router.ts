@@ -7,10 +7,11 @@ import { pruefen } from "./pruefer";
 import { Belegung, ebenenFuer, mitteVon, sperrabstand, zelleVon } from "./raster";
 import { spurenZuteilen, spurWert, trassenLage, type Lage } from "./trasse";
 import { ROHR } from "../technik";
-import { boegen, segAbstand } from "./geometrie";
+import { boegen, boegenJeAbschnitt, segAbstand } from "./geometrie";
 import { GRENZEN, ROUTER, type Befund, type PruefLeitung, type V3 } from "./typen";
 
 const EPS = 1e-6;
+const START_FREI = "vorlaeufig:strangstart";
 const ERZEUGER = new Set(["heizung.waermepumpe", "heizung.gaskessel", "heizung.oelkessel", "heizung.fernwaerme_uebergabe"]);
 
 /**
@@ -70,6 +71,8 @@ export class LeitungsRouter {
   private b: Belegung;
   private ebenen: Map<string, number[]>;
   private eigene = new Map<string, V3[][]>();
+  /** Vorbelegte Stuecke je Netz (Anschluesse, feste Gruppenteile). */
+  private vor = new Map<string, V3[][]>();
   /** Alle vor- und verlegten Stuecke (auch ausserhalb der Leitungsebenen, z. B. Stummel auf Stutzenhoehe). */
   private alle: V3[][] = [];
   private spur = new Map<string, Vorzug>();
@@ -94,7 +97,25 @@ export class LeitungsRouter {
   }
 
   /** `radius`: Rohrradius fuer den Sperrabstand (Vorgabe Hauptrohr); `gegen`: dickstes danach noch verlegtes Rohr. */
-  vorbelegen(punkte: V3[], netz: string, radius: number = ROHR.haupt, gegen: number = radius) { this.b.belegen(punkte, netz, radius, gegen); this.alle.push(punkte); }
+  vorbelegen(punkte: V3[], netz: string, radius: number = ROHR.haupt, gegen: number = radius) {
+    this.b.belegen(punkte, netz, radius, gegen); this.alle.push(punkte);
+    const l = this.vor.get(netz) ?? []; l.push(punkte); this.vor.set(netz, l);
+  }
+  /**
+   * Haelt waehrend der Hauptleitungen den Umkreis ROUTER.startFrei [A] um Strangstarts frei, damit kein Hauptlauf den
+   * Start einer Gruppe einschliesst (Task 8, Gruppe ohne Weg); danach `startsFreigeben`.
+   */
+  startsFreihalten(punkte: V3[]) { for (const p of punkte) this.b.sperrenBei(p, START_FREI, ROUTER.startFrei); }
+  startsFreigeben() { this.b.freigeben(START_FREI); }
+  /**
+   * Abgangskorridor eines Strangstarts [A]: ROUTER.korridor beidseits quer zum Verteiler (Abgaenge liegen entlang x,
+   * der Korridor entlang z), Breite wie der Sperrabstand eines Gruppenrohrs. Nur das eigene Netz darf hinein; so
+   * schneiden frueher verlegte Straenge den inneren Abgaengen eines dichten Verteilers den Weg nicht ab (Task 8).
+   */
+  korridor(start: V3, netz: string) {
+    const k = ROUTER.korridor;
+    this.b.sperrenStrecke([start[0], start[1], start[2] - k], [start[0], start[1], start[2] + k], netz, sperrabstand(ROHR.verteil));
+  }
   /**
    * Anschluss-Steigleitung (endet oben auf der Leitungsebene): unterhalb ihres oberen Endes (Ausweichebene) sperrt sie
    * fuer alle Netze, auch fuer das eigene. Sonst fuehrt der eigene Strang auf der Ausweichebene dicht an ihr vorbei
@@ -117,18 +138,35 @@ export class LeitungsRouter {
     const nah = (p: V3) => offen.some((q) => Math.abs(q[0] - p[0]) < EPS && Math.abs(q[1] - p[1]) < EPS && Math.abs(q[2] - p[2]) < EPS);
     const L = sperrabstand(radius) + ROUTER.zelle;
     let rest = punkte;
-    const schneiden = (von: V3, nach: V3): V3 => {
-      const d = Math.hypot(nach[0] - von[0], nach[1] - von[1], nach[2] - von[2]), t = Math.min(1, L / Math.max(d, EPS));
-      return [von[0] + (nach[0] - von[0]) * t, von[1] + (nach[1] - von[1]) * t, von[2] + (nach[2] - von[2]) * t];
+    // Teilt die Polylinie p nach der Laenge L ab p[0] (ueber Eckpunkte hinweg): [nahes Stueck, Rest]. Ein kurzer
+    // Versatz direkt am Anschluss (z. B. 0.1 m) gibt so auch das Stueck davor frei (Task 8, Hauptleitung ohne Weg).
+    const teilen = (p: V3[]): [V3[], V3[]] => {
+      let r = L;
+      for (let n = 1; n < p.length; n++) {
+        const a = p[n - 1], b = p[n], d = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+        if (d >= r) {
+          const t = r / Math.max(d, EPS), c: V3 = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+          return [[...p.slice(0, n), c], [c, ...p.slice(n)]];
+        }
+        r -= d;
+      }
+      return [p, [p.at(-1)!]];
     };
     if (rest.length >= 2 && nah(rest[0])) {
-      const c = schneiden(rest[0], rest[1]); this.b.belegen([rest[0], c], basis, radius); rest = [c, ...rest.slice(1)];
+      const [vorn, hinten] = teilen(rest); this.b.belegen(vorn, basis, radius); rest = hinten;
     }
     if (rest.length >= 2 && nah(rest.at(-1)!)) {
-      const c = schneiden(rest.at(-1)!, rest.at(-2)!); this.b.belegen([c, rest.at(-1)!], basis, radius); rest = [...rest.slice(0, -1), c];
+      const [vorn, hinten] = teilen([...rest].reverse()); this.b.belegen([...vorn].reverse(), basis, radius); rest = [...hinten].reverse();
     }
     this.b.belegen(rest, netz, radius);
     const l = this.eigene.get(netz) ?? []; l.push(punkte); this.eigene.set(netz, l);
+  }
+
+  /** Verlegte Stuecke des Netzes und seiner Teilnetze `netz~x` (z. B. alle Hauptverbindungen unter `haupt`). */
+  private eigeneVon(netz: string): V3[][] {
+    const l: V3[][] = [];
+    for (const [k, v] of this.eigene) if (k === netz || k.startsWith(`${netz}~`)) l.push(...v);
+    return l;
   }
 
   /** Trassenspur eines Netzes; Teilnetze `netz~schluessel` (Strang) erben die Spur des Basisnetzes. */
@@ -264,7 +302,7 @@ export class LeitungsRouter {
     const start = { y: ebenen.find((y) => Math.abs(y - a[1]) < 0.01) ?? a[1], i: ia, k: ka }, ziel = { y: start.y, i: ib, k: kb };
     const gleich = (p: V3) => Math.abs(p[0] - a[0]) < EPS && Math.abs(p[1] - a[1]) < EPS && Math.abs(p[2] - a[2]) < EPS;
     const verbote: number[] = [];
-    for (const s of this.eigene.get(basis) ?? []) for (let n = 1; n < s.length; n++) {
+    for (const s of this.eigeneVon(basis)) for (let n = 1; n < s.length; n++) {
       const [p, q] = gleich(s[n - 1]) ? [s[n - 1], s[n]] : gleich(s[n]) ? [s[n], s[n - 1]] : [null, null];
       const r = p && q ? rasterRichtung([q[0] - p[0], q[1] - p[1], q[2] - p[2]]) : undefined;
       if (r !== undefined) verbote.push(r);
@@ -367,10 +405,81 @@ export class LeitungsRouter {
   }
 
   /** Keine harten Pruefbefunde der Polylinie w mit sich selbst oder mit dem bisher verlegten eigenen Netz. */
-  private befundfrei(w: V3[], netz: string, radius: number): boolean {
+  private befundfrei(w: V3[], netz: string, radius: number, mitVorbelegten = false): boolean {
     const linie = (id: string, punkte: V3[]): PruefLeitung => ({ id, netz, punkte, radius, enden: [] });
-    const eigene = (this.eigene.get(netz) ?? []).map((s, n) => linie(`e${n}`, s));
+    const vor = mitVorbelegten ? [...this.vor].filter(([k]) => k === netz || k.startsWith(`${netz}~`)).flatMap(([, v]) => v) : [];
+    const eigene = [...this.eigeneVon(netz), ...vor].map((s, n) => linie(`e${n}`, s));
     return !pruefen([linie("neu", w), ...eigene], []).some((f) => f.hart && f.leitungen.includes("neu"));
+  }
+
+  /**
+   * Schneidet den Anfang von w ab, solange sein erstes Stueck waagrecht und gleich gerichtet auf einem Stueck des eigenen
+   * Netzes liegt (Rueckfall-Weg ab Start oder Kopf): w beginnt dann am Ende der Ueberdeckung als T-Abzweig (Task 8).
+   * Gibt w unveraendert zurueck, wenn nichts abzuschneiden ist.
+   */
+  private ohneGemeinsamenAnfang(w: V3[], netz: string): V3[] {
+    let p = w;
+    const eigene = this.eigeneVon(netz).flatMap((s) => s.slice(1).map((q, n) => [s[n], q] as [V3, V3]));
+    const achse = (u: V3, v: V3) => [0, 1, 2].filter((i) => Math.abs(u[i] - v[i]) > EPS);
+    for (let runde = 0; runde < 20 && p.length >= 2; runde++) {
+      const a = p[0], b = p[1], ax = achse(a, b);
+      if (ax.length !== 1) break;
+      const k = ax[0], quer = [0, 1, 2].filter((i) => i !== k), r = Math.sign(b[k] - a[k]);
+      let ende: number | null = null;
+      for (const [c, d] of eigene) {
+        if (quer.some((i) => Math.abs(c[i] - a[i]) > EPS || Math.abs(d[i] - a[i]) > EPS)) continue;
+        const lo = Math.min(c[k], d[k]), hi = Math.max(c[k], d[k]);
+        if (a[k] < lo - EPS || a[k] > hi + EPS) continue;
+        // Ueberdeckung ab a in Laufrichtung bis zum Ende des eigenen Stuecks bzw. von a-b.
+        const bis = r > 0 ? Math.min(hi, b[k]) : Math.max(lo, b[k]);
+        if ((bis - a[k]) * r > 0.01 && (ende === null || (bis - ende) * r > 0)) ende = bis;
+      }
+      if (ende === null) break;
+      const t: V3 = [...a]; t[k] = ende;
+      p = Math.abs(ende - b[k]) < EPS ? p.slice(1) : [t, ...p.slice(1)];
+    }
+    return p.length >= 2 ? p : w;
+  }
+
+  /**
+   * Letzter Punkt von w, an dem w ein Stueck des eigenen Netzes im Inneren rechtwinklig kreuzt (waagrecht auf gleicher
+   * Hoehe oder eine eigene Steigleitung); w beginnt dann dort (T-Abzweig). null ohne Kreuzung (Task 8).
+   */
+  private abLetzterKreuzung(w: V3[], netz: string): V3[] | null {
+    const eigene = this.eigeneVon(netz).flatMap((s) => s.slice(1).map((q, n) => [s[n], q] as [V3, V3]));
+    for (let i = w.length - 2; i >= 0; i--) {
+      const a = w[i], b = w[i + 1];
+      if (Math.abs(a[1] - b[1]) > EPS) continue;
+      const k: 0 | 2 = Math.abs(a[0] - b[0]) > EPS ? 0 : 2, q: 0 | 2 = k === 0 ? 2 : 0;
+      let best: number | null = null;
+      for (const [c, d] of eigene) {
+        let t: number | null = null;
+        if (Math.abs(c[1] - a[1]) < EPS && Math.abs(d[1] - a[1]) < EPS && Math.abs(c[k] - d[k]) < EPS && Math.abs(c[q] - d[q]) > EPS) {
+          // Rechtwinkliges eigenes Stueck auf gleicher Hoehe: Schnitt im Inneren beider Stuecke.
+          if (a[q] > Math.min(c[q], d[q]) + EPS && a[q] < Math.max(c[q], d[q]) - EPS) t = c[k];
+        } else if (Math.abs(c[0] - d[0]) < EPS && Math.abs(c[2] - d[2]) < EPS && Math.abs(c[q] - a[q]) < EPS
+          && a[1] > Math.min(c[1], d[1]) + EPS && a[1] < Math.max(c[1], d[1]) - EPS) t = c[k];
+        if (t === null || t <= Math.min(a[k], b[k]) + EPS || t >= Math.max(a[k], b[k]) - EPS) continue;
+        if (best === null || (t - best) * Math.sign(b[k] - a[k]) > 0) best = t;
+      }
+      if (best !== null) { const p: V3 = [...a]; p[k] = best; return [p, ...w.slice(i + 1)]; }
+    }
+    return null;
+  }
+
+  /**
+   * Hauptverbindung nach dem Verlegen nachbessern (Task 8): Erzeugt sie mit den bisherigen Hauptleitungen (Pruefnetz
+   * `haupt`) einen harten Befund, zuerst den deckungsgleichen Anfang bzw. das Ende abschneiden (T-Abzweig am geteilten
+   * Anschluss), sonst streng neu suchen. Unveraendert, wenn nichts befundfrei ist.
+   */
+  hauptNachbessern(a: V3, b: V3, w: V3[], netz: string, radius: number): V3[] {
+    const basis = netz.split("~")[0];
+    // Geprueft wird mit den Anschluessen des Hauptnetzes (geteilter Anschluss am Speicher).
+    if (this.befundfrei(w, basis, radius, true)) return w;
+    const kurz = [...this.ohneGemeinsamenAnfang([...this.ohneGemeinsamenAnfang(w, basis)].reverse(), basis)].reverse();
+    if (this.befundfrei(kurz, basis, radius, true)) return kurz;
+    const streng = this.wegStreng(a, b, netz, basis, radius);
+    return streng && this.befundfrei(streng, basis, radius, true) ? streng : w;
   }
 
   /**
@@ -447,8 +556,18 @@ export class LeitungsRouter {
           }
         }
       }
+      // Laeuft der Abzweig am Anfang deckungsgleich auf dem eigenen Strang, beginnt er erst dort, wo er ihn verlaesst (T-Abzweig).
+      if (segmente.length) {
+        const kurz = this.ohneGemeinsamenAnfang(punkte, netz);
+        if (kurz !== punkte && this.befundfrei(kurz, netz, ROHR.verteil)) punkte = kurz;
+        // Kreuzt der Abzweig den eigenen Strang, beginnt er am letzten Kreuzungspunkt (T-Abzweig).
+        if (!this.befundfrei(punkte, netz, ROHR.verteil)) {
+          const spaet = this.abLetzterKreuzung(punkte, netz);
+          if (spaet && this.befundfrei(spaet, netz, ROHR.verteil)) punkte = spaet;
+        }
+      }
       // Ueber dem Bogenlimit darf die Begradigung die Trassenspur verlassen (Pruefregel boegen hat Vorrang).
-      if (boegen(punkte) > GRENZEN.maxBoegen) punkte = this.glaetten(punkte, netz, ROHR.verteil, false, durch);
+      if (Math.max(...boegenJeAbschnitt(punkte)) > GRENZEN.maxBoegen) punkte = this.glaetten(punkte, netz, ROHR.verteil, false, durch);
       this.belegen(punkte, netz, ROHR.verteil);
       if (punkte.length >= 2) segmente.push(punkte);
       abzweige.push({ schluessel, punkte });

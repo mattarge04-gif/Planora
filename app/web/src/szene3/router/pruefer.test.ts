@@ -33,6 +33,17 @@ describe("pruefen", () => {
     const zick: V3[] = [[0, 0, 0], [1, 0, 0], [1, 0, 1], [2, 0, 1], [2, 0, 0], [3, 0, 0], [3, 0, 1], [4, 0, 1], [4, 0, 0]];
     expect(regeln(pruefen([L("a", "n1", zick)], []))).toEqual(["boegen"]);
   });
+  it("Boegen je Geschoss (PO 14.11.): Strang ueber zwei Geschosse mit je 4 Boegen ist zulaessig", () => {
+    const strang: V3[] = [[0, 2.8, 0], [1, 2.8, 0], [1, 2.8, 1], [2, 2.8, 1], [2, 2.8, 2], [3, 2.8, 2],
+      [3, 6, 2], [4, 6, 2], [4, 6, 3], [5, 6, 3], [5, 6, 4], [6, 6, 4]];
+    expect(boegen(strang)).toBe(10);
+    expect(regeln(pruefen([L("a", "n1", strang)], []))).toEqual([]);
+  });
+  it("Boegen je Geschoss: 7 Boegen in einem Abschnitt bleiben hart, Ausweich-Boegen zaehlen mit", () => {
+    const abschnitt: V3[] = [[0, 2.8, 0], [1, 2.8, 0], [1, 2.55, 0], [2, 2.55, 0], [2, 2.8, 0], [2, 2.8, 1], [3, 2.8, 1], [3, 2.8, 2], [4, 2.8, 2],
+      [4, 6, 2], [5, 6, 2]];
+    expect(regeln(pruefen([L("a", "n1", abschnitt)], []))).toEqual(["boegen"]);
+  });
   it("Rohr durch fremdes Geraet, eigenes Endgeraet erlaubt", () => {
     const k: Koerper[] = [{ schluessel: "S", min: [1, 0, -0.5], max: [2, 1.8, 0.5] }];
     expect(regeln(pruefen([L("a", "n1", [[0, 1, 0], [3, 1, 0]])], k))).toEqual(["durch_geraet"]);
