@@ -4,7 +4,8 @@ import { LeitungsRouter } from "./router";
 import { pruefen } from "./pruefer";
 import { TEST_KATALOG } from "./testKatalog";
 import type { V3 } from "./typen";
-import { zufall } from "./zufallsWelt";
+import { zufall, zufallsWelt } from "./zufallsWelt";
+import { rohrnetzMitBefunden } from "../netz";
 import { ROHR } from "../technik";
 
 const welt: Welt = { regelwerkVersion: 2, hash: "r", grundriss: [{ x: 0, z: 0, breite: 10, tiefe: 6 }], hinweise: [], symbole: [], einheiten: [],
@@ -58,6 +59,15 @@ describe("LeitungsRouter", () => {
     const w = r.weg([2, 2.8, 3], [8, 2.8, 3], "n");
     expect(w.length).toBeGreaterThanOrEqual(2);
     expect(r.befunde.map((b) => b.regel)).toContain("kein_weg");
+  });
+
+  it("Regression Zufallswelt 76: Anschluss-Steigleitung sperrt die Ausweichebene auch fuer den eigenen Strang", () => {
+    // Ohne LeitungsRouter.anschlussSperren lief der Strang auf der Ausweichebene dicht an der eigenen Steigleitung vorbei (abstand).
+    expect(rohrnetzMitBefunden(zufallsWelt(76), TEST_KATALOG, {}).befunde.filter((b) => b.hart)).toEqual([]);
+  });
+  it("Regression Zufallswelt 88: Rueckfall-Abzweig laeuft nicht auf dem eigenen Strang", () => {
+    // Ohne wegStreng lief der Rueckfall ab dem Strangstart deckungsgleich auf einem eigenen Abzweig (abstand im selben Netz).
+    expect(rohrnetzMitBefunden(zufallsWelt(88), TEST_KATALOG, {}).befunde.filter((b) => b.hart)).toEqual([]);
   });
 
   it("Zufall: 1000 Wege ohne harte Befunde (Radius bis 0.07)", () => {

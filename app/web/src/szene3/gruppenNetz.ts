@@ -447,7 +447,7 @@ export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], an
   const fest = (x: (typeof vorbereitet)[number]): V3[][] => [[x.abgang, x.start], ...Object.values(x.anschluss).map((a) => a.riser)];
   // Feste Gruppenteile vor den Hauptleitungen belegen: Hauptlaeufe fuehren nicht ueber Abgaenge und Anschluesse. Weil
   // danach noch Hauptrohre folgen, sperren sie gegen den Hauptrohrradius (Sperrabstand paarweise, raster.sperrabstand).
-  for (const x of vorbereitet) for (const p of fest(x)) r.vorbelegen(p, x.st.gruppeId, ROHR.verteil, ROHR.haupt);
+  for (const x of vorbereitet) for (const p of fest(x)) { r.vorbelegen(p, x.st.gruppeId, ROHR.verteil, ROHR.haupt); r.anschlussSperren(p, x.st.gruppeId, ROHR.verteil, ROHR.haupt); }
   // Spuren fuer Haupt- und Gruppenleitungen in einer Zuteilung (kantenNetz ruft spurenFestlegen).
   let stuecke = kantenNetz(welt, katalog, anschluesse, haupt, r, vorbereitet.map((x) => {
     const ziel = x.ziele.find((z) => Math.abs(z.punkt[1] - x.start[1]) < 1e-3)?.punkt

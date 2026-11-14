@@ -96,6 +96,19 @@ export class LeitungsRouter {
   /** `radius`: Rohrradius fuer den Sperrabstand (Vorgabe Hauptrohr); `gegen`: dickstes danach noch verlegtes Rohr. */
   vorbelegen(punkte: V3[], netz: string, radius: number = ROHR.haupt, gegen: number = radius) { this.b.belegen(punkte, netz, radius, gegen); this.alle.push(punkte); }
   /**
+   * Anschluss-Steigleitung (endet oben auf der Leitungsebene): unterhalb ihres oberen Endes (Ausweichebene) sperrt sie
+   * fuer alle Netze, auch fuer das eigene. Sonst fuehrt der eigene Strang auf der Ausweichebene dicht an ihr vorbei
+   * und steigt erst neben dem Ziel auf (Pruefregel abstand im selben Netz, Task 8).
+   */
+  anschlussSperren(punkte: V3[], netz: string, radius: number = ROHR.haupt, gegen: number = radius) {
+    for (let n = 1; n < punkte.length; n++) {
+      const a = punkte[n - 1], b = punkte[n];
+      if (Math.abs(a[0] - b[0]) > EPS || Math.abs(a[2] - b[2]) > EPS || Math.abs(a[1] - b[1]) < EPS) continue;
+      const lo = Math.min(a[1], b[1]), hi = Math.max(a[1], b[1]) - ROUTER.ausweich / 2;
+      if (hi > lo) this.b.belegen([[a[0], lo, a[2]], [a[0], hi, a[2]]], `sperre:${netz}`, radius, gegen);
+    }
+  }
+  /**
    * `offen`: Endpunkte, an denen ein Anschluss mit anderen Verbindungen geteilt wird; das End- bzw. Anfangsstueck wird
    * dort auf Sperrabstand plus eine Zelle nur fuer `basis` belegt (Teilnetze von `basis` duerfen hinein).
    */
@@ -226,21 +239,39 @@ export class LeitungsRouter {
     return p;
   }
 
-  /**
-   * `radius`: Rohrradius, unter dem kurze Zwischenstuecke entfernt werden (Vorgabe Hauptrohr).
-   * `abgang`: Richtung der waagrechten Anschlussstuecke, die in a enden bzw. in b enden (Adapter); der Lauf setzt sie
-   * fort und fuehrt nicht ueber sie zurueck.
-   */
-  weg(a: V3, b: V3, netz: string, radius: number = ROHR.haupt, abgang: { a?: V3; b?: V3 } = {}): V3[] {
+  /** `radius`: Rohrradius, unter dem kurze Zwischenstuecke entfernt werden (Vorgabe Hauptrohr). */
+  weg(a: V3, b: V3, netz: string, radius: number = ROHR.haupt): V3[] {
     const ebenen = this.ebenenBei(a[1]);
     const [ia, ka] = zelleVon(this.b.gitter, a[0], a[2]), [ib, kb] = zelleVon(this.b.gitter, b[0], b[2]);
     const start = { y: ebenen.find((y) => Math.abs(y - a[1]) < 0.01) ?? a[1], i: ia, k: ka }, ziel = { y: start.y, i: ib, k: kb };
     if (ia === ib && ka === kb) return bereinigen([a, [b[0], a[1], a[2]], b]);
-    const z = suchen(this.b, start, ziel, (c) => c.i === ib && c.k === kb && c.y === start.y, netz, ebenen, this.spurFuer(netz),
-      { start: rasterRichtung(abgang.a), zielVerbot: rasterRichtung(abgang.b) });
+    const z = suchen(this.b, start, ziel, (c) => c.i === ib && c.k === kb && c.y === start.y, netz, ebenen, this.spurFuer(netz));
     if (z) return this.glaetten(this.alsPunkte(z, a, b, radius), netz, radius);
     this.befunde.push({ regel: "kein_weg", leitungen: [netz.split("~")[0]], ort: a, hart: true });
     return bereinigen([a, [a[0], a[1], b[2]], [b[0], a[1], b[2]], b]);
+  }
+
+  /**
+   * Rueckfall-Weg eines Abzweigs ab einem Punkt a des eigenen Strangs (Start oder Kopf der Steigleitung), wenn kein
+   * T-Stich passt: Zellen des eigenen Netzes `basis` nur nahe a und b, kein Abgang in Richtung eines eigenen Stuecks,
+   * das in a beginnt oder endet. Verhindert den Parallellauf auf dem eigenen Strang (Pruefregel abstand, Task 8).
+   * null ohne Weg (kein Befund; der Aufrufer behaelt seinen bisherigen Weg).
+   */
+  private wegStreng(a: V3, b: V3, durch: string, basis: string, radius: number): V3[] | null {
+    const ebenen = this.ebenenBei(a[1]);
+    const [ia, ka] = zelleVon(this.b.gitter, a[0], a[2]), [ib, kb] = zelleVon(this.b.gitter, b[0], b[2]);
+    if (ia === ib && ka === kb) return null;
+    const start = { y: ebenen.find((y) => Math.abs(y - a[1]) < 0.01) ?? a[1], i: ia, k: ka }, ziel = { y: start.y, i: ib, k: kb };
+    const gleich = (p: V3) => Math.abs(p[0] - a[0]) < EPS && Math.abs(p[1] - a[1]) < EPS && Math.abs(p[2] - a[2]) < EPS;
+    const verbote: number[] = [];
+    for (const s of this.eigene.get(basis) ?? []) for (let n = 1; n < s.length; n++) {
+      const [p, q] = gleich(s[n - 1]) ? [s[n - 1], s[n]] : gleich(s[n]) ? [s[n], s[n - 1]] : [null, null];
+      const r = p && q ? rasterRichtung([q[0] - p[0], q[1] - p[1], q[2] - p[2]]) : undefined;
+      if (r !== undefined) verbote.push(r);
+    }
+    const z = suchen(this.b, start, ziel, (c) => c.i === ib && c.k === kb && c.y === start.y, durch, ebenen, this.spurFuer(durch),
+      { startVerbote: verbote, streng: basis });
+    return z ? this.glaetten(this.alsPunkte(z, a, b, radius), basis, radius, true, durch) : null;
   }
 
   /**
@@ -382,8 +413,14 @@ export class LeitungsRouter {
       let punkte: V3[] | null = null;
       if (segmente.some((s) => s.some((p) => gleich(p[1], u[1])))) punkte = this.wegZumNetz(u, netz, ROHR.verteil, durch);
       if (!punkte) {
-        if (gleich(u[1], start[1])) punkte = this.weg(start, u, durch, ROHR.verteil);
-        else {
+        if (gleich(u[1], start[1])) {
+          punkte = this.weg(start, u, durch, ROHR.verteil);
+          // Rueckfall laeuft auf dem eigenen Strang: streng neu suchen (eigene Zellen nur an den Enden).
+          if (segmente.length && !this.befundfrei(punkte, netz, ROHR.verteil)) {
+            const streng = this.wegStreng(start, u, durch, netz, ROHR.verteil);
+            if (streng && this.befundfrei(streng, netz, ROHR.verteil)) punkte = streng;
+          }
+        } else {
           const kopf: V3 = [steig[0], u[1], steig[1]];
           const st = steigSegmente();
           let anfang: V3[];
@@ -397,10 +434,17 @@ export class LeitungsRouter {
             anfang = [...vorlauf, kopf];
           }
           this.vorbelegen(bereinigen(anfang), netz, ROHR.verteil);
-          const rest = this.weg(kopf, u, durch, ROHR.verteil);
           // Kurzstueck an der Steigleitung entfernen, aber nur, wenn das Ergebnis mit dem eigenen Netz befundfrei bleibt.
-          const roh = bereinigen([...anfang, ...rest.slice(1)]), glatt = ohneKurzstuecke(roh, ROHR.verteil);
-          punkte = this.befundfrei(glatt, netz, ROHR.verteil) || !this.befundfrei(roh, netz, ROHR.verteil) ? glatt : roh;
+          const zusammen = (rest: V3[]) => {
+            const roh = bereinigen([...anfang, ...rest.slice(1)]), glatt = ohneKurzstuecke(roh, ROHR.verteil);
+            return this.befundfrei(glatt, netz, ROHR.verteil) || !this.befundfrei(roh, netz, ROHR.verteil) ? glatt : roh;
+          };
+          punkte = zusammen(this.weg(kopf, u, durch, ROHR.verteil));
+          // Rueckfall ab dem Kopf laeuft auf dem eigenen Strang: streng neu suchen (eigene Zellen nur an den Enden).
+          if (!this.befundfrei(punkte, netz, ROHR.verteil)) {
+            const rest = this.wegStreng(kopf, u, durch, netz, ROHR.verteil), streng = rest && zusammen(rest);
+            if (streng && this.befundfrei(streng, netz, ROHR.verteil)) punkte = streng;
+          }
         }
       }
       // Ueber dem Bogenlimit darf die Begradigung die Trassenspur verlassen (Pruefregel boegen hat Vorrang).

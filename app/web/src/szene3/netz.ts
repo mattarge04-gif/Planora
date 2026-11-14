@@ -179,9 +179,13 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
   const adapterKey = (r: Rohrstueck) => JSON.stringify(r.punkte);
   const geteilt = new Map<string, number>();
   for (const x of vorbereitet) for (const r of x.adapter) geteilt.set(adapterKey(r), (geteilt.get(adapterKey(r)) ?? 0) + 1);
+  // Folgen noch Hauptlaeufe, sperren die Adapter gegen den Hauptrohrradius (paarweiser Sperrabstand, raster.sperrabstand).
+  const gegen = kanten.some((k) => k.art === "haupt") ? ROHR.haupt : 0;
   if (router) for (const x of vorbereitet) for (const r of x.adapter) {
     const netz = (geteilt.get(adapterKey(r)) ?? 0) > 1 ? netzVon(x.v).split("~")[0] : netzVon(x.v);
-    router.vorbelegen(r.punkte, netz, Math.max(r.radius, r.endRadius));
+    const radius = Math.max(r.radius, r.endRadius);
+    router.vorbelegen(r.punkte, netz, radius, Math.max(radius, gegen));
+    router.anschlussSperren(r.punkte, netz, radius, Math.max(radius, gegen));
   }
   router?.spurenFestlegen([...vorbereitet.filter((x) => x.a && x.b).map((x) => ({ netz: netzVon(x.v), a: x.a!, b: x.b! })), ...weitereSpuren]);
   // Durchgang 2: Wege.
@@ -189,12 +193,8 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
     if (!a || !b) continue;
     let punkte: V3[];
     if (router && Math.abs(a[1] - b[1]) < 0.01) {
-      // Richtung des letzten Adapterstuecks an a bzw. b: der Lauf setzt es fort, statt ueber es zurueckzulaufen.
-      const abgang = (p: V3): V3 | undefined => {
-        const q = adapter.find((r) => r.punkte.at(-1) === p)?.punkte;
-        return q && q.length >= 2 ? [p[0] - q[q.length - 2][0], p[1] - q[q.length - 2][1], p[2] - q[q.length - 2][2]] : undefined;
-      };
-      punkte = router.weg(a, b, netzVon(v), radius, { a: abgang(a), b: abgang(b) });
+      // Anschluesse (routerAnschluss) enden senkrecht auf der Leitungsebene; eine waagrechte Abgangsrichtung gibt es nicht.
+      punkte = router.weg(a, b, netzVon(v), radius);
       // Am geteilten Anschluss (Kopf gehoert zu `haupt`) bleibt die Umgebung fuer die andere Hauptverbindung offen.
       const kopf = adapter.filter((r) => (geteilt.get(adapterKey(r)) ?? 0) > 1).map((r) => r.punkte.at(-1)!);
       router.belegen(punkte, netzVon(v), radius, kopf, netzVon(v).split("~")[0]);

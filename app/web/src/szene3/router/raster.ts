@@ -44,17 +44,29 @@ export const sperrabstand = (r: number, gegen: number = r) => r + gegen + GRENZE
 export class Belegung {
   readonly gitter: Gitter;
   readonly ebenen: number[];
-  private achse = new Map<string, string>();
-  private sperre = new Map<string, Set<string>>();
-  private kosten = new Map<string, number>();
+  /** Zellen je Ebene (nx * nz); Zellindex = Ebene * flaeche + k * nx + i. */
+  private readonly flaeche: number;
+  private readonly ebeneIndex = new Map<number, number>();
+  // Flache Felder statt Map mit Textschluesseln (Laufzeit, Task 8); gleiche Bedeutung wie zuvor.
+  private achse: (string | undefined)[];
+  private sperre: (string[] | undefined)[];
+  private kosten: Float64Array;
   constructor(welt: Welt) {
     this.gitter = gitterFuer(welt);
     this.ebenen = [...ebenenFuer(welt).values()].flat().sort((a, b) => a - b);
+    this.ebenen.forEach((y, n) => this.ebeneIndex.set(ek(y), n));
+    this.flaeche = this.gitter.nx * this.gitter.nz;
+    const n = this.ebenen.length * this.flaeche;
+    this.achse = new Array(n); this.sperre = new Array(n); this.kosten = new Float64Array(n);
   }
-  private key(y: number, i: number, k: number) { return `${ek(y)}:${i}:${k}`; }
+  /** Index der Ebene y (gerundet auf mm), -1 ausserhalb der Leitungsebenen. */
+  ebeneVon(y: number): number { return this.ebeneIndex.get(ek(y)) ?? -1; }
+  private key(y: number, i: number, k: number) { const e = this.ebeneVon(y); return e < 0 ? -1 : e * this.flaeche + k * this.gitter.nx + i; }
   private sperrSet(y: number, i: number, k: number, netz: string) {
-    const key = this.key(y, i, k), s = this.sperre.get(key) ?? new Set<string>();
-    s.add(netz); this.sperre.set(key, s);
+    const key = this.key(y, i, k);
+    if (key < 0) return;
+    const s = this.sperre[key];
+    if (!s) this.sperre[key] = [netz]; else if (!s.includes(netz)) s.push(netz);
   }
   /** Sperrt alle Zellen, deren Mitte naeher als SPERRABSTAND an der Strecke a-b (im Grundriss) liegt. */
   private sperrenUm(y: number, a: [number, number], b: [number, number], netz: string, R = SPERRABSTAND) {
@@ -82,7 +94,7 @@ export class Belegung {
         const lo = Math.min(a[1], b[1]) - ROHR.haupt, hi = Math.max(a[1], b[1]) + ROHR.haupt;
         for (const y of this.ebenen) if (y >= lo && y <= hi) {
           this.sperrenUm(y, [a[0], a[2]], [a[0], a[2]], netz, R);
-          this.sperrSet(y, i, k, netz); this.achse.set(this.key(y, i, k), netz);
+          this.sperrSet(y, i, k, netz); this.achse[this.key(y, i, k)] = netz;
         }
         continue;
       }
@@ -99,7 +111,7 @@ export class Belegung {
       const schritte = Math.max(Math.abs(i1 - i0), Math.abs(k1 - k0));
       for (let s = 0; s <= schritte; s++) {
         const t = schritte ? s / schritte : 0, i = Math.round(i0 + (i1 - i0) * t), k = Math.round(k0 + (k1 - k0) * t);
-        this.sperrSet(y, i, k, netz); this.achse.set(this.key(y, i, k), netz);
+        this.sperrSet(y, i, k, netz); this.achse[this.key(y, i, k)] = netz;
       }
     }
   }
@@ -113,10 +125,7 @@ export class Belegung {
     for (const k of koerper) for (const y of this.ebenen) {
       if (y - ROHR.haupt >= k.max[1] + GRENZEN.luftUeberGeraet || y + ROHR.haupt <= k.min[1]) continue;
       const [i0, k0] = zelleVon(this.gitter, k.min[0], k.min[2]), [i1, k1] = zelleVon(this.gitter, k.max[0], k.max[2]);
-      for (let i = i0; i <= i1; i++) for (let kk = k0; kk <= k1; kk++) {
-        const key = this.key(y, i, kk), s = this.sperre.get(key) ?? new Set<string>();
-        s.add(`geraet:${k.schluessel}`); this.sperre.set(key, s);
-      }
+      for (let i = i0; i <= i1; i++) for (let kk = k0; kk <= k1; kk++) this.sperrSet(y, i, kk, `geraet:${k.schluessel}`);
     }
   }
   /** Innenwaende: passierbar mit Zuschlag je Zelle [A]. */
@@ -126,18 +135,29 @@ export class Belegung {
       for (const w of innenwaende(welt, g.id, g.yUnten, g.hoehe)) {
         const [i0, k0] = zelleVon(this.gitter, w.mitte[0] - w.groesse[0] / 2, w.mitte[2] - w.groesse[2] / 2);
         const [i1, k1] = zelleVon(this.gitter, w.mitte[0] + w.groesse[0] / 2, w.mitte[2] + w.groesse[2] / 2);
-        for (const y of ys) for (let i = i0; i <= i1; i++) for (let k = k0; k <= k1; k++) this.kosten.set(this.key(y, i, k), ROUTER.wand);
+        for (const y of ys) for (let i = i0; i <= i1; i++) for (let k = k0; k <= k1; k++) this.kosten[this.key(y, i, k)] = ROUTER.wand;
       }
     }
   }
   /** `rand`: Zellen im Aussenrand zulassen (Anfahrt an einen Anschluss, der selbst im Rand liegt). */
   frei(y: number, i: number, k: number, netz: string, rand = false): boolean {
     if (i < 0 || k < 0 || i >= this.gitter.nx || k >= this.gitter.nz || (!rand && !this.innen(i, k))) return false;
-    const s = this.sperre.get(this.key(y, i, k));
-    // Teilnetz `netz~x` darf Zellen seines Netzes `netz` mitbenutzen (Abzweige eines Strangs mit eigener Reservierung).
-    return !s || [...s].every((n) => n === netz || netz.startsWith(`${n}~`));
+    const e = this.ebeneVon(y);
+    return e < 0 || this.freiIndex(e * this.flaeche + k * this.gitter.nx + i, netz);
   }
+  /** Wie `frei` ohne Raster-/Randpruefung, fuer einen Zellindex (A*). */
+  freiIndex(index: number, netz: string): boolean {
+    const s = this.sperre[index];
+    if (!s) return true;
+    // Teilnetz `netz~x` darf Zellen seines Netzes `netz` mitbenutzen (Abzweige eines Strangs mit eigener Reservierung).
+    for (const n of s) if (n !== netz && !(netz.length > n.length && netz.charCodeAt(n.length) === 126 && netz.startsWith(n))) return false;
+    return true;
+  }
+  /** Sperrt der Name `netz` die Zelle (Zellindex)? */
+  hat(index: number, netz: string): boolean { return !!this.sperre[index]?.includes(netz); }
   innen(i: number, k: number): boolean { return !!this.gitter.innen[k * this.gitter.nx + i]; }
-  eigen(y: number, i: number, k: number, netz: string): boolean { return this.achse.get(this.key(y, i, k)) === netz; }
-  zusatz(y: number, i: number, k: number): number { return this.kosten.get(this.key(y, i, k)) ?? 0; }
+  eigen(y: number, i: number, k: number, netz: string): boolean { const key = this.key(y, i, k); return key >= 0 && this.achse[key] === netz; }
+  zusatz(y: number, i: number, k: number): number { const key = this.key(y, i, k); return key < 0 ? 0 : this.kosten[key]; }
+  /** Wandzuschlag fuer einen Zellindex (A*). */
+  zusatzIndex(index: number): number { return this.kosten[index]; }
 }
