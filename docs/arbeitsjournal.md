@@ -23,7 +23,7 @@ Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
 ### 4. Was technisch Zeit spart
 
-- [F] Zufallstest nur mit `PLANORA_ZUFALL=<n>`; ohne Variable uebersprungen (sonst Standardsuite > 7 min).
+- [F] Zufallstest in der Standardsuite mit 100 Welten (~25 s); `PLANORA_ZUFALL=2000` fuer die Abnahme (~8 min).
 
 ## 2026-11-13 – Stufe 1: Tracks abgeschlossen, integriert, Betreiber legt Gebaeude an
 

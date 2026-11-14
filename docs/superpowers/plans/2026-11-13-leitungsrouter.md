@@ -18,7 +18,7 @@
 - Ausgabe bleibt `Rohrstueck[]` aus `szene3/netz.ts`; `durchgaenge`, `Technik3.tsx`, Gruppenhervorhebung unveraendert lauffaehig.
 - Deterministisch: gleiche Welt -> identische Punkte (keine `Math.random`, keine Map-Iteration ueber ungeordnete Eingaben ohne Sortierung).
 - Zahlen sind Startwerte [A]: Zelle 0.09 m, Fuge 0.04 m, max. 6 Boegen je Geschossabschnitt (PO 14.11.; Teilung an senkrechten Stuecken ab 1.0 m), Luft ueber Geraet 0.15 m, Geraetezuschlag 0.05 m, Bogen 2 m, Ebenenwechsel 25 m (Task 7, Controller-Entscheid 14.11.: Startwert 3 m; 2 Wechsel = 50 m je Kreuzung nach Spec 5.4), Wandzelle 2 m, Spurfaktor 0.4, Ausweichebene 0.25 m unter Leitungsebene, Trasse 0.3 m ab Wand.
-- Zufallsgenerator [A] (PO 14.11.): Zentrale 7 x 6 m, Wandabstand 0.5 m, Geraeteabstand 0.8 m, Steigzone 0.6 m frei. Kreuzungsquote [A] gemessen 39.7 %, Schwelle 42 %. Laufzeit ~230 ms je Welt akzeptiert (PO 14.11., statt < 50 ms).
+- Zufallsgenerator [A] (PO 14.11.): Zentrale 7 x 6 m, Wandabstand 0.5 m, Geraeteabstand 0.8 m, Steigzone 0.6 m frei. Kreuzungsquote [A] gemessen 39.6 %, Schwelle 42 %. Laufzeit ~230 ms je Welt akzeptiert (PO 14.11., statt < 50 ms).
 - Windows: `npm.cmd` statt `npm`; Befehle aus `app/web` fuer Webtests. PO-Server 3000/54500 nicht stoppen.
 - Kein Push/Merge ohne PO-Auftrag. Commits enden mit `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Pruefstand vor Beginn: Web 251/251 gruen; nach jedem Task alle Webtests gruen (ausser Tests, die der Task ausdruecklich ersetzt).
@@ -1579,7 +1579,7 @@ Vor Pruefer-Korrektur (oben): selbst 423 war zu 97 % Fehlalarm durch Nullstuecke
 | 7 Zufallstests 2000, Muster, Determinismus, Laufzeit, GPU | T7, T8, T10 |
 | 8 Zwischenstand Zentrale an PO | nach T7 (Bilder m3/m4 Zentrale vorab zeigen) |
 
-Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (Ausweichebene) ist ein **weicher** Befund mit Grenze 1 % der Zufallswelten und 0 in allen Mustern. Grund: Bei festen Geraetepositionen kann eine kreuzungsfreie Fuehrung auf einer einzigen Ebene geometrisch unmoeglich sein (z. B. eingeschlossener Anschluss). Wird dem PO mit dem Zwischenstand gemeldet.
+Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (Ausweichebene) ist ein **weicher** Befund; Schwelle 42 % der Zufallswelten [A] (gemessen 39.6 % aufgerundet + 2 Punkte, PO 14.11.; urspruenglich 1 %), 0 in allen Mustern. Grund: Bei festen Geraetepositionen kann eine kreuzungsfreie Fuehrung auf einer einzigen Ebene geometrisch unmoeglich sein (z. B. eingeschlossener Anschluss). Wird dem PO mit dem Zwischenstand gemeldet.
 
 ## Fortsetzung (Stand 13.11.2026, Sitzungsende wegen Nutzungslimit)
 
@@ -1595,10 +1595,11 @@ Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (
   - Entscheid: Adapter = Stutzen + senkrechter Teil; waagrechte Stuecke fuehrt der Router (Spec 5).
   - Ebenenwechsel 25 statt 3 [A]; in T8 gemessen besser als 3.
   - Paarweiser Sperrabstand `sperrabstand(r, gegen)`; Anschluss-Rueckfall ist harter Befund; Rohrnetz in Technik3 eigenes useMemo.
-- T8 **in Arbeit**, nicht reviewt: `d1f6764` (Laufzeit 1.05 s -> ~230 ms je Welt, m6u 15 s -> 0.3 s, Ausgabe bitgleich), `96e5216` (Hinweis "Leitungsführung unsauber" im Twin), `5e3eec7` (Zwischenstand).
-  - PO-Entscheid 14.11. "Annahmen anpassen": Boegen je Geschoss (Teilung an senkrechten Stuecken >= 1.0 m [A]); Zufallsgenerator Zentrale 7x6 m, 0.8 m Geraeteabstand, Steigzone 0.6 m frei [A]; Kreuzungsschwelle = Messwert aufgerundet + 2 Prozentpunkte; ~230 ms akzeptiert.
-  - Letzte Messung 300 Welten: 13 mit harten Befunden (4.3 %, vorher 139). Web 329 ok / 3 uebersprungen, tsc gruen.
-- **Naechste Schritte T8:** Rest-Seeds beheben (163, 127, 76, 148 u.a.: Abstand gleiche Gruppe, Anschluss-Strang, 7–9 Boegen je Abschnitt); Regressionstests neu seeden (alte Seeds 76/88 uebersprungen); 2000er-Lauf `PLANORA_ZUFALL=2000`; Schwelle setzen, `runIf` entfernen oder Default festlegen; Spec 5.5/9 und Global Constraints nachfuehren. Danach Review T8, T9 (alte Fuehrung entfernen), T10 (GPU-Bilder, PO-Sichtung).
+- T8 **abgeschlossen** (Review: Approved mit Bedingung, Fixrunde 1): `d1f6764` (Laufzeit 1.05 s -> ~230 ms je Welt, m6u 15 s -> 0.3 s), `96e5216` (Hinweis "Leitungsführung unsauber" im Twin), `5e3eec7`, `b2de316` (Rest-Seeds, 15 Regressionstests), `46eb00f` (Spec/Plan), Fixrunde 1 siehe Report.
+  - PO-Entscheid 14.11. "Annahmen anpassen": Boegen je Geschossabschnitt (Teilung an senkrechten Stuecken >= 1.0 m [A]); Zufallsgenerator Zentrale 7x6 m, 0.8 m Geraeteabstand, Steigzone 0.6 m frei [A]; Kreuzungsschwelle 42 % [A]; ~230 ms akzeptiert.
+  - 2000 Zufallswelten (Endstand Fixrunde 1): **42 Welten mit harten Befunden (2.1 %)**, als bekannte Luecke akzeptiert (Controller-Entscheid, PO sieht es); Kreuzungen 39.6 %; Laufzeit 235 ms Mittel, 1.45 s Max.
+  - Zufallstest in der Standardsuite mit 100 Welten (`PLANORA_ZUFALL` fuer mehr); Abnahme 2000 Welten bleibt rot bis zur Behebung der Restfaelle.
+- **Naechste Schritte:** T9 (alte Fuehrung entfernen), T10 (GPU-Bilder, PO-Sichtung). Restfaelle (Strang im Band Fassade/Heizkoerperanschluesse bei wandnahem Verteiler) spaeter.
 - Details: `.superpowers/sdd/2026-11-13-leitungsrouter/task-8-report.md` (Abschnitt "Zwischenstand Pause 14.11.") und Ledger `progress.md` (beide git-ignoriert, lokal).
 
 ### PO-Rueckmeldung 14.11. aus dem Browser (in T8–T10 beachten)

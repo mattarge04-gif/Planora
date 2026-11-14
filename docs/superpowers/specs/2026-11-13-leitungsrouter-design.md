@@ -80,8 +80,9 @@ welt -> topologie (Baum) -> raum (Hindernisse)
 ## 7. Tests und Nachweis
 
 - Einheitstests je Baustein (Left-Edge, A* mit Hindernissen, jede Pruefregel positiv/negativ).
-- **Zufallstests:** 2000 Anordnungen je Lauf mit festem Startwert (Zentrale 7 x 6 m mit Wartungsabstaenden, 1–6 Gruppen, 1–4 Geschosse; Werte siehe 9). Ziel: jede besteht den Pruefer ohne harten Befund. Grundriss-Kreuzungen (weich) hoechstens 42 % der Welten [A] (gemessene Quote 39.7 % aufgerundet plus 2 Prozentpunkte, PO 14.11.). Fehlschlag gibt Startwert aus.
+- **Zufallstests:** 2000 Anordnungen je Lauf mit festem Startwert (Zentrale 7 x 6 m mit Wartungsabstaenden, 1–6 Gruppen, 1–4 Geschosse; Werte siehe 9). Ziel: jede besteht den Pruefer ohne harten Befund. Grundriss-Kreuzungen (weich) hoechstens 42 % der Welten [A] (gemessene Quote 39.6 % aufgerundet plus 2 Prozentpunkte, PO 14.11.). Fehlschlag gibt Startwert aus.
 - Alle 7 Muster: Pruefer ohne Befund; `npm run muster:welt` deterministisch.
+- Stand Abschluss T8: Der 2000er-Lauf ist rot, 42 Welten (2.1 %) mit harten Befunden; als bekannte Luecke akzeptiert (Controller-Entscheid, PO sieht es). Die Kreuzungsschwelle 42 % schuetzt nur vor Rueckschritt.
 - Laufzeit: urspruenglich < 50 ms je Gebaeude [A]; gemessen ~230 ms je Zufallswelt (Node), vom PO am 14.11. akzeptiert.
 - GPU-Bilder Zentrale + Geschosse aller Muster, `visual-critic`-Runde, danach PO-Sichtung (Ablauf `planora-design`).
 
@@ -107,7 +108,7 @@ Gesamt ca. 5–6 PT [A].
 - [A] Werte aus Task 8 (PO-Entscheid 14.11. "Annahmen anpassen"):
   - Boegen je Geschossabschnitt (siehe 5.5), Teilung an senkrechten Stuecken ab 1.0 m.
   - Zufallsgenerator: Zentrale 7 x 6 m, 0.5 m Wandabstand, 0.8 m zwischen Geraeten (Wartungs-/Bedienabstand), Steigzone samt Spurdiagonale 0.6 m frei.
-  - Kreuzungsquote der Zufallswelten: gemessen 39.7 % (2000 Welten), Schwelle 42 %.
+  - Kreuzungsquote der Zufallswelten: gemessen 39.6 % (2000 Welten), Schwelle 42 %.
   - Laufzeit ~230 ms je Welt akzeptiert (statt < 50 ms).
   - Router: Strangstarts waehrend der Hauptleitungen 0.35 m frei, Abgangskorridor 0.4 m beidseits quer zum Verteiler, Fassadenabstand 0.35 m im Rueckfall ueber dem Bogenlimit.
 - [?] Darf ein Rohr unter der Decke ueber einem Geraet laufen, wenn genug Hoehe frei ist? Startannahme: ja, wenn Abstand zur Geraeteoberkante >= 0.15 m.
