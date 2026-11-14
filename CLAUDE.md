@@ -25,6 +25,7 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 - T8 in Arbeit, nicht reviewt (`d1f6764`, `96e5216`, `5e3eec7`): Laufzeit ~230 ms/Welt (vorher 1.05 s), Hinweis "Leitungsführung unsauber" im Twin. PO-Entscheid 14.11. "Annahmen anpassen": Boegen je Geschoss, realistischer Zufallsgenerator, Kreuzungsschwelle nach Messung, 230 ms akzeptiert. Letzte Messung 13/300 Welten mit harten Befunden.
 - Einstieg: "weiter mit Leitungsrouter" -> `docs/superpowers/plans/2026-11-13-leitungsrouter.md`, Abschnitt "Fortsetzung (Stand 14.11.2026)". Danach T9, T10 (GPU-Bilder an PO).
 - Branch `m2c-interview` am 14.11. auf PO-Auftrag gepusht; kein Merge nach `main`.
+- PO-Rueckmeldung 14.11. aus dem Browser, spaeter umsetzen: Router-Plan Abschnitt "PO-Rueckmeldung 14.11." (Boegen und T-Stuecke nicht als Formstuecke dargestellt, FBH-Kasten zu transparent) und `docs/superpowers/plans/2026-11-13-stufe1-integration.md` Punkte 10–13 (Vorschau abgeschnitten, Hinweis `seitenverhaeltnis` unverstaendlich, Heizungserfassung je Geschoss zu aufwendig -> Brainstorming mit PO, Test-Liegenschaften in lokaler DB aufraeumen).
 
 ### Leitungsrouter (13.11. abends) [F, ueberholt durch 14.11.]
 
