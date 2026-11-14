@@ -34,11 +34,12 @@ const ek = (y: number) => Math.round(y * 1000);
 /** Sperrabstand von Zellmitten zur Rohrgeometrie: zwei Hauptrohr-Radien, Fuge und eine halbe Zelle Einrastversatz [A]. */
 export const SPERRABSTAND = 2 * ROHR.haupt + GRENZEN.fuge + Z / 2;
 /**
- * Sperrabstand fuer ein Rohr mit Radius r: zwei Radien dieses Rohrs, Fuge, halbe Zelle [A]. Hauptleitungen werden vor
- * den Gruppen verlegt; duennere Rohre halten so den vollen Abstand zu dickeren, und parallele Gruppenrohre passen im
- * Spurabstand (SPUR 0.18) nebeneinander, etwa an der Steigzone.
+ * Sperrabstand eines Rohrs mit Radius r gegen spaeter verlegte Rohre mit Radius bis `gegen`: r + gegen + Fuge + halbe
+ * Zelle Einrastversatz [A]. Der Aufrufer nennt das dickste Rohr, das danach noch verlegt wird (Reihenfolge: feste
+ * Gruppenteile, Hauptleitungen, Gruppenstraenge). So passen parallele Gruppenrohre im Spurabstand (SPUR 0.18)
+ * nebeneinander, und Hauptleitungen halten trotzdem den vollen Abstand zu vorher belegten Gruppenteilen.
  */
-export const sperrabstand = (r: number) => 2 * r + GRENZEN.fuge + Z / 2;
+export const sperrabstand = (r: number, gegen: number = r) => r + gegen + GRENZEN.fuge + Z / 2;
 
 export class Belegung {
   readonly gitter: Gitter;
@@ -72,8 +73,8 @@ export class Belegung {
    * der tatsaechlichen Geometrie (Laeufe sind nach dem Einrasten bis eine halbe Zelle verschoben), die Achse bleibt
    * auf der gerasterten Zelle markiert.
    */
-  belegen(punkte: V3[], netz: string, radius: number = ROHR.haupt) {
-    const R = sperrabstand(radius);
+  belegen(punkte: V3[], netz: string, radius: number = ROHR.haupt, gegen: number = radius) {
+    const R = sperrabstand(radius, gegen);
     for (let n = 1; n < punkte.length; n++) {
       const a = punkte[n - 1], b = punkte[n];
       if (Math.abs(a[1] - b[1]) > 1e-6 && Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[2] - b[2]) < 1e-6) {

@@ -99,6 +99,16 @@ describe("Rohrnetz mit Gruppen", { timeout: 120_000 }, () => {
       }
     }
   });
+  it("Muster 5: der Unterverteiler mit Gruppe hat genau eine Zuleitung (seine Gruppe), keine zusätzliche Hauptleitung", () => {
+    const w = muster("m5"), netz = rohrnetz(w, katalog, {});
+    const unter = gruppenVerbindungen(w, katalog).flatMap((s) => s.verbraucher)
+      .filter((k) => w.symbole.find((s) => s.schluessel === k)?.katalogId === "heizung.verteiler");
+    expect(unter).toHaveLength(1);
+    const zu = netz.filter((r) => r.daten.nach === unter[0]);
+    expect(zu.filter((r) => r.daten.art === "haupt")).toEqual([]);
+    expect(netz.some((r) => r.daten.art === "haupt" && r.daten.von === unter[0])).toBe(false);
+    expect(new Set(zu.map((r) => r.daten.gruppeId)).size).toBe(1);
+  });
   it("Rohrstücke sind achsparallel", () => {
     for (const name of ALLE) for (const r of rohrnetz(muster(name), katalog, {})) for (const [a, b] of segmente(r)) {
       expect([0, 1, 2].filter((k) => Math.abs(a[k] - b[k]) > 1e-9).length, name).toBeLessThanOrEqual(1);

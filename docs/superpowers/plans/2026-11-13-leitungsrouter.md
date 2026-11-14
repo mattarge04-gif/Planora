@@ -17,7 +17,7 @@
 - Router verschiebt keine Geraete; `welt.symbole[*].position` wird nie veraendert.
 - Ausgabe bleibt `Rohrstueck[]` aus `szene3/netz.ts`; `durchgaenge`, `Technik3.tsx`, Gruppenhervorhebung unveraendert lauffaehig.
 - Deterministisch: gleiche Welt -> identische Punkte (keine `Math.random`, keine Map-Iteration ueber ungeordnete Eingaben ohne Sortierung).
-- Zahlen sind Startwerte [A]: Zelle 0.09 m, Fuge 0.04 m, max. 6 Boegen, Luft ueber Geraet 0.15 m, Geraetezuschlag 0.05 m, Bogen 2 m, Ebenenwechsel 3 m, Wandzelle 2 m, Spurfaktor 0.4, Ausweichebene 0.25 m unter Leitungsebene, Trasse 0.3 m ab Wand.
+- Zahlen sind Startwerte [A]: Zelle 0.09 m, Fuge 0.04 m, max. 6 Boegen, Luft ueber Geraet 0.15 m, Geraetezuschlag 0.05 m, Bogen 2 m, Ebenenwechsel 25 m (Task 7, Controller-Entscheid 14.11.: Startwert 3 m; 2 Wechsel = 50 m je Kreuzung nach Spec 5.4), Wandzelle 2 m, Spurfaktor 0.4, Ausweichebene 0.25 m unter Leitungsebene, Trasse 0.3 m ab Wand.
 - Windows: `npm.cmd` statt `npm`; Befehle aus `app/web` fuer Webtests. PO-Server 3000/54500 nicht stoppen.
 - Kein Push/Merge ohne PO-Auftrag. Commits enden mit `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Pruefstand vor Beginn: Web 251/251 gruen; nach jedem Task alle Webtests gruen (ausser Tests, die der Task ausdruecklich ersetzt).

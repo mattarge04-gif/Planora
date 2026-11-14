@@ -52,6 +52,7 @@ Eingang wie heute `rohrnetz(welt, katalog, anschluesse)`, Ausgang unveraendert `
 ### 5.4 `wegsuche.ts` – Rueckfall
 - Wenn eine Verbindung nicht auf eine Trasse passt (Geraet frei im Raum, Trasse blockiert): A* auf orthogonalem Raster 0.05 m [A] in der Hinderniskarte.
 - Kosten: Laenge + 2 m je Bogen + 50 m je Kreuzung + Wanddurchbruch 5 m [A, an GPU-Bildern kalibrieren].
+- Umsetzung (Task 7, Controller-Entscheid 14.11.): Eine Kreuzung entsteht im Raster als Ausweichen auf die Ausweichebene und zurueck, also zwei Ebenenwechsel. Ebenenwechsel kostet deshalb 25 m [A] (2 x 25 = 50 m je Kreuzung); der Startwert 3 m liess in den Mustern Kreuzungen statt kurzer Umwege zu. In Task 8 Kreuzungs- und Bogenrate 3 vs. 25 an 2000 Zufallswelten vergleichen.
 - Reihenfolge: Hauptleitungen, dann Gruppen absteigend nach Laenge, Gleichstand nach Schluessel.
 - Bleibt ein Konflikt: betroffene Leitungen ausreissen und neu verlegen, hoechstens 3 Runden; danach Befund.
 - Ergebnis wird mit `bereinigen()` auf Eckpunkte reduziert.
@@ -97,4 +98,10 @@ Gesamt ca. 5–6 PT [A].
 
 - [A] Alle Zahlen (Raster, Kosten, Abstaende, max. Boegen, Sicherheitsabstand) sind Startwerte.
 - [A] Trassenwand-Wahl nach Abstandssumme; kann bei L/U-Fluegeln an Bildern nachjustiert werden.
+- [A] Werte aus dem Einbau (Task 7, Startwerte):
+  - Ebenenwechsel 25 m (siehe 5.4).
+  - Anschluss (`router/anschluss.ts`): Stutzen, Stummel nur zum Freikommen vom eigenen Koerper (Abstand Rohrradius + Fuge 0.04 m), dann senkrecht. Steigleitung mindestens 0.25 m von der Steigzone samt Spurdiagonale; Raumrand max(0.15 m, Rohrradius + Fuge) zur Einheit; Abstand Rohrradius zu fremden Geraetekoerpern (direkt verbundene Geraete ausgenommen, wie im Pruefer).
+  - Stummel am Verbraucher (Gruppenstrang): zum T-Punkt bleiben mindestens 2 x Verteilradius + Fuge (0.13 m).
+  - Sperrabstand im Raster paarweise: r_eigen + r_gegen + Fuge + halbe Zelle, `r_gegen` = dickstes danach noch verlegtes Rohr (feste Gruppenteile gegen Hauptrohr, Hauptleitungen 0.225 m, Gruppenstraenge untereinander 0.175 m).
+  - Waagrechte Stuecke ausserhalb der Leitungsebenen (Anschluss auf Stutzenhoehe) sperren auf Ebenen naeher als 0.5 m ihre Achszellen (Radius 0.75 x Zelle), passend zur weichen Pruefregel `kreuzung` (Hoehenband 0.5 m).
 - [?] Darf ein Rohr unter der Decke ueber einem Geraet laufen, wenn genug Hoehe frei ist? Startannahme: ja, wenn Abstand zur Geraeteoberkante >= 0.15 m.

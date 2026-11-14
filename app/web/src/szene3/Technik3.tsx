@@ -32,9 +32,10 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
   const anzeige = useMemo(() => anzeigeWelt(welt, katalog, anschluesse), [welt, katalog, anschluesse]);
   const symbole = useMemo(() => anzeige.symbole.filter((s) => anlageSichtbar(anzeige, fokusId, s)), [anzeige, fokusId]);
   const schnitt = useMemo(() => geschossSchnitt(welt, fokusId), [welt, fokusId]);
+  // Leitungsführung nur bei geänderter Welt bzw. geladenen Anschlüssen neu berechnen, nicht bei jedem Geschosswechsel.
+  const ganz = useMemo(() => rohrnetz(welt, katalog, anschluesse), [welt, katalog, anschluesse]);
   const netz = useMemo(() => {
     const yMax = schnitt.fokus ? schnitt.fokus.yUnten + schnitt.fokus.hoehe - 0.25 : Infinity;
-    const ganz = rohrnetz(welt, katalog, anschluesse);
     const huelsen = new Map<string, Huelse>();
     for (const r of ganz) for (const h of durchgaenge(welt, r.punkte, r.radius)) {
       // Offene Geschosse zeigen Innenwände nur bis 1.15 m; Wandhülsen der Deckenleitung würden sonst frei schweben.
@@ -48,7 +49,7 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
       }))),
       huelsen: [...huelsen.values()],
     };
-  }, [welt, katalog, anschluesse, schnitt]);
+  }, [welt, ganz, schnitt]);
   const flaechen = useMemo(() => {
     const gesehen = new Set<string>();
     return welt.symbole.filter((s) => FLAECHE.has(s.katalogId)).flatMap((s) => {

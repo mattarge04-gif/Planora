@@ -78,11 +78,11 @@ describe("Geschlossenes Techniknetz", () => {
       expect(n.some((h) => h.radius === h.endRadius && [h.punkte[0], h.punkte.at(-1)!].some((p) => p.every((x, i) => x === ende[i])))).toBe(true);
     }
   });
-  it("führt Raumdurchgänge unter der Decke (0.40 m unter Geschossoberkante) und die wandnahe Verteilerzuleitung direkt auf Balkenhöhe durch die Wand", () => {
+  it("führt Raumdurchgänge unter der Decke (0.40 m unter Geschossoberkante); Zentraleanschlüsse bleiben im Technikraum", () => {
     const n = rohrnetz(welt, katalog, anschluesse);
     const h = n.flatMap((r) => durchgaenge(welt, r.punkte, r.radius));
     expect(h.filter((h) => h.art === "wand").length).toBeGreaterThan(0);
-    expect(h.filter((h) => h.art === "wand").every((h) => [2.8, 0.62, 6].some((y) => Math.abs(y - h.position[1]) < 1e-6))).toBe(true);
+    expect(h.filter((h) => h.art === "wand").every((h) => [2.8, 6].some((y) => Math.abs(y - h.position[1]) < 1e-6))).toBe(true);
     for (const r of n.filter((r) => r.radius < r.endRadius && ["wp", "speicher", "v"].some((id) => r.daten.bauteilIds.includes(`bauteil-${id}`)))) {
       expect(r.punkte.every((p) => p[0] > 27.09 && p[0] < 29.91 && p[2] > 0 && p[2] < 15)).toBe(true);
     }

@@ -1,7 +1,7 @@
 import type { V3 } from "../szene2/huelle";
 import { geschossBeiY } from "../szene2/leitungen";
 import type { GruppenArt, KatalogEintrag, Rechteck, Welt, WeltSymbol } from "../typen";
-import { einheitVon, kantenNetz, steigBereich, verbindungen, type Rohrstueck, type Verbindung } from "./netz";
+import { einheitVon, kantenNetz, partnerVon, steigBereich, verbindungen, type Rohrstueck, type Verbindung } from "./netz";
 import { routerAnschluss } from "./router/anschluss";
 import { geraeteKoerper } from "./router/koerper";
 import { LeitungsRouter } from "./router/router";
@@ -310,7 +310,10 @@ export function anzeigeWelt(welt: Welt, katalog: KatalogEintrag[], anschluesse: 
     const teile = st.zubehoer.flatMap((k) => { const s = symbole.get(k); return s ? [{ schluessel: k, katalogId: s.katalogId, menge: s.mengeSumme }] : []; });
     for (const t of gruppenStock(abgang, teile, deckenLauf(g), katalog).teile) setzen(t.schluessel, t.mitten, t.laenge);
   }
+  // Einmal je Welt (nicht je Teil): Hauptleitungsenden, Partner, Steigzone und Koerper ohne Teile in der Leitung.
   const haupt = new Set(verbindungen(welt, katalog).filter((v) => v.art === "haupt").flatMap((v) => [v.von, v.nach]));
+  const partner = partnerVon(welt, katalog), steig = steigBereich(welt, katalog);
+  const koerper = geraeteKoerper({ ...welt, symbole: [...symbole.values()].filter((x) => !x.inline && !(x.ort && "vorBauteil" in x.ort)) }, katalog);
   for (const s of symbole.values()) {
     if (!s.ort || !("vorBauteil" in s.ort)) continue;
     const bezug = symbole.get(s.ort.vorBauteil), g = bezug && geschossVon(welt, bezug.position.y);
@@ -318,8 +321,7 @@ export function anzeigeWelt(welt: Welt, katalog: KatalogEintrag[], anschluesse: 
     // Dieselbe Anschlussleitung wie im Rohrnetz (routerAnschluss), damit das Teil auf ihr sitzt und sie dort unterbricht.
     const lokalB = anschlussLokal(bezug, anschluesse, katalog), raum = einheitVon(welt, bezug)?.rechteck;
     const radius = haupt.has(bezug.schluessel) ? ROHR.haupt : ROHR.verteil;
-    const koerper = geraeteKoerper({ ...welt, symbole: [...symbole.values()].filter((x) => !x.inline && !(x.ort && "vorBauteil" in x.ort)) }, katalog);
-    const adapter = routerAnschluss(bezug, lokalB, radius, deckenLauf(g), raum, koerper, steigBereich(welt, katalog), katalog).punkte;
+    const adapter = routerAnschluss(bezug, lokalB, radius, deckenLauf(g), raum, koerper, steig, katalog, partner.get(bezug.schluessel)).punkte;
     const p = ortVorBauteil(bezug, lokalB, deckenLauf(g), raum, s.katalogId, s.mengeSumme, katalog, adapter);
     setzen(s.schluessel, p.mitten, p.laenge);
   }
@@ -403,7 +405,7 @@ export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], an
   // das ersetzt den frueheren Filter `unterverteiler` (Hauptkanten von/zu Unterverteilern mit Gruppe). Nur echte Zyklen sind Befunde.
   for (const k of topologie.verworfen.filter((k) => k.art === "haupt" && !gruppenZiel.has(k.nach))) r.befunde.push({ regel: "zyklus", leitungen: [`${k.von}>${k.nach}`], ort: [0, 0, 0], hart: true });
   const haupt = topologie.kanten.filter((k) => k.art === "haupt") as Verbindung[];
-  const koerper = geraeteKoerper(welt, katalog), steig = steigBereich(welt, katalog);
+  const koerper = geraeteKoerper(welt, katalog), steig = steigBereich(welt, katalog), partner = partnerVon(welt, katalog);
   const spur = spuren(welt, straenge);
   const anzahl = new Map<string, number>();
   for (const s of straenge) anzahl.set(s.verteiler, (anzahl.get(s.verteiler) ?? 0) + 1);
@@ -430,7 +432,9 @@ export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], an
       if (!gt) continue;
       const lauf = deckenLauf(gt);
       // Stutzen, noetigenfalls Stummel, senkrecht bis zur Leitungsebene; den Rest verlegt der Strang (Router).
-      const f = routerAnschluss(t, anschlussLokal(t, anschluesse, katalog), ROHR.verteil, lauf, einheitVon(welt, t)?.rechteck, koerper, steig, katalog);
+      const f = routerAnschluss(t, anschlussLokal(t, anschluesse, katalog), ROHR.verteil, lauf, einheitVon(welt, t)?.rechteck, koerper, steig, katalog, partner.get(key));
+      // Keine zulaessige Lage fuer die Steigleitung: harter Befund (der Pruefer nimmt den eigenen Koerper aus).
+      if (!f.ok) r.befunde.push({ regel: "kein_weg", leitungen: [st.gruppeId, key], ort: f.punkte[0], hart: true });
       const riser = f.punkte;
       const stutzen = t.katalogId === "heizung.verteiler" ? 0.035 : t.katalogId === "heizung.waermepumpe" ? 0.026 : ROHR.anschluss;
       anschluss[key] = { riser, stutzen, radius: f.adapterRadius, boden: t.position.y, bauteilIds: t.bauteilIds };
@@ -441,8 +445,9 @@ export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], an
     return [{ st, v, yL, abgang, anschluss, ziele, freieZiele, oben, start: [abgang[0], yL, abgang[2]] as V3 }];
   });
   const fest = (x: (typeof vorbereitet)[number]): V3[][] => [[x.abgang, x.start], ...Object.values(x.anschluss).map((a) => a.riser)];
-  // Feste Gruppenteile vor den Hauptleitungen belegen: Hauptlaeufe fuehren nicht ueber Abgaenge und Anschluesse.
-  for (const x of vorbereitet) for (const p of fest(x)) r.vorbelegen(p, x.st.gruppeId, ROHR.verteil);
+  // Feste Gruppenteile vor den Hauptleitungen belegen: Hauptlaeufe fuehren nicht ueber Abgaenge und Anschluesse. Weil
+  // danach noch Hauptrohre folgen, sperren sie gegen den Hauptrohrradius (Sperrabstand paarweise, raster.sperrabstand).
+  for (const x of vorbereitet) for (const p of fest(x)) r.vorbelegen(p, x.st.gruppeId, ROHR.verteil, ROHR.haupt);
   // Spuren fuer Haupt- und Gruppenleitungen in einer Zuteilung (kantenNetz ruft spurenFestlegen).
   let stuecke = kantenNetz(welt, katalog, anschluesse, haupt, r, vorbereitet.map((x) => {
     const ziel = x.ziele.find((z) => Math.abs(z.punkt[1] - x.start[1]) < 1e-3)?.punkt

@@ -71,6 +71,15 @@ export function steigBereich(welt: Welt, katalog: KatalogEintrag[]): SteigBereic
   return { x: welt.steigzone.x, z: welt.steigzone.z, laenge: SPUR * Math.max(0, n - 1) };
 }
 
+/** Direkt verbundene Geraete je Schluessel (Verbindungen und Gruppen), fuer die Anschlussfuehrung (routerAnschluss). */
+export function partnerVon(welt: Welt, katalog: KatalogEintrag[]): Map<string, Set<string>> {
+  const m = new Map<string, Set<string>>();
+  const hinzu = (a: string, b: string) => { m.set(a, (m.get(a) ?? new Set()).add(b)); m.set(b, (m.get(b) ?? new Set()).add(a)); };
+  for (const v of verbindungen(welt, katalog)) hinzu(v.von, v.nach);
+  for (const s of gruppenVerbindungen(welt, katalog)) for (const k of s.verbraucher) hinzu(s.verteiler, k);
+  return m;
+}
+
 /** v1: alle Verbindungen einzeln; v2: Hauptleitungen und Gruppenstraenge. Beide ueber den LeitungsRouter (Spec 2026-11-13). */
 export function rohrnetzMitBefunden(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>): { stuecke: Rohrstueck[]; befunde: Befund[] } {
   let vorrang: string[] = [];
@@ -124,7 +133,7 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
   // gemeinsamen Punkten). Ein Anschluss, den mehrere Hauptverbindungen teilen (z. B. Speicher), gehoert zu `haupt`.
   const netzVon = (v: Verbindung) => (v.art === "haupt" ? `haupt~${v.von}>${v.nach}` : ersatzGruppeId(v.von, v.nach));
   const koerper = router ? geraeteKoerper(welt, katalog) : [];
-  const steig = steigBereich(welt, katalog);
+  const steig = steigBereich(welt, katalog), partner = partnerVon(welt, katalog);
   // Durchgang 1: Adapter je Verbindung (Reihenfolge wie bisher, damit Verteilerabgaenge gleich nummeriert bleiben).
   const vorbereitet = kanten.map((v) => {
     const radius = ROHR[v.art];
@@ -151,7 +160,9 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
       const stutzen = s.katalogId === "heizung.verteiler" ? ausgang ? 0.02 : 0.035 : s.katalogId === "heizung.waermepumpe" ? 0.026 : ROHR.anschluss;
       if (router) {
         // Mit Router: Stutzen, noetigenfalls kurzer Stummel, senkrecht bis zur Leitungsebene; den Rest verlegt der Router.
-        const f = routerAnschluss(s, lokal as V3, radius, s.position.y + laufY, einheitVon(welt, s)?.rechteck, koerper, steig, katalog);
+        const f = routerAnschluss(s, lokal as V3, radius, s.position.y + laufY, einheitVon(welt, s)?.rechteck, koerper, steig, katalog, partner.get(key));
+        // Keine zulaessige Lage fuer die Steigleitung: harter Befund (der Pruefer nimmt den eigenen Koerper aus).
+        if (!f.ok) router.befunde.push({ regel: "kein_weg", leitungen: [netzVon(v).split("~")[0], s.schluessel], ort: f.punkte[0], hart: true });
         adapter.push({ punkte: f.punkte, radius: f.adapterRadius, startRadius: stutzen, endRadius: radius, boden: s.position.y,
           daten: { ...v, bauteilIds: s.bauteilIds }, frei: false });
         return f.punkte.at(-1)!;

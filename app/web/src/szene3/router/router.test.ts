@@ -5,6 +5,7 @@ import { pruefen } from "./pruefer";
 import { TEST_KATALOG } from "./testKatalog";
 import type { V3 } from "./typen";
 import { zufall } from "./zufallsWelt";
+import { ROHR } from "../technik";
 
 const welt: Welt = { regelwerkVersion: 2, hash: "r", grundriss: [{ x: 0, z: 0, breite: 10, tiefe: 6 }], hinweise: [], symbole: [], einheiten: [],
   geschosse: [{ id: "eg", code: "EG", yUnten: 0, hoehe: 3.2 }, { id: "og", code: "OG1", yUnten: 3.2, hoehe: 3.2 }], steigzone: { x: 1, z: 1 } };
@@ -39,6 +40,16 @@ describe("LeitungsRouter", () => {
     const ohne = new LeitungsRouter(welt, TEST_KATALOG).weg([1, 2.8, 2.8], [9, 2.8, 2.8], "g~hk1");
     expect(mit.some((p) => Math.abs(p[2] - 3) < 0.06)).toBe(true);
     expect(ohne.some((p) => Math.abs(p[2] - 3) < 0.06)).toBe(false);
+  });
+  it("Hauptlauf haelt Abstand zu einer vorher belegten Gruppen-Steigleitung (Sperrabstand gegen Hauptrohr)", () => {
+    // Fall aus der Zufallssuche: mit Sperrabstand nur nach Verteilradius (0.175) lag der eingerastete Hauptlauf 0.142 m neben dem Steigrohr.
+    const riser: V3[] = [[4.878, 0.5, 2.559], [4.878, 2.8, 2.559]];
+    // Mit `gegen` = ROHR.verteil (alter Stand) schlaegt der Test fehl.
+    const r = new LeitungsRouter(welt, TEST_KATALOG);
+    r.vorbelegen(riser, "g", ROHR.verteil, ROHR.haupt);
+    const w = r.weg([4.547, 2.8, 2.417], [5.288, 2.8, 3.359], "haupt~x", ROHR.haupt);
+    expect(pruefen([{ id: "h", netz: "haupt", punkte: w, radius: ROHR.haupt, enden: [] },
+      { id: "g", netz: "g", punkte: riser, radius: ROHR.verteil, enden: [] }], []).filter((x) => x.hart)).toEqual([]);
   });
   it("blockierter Weg erzeugt Befund kein_weg und trotzdem eine Polylinie", () => {
     const r = new LeitungsRouter(welt, TEST_KATALOG);

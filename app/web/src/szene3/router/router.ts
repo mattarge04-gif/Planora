@@ -93,8 +93,8 @@ export class LeitungsRouter {
     return this.ebenen.get(geschossBeiY(this.welt, y) ?? "") ?? [y];
   }
 
-  /** `radius`: Rohrradius fuer den Sperrabstand (Vorgabe Hauptrohr). */
-  vorbelegen(punkte: V3[], netz: string, radius: number = ROHR.haupt) { this.b.belegen(punkte, netz, radius); this.alle.push(punkte); }
+  /** `radius`: Rohrradius fuer den Sperrabstand (Vorgabe Hauptrohr); `gegen`: dickstes danach noch verlegtes Rohr. */
+  vorbelegen(punkte: V3[], netz: string, radius: number = ROHR.haupt, gegen: number = radius) { this.b.belegen(punkte, netz, radius, gegen); this.alle.push(punkte); }
   /**
    * `offen`: Endpunkte, an denen ein Anschluss mit anderen Verbindungen geteilt wird; das End- bzw. Anfangsstueck wird
    * dort auf Sperrabstand plus eine Zelle nur fuer `basis` belegt (Teilnetze von `basis` duerfen hinein).
