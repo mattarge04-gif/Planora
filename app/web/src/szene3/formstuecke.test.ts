@@ -4,6 +4,7 @@ import type { V3 } from "../szene2/huelle";
 import { anAbzweigenTeilen, bogenMatrix, bogenSchluessel, formstuecke, FORMSTUECK, knoten, zylinderMatrix } from "./formstuecke";
 import type { Rohrstueck } from "./netz";
 import { ROHR, bogenLagen } from "./technik";
+import { rohrGedimmt } from "./Interaktion";
 
 const rohr = (punkte: V3[], gruppeId?: string, radius = 0.045, art: "haupt" | "verteil" = "verteil"): Rohrstueck => ({
   punkte, radius, startRadius: radius, endRadius: radius, boden: 0, frei: false,
@@ -113,5 +114,17 @@ describe("anAbzweigenTeilen (Abzweig an einer Ecke des Strangs, PO 15.11.)", () 
   it("teilt nicht bei fremdem Netz und nicht ohne Abzweig", () => {
     expect(anAbzweigenTeilen([strang, rohr([[4, 3, 0], [8, 3, 0]], "x")])).toHaveLength(2);
     expect(anAbzweigenTeilen([strang])).toHaveLength(1);
+  });
+});
+
+describe("Formstücke dimmen wie ihr Rohr (Gesamtreview 15.11.)", () => {
+  it("tragen von/nach des Rohrs, auch bei Hauptleitungen ohne Gruppe", () => {
+    const haupt = { ...rohr([[0, 2, 0], [2, 2, 0], [2, 2, 2]], undefined, ROHR.haupt, "haupt"), daten: { art: "haupt" as const, von: "wp", nach: "sp", bauteilIds: [] } };
+    const f = formstuecke([haupt]);
+    expect(f.boegen[0].bezug).toEqual({ von: "wp", nach: "sp", gruppeId: undefined });
+    expect(f.muffen.every((m) => m.bezug?.von === "wp")).toBe(true);
+    const geraet = { schluessel: "vt", gruppen: new Set<string>() };
+    expect(rohrGedimmt(f.boegen[0].bezug!, { geraet })).toBe(true);
+    expect(rohrGedimmt(f.boegen[0].bezug!, { geraet: { ...geraet, schluessel: "sp" } })).toBe(false);
   });
 });

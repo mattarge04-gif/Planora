@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
 import { huelle, type Bereich, type V3 } from "../szene2/huelle";
 import type { KatalogEintrag, Welt } from "../typen";
+import type { Befund } from "./router/typen";
 import { Gebaeude3 } from "./Gebaeude3";
 import { Kulisse3 } from "./Kulisse3";
 import { ortBereich, einpassen, FIT_ANTEIL, freiraumMitte, zielKorrektur, type Freiraum, type SzenenZiel } from "./kamera";
@@ -33,6 +34,8 @@ export interface Szene3Props {
   tastatur?: boolean;
   onAuswahl?: (schluessel: string | null) => void; onHover?: (schluessel: string | null) => void;
   onAuswahlPunkt?: (punkt: BildschirmPunkt | null) => void;
+  /** Befunde der automatischen Leitungsführung, wie gezeichnet (Twin-Hinweis). */
+  onLeitungsBefunde?: (befunde: Befund[], weltHash: string) => void;
 }
 const KEINE_GESCHOSSE: string[] = [];
 
@@ -47,7 +50,7 @@ export function Szene3(props: Szene3Props) {
 }
 
 function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblendet = KEINE_GESCHOSSE, separiert = false,
-  auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt }: Szene3Props) {
+  auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt, onLeitungsBefunde }: Szene3Props) {
   const h = useMemo(() => huelle(welt), [welt]);
   /** Darstellungslage der Anlagen (Verteiler mit Gruppen, Teile in der Leitung) für Kamera und Auswahlpunkt. */
   const anzeige = useMemo(() => anzeigeWelt(welt, katalog), [welt, katalog]);
@@ -139,7 +142,7 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       <FreiraumSchnitt freiraum={freiraum} nurUnten>
       <Gebaeude3 welt={welt} h={h} fokusId={fokusId} kameraRichtung={kameraRichtung} schatten={!reduziert} darstellung={darstellung} />
       <Technik3 welt={welt} katalog={katalog} fokusId={fokusId} schatten={!reduziert} onModelle={modelleGeladen}
-        darstellung={darstellung} interaktion={interaktion} separiert={separiert} />
+        darstellung={darstellung} interaktion={interaktion} separiert={separiert} onBefunde={onLeitungsBefunde} />
       {!auswahl && ziel && <Ortsmarke welt={welt} ziel={ziel} darstellung={darstellung} />}
       </FreiraumSchnitt>
       <NahKulisse basisZoom={basisZoom}><FreiraumSchnitt freiraum={freiraum}><Kulisse3 bereich={h.bereich} schatten={!reduziert} /></FreiraumSchnitt></NahKulisse>

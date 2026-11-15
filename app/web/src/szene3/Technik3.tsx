@@ -7,7 +7,8 @@ import { type V3 } from "../szene2/huelle";
 import { schlange, geschossBeiY } from "../szene2/leitungen";
 import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
 import { Anlagen3 } from "./Anlagen3";
-import { durchgaenge, einheitVon, freieVerteilerAbgaenge, rohrnetz, type Huelse, type Rohrstueck } from "./netz";
+import { durchgaenge, einheitVon, freieVerteilerAbgaenge, rohrnetzMitBefunden, type Huelse, type Rohrstueck } from "./netz";
+import type { Befund } from "./router/typen";
 import { geschossSchnitt } from "./schnitt";
 import { anlagenDaten, anlageSichtbar, rohrAbschluesse, rohrSchnitt } from "./technik";
 import { anzeigeWelt } from "./gruppenNetz";
@@ -22,9 +23,11 @@ import { achseY, mitRohrStaerke, ROHR_FAKTOR, rohrFaktor, rohrTreffer } from "./
 
 const FLAECHE = new Set(["heizung.fbh_kreis", "heizung.tabs_feld"]);
 
-export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstellung, interaktion, separiert = false }: {
+export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstellung, interaktion, separiert = false, onBefunde }: {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; schatten: boolean; onModelle: () => void;
   darstellung?: Darstellung; interaktion?: Interaktion; separiert?: boolean;
+  /** Befunde der gezeichneten Leitungsführung (eine Berechnung für Bild und Hinweis). */
+  onBefunde?: (befunde: Befund[], weltHash: string) => void;
 }) {
   const [anschluesse, setAnschluesse] = useState<Record<string, V3>>({});
   const onModell = useCallback((pfad: string, anschluss: V3) => {
@@ -38,7 +41,9 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
   const symbole = useMemo(() => anzeige.symbole.filter((s) => anlageSichtbar(anzeige, fokusId, s)), [anzeige, fokusId]);
   const schnitt = useMemo(() => geschossSchnitt(welt, fokusId), [welt, fokusId]);
   // Leitungsführung nur bei geänderter Welt bzw. geladenen Anschlüssen neu berechnen, nicht bei jedem Geschosswechsel.
-  const ganz = useMemo(() => rohrnetz(welt, katalog, anschluesse), [welt, katalog, anschluesse]);
+  const ergebnis = useMemo(() => rohrnetzMitBefunden(welt, katalog, anschluesse), [welt, katalog, anschluesse]);
+  const ganz = ergebnis.stuecke;
+  useEffect(() => { onBefunde?.(ergebnis.befunde, welt.hash); }, [ergebnis, onBefunde, welt.hash]);
   const netz = useMemo(() => {
     const yMax = schnitt.fokus ? schnitt.fokus.yUnten + schnitt.fokus.hoehe - 0.25 : Infinity;
     const huelsen = new Map<string, Huelse>();

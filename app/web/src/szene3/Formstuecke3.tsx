@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
-import { bogenMatrix, bogenSchluessel, FORMSTUECK, zylinderMatrix, type Formstuecke } from "./formstuecke";
+import { bogenMatrix, bogenSchluessel, FORMSTUECK, zylinderMatrix, type Formstuecke, type RohrBezug } from "./formstuecke";
+import { rohrGedimmt, type Interaktion } from "./Interaktion";
 import { ACHSE, achseMitte, achseTorus, achseY, mitRohrStaerke } from "./rohrStaerke";
 
 /** Geteilte Einheitsgeometrien: Zylinder (Achse y, Höhe 1), Kugel, Viertelbogen je Radienverhältnis. */
@@ -28,7 +29,7 @@ export interface FormstueckFarben { normal: string; gedimmt: string }
  * der Hervorhebung ihres Rohres gedimmt, Pressringe in Metallgrau. Nicht anwählbar; Klicks treffen das Rohr darunter.
  */
 export function Formstuecke3({ f, schatten, gruppe, geraet = null, farben }: { f: Formstuecke; schatten: boolean; gruppe: string | null;
-  geraet?: { gruppen: ReadonlySet<string> } | null; farben: FormstueckFarben }) {
+  geraet?: Interaktion["geraet"]; farben: FormstueckFarben }) {
   const koerper = useMemo(() => mitRohrStaerke(new THREE.MeshStandardMaterial({ color: "#ffffff", ...TOKENS.material.leitung })), []);
   const ring = useMemo(() => mitRohrStaerke(new THREE.MeshStandardMaterial({ color: TOKENS.farbe.grau2, ...TOKENS.material.metall })), []);
   useEffect(() => () => { koerper.dispose(); ring.dispose(); }, [koerper, ring]);
@@ -38,15 +39,16 @@ export function Formstuecke3({ f, schatten, gruppe, geraet = null, farben }: { f
     return [...m.entries()];
   }, [f]);
   const kerne = useMemo(() => f.knoten.map((k) => ({ matrix: new THREE.Matrix4().compose(new THREE.Vector3(...k.position), new THREE.Quaternion(),
-    new THREE.Vector3().setScalar(k.radius * FORMSTUECK.koerper)), gruppeId: k.gruppeId })), [f]);
-  // Wie die Rohre: andere Gruppe hervorgehoben, oder Gerät gewählt und Formstück einer fremden Gruppe (Hauptleitungen bleiben).
-  const farbe = (gruppeId?: string) => (gruppe ? gruppeId !== gruppe : !!geraet && !!gruppeId && !geraet.gruppen.has(gruppeId)) ? farben.gedimmt : farben.normal;
+    new THREE.Vector3().setScalar(k.radius * FORMSTUECK.koerper)), gruppeId: k.gruppeId, bezug: k.bezug })), [f]);
+  // Genau wie das zugehörige Rohr (Interaktion.rohrGedimmt), auch für Hauptleitungen und Ersatzgruppen.
+  const farbe = (x: { gruppeId?: string; bezug?: RohrBezug }) =>
+    rohrGedimmt(x.bezug ?? { von: "", nach: "", gruppeId: x.gruppeId }, { gruppe, geraet }) ? farben.gedimmt : farben.normal;
   return <group name="formstuecke">
     {boegen.map(([s, liste]) => <Instanzen key={s} geometrie={bogenGeometrie(s)} material={koerper} schatten={schatten}
-      teile={liste.map((b) => ({ matrix: bogenMatrix(b), farbe: farbe(b.gruppeId) }))} />)}
-    <Instanzen geometrie={KUGEL} material={koerper} schatten={schatten} teile={kerne.map((k) => ({ matrix: k.matrix, farbe: farbe(k.gruppeId) }))} />
+      teile={liste.map((b) => ({ matrix: bogenMatrix(b), farbe: farbe(b) }))} />)}
+    <Instanzen geometrie={KUGEL} material={koerper} schatten={schatten} teile={kerne.map((k) => ({ matrix: k.matrix, farbe: farbe(k) }))} />
     <Instanzen geometrie={ZYLINDER} material={koerper} schatten={schatten}
-      teile={f.muffen.map((z) => ({ matrix: zylinderMatrix(z), farbe: farbe(z.gruppeId) }))} />
+      teile={f.muffen.map((z) => ({ matrix: zylinderMatrix(z), farbe: farbe(z) }))} />
     <Instanzen geometrie={ZYLINDER} material={ring} schatten={schatten} teile={f.ringe.map((z) => ({ matrix: zylinderMatrix(z) }))} />
   </group>;
 }

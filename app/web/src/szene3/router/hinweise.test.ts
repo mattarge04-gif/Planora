@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Welt } from "../../typen";
+import { rohrnetzMitBefunden } from "../netz";
 import { leitungsHinweise } from "./hinweise";
 import { TEST_KATALOG } from "./testKatalog";
 
@@ -7,7 +8,7 @@ const dateien = import.meta.glob<Welt>("../../fixtures/muster-*.json", { eager: 
 
 describe("leitungsHinweise", () => {
   it("saubere Muster: kein Hinweis", () => {
-    for (const w of Object.values(dateien)) expect(leitungsHinweise(structuredClone(w), TEST_KATALOG)).toEqual([]);
+    for (const w of Object.values(dateien)) { const x = structuredClone(w); expect(leitungsHinweise(x, rohrnetzMitBefunden(x, TEST_KATALOG, {}).befunde)).toEqual([]); }
   });
   it("erzwungener Konflikt: ein Hinweis mit Umlaut-Text und Geschossziel", () => {
     // Erstes Muster mit Speicher und Verteiler (m1 hat keinen Speicher; der Test waere dort leer).
@@ -15,7 +16,7 @@ describe("leitungsHinweise", () => {
     const v = w.symbole.find((s) => s.katalogId === "heizung.verteiler")!;
     const sp = w.symbole.find((s) => s.katalogId === "heizung.speicher")!;
     sp.position = { ...v.position }; // Speicher in den Verteiler geschoben -> Geraetekonflikt
-    const h = leitungsHinweise(w, TEST_KATALOG);
+    const h = leitungsHinweise(w, rohrnetzMitBefunden(w, TEST_KATALOG, {}).befunde);
     expect(h).toHaveLength(1);
     expect(h[0].text).toContain("Leitungsführung unsauber");
     expect(h[0].ziel?.geschossId).toBeTruthy();

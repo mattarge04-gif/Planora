@@ -4,6 +4,7 @@ import { TOKENS } from "../design/tokens";
 import { Szene3 } from "../szene3/Szene3";
 import type { Freiraum } from "../szene3/kamera";
 import type { Beschreibung, GebaeudeEintrag, Katalog, Welt } from "../typen";
+import type { Befund } from "../szene3/router/typen";
 import { Kopfzeile, type Modus } from "../ui/Kopfzeile";
 import { TwinGebaeude } from "../karten/TwinGebaeude";
 import { TwinHinweise } from "../karten/TwinHinweise";
@@ -153,8 +154,12 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
     return () => { ro.disconnect(); window.removeEventListener("resize", messen); };
   }, [bereit, !!(welt && beschreibung && katalog)]);
 
-  // Automatische Leitungsfuehrung pruefen (routet selbst): nur bei geaenderter Welt bzw. geaendertem Katalog.
-  const leitungsHinweis = useMemo(() => (welt && katalog ? leitungsHinweise(welt, katalog.eintraege) : []), [welt, katalog]);
+  // Hinweis aus den Befunden der gezeichneten Leitungsführung (Technik3 meldet sie; keine zweite Berechnung).
+  // An den Welt-Hash gebunden: Befunde einer vorherigen Welt gelten nicht (Kind-Effekte laufen vor Eltern-Effekten).
+  const [leitungsBefunde, setLeitungsBefunde] = useState<{ hash: string; befunde: Befund[] } | null>(null);
+  const befundeMelden = useCallback((befunde: Befund[], hash: string) => setLeitungsBefunde({ hash, befunde }), []);
+  const leitungsHinweis = useMemo(() => (welt && leitungsBefunde?.hash === welt.hash ? leitungsHinweise(welt, leitungsBefunde.befunde) : []),
+    [welt, leitungsBefunde]);
   const daten = useMemo(() => {
     if (!welt || !beschreibung || !katalog) return null;
     const geschosse = geschossListe(welt);
@@ -268,7 +273,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
           {/* Szene im DOM zwischen linken und rechten Karten: ein Tab-Stopp (Canvas) an der richtigen Stelle. */}
           {bereit && <Szene3 welt={welt!} katalog={katalog!.eintraege} fokusId={fokusId} reduziert={reduziert} freiraum={freiraum}
             ausgeblendet={ausgeblendet} separiert={separiert} auswahl={auswahl}
-            onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} tastatur />}
+            onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} tastatur onLeitungsBefunde={befundeMelden} />}
           {bereit && <TwinSzenenTasten name={name} geschosse={daten.geschosse} fokusId={fokusId}
             onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
             onTechnik={technikTaste} meldung={tastenMeldung} separiert={separiert} onSeparieren={setSepariert} />}

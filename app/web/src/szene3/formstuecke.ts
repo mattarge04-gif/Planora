@@ -23,15 +23,18 @@ export const FORMSTUECK = {
   toleranz: 1e-3,
 } as const;
 
-export interface Zylinder { position: V3; richtung: V3; radius: number; laenge: number; gruppeId?: string }
-export interface Bogenstueck { ecke: V3; ein: V3; aus: V3; r: number; rohrRadius: number; gruppeId?: string }
-export interface Knoten { position: V3; radius: number; arme: { richtung: V3; radius: number }[]; gruppeId?: string }
+/** Rohr, zu dem ein Formstueck gehoert (fuer Dimmen wie das Rohr, Interaktion.rohrGedimmt). */
+export interface RohrBezug { von: string; nach: string; gruppeId?: string }
+export interface Zylinder { position: V3; richtung: V3; radius: number; laenge: number; gruppeId?: string; bezug?: RohrBezug }
+export interface Bogenstueck { ecke: V3; ein: V3; aus: V3; r: number; rohrRadius: number; gruppeId?: string; bezug?: RohrBezug }
+export interface Knoten { position: V3; radius: number; arme: { richtung: V3; radius: number }[]; gruppeId?: string; bezug?: RohrBezug }
 export interface Formstuecke { boegen: Bogenstueck[]; knoten: Knoten[]; muffen: Zylinder[]; ringe: Zylinder[] }
 
 /** Netz eines Rohrstücks: Gruppe, sonst alle Hauptleitungen gemeinsam, sonst die einzelne Verbindung. */
 export const netzVon = (r: Rohrstueck) => r.daten.gruppeId ?? (r.daten.art === "haupt" ? "haupt" : `${r.daten.von}>${r.daten.nach}`);
 
 const v = (p: V3) => new THREE.Vector3(...p);
+const bezugVon = (r: Rohrstueck): RohrBezug => ({ von: r.daten.von, nach: r.daten.nach, gruppeId: r.daten.gruppeId });
 
 /**
  * Knoten: Stellen, an denen Rohrstücke desselben Netzes zusammenstossen (Endpunkt auf Endpunkt) oder ein Rohr auf
@@ -40,17 +43,17 @@ const v = (p: V3) => new THREE.Vector3(...p);
  */
 export function knoten(stuecke: Rohrstueck[]): Knoten[] {
   const tol = FORMSTUECK.toleranz;
-  const roh: { netz: string; position: THREE.Vector3; arme: { richtung: THREE.Vector3; radius: number }[]; gruppeId?: string }[] = [];
-  const knotenBei = (netz: string, p: THREE.Vector3, gruppeId?: string) => {
+  const roh: { netz: string; position: THREE.Vector3; arme: { richtung: THREE.Vector3; radius: number }[]; gruppeId?: string; bezug: RohrBezug }[] = [];
+  const knotenBei = (netz: string, p: THREE.Vector3, gruppeId: string | undefined, bezug: RohrBezug) => {
     let k = roh.find((x) => x.netz === netz && x.position.distanceTo(p) < tol);
-    if (!k) roh.push(k = { netz, position: p.clone(), arme: [], gruppeId });
+    if (!k) roh.push(k = { netz, position: p.clone(), arme: [], gruppeId, bezug });
     return k;
   };
   stuecke.forEach((s, i) => {
     const netz = netzVon(s);
     rohrAbschluesse(s.punkte).forEach((ende, e) => {
       const p = v(ende.position);
-      const k = knotenBei(netz, p, s.daten.gruppeId);
+      const k = knotenBei(netz, p, s.daten.gruppeId, bezugVon(s));
       k.arme.push({ richtung: v(ende.richtung).negate(), radius: e === 0 ? s.startRadius : s.endRadius });
       // Beginnt das Rohr auf einem Segment eines anderen Rohres desselben Netzes, laufen dort zwei Arme durch.
       stuecke.forEach((t, j) => {
@@ -75,7 +78,7 @@ export function knoten(stuecke: Rohrstueck[]): Knoten[] {
       else arme.push({ richtung: a.richtung.clone(), radius: a.radius });
     }
     if (arme.length < 2 || (arme.length === 2 && arme[0].richtung.dot(arme[1].richtung) < -0.999)) return [];
-    return [{ position: k.position.toArray() as V3, radius: Math.max(...arme.map((a) => a.radius)), gruppeId: k.gruppeId,
+    return [{ position: k.position.toArray() as V3, radius: Math.max(...arme.map((a) => a.radius)), gruppeId: k.gruppeId, bezug: k.bezug,
       arme: arme.map((a) => ({ richtung: a.richtung.toArray() as V3, radius: a.radius })) }];
   });
 }
@@ -111,29 +114,29 @@ export function formstuecke(stuecke: Rohrstueck[]): Formstuecke {
   const boegen: Bogenstueck[] = [], muffen: Zylinder[] = [], ringe: Zylinder[] = [];
   const knotenListe = knoten(stuecke);
   /** Muffe vom Punkt `p` in Richtung `d` mit Pressring am äusseren Ende. */
-  const muffe = (p: THREE.Vector3, d: THREE.Vector3, rohrRadius: number, laenge: number, gruppeId?: string) => {
+  const muffe = (p: THREE.Vector3, d: THREE.Vector3, rohrRadius: number, laenge: number, gruppeId?: string, bezug?: RohrBezug) => {
     muffen.push({ position: p.clone().addScaledVector(d, laenge / 2).toArray() as V3, richtung: d.toArray() as V3,
-      radius: rohrRadius * FORMSTUECK.koerper, laenge, gruppeId });
+      radius: rohrRadius * FORMSTUECK.koerper, laenge, gruppeId, bezug });
     const rl = rohrRadius * FORMSTUECK.ringLaenge;
     ringe.push({ position: p.clone().addScaledVector(d, laenge - rl / 2).toArray() as V3, richtung: d.toArray() as V3,
-      radius: rohrRadius * FORMSTUECK.ring, laenge: rl, gruppeId });
+      radius: rohrRadius * FORMSTUECK.ring, laenge: rl, gruppeId, bezug });
   };
   for (const s of stuecke) {
     for (const b of bogenLagen(s.punkte, s.radius)) {
-      const ein = v(b.ein), aus = v(b.aus), gruppeId = s.daten.gruppeId;
+      const ein = v(b.ein), aus = v(b.aus), gruppeId = s.daten.gruppeId, bezug = bezugVon(s);
       if (b.r < s.radius * FORMSTUECK.engerBogen) {
         // Enger Bogen (kurze Schenkel): als Winkel mit Kern an der Ecke.
-        knotenListe.push({ position: b.ecke, radius: s.radius, gruppeId,
+        knotenListe.push({ position: b.ecke, radius: s.radius, gruppeId, bezug,
           arme: [{ richtung: ein.clone().negate().toArray() as V3, radius: s.radius }, { richtung: b.aus, radius: s.radius }] });
         continue;
       }
-      boegen.push({ ecke: b.ecke, ein: b.ein, aus: b.aus, r: b.r, rohrRadius: s.radius, gruppeId });
+      boegen.push({ ecke: b.ecke, ein: b.ein, aus: b.aus, r: b.r, rohrRadius: s.radius, gruppeId, bezug });
       const laenge = s.radius * FORMSTUECK.bogenMuffe;
-      muffe(v(b.a), ein.clone().negate(), s.radius, laenge, gruppeId);
-      muffe(v(b.b), aus, s.radius, laenge, gruppeId);
+      muffe(v(b.a), ein.clone().negate(), s.radius, laenge, gruppeId, bezug);
+      muffe(v(b.b), aus, s.radius, laenge, gruppeId, bezug);
     }
   }
-  for (const k of knotenListe) for (const a of k.arme) muffe(v(k.position), v(a.richtung), a.radius, a.radius * FORMSTUECK.knotenMuffe, k.gruppeId);
+  for (const k of knotenListe) for (const a of k.arme) muffe(v(k.position), v(a.richtung), a.radius, a.radius * FORMSTUECK.knotenMuffe, k.gruppeId, k.bezug);
   return { boegen, knoten: knotenListe, muffen, ringe };
 }
 
