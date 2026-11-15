@@ -18,7 +18,7 @@ Kritik: [r1](../../design/kritiken/2026-11-15-leitungsrouter-r1.md) (verbessern)
 | Geschossbild (Rohre aus Distanz verdickt) | [m3 EG](m3-geschoss-eg-1440x900.png), [m3 OG1](m3-geschoss-og1-1440x900.png), [m6 EG](m6-geschoss-eg-1440x900.png) |
 | Band-Effekt aus Distanz (Geschmacksfrage) | [m6 Technik](m6-technik-1440x900.png) |
 
-Vollsatz je Muster: `<muster>-uebersicht | technik | geschoss-<code>[-nah] | zentrale | formstuecke`.
+Vollsatz je Muster (im Repo nur 1440×900; 1920×1080 und 1280×720 geprueft, siehe `bericht.json`): `<muster>-uebersicht | technik | geschoss-<code>[-nah] | zentrale | formstuecke`. Formstueck-Nahbilder in allen drei Fenstern.
 
 ## Was sich geändert hat
 
