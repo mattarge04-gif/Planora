@@ -1530,10 +1530,10 @@ Import: `import { leitungsHinweise } from "../szene3/router/hinweise";`
 - Create: `docs/abnahme/2026-11-13-leitungsrouter/README.md` und Bilder
 - Modify: `docs/superpowers/plans/2026-11-13-stufe1-integration.md` (Offen-Punkt 2 auf erledigt), `CLAUDE.md` Abschnitt 0b
 
-- [ ] **Step 1: Skill `planora-design` laden** und Ablauf fuer Stufe "mittel" befolgen.
-- [ ] **Step 2: Eigene Instanz starten** (nicht 3000/54500): in `app/` `$env:PLANORA_PORT=3100; $env:PLANORA_PG_PORT=54600; npm.cmd run entwicklung`. Vorher Port 54800 pruefen (offener Punkt 8 im Integrationsplan).
-- [ ] **Step 3: Bilder** mit `werkzeug/design/screenshot.mjs` (Szenarien wie `docs/abnahme/2026-11-12-gruppen/`): je Muster Zentrale + jedes Geschoss, 1280/1440/1920. Vorher/Nachher fuer m3-zentrale nebeneinander im README.
-- [ ] **Step 4: `visual-critic`** auf die Bilder ansetzen (Leitungsbild: Parallelitaet, Abstaende, Boegen, Lesbarkeit). P1-Befunde beheben, P2 als Restauflagen notieren.
+- [x] **Step 1: Skill `planora-design` laden** und Ablauf fuer Stufe "mittel" befolgen.
+- [x] **Step 2: Eigene Instanz starten** (nicht 3000/54500): in `app/` `$env:PLANORA_PORT=3100; $env:PLANORA_PG_PORT=54600; npm.cmd run entwicklung`. Vorher Port 54800 pruefen (offener Punkt 8 im Integrationsplan).
+- [x] **Step 3: Bilder** mit `werkzeug/design/screenshot.mjs` (Szenarien wie `docs/abnahme/2026-11-12-gruppen/`): je Muster Zentrale + jedes Geschoss, 1280/1440/1920. Vorher/Nachher fuer m3-zentrale nebeneinander im README.
+- [x] **Step 4: `visual-critic`** auf die Bilder ansetzen (Leitungsbild: Parallelitaet, Abstaende, Boegen, Lesbarkeit). P1-Befunde beheben, P2 als Restauflagen notieren.
 - [ ] **Step 5: Instanz stoppen**, Doku nachfuehren (Pruefstand, Laufzeit, Kreuzungsquote, Annahmen), Commit `Leitungsrouter T10: GPU-Abnahme und Doku`.
 - [ ] **Step 6: PO-Sichtung anfragen** mit Link auf `docs/abnahme/2026-11-13-leitungsrouter/README.md`. Kein Push ohne Auftrag.
 
@@ -1622,3 +1622,4 @@ Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (
 
 - T9 fertig: `strangBaum`, `lWeg`, `konflikte`, `KONFLIKT_ABSTAND`, `Strangpunkt`/`Achse` aus `gruppenNetz.ts` entfernt; `kantenNetz` verlangt den Router (Schablonen-Zweig und `lage` entfernt). Sechs `strangBaum`-Tests auf `LeitungsRouter.strang` umgestellt (Eigenschaften statt Zwischenpunkte; Spurabstand jetzt ueber den Pruefer). Web 345/345, tsc und Build gruen. Router-Sonderfaelle unveraendert.
 - Naechstes: T10 (GPU-Bilder inkl. Boegen, T-Stuecke, FBH-Kasten), dann Gesamtreview.
+- T10: GPU-Bilder aller 7 Muster, Formstuecke (`3a574ae`), Fixrunde Rohrstaerke/Szenario (`d2c7229`), Kritik r2 "bereit fuer PO-Sichtung". README `docs/abnahme/2026-11-15-leitungsrouter/README.md`. Offen: PO-Sichtung (Step 6), Bilder-Umfang im Repo, Restauflagen N1/N3/B4/B6. Danach Gesamtreview.

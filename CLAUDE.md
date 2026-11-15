@@ -17,11 +17,13 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 **Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
 
-## 0b. Stand – zuletzt aktualisiert 14.11.2026
+## 0b. Stand – zuletzt aktualisiert 15.11.2026
 
 ### Leitungsrouter (15.11.) [F]
 
-- T9 fertig: alte Schablonenfuehrung (`strangBaum`, `kantenNetz`-`else`) entfernt, Router Pflicht; Web 345/345. Naechstes: T10 (GPU-Bilder an PO), dann Gesamtreview.
+- T9 fertig (`384eca0`): alte Schablonenfuehrung entfernt, Router Pflicht.
+- T10 bis PO-Sichtung (`3a574ae`, `d2c7229`): Pressboegen/T-Stuecke/Winkel, FBH-Kasten geschlossen (GLB), Rohre aus Distanz verdickt [A]; Web 363/363, 60 fps; Kritik r2 bereit. Bilder/README `docs/abnahme/2026-11-15-leitungsrouter/`. Offen: PO-Sichtung, Bilder-Umfang im Repo, P2 N1/N3/B4/B6, dann Gesamtreview.
+- Punkt 13 (Test-Liegenschaften): Entwicklungsstart nutzt je Start eine Wegwerf-DB, nichts zu loeschen. Aber 117 Temp-Ordner `planora-*` (6.4 GB) in %TEMP% bleiben liegen; PO-Entscheid offen (loeschen / start.ts aufraeumen lassen).
 
 ### Leitungsrouter (14.11., Tagesabschluss) [F]
 
