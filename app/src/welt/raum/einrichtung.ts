@@ -10,7 +10,10 @@ export const ERZEUGER = ["heizung.waermepumpe", "heizung.gaskessel", "heizung.oe
 const SPEICHER = "heizung.speicher";
 
 /** Abstaende in Metern [A]: zwischen Geraeten, zu den Seitenwaenden, zur Rueckwand, Heizkoerper zur Fassade, Raster zur Wand. */
-const ABSTAND = 0.5, RAND = 0.5, RUECK = 0.2, HK_WAND = 0.1, RASTER_WAND = 0.6;
+/** Aussenwand liegt in der 3D-Huelle 0.3 m innerhalb der Grundrisskante (web/src/szene2/huelle.ts MASSE.wand). */
+const AUSSENWAND = 0.3;
+// HK_WAND: Rueckseite Heizkoerper ab Grundrisskante = Wand + 0.05 m Luft [A] (vorher 0.1 m: Heizkoerper steckte in der Wand).
+const ABSTAND = 0.5, RAND = 0.5, RUECK = 0.2, HK_WAND = AUSSENWAND + 0.05, RASTER_WAND = 0.6;
 const RANDNAH = 0.01; // Mindestabstand jeder Position zur Raumgrenze
 
 /** Wand eines Raums: Koordinate, Richtung ins Rauminnere, Achse der Wand ("x" = Wand laeuft entlang x) und deren Bereich. */

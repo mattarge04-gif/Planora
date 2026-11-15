@@ -61,6 +61,14 @@ describe("einrichten", () => {
       expect(p.get(k)!.z).toBeLessThan(15);
     }
   });
+  it("Heizkoerper steht vor der Innenseite der Aussenwand (Wand 0.3 m im Grundriss), nicht in ihr", () => {
+    // Die 3D-Huelle legt die Aussenwand 0.3 m nach innen ab der Grundrisskante (web/src/szene2/huelle.ts MASSE.wand).
+    const p = einrichten(RAUM, "-z", "+z", [s("h1", HK)], KATALOG_V2, null);
+    const rueckseite = p.get("h1")!.z + tiefe(HK) / 2;
+    expect(15 - rueckseite).toBeGreaterThanOrEqual(0.3);
+    const r: Rechteck = { x: 0, z: 15, breite: 6, tiefe: 9 };
+    expect(einrichten(r, "+x", "-x", [s("h1", HK)], KATALOG_V2, null).get("h1")!.x - tiefe(HK) / 2).toBeGreaterThanOrEqual(0.3);
+  });
   it("Heizkoerper an Fassade -x bei Raum im Schenkel", () => {
     const r: Rechteck = { x: 0, z: 15, breite: 6, tiefe: 9 };
     const p = einrichten(r, "+x", "-x", [s("h1", HK)], KATALOG_V2, null);

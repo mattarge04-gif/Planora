@@ -228,7 +228,7 @@
       "position": {
         "x": 2.25,
         "y": 0,
-        "z": 0.16
+        "z": 0.41
       },
       "versorgt": []
     },
@@ -246,7 +246,7 @@
       "position": {
         "x": 6.75,
         "y": 0,
-        "z": 0.16
+        "z": 0.41
       },
       "versorgt": []
     },
@@ -354,5 +354,5 @@
     "x": 0.3,
     "z": 9.3
   },
-  "hash": "85cb95c910b415f66faa4bfed267cf4781ae23982e39fa4999eefdcf66e80f32"
+  "hash": "1aa9b0eb7b4a67d57067edc4f8f92f7d66840473d9885b6bf80bc0f0ed1781c9"
 }

@@ -361,7 +361,7 @@
       "mengeUnbekannt": false,
       "status": "bestaetigt",
       "position": {
-        "x": 0.16,
+        "x": 0.41,
         "y": 0,
         "z": 13.5
       },
@@ -399,7 +399,7 @@
       "position": {
         "x": 18,
         "y": 0,
-        "z": 0.16
+        "z": 0.41
       },
       "versorgt": []
     },
@@ -453,7 +453,7 @@
       "position": {
         "x": 18,
         "y": 0,
-        "z": 14.84
+        "z": 14.59
       },
       "versorgt": []
     }
@@ -570,5 +570,5 @@
     "x": 18,
     "z": 12
   },
-  "hash": "cfe2750382a3362782d09427e40771560fc5591e079acb941f5bde45e288aaf9"
+  "hash": "5ea198a836e6bf484c2b8ad9e29cf0a7eee7857a7c6652777299cd5ba7a217d8"
 }
