@@ -15,6 +15,17 @@ export function tastaturSchritt(key: string, azimut: number, polar: number, zoom
 }
 
 /** Verschieben darf das Modell nicht aus dem Bild tragen: das Ziel bleibt innerhalb des sichtbaren Gebäudebereichs. */
+/**
+ * Weltpunkt in der Mitte der freien Flaeche (Bildmitte verschoben um den Freiraum der Karten), auf Hoehe des Ziels.
+ * `einpassen` legt diesen Punkt auf die Bereichsmitte; Klemmen muss diesen Punkt pruefen, nicht das Kameraziel.
+ */
+export function freiraumMitte(camera: Camera & { zoom: number }, ziel: { x: number; y: number; z: number }, frei: Freiraum): { x: number; y: number; z: number } {
+  camera.updateMatrixWorld();
+  const dx = (frei.links - frei.rechts) / 2 / camera.zoom, dy = (frei.unten - frei.oben) / 2 / camera.zoom;
+  const r = new Vector3().setFromMatrixColumn(camera.matrixWorld, 0), o = new Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+  return new Vector3(ziel.x, ziel.y, ziel.z).addScaledVector(r, dx).addScaledVector(o, dy);
+}
+
 export function zielKorrektur(ziel: { x: number; y: number; z: number }, b: Bereich): V3 {
   const klemme = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v)) - v;
   return [klemme(ziel.x, b.xMin, b.xMax), klemme(ziel.y, b.yMin, b.yMax), klemme(ziel.z, b.zMin, b.zMax)];

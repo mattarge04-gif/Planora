@@ -10,7 +10,7 @@ import { huelle, type Bereich, type V3 } from "../szene2/huelle";
 import type { KatalogEintrag, Welt } from "../typen";
 import { Gebaeude3 } from "./Gebaeude3";
 import { Kulisse3 } from "./Kulisse3";
-import { ortBereich, einpassen, FIT_ANTEIL, zielKorrektur, type Freiraum, type SzenenZiel } from "./kamera";
+import { ortBereich, einpassen, FIT_ANTEIL, freiraumMitte, zielKorrektur, type Freiraum, type SzenenZiel } from "./kamera";
 import { kulisse } from "./kulisse";
 import { geschossSchnitt, kameraSeiten, POLAR_GRENZEN } from "./schnitt";
 import { Technik3 } from "./Technik3";
@@ -112,7 +112,8 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
   const kameraGeaendert = () => {
     const c = controls.current;
     if (!c) return;
-    const [dx, dy, dz] = zielKorrektur(c.target, sichtbar);
+    // Geklemmt wird die Mitte der freien Flaeche, nicht das Ziel: einpassen verschiebt das Ziel bei einseitigen Karten (Assistent).
+    const [dx, dy, dz] = zielKorrektur(freiraumMitte(c.object as THREE.OrthographicCamera, c.target, freiraum), sichtbar);
     if (dx || dy || dz) { c.target.add(new THREE.Vector3(dx, dy, dz)); c.object.position.add(new THREE.Vector3(dx, dy, dz)); }
     const richtung = c.object.position.clone().sub(c.target).toArray() as V3;
     setKameraRichtung((alt) => kameraSeiten(richtung, alt));

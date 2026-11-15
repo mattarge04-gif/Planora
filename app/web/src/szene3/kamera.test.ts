@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { einpassen, gruppenBereich, ISO_RICHTUNG, zielKorrektur } from "./kamera";
+import { einpassen, freiraumMitte, gruppenBereich, ISO_RICHTUNG, zielKorrektur } from "./kamera";
 import type { Welt } from "../typen";
 import type { Bereich } from "../szene2/huelle";
 import { OrthographicCamera, Vector3 } from "three";
@@ -52,6 +52,18 @@ describe("einpassen", () => {
 });
 
 describe("zielKorrektur", () => {
+  it("lässt eine Einpassung mit einseitigem Freiraum (Assistent) unverändert", () => {
+    // Assistent 1440 x 900: Formular links bis 844 px. Die Einpassung schiebt das Ziel absichtlich aus dem Gebäude;
+    // geklemmt wird die Mitte der freien Fläche, sonst rutscht das Gebäude unter das Formular (PO 14.11., Punkt 10).
+    const g: Bereich = { xMin: 0, xMax: 12, yMin: -0.25, yMax: 9.6, zMin: 0, zMax: 15 };
+    const frei = { links: 844, rechts: 20, oben: 104, unten: 28 };
+    const e = einpassen(g, 1440, 900, frei, 0.7, [1, 1, 1]);
+    const cam = new OrthographicCamera(-720, 720, 450, -450, 0.1, 1000);
+    cam.position.set(...e.position); cam.zoom = e.zoom; cam.lookAt(...e.ziel); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+    const ziel = new Vector3(...e.ziel);
+    expect(zielKorrektur(ziel, g).some((v) => Math.abs(v) > 1e-6)).toBe(true); // bisherige Klemmung des Ziels verschob die Ansicht
+    expect(zielKorrektur(freiraumMitte(cam, ziel, frei), g).every((v) => Math.abs(v) < 1e-6)).toBe(true);
+  });
   const b: Bereich = { xMin: 0, xMax: 30, yMin: 0, yMax: 6, zMin: 0, zMax: 10 };
   it("lässt ein Ziel innerhalb des Bereichs unverändert", () => {
     expect(zielKorrektur({ x: 2, y: 3, z: 9 }, b)).toEqual([0, 0, 0]);
