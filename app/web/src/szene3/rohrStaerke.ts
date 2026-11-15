@@ -81,3 +81,29 @@ export function achseTorus(geometrie: THREE.BufferGeometry, r: number): THREE.Bu
   geometrie.setAttribute(ACHSE, new THREE.BufferAttribute(a, 3));
   return geometrie;
 }
+
+/**
+ * Trefferprüfung eines Rohrs entlang seiner Achse mit dem aktuell sichtbaren Radius (Radius × ROHR_FAKTOR): Aus der
+ * Distanz ist das Rohr so breit anklickbar, wie es erscheint (Kritik r2 N3). Ersetzt `Mesh.raycast` des Rohrkörpers.
+ */
+export function rohrTreffer(punkte: readonly (readonly [number, number, number])[], radius: number) {
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), aufStrahl = new THREE.Vector3(), aufAchse = new THREE.Vector3();
+  const inv = new THREE.Matrix4(), strahl = new THREE.Ray();
+  return function (this: THREE.Object3D, raycaster: THREE.Raycaster, ziel: THREE.Intersection[]) {
+    inv.copy(this.matrixWorld).invert();
+    strahl.copy(raycaster.ray).applyMatrix4(inv);
+    const grenze = (radius * ROHR_FAKTOR.value) ** 2;
+    let best: THREE.Vector3 | null = null;
+    for (let i = 1; i < punkte.length; i++) {
+      a.set(...punkte[i - 1]); b.set(...punkte[i]);
+      if (strahl.distanceSqToSegment(a, b, aufStrahl, aufAchse) > grenze) continue;
+      const welt = aufStrahl.clone().applyMatrix4(this.matrixWorld);
+      if (!best || welt.distanceTo(raycaster.ray.origin) < best.distanceTo(raycaster.ray.origin)) best = welt;
+    }
+    if (!best) return;
+    const distance = best.distanceTo(raycaster.ray.origin);
+    if (distance < raycaster.near || distance > raycaster.far) return;
+    ziel.push({ distance, point: best, object: this });
+  };
+}
+

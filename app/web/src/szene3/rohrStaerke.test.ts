@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { ROHR } from "./technik";
-import { ACHSE, achseMitte, achseTorus, achseY, achseZ, ROHR_STAERKE, rohrFaktor } from "./rohrStaerke";
+import { ACHSE, achseMitte, achseTorus, achseY, achseZ, ROHR_FAKTOR, ROHR_STAERKE, rohrFaktor, rohrTreffer } from "./rohrStaerke";
 import { rohrGeometrie } from "./technikGeometrie";
 
 describe("Bildschirm-Mindeststärke der Leitungen", () => {
@@ -44,5 +44,29 @@ describe("Bildschirm-Mindeststärke der Leitungen", () => {
     expect(achseMitte(new THREE.SphereGeometry(1, 8, 6)).getAttribute(ACHSE).getX(5)).toBe(0);
     const t = achseTorus(new THREE.TorusGeometry(1, 0.1, 6, 8, Math.PI / 2), 1).getAttribute(ACHSE);
     for (let i = 0; i < t.count; i++) expect(Math.hypot(t.getX(i), t.getY(i))).toBeCloseTo(1, 6);
+  });
+});
+
+describe("rohrTreffer (Klickfläche folgt der Verdickung, Kritik r2 N3)", () => {
+  const punkte: [number, number, number][] = [[0, 0, 0], [4, 0, 0]];
+  const mesh = new THREE.Mesh(new THREE.BufferGeometry());
+  mesh.updateMatrixWorld();
+  const strahl = (z: number) => { const r = new THREE.Raycaster(new THREE.Vector3(2, 5, z), new THREE.Vector3(0, -1, 0)); return r; };
+  const treffer = (z: number, faktor: number) => {
+    ROHR_FAKTOR.value = faktor;
+    const liste: THREE.Intersection[] = [];
+    rohrTreffer(punkte, 0.045).call(mesh, strahl(z), liste);
+    ROHR_FAKTOR.value = 1;
+    return liste;
+  };
+  it("trifft neben der dünnen Achse nur mit Verdickung", () => {
+    expect(treffer(0.1, 1)).toHaveLength(0);
+    expect(treffer(0.1, 3)).toHaveLength(1);
+  });
+  it("liefert Abstand und Punkt in Weltkoordinaten", () => {
+    const [t] = treffer(0, 3);
+    expect(t.object).toBe(mesh);
+    expect(t.distance).toBeCloseTo(5, 6);
+    expect(t.point.x).toBeCloseTo(2, 6);
   });
 });

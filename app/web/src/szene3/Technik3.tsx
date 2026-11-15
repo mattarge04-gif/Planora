@@ -18,7 +18,7 @@ import { rohrGeschosse } from "./darstellung";
 import { SCHATTEN, kontaktLichtZiel } from "./qualitaet";
 import { anAbzweigenTeilen, formstuecke } from "./formstuecke";
 import { Formstuecke3 } from "./Formstuecke3";
-import { achseY, mitRohrStaerke, ROHR_FAKTOR, rohrFaktor } from "./rohrStaerke";
+import { achseY, mitRohrStaerke, ROHR_FAKTOR, rohrFaktor, rohrTreffer } from "./rohrStaerke";
 
 const FLAECHE = new Set(["heizung.fbh_kreis", "heizung.tabs_feld"]);
 
@@ -130,6 +130,8 @@ const MATERIAL = {
 
 function Rohr({ stueck, schatten, anfangFrei = false, interaktion }: { stueck: Rohrstueck; schatten: boolean; anfangFrei?: boolean; interaktion?: Interaktion }) {
   const geometrie = useMemo(() => rohrGeometrie(stueck), [stueck]);
+  // Klickfläche wie sichtbar: Achse mit Radius × Verdickungsfaktor (rohrStaerke.rohrTreffer).
+  const treffer = useMemo(() => rohrTreffer(stueck.punkte, stueck.radius), [stueck]);
   useEffect(() => () => geometrie?.dispose(), [geometrie]);
   const gruppeId = stueck.daten.gruppeId;
   const aktiv = !!gruppeId && interaktion?.gruppe === gruppeId;
@@ -148,7 +150,7 @@ function Rohr({ stueck, schatten, anfangFrei = false, interaktion }: { stueck: R
     onClick: (e: ThreeEvent<MouseEvent>) => { if (e.delta <= 4) { e.stopPropagation(); interaktion.waehlen(gruppeId); } },
   } : {};
   return <group userData={stueck.daten}>
-    <mesh geometry={geometrie} material={gedimmt ? MATERIAL.gedimmt : MATERIAL.rohr} userData={stueck.daten}
+    <mesh geometry={geometrie} material={gedimmt ? MATERIAL.gedimmt : MATERIAL.rohr} userData={stueck.daten} raycast={treffer}
       castShadow={schatten} receiveShadow={schatten} {...ereignisse} />
     {umriss && <mesh geometry={umriss} material={MATERIAL.umriss} raycast={() => {}} userData={{ umriss: gruppeId }} />}
     {ende.map((a, i) => <mesh key={i} position={a.position} geometry={kappe} material={MATERIAL.metall} userData={{ ...stueck.daten, abschluss: true }}
