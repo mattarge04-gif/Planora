@@ -19,7 +19,17 @@ export interface Interaktion {
   gruppe?: string | null;
   /** Anlage, an der die Karte einer gewählten Gruppe andockt (Verteiler der Gruppe). */
   anker?: string | null;
+  /** Gewähltes Gerät und seine Heizgruppen: übrige Leitungen treten zurück (PO 15.11., verdeckter Speicher). */
+  geraet?: { schluessel: string; gruppen: ReadonlySet<string> } | null;
   waehlen: (key: string | null) => void; schweben: (key: string | null) => void;
+}
+
+/** Rohr tritt zurück: eine andere Gruppe ist hervorgehoben, oder ein Gerät ist gewählt und das Rohr gehört nicht dazu. */
+export function rohrGedimmt(daten: { von: string; nach: string; gruppeId?: string }, i?: Pick<Interaktion, "gruppe" | "geraet">): boolean {
+  if (i?.gruppe) return daten.gruppeId !== i.gruppe;
+  const g = i?.geraet;
+  if (!g) return false;
+  return !(daten.von === g.schluessel || daten.nach === g.schluessel || (!!daten.gruppeId && g.gruppen.has(daten.gruppeId)));
 }
 
 export function InteraktionsBewegung({ welt, interaktion, darstellung, weniger, onAuswahlPunkt }: {

@@ -27,7 +27,8 @@ export interface FormstueckFarben { normal: string; gedimmt: string }
  * Formstücke eines Geschosses als Instanzen (wenige Draw-Calls auch bei Muster 6): Körper in der Leitungsfarbe und mit
  * der Hervorhebung ihres Rohres gedimmt, Pressringe in Metallgrau. Nicht anwählbar; Klicks treffen das Rohr darunter.
  */
-export function Formstuecke3({ f, schatten, gruppe, farben }: { f: Formstuecke; schatten: boolean; gruppe: string | null; farben: FormstueckFarben }) {
+export function Formstuecke3({ f, schatten, gruppe, geraet = null, farben }: { f: Formstuecke; schatten: boolean; gruppe: string | null;
+  geraet?: { gruppen: ReadonlySet<string> } | null; farben: FormstueckFarben }) {
   const koerper = useMemo(() => mitRohrStaerke(new THREE.MeshStandardMaterial({ color: "#ffffff", ...TOKENS.material.leitung })), []);
   const ring = useMemo(() => mitRohrStaerke(new THREE.MeshStandardMaterial({ color: TOKENS.farbe.grau2, ...TOKENS.material.metall })), []);
   useEffect(() => () => { koerper.dispose(); ring.dispose(); }, [koerper, ring]);
@@ -38,7 +39,8 @@ export function Formstuecke3({ f, schatten, gruppe, farben }: { f: Formstuecke; 
   }, [f]);
   const kerne = useMemo(() => f.knoten.map((k) => ({ matrix: new THREE.Matrix4().compose(new THREE.Vector3(...k.position), new THREE.Quaternion(),
     new THREE.Vector3().setScalar(k.radius * FORMSTUECK.koerper)), gruppeId: k.gruppeId })), [f]);
-  const farbe = (gruppeId?: string) => gruppe && gruppeId !== gruppe ? farben.gedimmt : farben.normal;
+  // Wie die Rohre: andere Gruppe hervorgehoben, oder Gerät gewählt und Formstück einer fremden Gruppe (Hauptleitungen bleiben).
+  const farbe = (gruppeId?: string) => (gruppe ? gruppeId !== gruppe : !!geraet && !!gruppeId && !geraet.gruppen.has(gruppeId)) ? farben.gedimmt : farben.normal;
   return <group name="formstuecke">
     {boegen.map(([s, liste]) => <Instanzen key={s} geometrie={bogenGeometrie(s)} material={koerper} schatten={schatten}
       teile={liste.map((b) => ({ matrix: bogenMatrix(b), farbe: farbe(b.gruppeId) }))} />)}

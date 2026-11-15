@@ -8,6 +8,7 @@ import { bewegungsAnteil, rohrGeschosse, separationsOffsets, sichtbareGeschosse 
 import { anlageSichtbar, rohrSchnitt } from "./technik";
 import { durchgaenge, rohrnetz } from "./netz";
 import { fahrtSchritt } from "./kameraFahrt";
+import { rohrGedimmt } from "./Interaktion";
 import { tastaturSchritt } from "./kamera";
 import { HINTERGRUND, kontaktLichtZiel, SCHATTEN } from "./qualitaet";
 
@@ -94,5 +95,19 @@ describe("Hintergrund und Kontaktschatten", () => {
     root.updateMatrixWorld(true); licht.shadow.updateMatrices(licht);
     const p = new THREE.Vector3(29, -3, 4).project(licht.shadow.camera);
     expect(Math.abs(p.x)).toBeLessThan(1); expect(Math.abs(p.y)).toBeLessThan(1);
+  });
+});
+
+describe("rohrGedimmt (Gerät gewählt, PO 15.11.)", () => {
+  const geraet = { schluessel: "sp", gruppen: new Set(["g1"]) };
+  it("lässt Leitungen am Gerät und seiner Gruppen stehen, dimmt die übrigen", () => {
+    expect(rohrGedimmt({ von: "wp", nach: "sp" }, { geraet })).toBe(false);
+    expect(rohrGedimmt({ von: "vt", nach: "hk", gruppeId: "g1" }, { geraet })).toBe(false);
+    expect(rohrGedimmt({ von: "vt", nach: "hk2", gruppeId: "g2" }, { geraet })).toBe(true);
+    expect(rohrGedimmt({ von: "sp2", nach: "vt" }, { geraet })).toBe(true);
+  });
+  it("Gruppenhervorhebung hat Vorrang; ohne Auswahl nichts gedimmt", () => {
+    expect(rohrGedimmt({ von: "vt", nach: "hk", gruppeId: "g1" }, { gruppe: "g2", geraet })).toBe(true);
+    expect(rohrGedimmt({ von: "a", nach: "b" }, {})).toBe(false);
   });
 });

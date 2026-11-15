@@ -88,7 +88,10 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
     const aktivGruppe = finde(hover) ?? finde(auswahl);
     return { auswahl, hover, lift, aktiv: !!onAuswahl || !!onHover || auswahl !== null, waehlen, schweben,
       gruppe: aktivGruppe?.gruppeId ?? null, betont: new Set(aktivGruppe ? [...aktivGruppe.zubehoer, ...aktivGruppe.verbraucher] : []),
-      anker: finde(auswahl)?.verteiler ?? null };
+      anker: finde(auswahl)?.verteiler ?? null,
+      // Gerät gewählt (keine Gruppe): seine Gruppen bleiben, übrige Leitungen treten zurück.
+      geraet: auswahl && !finde(auswahl) ? { schluessel: auswahl, gruppen: new Set(straenge.filter((s) => s.verteiler === auswahl
+        || s.verbraucher.includes(auswahl) || s.zubehoer.includes(auswahl)).map((s) => s.gruppeId)) } : null };
   }, [auswahl, hover, onAuswahl, onHover, waehlen, schweben, straenge]);
   const gl = useThree((s) => s.gl);
   const size = useThree((s) => s.size);

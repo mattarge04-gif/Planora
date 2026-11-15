@@ -13,7 +13,7 @@ import { anlagenDaten, anlageSichtbar, rohrAbschluesse, rohrSchnitt } from "./te
 import { anzeigeWelt } from "./gruppenNetz";
 import { bandGeometrie, huelsenGeometrie, rohrGeometrie } from "./technikGeometrie";
 import { GeschossGruppe, type Darstellung } from "./Bewegung";
-import type { Interaktion } from "./Interaktion";
+import { rohrGedimmt, type Interaktion } from "./Interaktion";
 import { rohrGeschosse } from "./darstellung";
 import { SCHATTEN, kontaktLichtZiel } from "./qualitaet";
 import { anAbzweigenTeilen, formstuecke } from "./formstuecke";
@@ -95,7 +95,7 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
       {kappen.filter((k) => geschossBeiY(welt, k.symbol.position.y) === id).map((k, i) =>
         <VerteilerKappe key={`kappe-${i}`} {...k} interaktion={interaktion} schatten={schatten} />)}
       {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} interaktion={interaktion} />)}
-      {formen.get(id) && <Formstuecke3 f={formen.get(id)!} schatten={schatten} gruppe={interaktion?.gruppe ?? null} farben={FORM_FARBEN} />}
+      {formen.get(id) && <Formstuecke3 f={formen.get(id)!} schatten={schatten} gruppe={interaktion?.gruppe ?? null} geraet={interaktion?.geraet ?? null} farben={FORM_FARBEN} />}
       {netz.huelsen.filter((h) => huelsenGeschoss(h) === id).map((h, i) => <Durchgang key={i} huelse={h} schatten={schatten} />)}
       {flaechen.filter((f) => f.geschossId === id).map((f) => <Flaechenband key={f.daten.einheitId} {...f} />)}
       {schatten && !darstellung?.bewegung && schnitt.fokus?.id === id && <Technikkontakte key={`${id}:${Object.keys(anschluesse).join(":")}`}
@@ -135,7 +135,7 @@ function Rohr({ stueck, schatten, anfangFrei = false, interaktion }: { stueck: R
   useEffect(() => () => geometrie?.dispose(), [geometrie]);
   const gruppeId = stueck.daten.gruppeId;
   const aktiv = !!gruppeId && interaktion?.gruppe === gruppeId;
-  const gedimmt = !!interaktion?.gruppe && !aktiv;
+  const gedimmt = rohrGedimmt(stueck.daten, interaktion);
   const umriss = useMemo(() => aktiv ? rohrGeometrie({ ...stueck, radius: stueck.radius + ROHR_UMRISS,
     startRadius: stueck.startRadius + ROHR_UMRISS, endRadius: stueck.endRadius + ROHR_UMRISS }) : null, [aktiv, stueck]);
   useEffect(() => () => umriss?.dispose(), [umriss]);
