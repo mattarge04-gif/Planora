@@ -2,7 +2,7 @@ import { imRechteck, type V3 } from "../szene2/huelle";
 import { geschossBeiY, leitungen } from "../szene2/leitungen";
 import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
 import { innenwaende } from "./geometrie";
-import { anschlussFuehrung, anschlussLokal, deckenLauf, ROHR, verteilerAbgang } from "./technik";
+import { anschlussLokal, deckenLauf, ROHR, verteilerAbgang } from "./technik";
 import { anzeigeWelt, bereinigen, ersatzGruppeId, gruppenRohrnetz, gruppenVerbindungen, SPUR } from "./gruppenNetz";
 import { LeitungsRouter } from "./router/router";
 import { alsBaum } from "./router/topologie";
@@ -120,10 +120,10 @@ export function rohrnetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Rec
 }
 
 /**
- * Fuehrung je Verbindung: Anschlussstueck an beiden Enden, Lauf ueber den LeitungsRouter (ohne Router: bisherige Schablone).
+ * Fuehrung je Verbindung: Anschlussstueck an beiden Enden, Lauf ueber den LeitungsRouter (Spec 2026-11-13, Abschnitt 6).
  * `weitereSpuren`: Auftraege weiterer Netze (Gruppen) fuer dieselbe Trassenzuteilung.
  */
-export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>, kanten: Verbindung[], router?: LeitungsRouter,
+export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>, kanten: Verbindung[], router: LeitungsRouter,
   weitereSpuren: { netz: string; a: V3; b: V3 }[] = []): Rohrstueck[] {
   const stuecke: Rohrstueck[] = [];
   const adapterSchluessel = new Set<string>();
@@ -132,18 +132,12 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
   // (der Pruefer fasst alle Hauptleitungen zu einem Netz zusammen und erlaubt Beruehrung nur am T-Abzweig oder an
   // gemeinsamen Punkten). Ein Anschluss, den mehrere Hauptverbindungen teilen (z. B. Speicher), gehoert zu `haupt`.
   const netzVon = (v: Verbindung) => (v.art === "haupt" ? `haupt~${v.von}>${v.nach}` : ersatzGruppeId(v.von, v.nach));
-  const koerper = router ? geraeteKoerper(welt, katalog) : [];
+  const koerper = geraeteKoerper(welt, katalog);
   const steig = steigBereich(welt, katalog), partner = partnerVon(welt, katalog);
   // Durchgang 1: Adapter je Verbindung (Reihenfolge wie bisher, damit Verteilerabgaenge gleich nummeriert bleiben).
   const vorbereitet = kanten.map((v) => {
     const radius = ROHR[v.art];
     const adapter: Rohrstueck[] = [];
-    const lage = (key: string): number | undefined => {
-      const s = welt.symbole.find((s) => s.schluessel === key);
-      if (s) return s.position.z;
-      const e = welt.einheiten.find((e) => e.id === key);
-      return e ? e.rechteck.z + e.rechteck.tiefe / 2 : undefined;
-    };
     const endpunkt = (key: string, ausgang = false): V3 | null => {
       const s = welt.symbole.find((s) => s.schluessel === key);
       if (!s) {
@@ -158,19 +152,13 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
       const g = welt.geschosse.find((g) => g.id === geschossBeiY(welt, s.position.y));
       const laufY = g ? deckenLauf(g) - s.position.y : ROHR.durchgangHoehe;
       const stutzen = s.katalogId === "heizung.verteiler" ? ausgang ? 0.02 : 0.035 : s.katalogId === "heizung.waermepumpe" ? 0.026 : ROHR.anschluss;
-      if (router) {
-        // Mit Router: Stutzen, noetigenfalls kurzer Stummel, senkrecht bis zur Leitungsebene; den Rest verlegt der Router.
-        const f = routerAnschluss(s, lokal as V3, radius, s.position.y + laufY, einheitVon(welt, s)?.rechteck, koerper, steig, katalog, partner.get(key));
-        // Keine zulaessige Lage fuer die Steigleitung: harter Befund (der Pruefer nimmt den eigenen Koerper aus).
-        if (!f.ok) router.befunde.push({ regel: "kein_weg", leitungen: [netzVon(v).split("~")[0], s.schluessel], ort: f.punkte[0], hart: true });
-        adapter.push({ punkte: f.punkte, radius: f.adapterRadius, startRadius: stutzen, endRadius: radius, boden: s.position.y,
-          daten: { ...v, bauteilIds: s.bauteilIds }, frei: false });
-        return f.punkte.at(-1)!;
-      }
-      const f = anschlussFuehrung([], { symbol: s, lokal: lokal as V3 }, radius, einheitVon(welt, s)?.rechteck, laufY, lage(key === v.von ? v.nach : v.von));
-      adapter.push({ punkte: f.adapter, radius: f.adapterRadius, startRadius: stutzen, endRadius: radius, boden: s.position.y,
+      // Stutzen, noetigenfalls kurzer Stummel, senkrecht bis zur Leitungsebene; den Rest verlegt der Router.
+      const f = routerAnschluss(s, lokal as V3, radius, s.position.y + laufY, einheitVon(welt, s)?.rechteck, koerper, steig, katalog, partner.get(key));
+      // Keine zulaessige Lage fuer die Steigleitung: harter Befund (der Pruefer nimmt den eigenen Koerper aus).
+      if (!f.ok) router.befunde.push({ regel: "kein_weg", leitungen: [netzVon(v).split("~")[0], s.schluessel], ort: f.punkte[0], hart: true });
+      adapter.push({ punkte: f.punkte, radius: f.adapterRadius, startRadius: stutzen, endRadius: radius, boden: s.position.y,
         daten: { ...v, bauteilIds: s.bauteilIds }, frei: false });
-      return f.adapter.at(-1)!;
+      return f.punkte.at(-1)!;
     };
     const a = endpunkt(v.von, true), b = endpunkt(v.nach);
     return { v, radius, adapter, a, b };
@@ -181,18 +169,18 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
   for (const x of vorbereitet) for (const r of x.adapter) geteilt.set(adapterKey(r), (geteilt.get(adapterKey(r)) ?? 0) + 1);
   // Folgen noch Hauptlaeufe, sperren die Adapter gegen den Hauptrohrradius (paarweiser Sperrabstand, raster.sperrabstand).
   const gegen = kanten.some((k) => k.art === "haupt") ? ROHR.haupt : 0;
-  if (router) for (const x of vorbereitet) for (const r of x.adapter) {
+  for (const x of vorbereitet) for (const r of x.adapter) {
     const netz = (geteilt.get(adapterKey(r)) ?? 0) > 1 ? netzVon(x.v).split("~")[0] : netzVon(x.v);
     const radius = Math.max(r.radius, r.endRadius);
     router.vorbelegen(r.punkte, netz, radius, Math.max(radius, gegen));
     router.anschlussSperren(r.punkte, netz, radius, Math.max(radius, gegen));
   }
-  router?.spurenFestlegen([...vorbereitet.filter((x) => x.a && x.b).map((x) => ({ netz: netzVon(x.v), a: x.a!, b: x.b! })), ...weitereSpuren]);
+  router.spurenFestlegen([...vorbereitet.filter((x) => x.a && x.b).map((x) => ({ netz: netzVon(x.v), a: x.a!, b: x.b! })), ...weitereSpuren]);
   // Durchgang 2: Wege.
   for (const { v, radius, adapter, a, b } of vorbereitet) {
     if (!a || !b) continue;
     let punkte: V3[];
-    if (router && Math.abs(a[1] - b[1]) < 0.01) {
+    if (Math.abs(a[1] - b[1]) < 0.01) {
       // Anschluesse (routerAnschluss) enden senkrecht auf der Leitungsebene; eine waagrechte Abgangsrichtung gibt es nicht.
       punkte = router.weg(a, b, netzVon(v), radius);
       // Hauptleitungen untereinander: kein Parallellauf am geteilten Anschluss (Task 8).
@@ -200,24 +188,10 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
       // Am geteilten Anschluss (Kopf gehoert zu `haupt`) bleibt die Umgebung fuer die andere Hauptverbindung offen.
       const kopf = adapter.filter((r) => (geteilt.get(adapterKey(r)) ?? 0) > 1).map((r) => r.punkte.at(-1)!);
       router.belegen(punkte, netzVon(v), radius, kopf, netzVon(v).split("~")[0]);
-    } else if (router) {
+    } else {
       // Endpunkte auf verschiedenen Hoehen (Leitung ueber Geschosse): Strang mit Steigleitung in der Steigzone.
       const baum = router.strang(a, [{ schluessel: v.nach, punkt: b }], 0, welt.steigzone ?? null, netzVon(v));
       punkte = bereinigen(baum.segmente.flat());
-    } else {
-      // Bisherige Schablone: nur noch ohne Router.
-      const richtung = (p: V3) => {
-        const abgang = adapter.find((r) => r.punkte.at(-1) === p);
-        return abgang ? Math.sign(p[2] - abgang.punkte[abgang.punkte.length - 2][2]) || 1 : 1;
-      };
-      const sa = richtung(a), sb = richtung(b);
-      const zugewandt = sa !== sb && (b[2] - a[2]) * sa > 0.3;
-      const z = zugewandt ? (a[2] + b[2]) / 2 : sa > 0 ? Math.max(a[2], b[2]) + 0.4 : Math.min(a[2], b[2]) - 0.4;
-      punkte = [a, [a[0], a[1], z], [a[0], b[1], z], [b[0], b[1], z], b];
-      if (sa !== sb && !zugewandt) {
-        const x = Math.min(a[0], b[0]) - 0.8, az = a[2] + sa * 0.4, bz = b[2] + sb * 0.4;
-        punkte = [a, [a[0], a[1], az], [x, a[1], az], [x, b[1], az], [x, b[1], bz], [b[0], b[1], bz], b];
-      }
     }
     const neueAdapter = adapter.filter((r) => {
       const key = JSON.stringify([r.punkte, r.radius, r.endRadius]);

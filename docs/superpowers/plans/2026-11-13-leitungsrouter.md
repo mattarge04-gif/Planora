@@ -1517,10 +1517,10 @@ Import: `import { leitungsHinweise } from "../szene3/router/hinweise";`
 - Modify: `szene3/gruppenNetz.ts` (entfernen: `strangBaum`, `lWeg`, `konflikte`, `KONFLIKT_ABSTAND`, Typ `Strangpunkt`/`Achse` falls unbenutzt)
 - Modify: `szene3/gruppenNetz.test.ts` (Tests zu `strangBaum`/`konflikte` entfernen oder auf `LeitungsRouter.strang` umstellen)
 
-- [ ] **Step 1: Verwendungen suchen** – `rg -n "strangBaum|konflikte\(|lWeg" app/web/src` – nur Definitionen und alte Tests duerfen uebrig sein.
-- [ ] **Step 2: Tests umstellen** – Jeder `strangBaum`-Test, der eine Eigenschaft prueft (Steigleitung in Steigzone, T-Abzweige, Spurversatz), wird mit `new LeitungsRouter(welt, TEST_KATALOG).strang(start, ziele, spur, steigzone, "g")` neu geschrieben; dieselben Erwartungen auf Eigenschaften (nicht auf exakte Zwischenpunkte). Reine Implementierungstests der alten Variantenwahl entfallen.
-- [ ] **Step 3: Code entfernen**, `npm.cmd test`, `npx.cmd tsc --noEmit -p .`, `npm.cmd run build` – gruen.
-- [ ] **Step 4: Commit** – `Leitungsrouter T9: alte Schablonenfuehrung entfernt` (Liste der entfernten/umgestellten Tests im Text).
+- [x] **Step 1: Verwendungen suchen** – `rg -n "strangBaum|konflikte\(|lWeg" app/web/src` – nur Definitionen und alte Tests duerfen uebrig sein.
+- [x] **Step 2: Tests umstellen** – Jeder `strangBaum`-Test, der eine Eigenschaft prueft (Steigleitung in Steigzone, T-Abzweige, Spurversatz), wird mit `new LeitungsRouter(welt, TEST_KATALOG).strang(start, ziele, spur, steigzone, "g")` neu geschrieben; dieselben Erwartungen auf Eigenschaften (nicht auf exakte Zwischenpunkte). Reine Implementierungstests der alten Variantenwahl entfallen.
+- [x] **Step 3: Code entfernen**, `npm.cmd test`, `npx.cmd tsc --noEmit -p .`, `npm.cmd run build` – gruen.
+- [x] **Step 4: Commit** – `Leitungsrouter T9: alte Schablonenfuehrung entfernt` (Liste der entfernten/umgestellten Tests im Text).
 
 ---
 
@@ -1617,3 +1617,8 @@ Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (
   - `einbau.test.ts` und `zufall.test.ts` unveraendert gruen.
 - Danach T10 (GPU-Bilder inkl. PO-Punkte Boegen, T-Stuecke, FBH-Kasten; Musterpunkte gegen T7-Bilder vergleichen), dann Gesamtreview des Branches.
 - Offene Kleinpunkte fuer das Gesamtreview (Ledger, lokal): Grenzfalltests Boegen-Teilung 0.99/1.0 m; doppeltes Routing Twin/Technik3 (Hinweis mit `{}` statt GLB-Anschluessen); globale A*-Puffer bleiben belegt (6–45 MB); `korridor` setzt Verteiler entlang x voraus; Seed 297 und die uebrigen 41 Restwelten.
+
+## Fortsetzung 15.11.2026
+
+- T9 fertig: `strangBaum`, `lWeg`, `konflikte`, `KONFLIKT_ABSTAND`, `Strangpunkt`/`Achse` aus `gruppenNetz.ts` entfernt; `kantenNetz` verlangt den Router (Schablonen-Zweig und `lage` entfernt). Sechs `strangBaum`-Tests auf `LeitungsRouter.strang` umgestellt (Eigenschaften statt Zwischenpunkte; Spurabstand jetzt ueber den Pruefer). Web 345/345, tsc und Build gruen. Router-Sonderfaelle unveraendert.
+- Naechstes: T10 (GPU-Bilder inkl. Boegen, T-Stuecke, FBH-Kasten), dann Gesamtreview.

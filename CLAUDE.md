@@ -19,6 +19,10 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 14.11.2026
 
+### Leitungsrouter (15.11.) [F]
+
+- T9 fertig: alte Schablonenfuehrung (`strangBaum`, `kantenNetz`-`else`) entfernt, Router Pflicht; Web 345/345. Naechstes: T10 (GPU-Bilder an PO), dann Gesamtreview.
+
 ### Leitungsrouter (14.11., Tagesabschluss) [F]
 
 - T6 und T7 fertig und geprueft (`52229c4`, `64df567`, `fafd06e`): Router fuehrt Haupt- und Gruppennetz, alle 7 Muster ohne Befund, Web 326/326. Entscheid: Adapter nur Stutzen + senkrecht, Waagrechtes macht der Router; Ebenenwechsel 25 [A].
