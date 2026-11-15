@@ -112,3 +112,11 @@ Gesamt ca. 5–6 PT [A].
   - Laufzeit ~230 ms je Welt akzeptiert (statt < 50 ms).
   - Router: Strangstarts waehrend der Hauptleitungen 0.35 m frei, Abgangskorridor 0.4 m beidseits quer zum Verteiler, Fassadenabstand 0.35 m im Rueckfall ueber dem Bogenlimit.
 - [?] Darf ein Rohr unter der Decke ueber einem Geraet laufen, wenn genug Hoehe frei ist? Startannahme: ja, wenn Abstand zur Geraeteoberkante >= 0.15 m.
+
+## 10. Nachtrag 15.11.2026: Direktverbindung naher Geraete (PO-Entscheid)
+
+- **Anlass [F]:** Die Hauptleitung Waermepumpe -> Speicher (0.5 m auseinander) lief zur Leitungsebene unter der Decke und zurueck ("Buegel"). PO 15.11.: fuer nahe Geraete eine kurze direkte Verbindung.
+- **Regel [A]:** Eine Hauptverbindung zwischen zwei Geraeten im selben Raum (gleiches Geschoss, gleiche Einheit) laeuft auf Anschlusshoehe, wenn die Anschlussfuesse (Punkt vor der Anschluss-Steigleitung) waagrecht hoechstens 2.0 m auseinanderliegen und ein freier Weg existiert. Weg: senkrecht auf eine gemeinsame Hoehe (ab der hoeheren Fusshoehe in Zellschritten 0.09 m, hoechstens 1.2 m hoeher und 0.3 m unter der Leitungsebene), rechtwinklig waagrecht, senkrecht zum anderen Fuss. Frei heisst: Pruefer-Mass zu allen Geraetekoerpern (auch den eigenen, samt 0.15 m Luft ueber Geraet), r + r2 + Fuge zu fremden Leitungen, keine enge Schlaufe (Pruefer-Regel `selbst`). Sonst bleibt die Fuehrung ueber die Leitungsebene.
+- **Einbau:** `router/direkt.ts`, `netz.kantenNetz`. Die Direktleitung wird vor allen anderen Leitungen belegt; ihre Anschluss-Steigleitungen entfallen, ausser eine andere Verbindung nutzt denselben Anschluss (dann muendet die Direktleitung als T in diese Steigleitung).
+- **Absicherung:** Jede zusammengesetzte Direktleitung wird samt ihren Anschlussstuecken mit dem Pruefer geprueft; mit hartem Befund (z. B. Lauf zurueck entlang eines Anschlussstummels, Zufallswelt 108) entfaellt sie.
+- **Messung (2000 Zufallswelten):** 42 Welten mit harten Befunden (vorher 42; neu Welt 891, Boegen einer Gruppenleitung durch geaenderte Spurzuteilung, eine andere Welt dafuer sauber); 41 der 42 bestanden schon vorher. Kreuzungen 38.9 % (vorher 39.6 %), ~240 ms je Welt. Alle 7 Muster ohne Befund.

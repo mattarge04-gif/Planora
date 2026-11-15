@@ -8,7 +8,8 @@ import { LeitungsRouter } from "./router/router";
 import { alsBaum } from "./router/topologie";
 import { geraeteKoerper } from "./router/koerper";
 import { alsPrueflinien, pruefen } from "./router/pruefer";
-import { ROUTER, type Befund } from "./router/typen";
+import { ROUTER, type Befund, type PruefLeitung } from "./router/typen";
+import { direktVerbindung } from "./router/direkt";
 import { routerAnschluss, type SteigBereich } from "./router/anschluss";
 
 const ERZEUGER = new Set(["heizung.waermepumpe", "heizung.gaskessel", "heizung.oelkessel", "heizung.fernwaerme_uebergabe"]);
@@ -121,10 +122,11 @@ export function rohrnetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Rec
 
 /**
  * Fuehrung je Verbindung: Anschlussstueck an beiden Enden, Lauf ueber den LeitungsRouter (Spec 2026-11-13, Abschnitt 6).
- * `weitereSpuren`: Auftraege weiterer Netze (Gruppen) fuer dieselbe Trassenzuteilung.
+ * `weitereSpuren`: Auftraege weiterer Netze (Gruppen) fuer dieselbe Trassenzuteilung. `feste`: schon festgelegte Leitungen
+ * (Gruppenabgaenge, Anschluesse), denen eine Direktverbindung ausweicht.
  */
 export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: Record<string, V3>, kanten: Verbindung[], router: LeitungsRouter,
-  weitereSpuren: { netz: string; a: V3; b: V3 }[] = []): Rohrstueck[] {
+  weitereSpuren: { netz: string; a: V3; b: V3 }[] = [], feste: PruefLeitung[] = []): Rohrstueck[] {
   const stuecke: Rohrstueck[] = [];
   const adapterSchluessel = new Set<string>();
   const naechsterAbgang = new Map<string, number>();
@@ -161,10 +163,63 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
       return f.punkte.at(-1)!;
     };
     const a = endpunkt(v.von, true), b = endpunkt(v.nach);
-    return { v, radius, adapter, a, b };
+    return { v, radius, adapter, a, b, boden: Math.min(...adapter.map((r) => r.boden)), startRadius: radius as number, endRadius: radius as number };
   });
-  // Anschluesse gehoeren zum Netz ihrer Verbindung: fremde Laeufe halten Abstand, der eigene Lauf beginnt am Kopf.
   const adapterKey = (r: Rohrstueck) => JSON.stringify(r.punkte);
+  // Direktverbindung naher Geraete (PO 15.11., router/direkt.ts): Hauptleitung zwischen zwei Geraeten im selben Raum auf
+  // Anschlusshoehe statt ueber die Leitungsebene. Gelingt sie, entfallen die Steigleitungen ihrer Anschluesse (ausser
+  // eine andere Verbindung nutzt denselben Anschluss); der Weg wird vor allen anderen belegt.
+  const raumVon = (k: string) => {
+    const s = welt.symbole.find((x) => x.schluessel === k), e = s && einheitVon(welt, s);
+    return s && e ? `${geschossBeiY(welt, s.position.y)}:${e.id}` : null;
+  };
+  const fuss = (p: V3[]) => p[Math.max(0, p.length - 2)];
+  const direkt = new Map<(typeof vorbereitet)[number], V3[]>();
+  for (const x of vorbereitet) {
+    if (x.v.art !== "haupt" || x.adapter.length !== 2) continue;
+    const raum = raumVon(x.v.von);
+    if (!raum || raum !== raumVon(x.v.nach)) continue;
+    const eigene = new Set(x.adapter.map(adapterKey));
+    const hindernisse: PruefLeitung[] = [...feste,
+      ...vorbereitet.flatMap((y) => y === x ? [] : y.adapter.filter((r) => !eigene.has(adapterKey(r)))
+        .map((r, i) => ({ id: `${netzVon(y.v)}#${i}`, netz: netzVon(y.v), punkte: r.punkte, radius: Math.max(r.radius, r.endRadius), enden: [] }))),
+      ...[...direkt].map(([y, w]) => ({ id: netzVon(y.v), netz: netzVon(y.v), punkte: w, radius: y.radius, enden: [] }))];
+    const weg = direktVerbindung(fuss(x.adapter[0].punkte), fuss(x.adapter[1].punkte), x.radius, x.adapter[0].punkte.at(-1)![1], koerper, hindernisse, netzVon(x.v));
+    if (weg) direkt.set(x, weg);
+  }
+  // Zusammenbau je Direktleitung; danach Pruefung samt Anschlussstuecken (Pruefer). Mit hartem Befund (z. B. Lauf zurueck
+  // entlang eines Anschlussstummels, Zufallswelt 108) entfaellt sie und die Verbindung laeuft ueber die Leitungsebene.
+  const senkrecht = (p: V3, q: V3) => Math.abs(p[0] - q[0]) < 1e-6 && Math.abs(p[2] - q[2]) < 1e-6;
+  const zusammenbau = () => {
+    const vonUmweg = new Set(vorbereitet.filter((x) => !direkt.has(x)).flatMap((x) => x.adapter.map(adapterKey)));
+    return new Map([...direkt].map(([x, roh]) => {
+      const [va, vb] = x.adapter;
+      // Bleibt die Steigleitung eines Anschlusses (andere Verbindung nutzt ihn), muendet die Direktleitung als T in sie,
+      // statt neben ihr zum Fuss abzusteigen (sonst zwei Rohre uebereinander).
+      let w = roh;
+      if (vonUmweg.has(adapterKey(va)) && w.length > 2 && senkrecht(w[0], w[1])) w = w.slice(1);
+      if (vonUmweg.has(adapterKey(vb)) && w.length > 2 && senkrecht(w[w.length - 2], w[w.length - 1])) w = w.slice(0, -1);
+      // Ohne Stummel (Fuss = Stutzen) beginnt die Direktleitung am Stutzen und uebernimmt dessen Radius.
+      const startRadius = va.punkte.length <= 2 && !vonUmweg.has(adapterKey(va)) ? va.startRadius : x.radius;
+      const endRadius = vb.punkte.length <= 2 && !vonUmweg.has(adapterKey(vb)) ? vb.startRadius : x.radius;
+      const adapter = x.adapter.flatMap((r) => vonUmweg.has(adapterKey(r)) ? [] : r.punkte.length > 2 ? [{ ...r, punkte: r.punkte.slice(0, -1) }] : []);
+      const bleibend = x.adapter.filter((r) => vonUmweg.has(adapterKey(r)));
+      return [x, { w, startRadius, endRadius, adapter, bleibend }] as const;
+    }));
+  };
+  for (let runde = 0; runde < 4; runde++) {
+    const verworfen = [...zusammenbau()].filter(([x, z]) => {
+      const linien: PruefLeitung[] = [{ id: "direkt", netz: "haupt", punkte: z.w, radius: x.radius, enden: [x.v.von, x.v.nach] },
+        ...[...z.adapter, ...z.bleibend].map((r, i) => ({ id: `anschluss${i}`, netz: "haupt", punkte: r.punkte, radius: Math.max(r.radius, r.endRadius), enden: [x.v.von, x.v.nach] }))];
+      return pruefen(linien, koerper).some((b) => b.hart && b.leitungen.includes("direkt"));
+    }).map(([x]) => x);
+    if (!verworfen.length) break;
+    for (const x of verworfen) direkt.delete(x);
+  }
+  for (const [x, z] of zusammenbau()) {
+    direkt.set(x, z.w); x.startRadius = z.startRadius; x.endRadius = z.endRadius; x.adapter = z.adapter;
+  }
+  // Anschluesse gehoeren zum Netz ihrer Verbindung: fremde Laeufe halten Abstand, der eigene Lauf beginnt am Kopf.
   const geteilt = new Map<string, number>();
   for (const x of vorbereitet) for (const r of x.adapter) geteilt.set(adapterKey(r), (geteilt.get(adapterKey(r)) ?? 0) + 1);
   // Folgen noch Hauptlaeufe, sperren die Adapter gegen den Hauptrohrradius (paarweiser Sperrabstand, raster.sperrabstand).
@@ -175,12 +230,16 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
     router.vorbelegen(r.punkte, netz, radius, Math.max(radius, gegen));
     router.anschlussSperren(r.punkte, netz, radius, Math.max(radius, gegen));
   }
-  router.spurenFestlegen([...vorbereitet.filter((x) => x.a && x.b).map((x) => ({ netz: netzVon(x.v), a: x.a!, b: x.b! })), ...weitereSpuren]);
+  for (const [x, weg] of direkt) router.vorbelegen(weg, netzVon(x.v), x.radius, Math.max(x.radius, gegen));
+  router.spurenFestlegen([...vorbereitet.filter((x) => x.a && x.b && !direkt.has(x)).map((x) => ({ netz: netzVon(x.v), a: x.a!, b: x.b! })), ...weitereSpuren]);
   // Durchgang 2: Wege.
-  for (const { v, radius, adapter, a, b } of vorbereitet) {
+  for (const x of vorbereitet) {
+    const { v, radius, adapter, a, b } = x;
     if (!a || !b) continue;
     let punkte: V3[];
-    if (Math.abs(a[1] - b[1]) < 0.01) {
+    const direktWeg = direkt.get(x);
+    if (direktWeg) punkte = direktWeg;
+    else if (Math.abs(a[1] - b[1]) < 0.01) {
       // Anschluesse (routerAnschluss) enden senkrecht auf der Leitungsebene; eine waagrechte Abgangsrichtung gibt es nicht.
       punkte = router.weg(a, b, netzVon(v), radius);
       // Hauptleitungen untereinander: kein Parallellauf am geteilten Anschluss (Task 8).
@@ -198,7 +257,7 @@ export function kantenNetz(welt: Welt, katalog: KatalogEintrag[], anschluesse: R
       if (adapterSchluessel.has(key)) return false;
       adapterSchluessel.add(key); return true;
     });
-    stuecke.push(...neueAdapter, { punkte, radius, startRadius: radius, endRadius: radius, boden: Math.min(...adapter.map((r) => r.boden)),
+    stuecke.push(...neueAdapter, { punkte, radius, startRadius: x.startRadius, endRadius: x.endRadius, boden: x.boden,
       daten: { ...v, bauteilIds: [...new Set(adapter.flatMap((a) => a.daten.bauteilIds))] }, frei: !welt.symbole.some((s) => s.schluessel === v.nach) });
   }
   return stuecke;

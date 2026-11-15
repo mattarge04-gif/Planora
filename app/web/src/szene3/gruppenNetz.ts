@@ -328,7 +328,7 @@ export function gruppenRohrnetz(weltEingabe: Welt, katalog: KatalogEintrag[], an
     const ziel = x.ziele.find((z) => Math.abs(z.punkt[1] - x.start[1]) < 1e-3)?.punkt
       ?? (welt.steigzone ? [welt.steigzone.x, x.start[1], welt.steigzone.z] as V3 : x.start);
     return { netz: x.st.gruppeId, a: x.start, b: ziel };
-  }));
+  }), vorbereitet.flatMap((x) => fest(x).map((p, i) => ({ id: `${x.st.gruppeId}#fest${i}`, netz: x.st.gruppeId, punkte: p, radius: ROHR.verteil, enden: [] }))));
   r.startsFreigeben();
   // Gruppen mit Vorrang zuerst, in der Reihenfolge von `vorrang`; die uebrigen wie bisher.
   const rang = (id: string) => { const i = vorrang.indexOf(id); return i < 0 ? vorrang.length : i; };

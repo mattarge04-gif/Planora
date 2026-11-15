@@ -24,7 +24,7 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 - Heizkoerper steckten in der Aussenwand (Generator `HK_WAND` 0.1 -> 0.35 m, Wand 0.3 im Grundriss), Fixtures neu (`5688b4a`).
 - Assistent-Vorschau mittig im freien Bereich (`68b5995`); Kamera auf Gruppenverlauf, Panels 0.94 deckend, Hinweis seitenverhaeltnis lesbar (`c540de2`); Rohr-Klickflaeche wie sichtbar (`d90d698`); Temp-Ordner werden geloescht (`6f307b0`). Betreiber-Ablauf im Browser geprueft.
 - Pruefstand: Backend 569/569, Web 373/373, tsc gruen. Anschlussbilder aller Bauteile als Artifact-Galerie (privat), PNGs lokal unter `docs/abnahme/2026-11-15-anschluesse/` (nicht committet, 37 MB).
-- Offen fuer PO: Buegel WP->Speicher zur Decke (Spec: alle Leitungen auf Leitungsebene), Speicher in m6 von Leitungen verdeckt (Leitungen bei Geraeteauswahl abschwaechen?), Band-Effekt, Hinweis seitenverhaeltnis fuer Kunde sichtbar?, Ordner `planora-abnahme-b*` (4.2 GB).
+- PO-Entscheide 15.11. umgesetzt: Direktverbindung naher Geraete (Spec 10, `router/direkt.ts`, 2000er-Lauf 42 Welten wie vorher), fremde Leitungen bei Geraeteauswahl gedimmt, Hinweis seitenverhaeltnis nur intern, Band-Effekt bleibt, Temp-/Abnahmeordner geloescht. Naechstes: Gesamtreview des Branches.
 
 ### Leitungsrouter (15.11.) [F]
 

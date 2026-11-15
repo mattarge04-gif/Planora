@@ -1624,3 +1624,4 @@ Abweichung zur Spec, bewusst: Grundriss-Ueberkreuzung auf verschiedenen Hoehen (
 - Naechstes: T10 (GPU-Bilder inkl. Boegen, T-Stuecke, FBH-Kasten), dann Gesamtreview.
 - T10: GPU-Bilder aller 7 Muster, Formstuecke (`3a574ae`), Fixrunde Rohrstaerke/Szenario (`d2c7229`), Kritik r2 "bereit fuer PO-Sichtung". README `docs/abnahme/2026-11-15-leitungsrouter/README.md`. Offen: PO-Sichtung (Step 6), Bilder-Umfang im Repo, Restauflagen N1/N3/B4/B6. Danach Gesamtreview.
 - PO-Sichtung 15.11.: "passt" (nach Korrektur T-Stueck an Strangecke, `2391a3e`). T1–T10 abgeschlossen. Naechstes: Gesamtreview des Branches; Restauflagen N1/N3/B4/B6 und Kleinpunkte aus dem Tagesabschluss 14.11. dort einordnen.
+- 15.11. PO-Entscheid Direktverbindung naher Geraete umgesetzt (Spec Abschnitt 10, `router/direkt.ts`): WP -> Speicher u. a. auf Anschlusshoehe statt ueber die Decke; 2000er-Lauf 42 Welten mit harten Befunden wie vorher.

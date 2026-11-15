@@ -115,7 +115,8 @@ describe("Geschlossenes Techniknetz", () => {
       if (mitte.distanceTo(pfad.getPointAt(0)) < 0.04) continue;
       expect(new THREE.Vector3().fromBufferAttribute(position, i * 13).distanceTo(mitte)).toBeCloseTo(ROHR.haupt, 5);
     }
-    expect(n.find((r) => r.daten.von === "wp" && r.daten.bauteilIds.length === 1)?.startRadius).toBe(0.026);
+    // Stutzen der WP: eigenes Anschlussstueck oder (Direktverbindung zum Speicher, PO 15.11.) Anfang der Hauptleitung.
+    expect(n.filter((r) => r.daten.von === "wp").some((r) => r.startRadius === 0.026)).toBe(true);
     g.dispose();
   });
   it("hat auf OG1 einen durchgehenden Steigstrang mit Hülsen auf beiden Plattenseiten", () => {
