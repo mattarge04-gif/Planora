@@ -1,4 +1,5 @@
 import type { KatalogEintrag, Welt } from "../typen";
+import { INTERNE_HINWEISE } from "../panel/daten";
 import { teilName } from "./bestueckung";
 import type { Positionen } from "./beschreibung";
 import {
@@ -50,7 +51,7 @@ export function pruefHinweise(z: AssistentZustand, welt: Welt | null, positionen
     return bezug;
   };
   for (const w of welt?.hinweise ?? []) {
-    if (eigene.has(w.code)) continue;
+    if (eigene.has(w.code) || INTERNE_HINWEISE.has(w.code)) continue;
     const s = schluesselVon(w.bezug);
     const symbol = welt?.symbole.find((x) => x.schluessel === w.bezug);
     const e = z.einheiten.find((x) => x.schluessel === s);

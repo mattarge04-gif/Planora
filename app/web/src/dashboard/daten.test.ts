@@ -111,10 +111,9 @@ describe("Anzeigenamen und Anlagen", () => {
 });
 
 describe("Echte Hinweise und Klickziele", () => {
-  it("übersetzt seitenverhaeltnis in einen verständlichen Satz", () => {
-    const w = { ...welt, hinweise: [{ code: "seitenverhaeltnis", bezug: welt.einheiten[0].id }] };
-    const h = hinweisListe(w, { ...beschreibung, hinweise: [] });
-    expect(h.map((x) => x.text)).toEqual([`${welt.einheiten[0].bezeichnung}: Raum sehr langgezogen, Aufteilung prüfen`]);
+  it("blendet den internen Hinweis seitenverhaeltnis für den Kunden aus (PO 15.11.)", () => {
+    const w = { ...welt, hinweise: [{ code: "seitenverhaeltnis", bezug: welt.einheiten[0].id }, ...welt.hinweise] };
+    expect(hinweisListe(w, beschreibung)).toEqual(hinweisListe(welt, beschreibung));
   });
   it("führt beide Quellen zusammen, übersetzt Texte und erfindet keinen Status", () => {
     const h = hinweisListe(welt, beschreibung);

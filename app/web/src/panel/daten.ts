@@ -35,6 +35,12 @@ export function panelDaten(welt: Welt, beschreibung: Beschreibung, katalog: Kata
   };
 }
 
+/** Hinweise nur fuer Planora (Generator/Layout), nicht fuer den Kunden (PO 15.11.: "seitenverhaeltnis" nicht sehen). */
+export const INTERNE_HINWEISE: ReadonlySet<string> = new Set(["seitenverhaeltnis"]);
+/** Hinweise aus Beschreibung und Welt, die der Kunde sieht (Reihenfolge wie bisher). */
+export const kundenHinweise = (welt: Welt, beschreibung: Beschreibung) =>
+  [...(beschreibung.hinweise ?? []), ...welt.hinweise].filter((h) => !INTERNE_HINWEISE.has(h.code));
+
 export function uebersicht(welt: Welt, beschreibung: Beschreibung) {
   const name = (id: string) => welt.einheiten.find((e) => e.id === id)?.bezeichnung ?? id;
   const text = (h: { code: string; bezug: string }) => {
@@ -46,6 +52,6 @@ export function uebersicht(welt: Welt, beschreibung: Beschreibung) {
   };
   return {
     geschosse: welt.geschosse.length, einheiten: welt.einheiten.length, symbole: welt.symbole.length,
-    hinweise: [...(beschreibung.hinweise ?? []), ...welt.hinweise].map(text),
+    hinweise: kundenHinweise(welt, beschreibung).map(text),
   };
 }

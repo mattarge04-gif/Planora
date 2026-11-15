@@ -1,4 +1,4 @@
-import { mengeText, panelDaten, uebersicht, type PanelDaten } from "../panel/daten";
+import { kundenHinweise, mengeText, panelDaten, uebersicht, type PanelDaten } from "../panel/daten";
 import type { BauteilStatus, Beschreibung, Hinweis, KatalogEintrag, Welt, WeltSymbol } from "../typen";
 
 const NAMEN: Record<string, string> = {
@@ -104,7 +104,7 @@ function hinweisStatus(h: Hinweis): HinweisZeile["status"] {
 }
 /** [A] Identische Hinweise aus Welt und Beschreibung erscheinen einmal; unterschiedliche Statuswerte bleiben erhalten. */
 export function hinweisListe(welt: Welt, beschreibung: Beschreibung): HinweisZeile[] {
-  const hinweise = [...(beschreibung.hinweise ?? []), ...welt.hinweise];
+  const hinweise = kundenHinweise(welt, beschreibung);
   const texte = uebersicht(welt, beschreibung).hinweise;
   const gesehen = new Set<string>();
   return hinweise.flatMap((h, i) => {
