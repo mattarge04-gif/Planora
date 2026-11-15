@@ -2,9 +2,9 @@
 import EmbeddedPostgres from "embedded-postgres";
 import pg from "pg";
 import { randomBytes, randomUUID } from "node:crypto";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { migriere } from "../src/db/migrator.js";
 import { baueServer } from "../src/server.js";
@@ -32,9 +32,17 @@ const ende = async () => {
   if (beendet) return;
   beendet = true;
   try { await app?.close(); } finally {
-    try { await pool.end(); } finally { if (gestartet) await instanz.stop(); }
+    try { await pool.end(); } finally {
+      try { if (gestartet) await instanz.stop(); } finally { aufraeumen(); }
+    }
   }
 };
+/** Wegwerf-Datenbank und Ablage loeschen; sonst bleiben je Start rund 40 MB in %TEMP% liegen (15.11.: 112 Ordner). */
+function aufraeumen() {
+  for (const ordner of [dirname(dbDir), ablage]) {
+    try { rmSync(ordner, { recursive: true, force: true, maxRetries: 3, retryDelay: 300 }); } catch { /* gesperrte Datei: Ordner bleibt */ }
+  }
+}
 
 try {
   await instanz.initialise();

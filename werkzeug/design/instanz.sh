@@ -12,13 +12,19 @@ pgport="${PLANORA_DESIGN_PG_PORT:-54600}"
 
 stoppen() {
   powershell.exe -NoProfile -Command "
+    \$pg0 = @(Get-CimInstance Win32_Process -Filter \"Name='postgres.exe'\" | Where-Object { \$_.CommandLine -like '*-p $pgport*' });
+    # Wegwerf-Datenordner (planora-entwicklung-*) merken: der harte Stopp ueberspringt das Aufraeumen in start.ts
+    \$ordner = @(\$pg0 | ForEach-Object { if (\$_.CommandLine -match '-D\s+(\S*planora-entwicklung-\w+)') { \$Matches[1] } });
     \$p = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty OwningProcess;
     if (\$p) { taskkill.exe /PID \$p /T /F | Out-Null };
     Start-Sleep -Seconds 2;
-    Get-CimInstance Win32_Process -Filter \"Name='postgres.exe'\" | Where-Object { \$_.CommandLine -like '*-p $pgport*' } | ForEach-Object { taskkill.exe /PID \$_.ProcessId /T /F | Out-Null };
+    \$pg = @(Get-CimInstance Win32_Process -Filter \"Name='postgres.exe'\" | Where-Object { \$_.CommandLine -like '*-p $pgport*' });
+    \$pg | ForEach-Object { taskkill.exe /PID \$_.ProcessId /T /F | Out-Null };
     Start-Sleep -Seconds 1;
     # verwaiste Postgres-Hilfsprozesse (Elternprozess beendet) halten sonst den Port fest
-    Get-CimInstance Win32_Process -Filter \"Name='postgres.exe'\" | Where-Object { \$_.CommandLine -like '*--forkchild*' -and -not (Get-Process -Id \$_.ParentProcessId -ErrorAction SilentlyContinue) } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force }
+    Get-CimInstance Win32_Process -Filter \"Name='postgres.exe'\" | Where-Object { \$_.CommandLine -like '*--forkchild*' -and -not (Get-Process -Id \$_.ParentProcessId -ErrorAction SilentlyContinue) } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force };
+    Start-Sleep -Seconds 1;
+    \$ordner | ForEach-Object { Remove-Item \$_ -Recurse -Force -ErrorAction SilentlyContinue }
   " >/dev/null 2>&1 || true
   echo "Instanz gestoppt (Port $port / $pgport)."
 }
