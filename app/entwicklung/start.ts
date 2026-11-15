@@ -62,8 +62,19 @@ try {
   const baseURL = `http://localhost:${port}`;
   app = await baueServer({ pool, stufe: 2, baseURL, secret: randomBytes(32).toString("hex"), ablageWurzel: ablage,
     webWurzel: fileURLToPath(new URL("../web/dist", import.meta.url)) });
+  // Nur Entwicklung (PO 15.11.): /entwicklung/anmelden meldet ohne Formular als Admin an und leitet zur App weiter.
+  // Abschalten mit PLANORA_OHNE_LOGIN=0. Nicht im Produkt: dieser Start ist in Produktion gesperrt und nicht im Docker-Image.
+  if (process.env.PLANORA_OHNE_LOGIN !== "0") {
+    app.get("/entwicklung/anmelden", async (_req, reply) => {
+      const r = await app!.inject({ method: "POST", url: "/api/auth/sign-in/email", headers: { origin: baseURL },
+        payload: { email: "admin@planora.invalid", password: passwort } });
+      const cookies = r.headers["set-cookie"];
+      if (r.statusCode !== 200 || !cookies) return reply.code(502).type("text/plain").send(`Anmeldung fehlgeschlagen (${r.statusCode})`);
+      return reply.header("set-cookie", cookies).redirect("/");
+    });
+  }
   await app.listen({ host: "127.0.0.1", port });
-  console.log(`Planora Entwicklung: ${baseURL}\nLogin: admin@planora.invalid / ${passwort}\nLogin Betreiber (neue Gebäude): betreiber@planora.invalid / ${betreiberPasswort}`);
+  console.log(`Planora Entwicklung: ${baseURL}\nOhne Login: ${baseURL}/entwicklung/anmelden\nLogin: admin@planora.invalid / ${passwort}\nLogin Betreiber (neue Gebäude): betreiber@planora.invalid / ${betreiberPasswort}`);
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.on(signal, () => { void ende().catch((e) => { console.error(e); process.exitCode = 1; }); });
   }
