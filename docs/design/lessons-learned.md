@@ -10,6 +10,8 @@ Format: `Datum – Erkenntnis – Beleg – Anwendung`.
 - 12.11.2026 – Arbeitsteilung mit festen Vertraegen (Modellvertrag GLB, Prop-Vertrag Szene3, Datenschicht ohne React) erlaubt parallele Designer/Codex-Arbeit ohne Konflikte; je Runde unabhaengige Kritik – Abnahme 1 und 2 vom PO freigegeben, [Anlagen](../abnahme/2026-11-12-anlagen/README.md), [Dashboard](../abnahme/2026-11-12-dashboard/README.md) – Vor parallelen Strängen Vertrag und Dateihoheit schriftlich festlegen.
 - 12.11.2026 – Schematische Rohre muessen verdickt werden (Haupt ca. 0,07 m Radius), sonst lesen sie aus Gebaeudedistanz als Haarlinien (F1) – Kritik Anlagen R1/R2, PO-Sichtung – Rohr- und Linienstaerken immer in der Uebersicht pruefen, nicht nur nah.
 - 12.11.2026 – Headless-Chromium mit `--use-angle=d3d11 --ignore-gpu-blocklist` nutzt die echte GPU (RTX 3070 Ti) – Renderer-Kennung "ANGLE (NVIDIA ... D3D11)" – Standard im Werkzeug `werkzeug/design/`.
+- 15.11.2026 – Leitungen als Pressfittings (Bogen mit Muffen und metallgrauem Pressring, T-Stueck mit drei Muffen, auch an Strangecken) lesen als echte Installation – PO-Sichtung "passt", Kritik r2 – Formstuecke immer aus den fertigen Rohrstuecken ableiten, Abzweige an Ecken als T, nie Bogen plus herausstehendes Rohr.
+- 15.11.2026 – Rohre aus Distanz per Shader auf ca. 4 px verdicken, nah massstaeblich lassen – Kritik r1 B1 und Lesson 12.11. (zweimal belegt), PO "passt" – Bildschirm-Mindeststaerke statt groesserer Geometrie.
 
 ## Wiederkehrende Fehler
 

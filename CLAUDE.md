@@ -22,8 +22,8 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 ### Leitungsrouter (15.11.) [F]
 
 - T9 fertig (`384eca0`): alte Schablonenfuehrung entfernt, Router Pflicht.
-- T10 bis PO-Sichtung (`3a574ae`, `d2c7229`): Pressboegen/T-Stuecke/Winkel, FBH-Kasten geschlossen (GLB), Rohre aus Distanz verdickt [A]; Web 363/363, 60 fps; Kritik r2 bereit. Bilder/README `docs/abnahme/2026-11-15-leitungsrouter/`. Offen: PO-Sichtung, Bilder-Umfang im Repo, P2 N1/N3/B4/B6, dann Gesamtreview.
-- Punkt 13 (Test-Liegenschaften): Entwicklungsstart nutzt je Start eine Wegwerf-DB, nichts zu loeschen. Aber 117 Temp-Ordner `planora-*` (6.4 GB) in %TEMP% bleiben liegen; PO-Entscheid offen (loeschen / start.ts aufraeumen lassen).
+- T10 abgeschlossen, PO-Sichtung 15.11. "passt" (`3a574ae`, `d2c7229`, `2391a3e`): Pressboegen/T-Stuecke/Winkel (auch an Strangecken), FBH-Kasten geschlossen (GLB), Rohre aus Distanz verdickt [A]; Web 366/366, 60 fps. Bilder/README `docs/abnahme/2026-11-15-leitungsrouter/`. Naechstes: Gesamtreview Branch, dann Integrationsplan Punkte 10/11 (Vorschau, Hinweis seitenverhaeltnis), Punkt 12 Brainstorming mit PO.
+- Punkt 13 (Test-Liegenschaften): Entwicklungsstart nutzt je Start eine Wegwerf-DB, nichts zu loeschen. 112 alte Temp-Ordner geloescht (PO 15.11.); offen: 4 Ordner `planora-abnahme-b*` (4.2 GB, WSL-Abnahme 11.11.), und start.ts raeumt seine Temp-Ordner weiterhin nicht auf.
 
 ### Leitungsrouter (14.11., Tagesabschluss) [F]
 
