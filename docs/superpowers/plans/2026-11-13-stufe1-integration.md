@@ -40,3 +40,14 @@ Pruefstand nach `5b2bf4b`: Backend 568/568 (nach Integration 565), Web 251/251, 
 - Ein Benutzer hat genau eine Rolle; Admin hat kein `huelle.verwalten`, die Huelle legt der Betreiber an.
 
 Branch gepusht (PO-Auftrag); kein Merge nach `main`, kein Deployment. Worktrees `wt-a-generator`, `wt-b-assistent`, `wt-c-leitungen` noch vorhanden (Branches gemergt), koennen nach dem Push aufgeraeumt werden.
+
+## Abarbeitung 15.11.2026 [F]
+
+- Punkt 1/10 Vorschau: erledigt (`68b5995`). Ursache: zielKorrektur klemmte das absichtlich seitlich verschobene Kameraziel in den Gebaeudequader; neu wird die Mitte der freien Flaeche geklemmt.
+- Punkt 3 Gruppenauswahl: Kamera faehrt auf den Gruppenverlauf (`c540de2`); Umriss folgt der Rohrverdickung.
+- Punkt 8 Port 54800: frei, erledigt.
+- Punkt 9 Betreiber-Ablauf: im Browser durchgeklickt (Liegenschaft, Name, "Gebäude anlegen", Meldung an Kunde). 401/404 in der Konsole sind erwartete Pruefungen.
+- Punkt 11 Hinweis seitenverhaeltnis: verstaendlicher Satz in Twin, Panel und Assistent (`c540de2`). [?] PO: soll der Kunde den Hinweis sehen oder bleibt er intern?
+- Zusaetzlich: Heizkoerper standen in der Aussenwand (Generator `HK_WAND`), jetzt davor (`5688b4a`); Panels deckender; Klickflaeche der Rohre wie sichtbar (`d90d698`); Temp-Ordner werden beim Beenden geloescht (`6f307b0`).
+- Offen: Punkt 12 (Brainstorming Heizungserfassung), Punkt 5/7 (Annahmen und Doku-Nachtraege), Punkt 6 (Ordner `wt-b-assistent/...`, PO).
+
