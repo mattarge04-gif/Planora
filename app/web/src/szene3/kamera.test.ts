@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { einpassen, ISO_RICHTUNG, zielKorrektur } from "./kamera";
+import { einpassen, gruppenBereich, ISO_RICHTUNG, zielKorrektur } from "./kamera";
+import type { Welt } from "../typen";
 import type { Bereich } from "../szene2/huelle";
 import { OrthographicCamera, Vector3 } from "three";
 
@@ -58,5 +59,27 @@ describe("zielKorrektur", () => {
   it("holt ein zu weit verschobenes Ziel an den Rand zurück", () => {
     const [dx, , dz] = zielKorrektur({ x: 100, y: 3, z: -40 }, b);
     expect(100 + dx).toBe(30); expect(-40 + dz).toBe(0);
+  });
+});
+
+describe("gruppenBereich (Kamera auf Gruppenverlauf)", () => {
+  const sym = (schluessel: string, x: number, y: number, z: number) => ({ schluessel, katalogId: "k", hersteller: null, typ: null, bauteilIds: [],
+    mengeSumme: 1, mengeUnbekannt: false, status: "bestaetigt", position: { x, y, z }, versorgt: [] }) as unknown as Welt["symbole"][number];
+  const welt = { regelwerkVersion: 2, hash: "g", grundriss: [{ x: 0, z: 0, breite: 20, tiefe: 10 }], hinweise: [],
+    geschosse: [{ id: "eg", code: "EG", yUnten: 0, hoehe: 3 }, { id: "og", code: "OG1", yUnten: 3, hoehe: 3 }],
+    einheiten: [{ id: "e1", geschossId: "og", rechteck: { x: 10, z: 2, breite: 4, tiefe: 3 } }],
+    symbole: [sym("vt", 1, 0, 1), sym("hk", 8, 0, 9)],
+    gruppen: [{ id: "g1", verteiler: "vt", nummer: 1, art: "ungeregelt", bezeichnung: "", verbraucher: ["hk", "e1"], zubehoer: [] }] } as unknown as Welt;
+  const masse = (): [number, number, number] => [1, 1, 1];
+
+  it("umfasst Verteiler und Verbraucher sichtbarer Geschosse bis zur Decke", () => {
+    expect(gruppenBereich(welt, "g1", ["eg"], {}, masse)).toEqual({ xMin: 0.5, xMax: 8.5, yMin: 0, yMax: 3, zMin: 0.5, zMax: 9.5 });
+  });
+  it("nimmt Einheiten als Verbraucher und Geschoss-Versatz mit", () => {
+    expect(gruppenBereich(welt, "g1", ["eg", "og"], { og: 2 }, masse)).toEqual({ xMin: 0.5, xMax: 14, yMin: 0, yMax: 8, zMin: 0.5, zMax: 9.5 });
+  });
+  it("Ersatzgruppe ueber ihre Enden, unbekannte Gruppe ergibt null", () => {
+    expect(gruppenBereich(welt, "ersatz:vt>hk", ["eg"], {}, masse)?.xMax).toBe(8.5);
+    expect(gruppenBereich(welt, "gibts-nicht", ["eg"], {}, masse)).toBeNull();
   });
 });

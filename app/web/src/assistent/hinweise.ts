@@ -60,6 +60,7 @@ export function pruefHinweise(z: AssistentZustand, welt: Welt | null, positionen
       : w.code === "position_widerspruch" ? `${wo || "Ein Bauteil"} hat widersprüchliche manuelle Positionen.`
       : w.code === "ohne_gruppe" ? `${wo || "Eine Abgabe"} gehört zu keiner Gruppe.`
       : w.code === "gruppe_leer" ? "Eine Gruppe hat keine Verbraucher."
+      : w.code === "seitenverhaeltnis" ? `${wo || "Eine Einheit"} wird sehr langgezogen. Prüfen Sie die Aufteilung der Einheiten im Geschoss.`
       : `Hinweis ${w.code}${wo ? ` zu ${wo}` : ""}.`;
     h.push({ code: w.code, text, schritt: e ? 2 : 5, ...(s && { schluessel: s }) });
   }

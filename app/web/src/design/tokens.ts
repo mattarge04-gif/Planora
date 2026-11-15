@@ -41,8 +41,8 @@ export const TOKENS = {
     geraetM: 0.03,
   },
   flaeche: {
-    panelDeckkraft: 0.85,
-    weichzeichnerPx: 16,
+    panelDeckkraft: 0.94, // [A] 15.11.: bei 0.85 schienen gesaettigte Rohre durch (Kritik B4)
+    weichzeichnerPx: 20,
     rahmenPx: 1,
     rahmen: "rgba(255, 255, 255, 0.7)",
   },

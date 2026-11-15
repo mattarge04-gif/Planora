@@ -7,7 +7,7 @@ import type { Bereich, V3 } from "../szene2/huelle";
 import { geschossBeiY } from "../szene2/leitungen";
 import type { Welt } from "../typen";
 import type { Darstellung } from "./Bewegung";
-import { anlageEinpassen, einpassen, FIT_ANTEIL, ortBereich, type Einpassung, type Freiraum, type SzenenZiel } from "./kamera";
+import { anlageEinpassen, einpassen, FIT_ANTEIL, gruppenBereich, ortBereich, type Einpassung, type Freiraum, type SzenenZiel } from "./kamera";
 import { fahrtSchritt, kameraEingaben, rueckkehrAnsicht, type Kamerafahrt } from "./kameraFahrt";
 import { modellVon } from "./technik";
 
@@ -55,6 +55,10 @@ export function Kamera3({ welt, fokusId, bereich, freiraum, repKey, auswahl, zie
         nach = anlageEinpassen({ xMin: s.position.x - m[0] / 2, xMax: s.position.x + m[0] / 2,
           yMin: y, yMax: y + m[1] + 0.04, zMin: s.position.z - m[2] / 2, zMax: s.position.z + m[2] / 2 },
         size.width, size.height, freiraum, richtung);
+      } else if (auswahl) {
+        // Gruppe gewaehlt: Kamera auf den Verlauf der Gruppe (Verteiler bis Verbraucher), nicht auf das ganze Geschoss.
+        const b = gruppenBereich(welt, auswahl, darstellung.sichtbar, darstellung.offsets, (x) => modellVon(x).masse);
+        if (b) nach = einpassen(b, size.width, size.height, freiraum, FIT_ANTEIL, richtung);
       } else if (!auswahl && ziel && darstellung.sichtbar.includes(ziel.geschossId)) {
         const b = ortBereich(welt, ziel, darstellung.offsets);
         if (b) nach = einpassen(b, size.width, size.height, freiraum, FIT_ANTEIL, richtung);

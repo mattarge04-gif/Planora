@@ -111,6 +111,11 @@ describe("Anzeigenamen und Anlagen", () => {
 });
 
 describe("Echte Hinweise und Klickziele", () => {
+  it("übersetzt seitenverhaeltnis in einen verständlichen Satz", () => {
+    const w = { ...welt, hinweise: [{ code: "seitenverhaeltnis", bezug: welt.einheiten[0].id }] };
+    const h = hinweisListe(w, { ...beschreibung, hinweise: [] });
+    expect(h.map((x) => x.text)).toEqual([`${welt.einheiten[0].bezeichnung}: Raum sehr langgezogen, Aufteilung prüfen`]);
+  });
   it("führt beide Quellen zusammen, übersetzt Texte und erfindet keinen Status", () => {
     const h = hinweisListe(welt, beschreibung);
     expect(h.map((h) => [h.text, h.status])).toEqual([["Büro D: Verteiler noch nicht erfasst", null], ["Büro D: Layout überlappt", null]]);

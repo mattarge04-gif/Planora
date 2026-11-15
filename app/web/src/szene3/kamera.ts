@@ -99,6 +99,40 @@ export function ortBereich(welt: Welt, ziel: SzenenZiel, offsets: Record<string,
 }
 
 /**
+ * Bereich einer Heizgruppe fuer die Kamerafahrt (Kritik/PO: Auswahl einer Gruppe fuhr auf das Geschoss): Verteiler,
+ * Verbraucher und Zubehoer auf sichtbaren Geschossen, jeweils bis zur Geschossdecke (Leitungsebene). Ersatzgruppen
+ * `ersatz:von>nach` nehmen ihre beiden Enden. Ohne sichtbares Teil: null.
+ */
+export function gruppenBereich(welt: Welt, gruppeId: string, sichtbar: readonly string[], offsets: Record<string, number>,
+  masse: (s: Welt["symbole"][number]) => V3): Bereich | null {
+  const g = welt.gruppen?.find((x) => x.id === gruppeId);
+  const teile = g ? [g.verteiler, ...g.verbraucher, ...g.zubehoer]
+    : gruppeId.startsWith("ersatz:") ? gruppeId.slice("ersatz:".length).split(">") : [];
+  const boxen: Bereich[] = [];
+  const geschossVon = (y: number) => [...welt.geschosse].sort((a, b) => b.yUnten - a.yUnten).find((x) => y >= x.yUnten - 1e-6);
+  for (const k of teile) {
+    const s = welt.symbole.find((x) => x.schluessel === k);
+    if (s) {
+      const ge = geschossVon(s.position.y);
+      if (!ge || !sichtbar.includes(ge.id)) continue;
+      const m = masse(s), off = offsets[ge.id] ?? 0;
+      boxen.push({ xMin: s.position.x - m[0] / 2, xMax: s.position.x + m[0] / 2, zMin: s.position.z - m[2] / 2, zMax: s.position.z + m[2] / 2,
+        yMin: s.position.y + off, yMax: ge.yUnten + ge.hoehe + off });
+      continue;
+    }
+    const e = welt.einheiten.find((x) => x.id === k), ge = e && welt.geschosse.find((x) => x.id === e.geschossId);
+    if (!e || !ge || !sichtbar.includes(ge.id)) continue;
+    const off = offsets[ge.id] ?? 0;
+    boxen.push({ xMin: e.rechteck.x, xMax: e.rechteck.x + e.rechteck.breite, zMin: e.rechteck.z, zMax: e.rechteck.z + e.rechteck.tiefe,
+      yMin: ge.yUnten + off, yMax: ge.yUnten + ge.hoehe + off });
+  }
+  if (!boxen.length) return null;
+  return { xMin: Math.min(...boxen.map((b) => b.xMin)), xMax: Math.max(...boxen.map((b) => b.xMax)),
+    yMin: Math.min(...boxen.map((b) => b.yMin)), yMax: Math.max(...boxen.map((b) => b.yMax)),
+    zMin: Math.min(...boxen.map((b) => b.zMin)), zMax: Math.max(...boxen.map((b) => b.zMax)) };
+}
+
+/**
  * Passt eine Orthokamera so ein, dass der Bereich `fuellung` (0..1) der freien Flaeche fuellt
  * (Ansicht minus Freiraum fuer Karten, in px) und in deren Mitte liegt. zoom = px pro Welteinheit.
  */

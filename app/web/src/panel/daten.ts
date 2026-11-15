@@ -41,6 +41,7 @@ export function uebersicht(welt: Welt, beschreibung: Beschreibung) {
     if (h.code === "verteiler_vorschlag") return `${name(h.bezug)}: Verteiler noch nicht erfasst`;
     if (h.code === "ueberlappung") return `${name(h.bezug)}: Layout ueberlappt`;
     if (h.code === "position_widerspruch") return "Widerspruechliche manuelle Positionen in einer Bauteilgruppe";
+    if (h.code === "seitenverhaeltnis") return `${name(h.bezug)}: Raum sehr langgezogen, Aufteilung pruefen`;
     return h.code;
   };
   return {

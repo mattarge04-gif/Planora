@@ -113,7 +113,9 @@ export function hinweisListe(welt: Welt, beschreibung: Beschreibung): HinweisZei
     gesehen.add(id);
     const name = welt.einheiten.find((e) => e.id === h.bezug)?.bezeichnung ?? h.bezug;
     const text = h.code === "ueberlappung" ? `${name}: Layout überlappt`
-      : h.code === "position_widerspruch" ? "Widersprüchliche manuelle Positionen in einer Bauteilgruppe" : texte[i];
+      : h.code === "position_widerspruch" ? "Widersprüchliche manuelle Positionen in einer Bauteilgruppe"
+      // Raumkomposition: Einheit laenger als seitenMax (Regelwerk v2) im Verhaeltnis zur Breite.
+      : h.code === "seitenverhaeltnis" ? `${name}: Raum sehr langgezogen, Aufteilung prüfen` : texte[i];
     return [{ id, code: h.code, bezug: h.bezug, text, status, ziel: hinweisZiel(welt, beschreibung, h.bezug) }];
   });
 }
