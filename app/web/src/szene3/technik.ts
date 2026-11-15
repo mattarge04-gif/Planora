@@ -118,8 +118,8 @@ class Rohrkurve extends THREE.CurvePath<THREE.Vector3> {
   }
 }
 
-/** Viertelkreisbögen (kubische Kreisnäherung), tangential an geraden Rohrstücken. */
-export function rohrPfad(punkte: V3[], radius: number): THREE.CurvePath<THREE.Vector3> {
+/** Eckpunkte ohne Doppelpunkte und ohne Zwischenpunkte auf einer Geraden. */
+function eckpunkte(punkte: V3[]): THREE.Vector3[] {
   const p: THREE.Vector3[] = [];
   for (const punkt of punkte) {
     const v = new THREE.Vector3(...punkt);
@@ -130,6 +130,29 @@ export function rohrPfad(punkte: V3[], radius: number): THREE.CurvePath<THREE.Ve
       p.splice(n - 2, 1);
     }
   }
+  return p;
+}
+
+/** Lage eines Viertelkreisbogens: Ecke, Richtungen davor/danach, Bogenradius (Achse), Tangentenpunkte a/b. */
+export interface Bogenlage { index: number; ecke: V3; ein: V3; aus: V3; r: number; a: V3; b: V3 }
+
+/** Bögen genau wie `rohrPfad` sie zeichnet (nur rechte Winkel; Radius `bogenFaktor` × Rohrradius, höchstens halbe Schenkellänge). */
+export function bogenLagen(punkte: V3[], radius: number): Bogenlage[] {
+  const p = eckpunkte(punkte), boegen: Bogenlage[] = [];
+  for (let i = 1; i < p.length - 1; i++) {
+    const ein = p[i].clone().sub(p[i - 1]), aus = p[i + 1].clone().sub(p[i]);
+    const r = Math.min(Math.max(0, radius * ROHR.bogenFaktor), ein.length() / 2, aus.length() / 2);
+    ein.normalize(); aus.normalize();
+    if (Math.abs(ein.dot(aus)) > 1e-6 || r < 1e-9) continue;
+    boegen.push({ index: i, ecke: p[i].toArray() as V3, ein: ein.toArray() as V3, aus: aus.toArray() as V3, r,
+      a: p[i].clone().addScaledVector(ein, -r).toArray() as V3, b: p[i].clone().addScaledVector(aus, r).toArray() as V3 });
+  }
+  return boegen;
+}
+
+/** Viertelkreisbögen (kubische Kreisnäherung), tangential an geraden Rohrstücken. */
+export function rohrPfad(punkte: V3[], radius: number): THREE.CurvePath<THREE.Vector3> {
+  const p = eckpunkte(punkte);
   const pfad = new Rohrkurve();
   if (p.length < 2) return pfad;
   let start = p[0];
@@ -137,14 +160,14 @@ export function rohrPfad(punkte: V3[], radius: number): THREE.CurvePath<THREE.Ve
     if (start.distanceToSquared(ende) > 1e-12) pfad.add(new THREE.LineCurve3(start, ende));
     start = ende;
   };
+  const boegen = new Map(bogenLagen(punkte, radius).map((b) => [b.index, b]));
   for (let i = 1; i < p.length - 1; i++) {
-    const ein = p[i].clone().sub(p[i - 1]), aus = p[i + 1].clone().sub(p[i]);
-    const r = Math.min(Math.max(0, radius * ROHR.bogenFaktor), ein.length() / 2, aus.length() / 2);
-    ein.normalize(); aus.normalize();
-    if (Math.abs(ein.dot(aus)) > 1e-6 || r < 1e-9) { linie(p[i]); continue; }
-    const a = p[i].clone().addScaledVector(ein, -r), b = p[i].clone().addScaledVector(aus, r);
+    const bogen = boegen.get(i);
+    if (!bogen) { linie(p[i]); continue; }
+    const a = new THREE.Vector3(...bogen.a), b = new THREE.Vector3(...bogen.b);
+    const ein = new THREE.Vector3(...bogen.ein), aus = new THREE.Vector3(...bogen.aus);
     linie(a);
-    const k = 4 / 3 * Math.tan(Math.PI / 8) * r;
+    const k = 4 / 3 * Math.tan(Math.PI / 8) * bogen.r;
     pfad.add(new THREE.CubicBezierCurve3(a, a.clone().addScaledVector(ein, k), b.clone().addScaledVector(aus, -k), b));
     start = b;
   }

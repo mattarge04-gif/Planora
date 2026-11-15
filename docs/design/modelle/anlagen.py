@@ -524,6 +524,12 @@ def fbh_kreis():
         kasten(0.03, 0.012, H, sx * (W / 2 - 0.015), yf + 0.004, z0, 0.005, "gehaeuse", segmente=2)
     kasten(W, 0.012, 0.03, 0, yf + 0.004, z0 + H - 0.03, 0.005, "gehaeuse", segmente=2)
     kasten(W, 0.012, 0.03, 0, yf + 0.004, z0, 0.005, "gehaeuse", segmente=2)
+    # PO 14.11.: geschlossene Revisionstuer, 6 mm hinter dem Rahmen (Schattenfuge 3 mm rundum);
+    # der offene Schrank wirkte, als liefen Steigleitungen hindurch. Innenleben bleibt fuer die Vorschau erhalten.
+    kasten(W - 0.066, 0.01, H - 0.066, 0, yf + 0.009, z0 + 0.033, 0.003, "gehaeuse", segmente=2)
+    kasten(0.014, 0.012, 0.09, W / 2 - 0.075, yf + 0.0, z0 + H / 2 - 0.045, 0.004, "detail", segmente=2)  # Griff
+    for i in range(4):  # Lueftungsschlitze oben
+        kasten(0.2, 0.004, 0.008, 0, yf + 0.003, z0 + H - 0.1 - i * 0.022, 0.002, "dunkel", segmente=1)
     # Montageschiene
     kasten(0.5, 0.01, 0.03, 0, D / 2 - t - 0.005, 0.5, 0.004, "detail", segmente=1)
     # Verteilerbalken: Vorlauf oben mit Durchflussmessern, Ruecklauf unten mit Stellantrieben

@@ -1,0 +1,1184 @@
+{
+ "beschreibung": "Leitungsrouter T10: alle sieben Muster – Übersicht, Technik, jedes Geschoss (Schnitt und Nahzoom), Zentrale am Verteiler und Nahbild der Formstücke (Bögen, T-Stücke).",
+ "fenster": [
+  [
+   1440,
+   900
+  ],
+  [
+   1920,
+   1080
+  ],
+  [
+   1280,
+   720
+  ]
+ ],
+ "schritte": [
+  {
+   "klick": "Muster 1 Ein Raum"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m1-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m1-technik"
+  },
+  {
+   "knopf": "EG 2 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m1-geschoss-eg"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m1-geschoss-eg-nah"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m1-zentrale"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m1-formstuecke"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "knopf": "Gebäude wählen"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "klick": "Muster 2 Beispiel"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m2-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m2-technik"
+  },
+  {
+   "knopf": "EG 3 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m2-geschoss-eg"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m2-geschoss-eg-nah"
+  },
+  {
+   "knopf": "OG1 2 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m2-geschoss-og1"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m2-geschoss-og1-nah"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m2-zentrale"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m2-formstuecke"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "knopf": "Gebäude wählen"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "klick": "Muster 3 Zubehoer"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m3-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m3-technik"
+  },
+  {
+   "knopf": "EG 3 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m3-geschoss-eg"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m3-geschoss-eg-nah"
+  },
+  {
+   "knopf": "OG1 2 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m3-geschoss-og1"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m3-geschoss-og1-nah"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m3-zentrale"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m3-formstuecke"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "knopf": "Gebäude wählen"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "klick": "Muster 4 Pumpe vor WP"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m4-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m4-technik"
+  },
+  {
+   "knopf": "EG 2 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m4-geschoss-eg"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m4-geschoss-eg-nah"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m4-zentrale"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m4-formstuecke"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "knopf": "Gebäude wählen"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "klick": "Muster 5 FBH ueber Geschosse"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m5-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m5-technik"
+  },
+  {
+   "knopf": "EG 1 Einheit",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m5-geschoss-eg"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m5-geschoss-eg-nah"
+  },
+  {
+   "knopf": "OG1 3 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m5-geschoss-og1"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m5-geschoss-og1-nah"
+  },
+  {
+   "knopf": "OG2 2 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m5-geschoss-og2"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m5-geschoss-og2-nah"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m5-zentrale"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m5-formstuecke"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "knopf": "Gebäude wählen"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "klick": "Muster 6 L-Form viele Gruppen"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m6-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m6-technik"
+  },
+  {
+   "knopf": "UG1 1 Einheit",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m6-geschoss-ug1"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m6-geschoss-ug1-nah"
+  },
+  {
+   "knopf": "EG 3 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m6-geschoss-eg"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m6-geschoss-eg-nah"
+  },
+  {
+   "knopf": "OG1 2 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m6-geschoss-og1"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m6-geschoss-og1-nah"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m6-zentrale"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m6-formstuecke"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "knopf": "Gebäude wählen"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "klick": "Muster 6u U-Form viele Gruppen"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "bild": "m6u-uebersicht"
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "m6u-technik"
+  },
+  {
+   "knopf": "UG1 1 Einheit",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m6u-geschoss-ug1"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m6u-geschoss-ug1-nah"
+  },
+  {
+   "knopf": "EG 3 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m6u-geschoss-eg"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m6u-geschoss-eg-nah"
+  },
+  {
+   "knopf": "OG1 2 Einheiten",
+   "exakt": true
+  },
+  {
+   "warte": 2500
+  },
+  {
+   "bild": "m6u-geschoss-og1"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m6u-geschoss-og1-nah"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "klick": "Heizungsverteiler",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m6u-zentrale"
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.5,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "m6u-formstuecke"
+  },
+  {
+   "fps": 3000
+  }
+ ]
+}

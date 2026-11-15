@@ -16,6 +16,8 @@ import { GeschossGruppe, type Darstellung } from "./Bewegung";
 import type { Interaktion } from "./Interaktion";
 import { rohrGeschosse } from "./darstellung";
 import { SCHATTEN, kontaktLichtZiel } from "./qualitaet";
+import { formstuecke } from "./formstuecke";
+import { Formstuecke3 } from "./Formstuecke3";
 
 const FLAECHE = new Set(["heizung.fbh_kreis", "heizung.tabs_feld"]);
 
@@ -63,12 +65,17 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
       });
     });
   }, [welt, schnitt]);
-  const sichtbar = darstellung?.sichtbar ?? schnitt.geschosse.map((g) => g.id);
+  // Stabile Liste: Rohrteile und Formstücke nicht bei jedem Überfahren neu ableiten.
+  const sichtbarListe = darstellung?.sichtbar ?? schnitt.geschosse.map((g) => g.id);
+  const sichtbarSchluessel = sichtbarListe.join("|");
+  const sichtbar = useMemo(() => sichtbarListe, [sichtbarSchluessel]);
   const kappen = useMemo(() => freieVerteilerAbgaenge(welt, katalog), [welt, katalog]);
   const getrennt = separiert || !!darstellung?.bewegung || sichtbar.length !== schnitt.geschosse.length;
   const rohre = useMemo(() => netz.rohre.flatMap((r) => rohrGeschosse(welt, r.punkte, sichtbar).map((t) => ({
     ...t, stueck: { ...r, punkte: t.punkte, frei: t.endeGetrennt ? getrennt : r.frei }, anfangFrei: getrennt && t.anfangGetrennt,
   }))), [netz, welt, sichtbar, getrennt]);
+  // Bögen, T-Stücke und Winkel je Geschoss aus den sichtbaren Rohrteilen (nur Darstellung, Punkte unverändert).
+  const formen = useMemo(() => new Map(sichtbar.map((id) => [id, formstuecke(rohre.filter((r) => r.geschossId === id).map((r) => r.stueck))])), [rohre, sichtbar]);
   const huelsenGeschoss = (h: Huelse) => h.art === "decke"
     ? [...welt.geschosse].sort((a, b) => Math.abs(a.yUnten - h.position[1]) - Math.abs(b.yUnten - h.position[1]))[0]?.id
     : geschossBeiY(welt, h.position[1]);
@@ -78,6 +85,7 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
       {kappen.filter((k) => geschossBeiY(welt, k.symbol.position.y) === id).map((k, i) =>
         <VerteilerKappe key={`kappe-${i}`} {...k} interaktion={interaktion} schatten={schatten} />)}
       {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} interaktion={interaktion} />)}
+      {formen.get(id) && <Formstuecke3 f={formen.get(id)!} schatten={schatten} gruppe={interaktion?.gruppe ?? null} farben={FORM_FARBEN} />}
       {netz.huelsen.filter((h) => huelsenGeschoss(h) === id).map((h, i) => <Durchgang key={i} huelse={h} schatten={schatten} />)}
       {flaechen.filter((f) => f.geschossId === id).map((f) => <Flaechenband key={f.daten.einheitId} {...f} />)}
       {schatten && !darstellung?.bewegung && schnitt.fokus?.id === id && <Technikkontakte key={`${id}:${Object.keys(anschluesse).join(":")}`}
@@ -100,6 +108,8 @@ function VerteilerKappe({ symbol, position, interaktion, schatten }: { symbol: W
 const ROHR_UMRISS = 0.012;
 /** Übrige Leitungen treten bei hervorgehobener Gruppe zurück [A]: KOO-Rot stark zum hellen Grau gemischt. */
 const ROHR_GEDIMMT = new THREE.Color(TOKENS.farbe.kooHeizung).lerp(new THREE.Color(TOKENS.farbe.grau1), 0.72).getStyle();
+
+const FORM_FARBEN = { normal: TOKENS.farbe.kooHeizung, gedimmt: ROHR_GEDIMMT };
 
 function Rohr({ stueck, schatten, anfangFrei = false, interaktion }: { stueck: Rohrstueck; schatten: boolean; anfangFrei?: boolean; interaktion?: Interaktion }) {
   const geometrie = useMemo(() => rohrGeometrie(stueck), [stueck]);
