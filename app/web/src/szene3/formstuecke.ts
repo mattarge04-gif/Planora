@@ -80,6 +80,32 @@ export function knoten(stuecke: Rohrstueck[]): Knoten[] {
   });
 }
 
+/**
+ * Teilt Rohre an inneren Punkten, an denen ein anderes Rohr desselben Netzes beginnt oder endet (Abzweig an einer Ecke
+ * des Strangs). Ohne Teilung zeichnet das Rohr dort einen Bogen und der Abzweig sticht aus dessen Ecke (PO 15.11.);
+ * geteilt stossen drei Enden zusammen und `knoten` setzt ein T-Stück. Nur Darstellung, die Punkte bleiben dieselben.
+ * Ergebnis je Teil: Rohrstück, Index des Ausgangsrohrs, ob es das erste Teil ist.
+ */
+export function anAbzweigenTeilen(stuecke: Rohrstueck[]): { stueck: Rohrstueck; index: number; erstes: boolean }[] {
+  const tol = FORMSTUECK.toleranz;
+  const enden = stuecke.map((s) => (s.punkte.length >= 2 ? [s.punkte[0], s.punkte[s.punkte.length - 1]] : []).map((p) => ({ p: v(p), netz: netzVon(s) })));
+  return stuecke.flatMap((t, i) => {
+    const netz = netzVon(t);
+    const schnitte: number[] = [];
+    for (let k = 1; k < t.punkte.length - 1; k++) {
+      const q = v(t.punkte[k]);
+      if (enden.some((e, j) => j !== i && e.some((x) => x.netz === netz && x.p.distanceTo(q) < tol))) schnitte.push(k);
+    }
+    if (!schnitte.length) return [{ stueck: t, index: i, erstes: true }];
+    const grenzen = [0, ...schnitte, t.punkte.length - 1];
+    return grenzen.slice(1).map((ende, n) => {
+      const anfang = grenzen[n], letztes = n === grenzen.length - 2;
+      return { index: i, erstes: n === 0, stueck: { ...t, punkte: t.punkte.slice(anfang, ende + 1),
+        startRadius: n === 0 ? t.startRadius : t.radius, endRadius: letztes ? t.endRadius : t.radius, frei: letztes && t.frei } };
+    });
+  });
+}
+
 /** Alle Formstücke einer Menge Rohrstücke: Bögen je Rohr, Knoten zwischen Rohren, dazu Muffen und Pressringe. */
 export function formstuecke(stuecke: Rohrstueck[]): Formstuecke {
   const boegen: Bogenstueck[] = [], muffen: Zylinder[] = [], ringe: Zylinder[] = [];

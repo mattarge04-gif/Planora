@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import type { V3 } from "../szene2/huelle";
-import { bogenMatrix, bogenSchluessel, formstuecke, FORMSTUECK, knoten, zylinderMatrix } from "./formstuecke";
+import { anAbzweigenTeilen, bogenMatrix, bogenSchluessel, formstuecke, FORMSTUECK, knoten, zylinderMatrix } from "./formstuecke";
 import type { Rohrstueck } from "./netz";
 import { ROHR, bogenLagen } from "./technik";
 
@@ -89,5 +89,29 @@ describe("Instanzmatrizen", () => {
     const m = zylinderMatrix({ position: [1, 2, 3], richtung: [0, 0, -1], radius: 0.05, laenge: 0.2 });
     const spitze = new THREE.Vector3(0, 0.5, 0).applyMatrix4(m);
     expect(spitze.distanceTo(new THREE.Vector3(1, 2, 2.9))).toBeLessThan(1e-9);
+  });
+});
+
+describe("anAbzweigenTeilen (Abzweig an einer Ecke des Strangs, PO 15.11.)", () => {
+  // Strang biegt bei (4,3,0) ab; dort beginnt ein Abzweig derselben Gruppe.
+  const strang = { ...rohr([[0, 3, 0], [4, 3, 0], [4, 3, 3]], "g"), startRadius: 0.02, endRadius: 0.03, frei: true };
+  const abzweig = rohr([[4, 3, 0], [8, 3, 0]], "g");
+  const teile = anAbzweigenTeilen([strang, abzweig]);
+
+  it("teilt den Strang an der Ecke, Punkte und Radien an den Enden bleiben", () => {
+    expect(teile.map((t) => t.stueck.punkte)).toEqual([[[0, 3, 0], [4, 3, 0]], [[4, 3, 0], [4, 3, 3]], [[4, 3, 0], [8, 3, 0]]]);
+    expect(teile.map((t) => [t.index, t.erstes])).toEqual([[0, true], [0, false], [1, true]]);
+    expect([teile[0].stueck.startRadius, teile[0].stueck.endRadius, teile[1].stueck.startRadius, teile[1].stueck.endRadius]).toEqual([0.02, 0.045, 0.045, 0.03]);
+    expect([teile[0].stueck.frei, teile[1].stueck.frei]).toEqual([false, true]);
+  });
+  it("ergibt an der Ecke ein T-Stück statt Bogen", () => {
+    const f = formstuecke(teile.map((t) => t.stueck));
+    expect(f.boegen).toEqual([]);
+    expect(f.knoten).toHaveLength(1);
+    expect(f.knoten[0].arme).toHaveLength(3);
+  });
+  it("teilt nicht bei fremdem Netz und nicht ohne Abzweig", () => {
+    expect(anAbzweigenTeilen([strang, rohr([[4, 3, 0], [8, 3, 0]], "x")])).toHaveLength(2);
+    expect(anAbzweigenTeilen([strang])).toHaveLength(1);
   });
 });

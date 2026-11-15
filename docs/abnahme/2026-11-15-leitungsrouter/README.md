@@ -14,6 +14,7 @@ Kritik: [r1](../../design/kritiken/2026-11-15-leitungsrouter-r1.md) (verbessern)
 | Zentrale nachher | [m3](m3-zentrale-1440x900.png), [m6](m6-zentrale-1440x900.png), [m6u](m6u-zentrale-1440x900.png) |
 | Pressbögen nah | [m3](formstuecke/m3-zentrale-nah-1440x900.png), [m6](formstuecke/m6-zentrale-nah-1440x900.png) |
 | T-Stück am Gruppenstrang (Mitte oben, x 740 / y 237) | [m3](formstuecke/m3-t-stueck-nah-1440x900.png) |
+| T-Stück an einer Strangecke (PO 15.11.: wirkte wie zwei Bögen) | [vorher](formstuecke/t-ecke-vorher.png), [nachher](formstuecke/t-ecke-nachher.png) |
 | FBH-Kasten geschlossen, ohne Auswahl | [m5](formstuecke/m5-fbh-kasten-nah-1440x900.png) |
 | Geschossbild (Rohre aus Distanz verdickt) | [m3 EG](m3-geschoss-eg-1440x900.png), [m3 OG1](m3-geschoss-og1-1440x900.png), [m6 EG](m6-geschoss-eg-1440x900.png) |
 | Band-Effekt aus Distanz (Geschmacksfrage) | [m6 Technik](m6-technik-1440x900.png) |

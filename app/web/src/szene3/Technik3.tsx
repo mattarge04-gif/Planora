@@ -16,7 +16,7 @@ import { GeschossGruppe, type Darstellung } from "./Bewegung";
 import type { Interaktion } from "./Interaktion";
 import { rohrGeschosse } from "./darstellung";
 import { SCHATTEN, kontaktLichtZiel } from "./qualitaet";
-import { formstuecke } from "./formstuecke";
+import { anAbzweigenTeilen, formstuecke } from "./formstuecke";
 import { Formstuecke3 } from "./Formstuecke3";
 import { achseY, mitRohrStaerke, ROHR_FAKTOR, rohrFaktor } from "./rohrStaerke";
 
@@ -74,9 +74,16 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
   const sichtbar = useMemo(() => sichtbarListe, [sichtbarSchluessel]);
   const kappen = useMemo(() => freieVerteilerAbgaenge(welt, katalog), [welt, katalog]);
   const getrennt = separiert || !!darstellung?.bewegung || sichtbar.length !== schnitt.geschosse.length;
-  const rohre = useMemo(() => netz.rohre.flatMap((r) => rohrGeschosse(welt, r.punkte, sichtbar).map((t) => ({
-    ...t, stueck: { ...r, punkte: t.punkte, frei: t.endeGetrennt ? getrennt : r.frei }, anfangFrei: getrennt && t.anfangGetrennt,
-  }))), [netz, welt, sichtbar, getrennt]);
+  const rohre = useMemo(() => {
+    const teile = netz.rohre.flatMap((r) => rohrGeschosse(welt, r.punkte, sichtbar).map((t) => ({
+      ...t, stueck: { ...r, punkte: t.punkte, frei: t.endeGetrennt ? getrennt : r.frei }, anfangFrei: getrennt && t.anfangGetrennt,
+    })));
+    // Abzweig an einer Ecke: Rohr dort teilen, damit ein T-Stück statt eines Bogens entsteht (formstuecke.anAbzweigenTeilen).
+    return sichtbar.flatMap((id) => {
+      const eigene = teile.filter((r) => r.geschossId === id);
+      return anAbzweigenTeilen(eigene.map((r) => r.stueck)).map((t) => ({ ...eigene[t.index], stueck: t.stueck, anfangFrei: t.erstes && eigene[t.index].anfangFrei }));
+    });
+  }, [netz, welt, sichtbar, getrennt]);
   // Bögen, T-Stücke und Winkel je Geschoss aus den sichtbaren Rohrteilen (nur Darstellung, Punkte unverändert).
   const formen = useMemo(() => new Map(sichtbar.map((id) => [id, formstuecke(rohre.filter((r) => r.geschossId === id).map((r) => r.stueck))])), [rohre, sichtbar]);
   const huelsenGeschoss = (h: Huelse) => h.art === "decke"
