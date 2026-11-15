@@ -3,6 +3,43 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-15 – Leitungsrouter T9/T10, Befunde, Gesamtreview
+
+### 1. Was gemacht wurde
+
+- [F] T9 `384eca0`: alte Schablonenfuehrung entfernt, Router Pflicht.
+- [F] T10: GPU-Bilder aller 7 Muster (`docs/abnahme/2026-11-15-leitungsrouter/`), Formstuecke Pressbogen/T-Stueck/Winkel (`3a574ae`, an Strangecken `2391a3e`), FBH-Kasten geschlossen (GLB), Rohre aus Distanz verdickt (`d2c7229`). visual-critic r1 "verbessern", r2 "bereit"; PO-Sichtung "passt".
+- [F] Befunde behoben: Heizkoerper in der Aussenwand (`5688b4a`), Assistent-Vorschau mittig (`68b5995`), Kamera auf Gruppenverlauf + Panels 0.94 deckend (`c540de2`), Rohr-Klickflaeche (`d90d698`), Temp-Ordner beim Beenden loeschen (`6f307b0`). Betreiber-Ablauf im Browser geprueft; ~10 GB alte Temp-/Abnahmeordner geloescht.
+- [F] PO-Entscheide umgesetzt: Direktverbindung naher Geraete (`c43713f`), fremde Leitungen dimmen (`afafb39`), Hinweis `seitenverhaeltnis` nur intern (`6fb15a1`); Band-Effekt bleibt.
+- [F] Gesamtreview Router "Mit Korrekturen": 3 wichtige Befunde behoben (`6a2a681`), 12 geringe offen (lokal `.superpowers/sdd/2026-11-13-leitungsrouter/gesamtreview.md`).
+- [F] Anschlussbilder aller 74 Bauteile als private Artifact-Galerie (Link in CLAUDE.md 0b).
+- [F] Pruefstand: Backend 569/569, Web 384/384, tsc und Build gruen. Branch gepusht bis `d0e509d`, kein Merge.
+
+### 2. Was inhaltlich gelernt wurde
+
+- [F] Heizkoerper-Wandabstand 0.1 m lag innerhalb der 0.3 m dicken Aussenwand; 0.35 m setzt sie davor.
+- [F] Die Assistent-Vorschau sass nicht wegen `einpassen()` falsch, sondern weil `zielKorrektur` das verschobene Kameraziel zurueckklemmte.
+- [F] Direktverbindung naher Geraete auf Anschlusshoehe veraendert die 2000er-Bilanz nicht (42 Welten mit harten Befunden; Seed 891 neu, eine andere sauber); Kreuzungen 38.9 %, ~240 ms je Welt.
+- [A] Grenze 2.0 m fuer Direktverbindung und die Shader-Verdickung der Rohre sind gesetzt, nicht gemessen bzw. nicht vom PO beziffert.
+
+### 3. Was ueber die Zusammenarbeit gelernt wurde
+
+- [F] Der PO entscheidet offene Gestaltungsfragen gesammelt in einer Liste (fuenf Entscheide in einer Antwort).
+- [F] Eine Artifact-Galerie war fuer die PO-Sichtung von 74 Anschlussbildern praktischer als PNGs im Repo (37 MB).
+
+### 4. Was technisch Zeit spart
+
+- [F] Anschlussbilder nicht committen: Szenario `werkzeug/design/szenarien/twin-anschluesse.json` erzeugt sie neu.
+- [F] Sackgasse: Entwicklungsstart und `instanz.sh` hinterliessen je Lauf einen Temp-Ordner (ueber Tage ~10 GB). Jetzt beim Beenden geloescht; bei abgebrochenen Laeufen trotzdem gelegentlich pruefen [A].
+- [F] Sackgasse: Leitungshinweis und Bild rechneten den Router doppelt; eine gemeinsame Berechnung spart Laufzeit und verhindert Abweichungen.
+
+### 5. Wo es weitergeht
+
+1. Brainstorming Heizungserfassung mit PO (Integrationsplan Punkt 12).
+2. 12 geringe Review-Befunde, 42 Restwelten des Routers.
+3. Integrationsplan Punkte 5/6/7; Regelwerk-v1-Freigabe, CH-VM, SMTP, Lizenz/Vertraege weiter offen.
+4. Merge nach `main` nur auf PO-Auftrag.
+
 ## 2026-11-14 – Leitungsrouter T6–T8 (Pause in T8)
 
 ### 1. Was gemacht wurde

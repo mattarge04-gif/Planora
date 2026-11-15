@@ -19,21 +19,19 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 15.11.2026
 
-### Befunde abgearbeitet (15.11., nach T10) [F]
+### Tagesabschluss 15.11.2026 – Leitungsrouter abgeschlossen [F]
 
-- Heizkoerper steckten in der Aussenwand (Generator `HK_WAND` 0.1 -> 0.35 m, Wand 0.3 im Grundriss), Fixtures neu (`5688b4a`).
-- Assistent-Vorschau mittig im freien Bereich (`68b5995`); Kamera auf Gruppenverlauf, Panels 0.94 deckend, Hinweis seitenverhaeltnis lesbar (`c540de2`); Rohr-Klickflaeche wie sichtbar (`d90d698`); Temp-Ordner werden geloescht (`6f307b0`). Betreiber-Ablauf im Browser geprueft.
-- Pruefstand: Backend 569/569, Web 373/373, tsc gruen. Anschlussbilder aller Bauteile als Artifact-Galerie (privat), PNGs lokal unter `docs/abnahme/2026-11-15-anschluesse/` (nicht committet, 37 MB).
-- PO-Entscheide 15.11. umgesetzt: Direktverbindung naher Geraete (Spec 10, `router/direkt.ts`, 2000er-Lauf 42 Welten wie vorher), fremde Leitungen bei Geraeteauswahl gedimmt, Hinweis seitenverhaeltnis nur intern, Band-Effekt bleibt, Temp-/Abnahmeordner geloescht.
-- Gesamtreview Leitungsrouter (15.11.): "Mit Korrekturen", 0 kritisch, 3 wichtig behoben (`6a2a681`: Formstuecke dimmen wie Rohre, Leitungshinweis aus derselben Berechnung wie das Bild, Tests Direktverbindung). 12 geringe Befunde offen: `.superpowers/sdd/2026-11-13-leitungsrouter/gesamtreview.md` (lokal). Web 384/384. Naechstes: PO entscheidet Push/Merge; offen Brainstorming Heizungserfassung (Integrationsplan Punkt 12).
+- Einstieg naechste Sitzung: "weiter" -> diesen Block lesen. Branch `m2c-interview` auf PO-Auftrag gepusht bis `d0e509d`; kein Merge nach `main` (nur auf PO-Auftrag).
+- Router fertig: T9 `384eca0` (alte Schablonenfuehrung entfernt, Router Pflicht). T10 (`3a574ae`, `d2c7229`, `2391a3e`): Pressbogen/T-Stueck/Winkel auch an Strangecken, FBH-Kasten geschlossen (GLB), Rohre aus Distanz per Shader verdickt [A]; visual-critic r1 "verbessern", r2 "bereit"; PO-Sichtung "passt". Bilder `docs/abnahme/2026-11-15-leitungsrouter/`, Lessons Learned ergaenzt.
+- Befunde behoben: Heizkoerper in der Aussenwand (Generator `HK_WAND` 0.1 -> 0.35 m, `5688b4a`); Assistent-Vorschau mittig (`zielKorrektur` klemmte verschobenes Kameraziel, `68b5995`); Kamera auf Gruppenverlauf, Panels 0.94 deckend (`c540de2`); Rohr-Klickflaeche wie sichtbar (`d90d698`); Temp-Ordner werden beim Beenden geloescht (`start.ts`, `instanz.sh`; `6f307b0`). Betreiber-Ablauf im Browser geprueft. Alte Temp-/Abnahmeordner (~10 GB, inkl. `planora-abnahme-b*`) geloescht.
+- PO-Entscheide 15.11.: (1) Direktverbindung naher Geraete auf Anschlusshoehe (Spec Leitungsrouter Abschnitt 10, `router/direkt.ts`, `c43713f`; Grenze 2.0 m [A]); (2) bei Geraeteauswahl fremde Leitungen dimmen (`afafb39`); (3) Hinweis `seitenverhaeltnis` nur intern, Kunde sieht ihn nicht (`6fb15a1`); (4) Band-Effekt bleibt; (5) Ordner loeschen.
+- 2000 Zufallswelten Endstand: 42 mit harten Befunden (wie vorher; neu Seed 891, eine andere jetzt sauber), Kreuzungen 38.9 %, ~240 ms je Welt.
+- Gesamtreview Router: "Mit Korrekturen", 0 kritisch, 3 wichtig behoben (`6a2a681`: Formstuecke dimmen wie Rohre, Leitungshinweis aus derselben Berechnung wie das Bild, Tests Direktverbindung). 12 geringe Befunde offen in `.superpowers/sdd/2026-11-13-leitungsrouter/gesamtreview.md` (lokal, git-ignoriert).
+- Anschlussbilder aller 74 Bauteile als private Artifact-Galerie https://claude.ai/artifact/FQfdQQytAnC7khMgZVTTGG; PNGs lokal geloescht, neu erzeugbar mit Szenario `werkzeug/design/szenarien/twin-anschluesse.json`.
+- Pruefstand: Backend 569/569, Web 384/384, tsc und Webbuild gruen.
+- Naechstes [?]: Brainstorming Heizungserfassung mit PO (Integrationsplan `docs/superpowers/plans/2026-11-13-stufe1-integration.md` Punkt 12); danach 12 geringe Review-Befunde und 42 Restwelten des Routers; Integrationsplan Punkte 5/6/7 (Annahmen, Ordner `wt-b-assistent`, Doku-Nachtraege).
 
-### Leitungsrouter (15.11.) [F]
-
-- T9 fertig (`384eca0`): alte Schablonenfuehrung entfernt, Router Pflicht.
-- T10 abgeschlossen, PO-Sichtung 15.11. "passt" (`3a574ae`, `d2c7229`, `2391a3e`): Pressboegen/T-Stuecke/Winkel (auch an Strangecken), FBH-Kasten geschlossen (GLB), Rohre aus Distanz verdickt [A]; Web 366/366, 60 fps. Bilder/README `docs/abnahme/2026-11-15-leitungsrouter/`. Naechstes: Gesamtreview Branch, dann Integrationsplan Punkte 10/11 (Vorschau, Hinweis seitenverhaeltnis), Punkt 12 Brainstorming mit PO.
-- Punkt 13 (Test-Liegenschaften): Entwicklungsstart nutzt je Start eine Wegwerf-DB, nichts zu loeschen. 112 alte Temp-Ordner geloescht (PO 15.11.); offen: 4 Ordner `planora-abnahme-b*` (4.2 GB, WSL-Abnahme 11.11.), und start.ts raeumt seine Temp-Ordner weiterhin nicht auf.
-
-### Leitungsrouter (14.11., Tagesabschluss) [F]
+### Leitungsrouter (14.11., Tagesabschluss) [F, ueberholt durch 15.11.]
 
 - T6 und T7 fertig und geprueft (`52229c4`, `64df567`, `fafd06e`): Router fuehrt Haupt- und Gruppennetz, alle 7 Muster ohne Befund, Web 326/326. Entscheid: Adapter nur Stutzen + senkrecht, Waagrechtes macht der Router; Ebenenwechsel 25 [A].
 - T8 abgeschlossen (Review Approved mit Bedingung, Fixrunde 1; `d1f6764`, `96e5216`, `5e3eec7`, `b2de316`): Laufzeit ~230 ms/Welt (vorher 1.05 s), Hinweis "Leitungsführung unsauber" im Twin. PO-Entscheid 14.11. "Annahmen anpassen": Boegen je Geschoss, realistischer Zufallsgenerator, Kreuzungsschwelle nach Messung, 230 ms akzeptiert. Endstand 2000 Zufallswelten: 42 mit harten Befunden (2.1 %), bekannte Luecke (Controller-Entscheid); Kreuzungen 39.6 %, Schwelle 42 %.
@@ -148,7 +146,9 @@ Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Ges
 
 ### Naechste Coding-Aufgabe
 
-**Aktuell (14.11.):** Leitungsrouter T8 abschliessen (Rest-Seeds, 2000er-Lauf, Review), dann T9–T10 (siehe Plan, Abschnitt "Fortsetzung (Stand 14.11.2026)"). Danach Vorschau-Zoom im Assistenten, Kamerafahrt auf Gruppenverlauf, danach I2 – Details in `docs/superpowers/plans/2026-11-13-stufe1-integration.md`.
+**Aktuell (15.11.):** siehe Block "Tagesabschluss 15.11.2026" (Brainstorming Heizungserfassung mit PO).
+
+*Ueberholt (Stand 14.11.):* Leitungsrouter T8 abschliessen (Rest-Seeds, 2000er-Lauf, Review), dann T9–T10 (siehe Plan, Abschnitt "Fortsetzung (Stand 14.11.2026)"). Danach Vorschau-Zoom im Assistenten, Kamerafahrt auf Gruppenverlauf, danach I2 – Details in `docs/superpowers/plans/2026-11-13-stufe1-integration.md`.
 
 *Ueberholt (Stand 12.11.):* PO-Korrekturrunde am Entwurf ([docs/abnahme/2026-11-12-entwurf/README.md](docs/abnahme/2026-11-12-entwurf/README.md)); danach alte Szene durch szene2 ersetzen und Explosion, Tabellenweg, Leistungsstufen anbinden. Regelwerk-v1 bleibt Annahme bis PO-Rueckmeldung. Einheitliches 400-Format ist in M2b-1 umgesetzt; weitere M2a-Nachtraege bleiben offen.
 
