@@ -18,6 +18,7 @@ import { rohrGeschosse } from "./darstellung";
 import { SCHATTEN, kontaktLichtZiel } from "./qualitaet";
 import { formstuecke } from "./formstuecke";
 import { Formstuecke3 } from "./Formstuecke3";
+import { achseY, mitRohrStaerke, ROHR_FAKTOR, rohrFaktor } from "./rohrStaerke";
 
 const FLAECHE = new Set(["heizung.fbh_kreis", "heizung.tabs_feld"]);
 
@@ -31,6 +32,8 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
   }, []);
   useEffect(onModelle, [anschluesse, onModelle]);
   // Verteiler mit Gruppen und Teile in der Leitung erhalten ihre Darstellungslage (v1-Welten unverändert).
+  // Bildschirm-Mindeststärke der Leitungen aus dem aktuellen Zoom (nur Uniform, keine neue Geometrie).
+  useFrame(({ camera }) => { ROHR_FAKTOR.value = rohrFaktor((camera as THREE.OrthographicCamera).zoom); });
   const anzeige = useMemo(() => anzeigeWelt(welt, katalog, anschluesse), [welt, katalog, anschluesse]);
   const symbole = useMemo(() => anzeige.symbole.filter((s) => anlageSichtbar(anzeige, fokusId, s)), [anzeige, fokusId]);
   const schnitt = useMemo(() => geschossSchnitt(welt, fokusId), [welt, fokusId]);
@@ -110,6 +113,13 @@ const ROHR_UMRISS = 0.012;
 const ROHR_GEDIMMT = new THREE.Color(TOKENS.farbe.kooHeizung).lerp(new THREE.Color(TOKENS.farbe.grau1), 0.72).getStyle();
 
 const FORM_FARBEN = { normal: TOKENS.farbe.kooHeizung, gedimmt: ROHR_GEDIMMT };
+/** Geteilte Leitungsmaterialien mit Bildschirm-Mindeststärke (rohrStaerke.ts). */
+const MATERIAL = {
+  rohr: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: TOKENS.farbe.kooHeizung, ...TOKENS.material.leitung })),
+  gedimmt: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: ROHR_GEDIMMT, ...TOKENS.material.leitung })),
+  metall: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: TOKENS.farbe.grau2, ...TOKENS.material.metall })),
+  umriss: mitRohrStaerke(new THREE.MeshBasicMaterial({ color: TOKENS.farbe.eisAkzent, side: THREE.BackSide })),
+};
 
 function Rohr({ stueck, schatten, anfangFrei = false, interaktion }: { stueck: Rohrstueck; schatten: boolean; anfangFrei?: boolean; interaktion?: Interaktion }) {
   const geometrie = useMemo(() => rohrGeometrie(stueck), [stueck]);
@@ -120,6 +130,8 @@ function Rohr({ stueck, schatten, anfangFrei = false, interaktion }: { stueck: R
   const umriss = useMemo(() => aktiv ? rohrGeometrie({ ...stueck, radius: stueck.radius + ROHR_UMRISS,
     startRadius: stueck.startRadius + ROHR_UMRISS, endRadius: stueck.endRadius + ROHR_UMRISS }) : null, [aktiv, stueck]);
   useEffect(() => () => umriss?.dispose(), [umriss]);
+  const kappe = useMemo(() => achseY(new THREE.CylinderGeometry(stueck.radius * 1.18, stueck.radius * 1.18, stueck.radius * 0.6, 12)), [stueck.radius]);
+  useEffect(() => () => kappe.dispose(), [kappe]);
   if (!geometrie) return null;
   const abschluesse = rohrAbschluesse(stueck.punkte);
   const ende = [...(anfangFrei ? abschluesse.slice(0, 1) : []), ...(stueck.frei ? abschluesse.slice(-1) : [])];
@@ -129,29 +141,21 @@ function Rohr({ stueck, schatten, anfangFrei = false, interaktion }: { stueck: R
     onClick: (e: ThreeEvent<MouseEvent>) => { if (e.delta <= 4) { e.stopPropagation(); interaktion.waehlen(gruppeId); } },
   } : {};
   return <group userData={stueck.daten}>
-    <mesh geometry={geometrie} userData={stueck.daten} castShadow={schatten} receiveShadow={schatten} {...ereignisse}>
-      <meshStandardMaterial color={gedimmt ? ROHR_GEDIMMT : TOKENS.farbe.kooHeizung} {...TOKENS.material.leitung} />
-    </mesh>
-    {umriss && <mesh geometry={umriss} raycast={() => {}} userData={{ umriss: gruppeId }}>
-      <meshBasicMaterial color={TOKENS.farbe.eisAkzent} side={THREE.BackSide} />
-    </mesh>}
-    {ende.map((a, i) => <mesh key={i} position={a.position} userData={{ ...stueck.daten, abschluss: true }}
+    <mesh geometry={geometrie} material={gedimmt ? MATERIAL.gedimmt : MATERIAL.rohr} userData={stueck.daten}
+      castShadow={schatten} receiveShadow={schatten} {...ereignisse} />
+    {umriss && <mesh geometry={umriss} material={MATERIAL.umriss} raycast={() => {}} userData={{ umriss: gruppeId }} />}
+    {ende.map((a, i) => <mesh key={i} position={a.position} geometry={kappe} material={MATERIAL.metall} userData={{ ...stueck.daten, abschluss: true }}
       quaternion={new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...a.richtung))}
-      castShadow={schatten} receiveShadow={schatten}>
-      <cylinderGeometry args={[stueck.radius * 1.18, stueck.radius * 1.18, stueck.radius * 0.6, 12]} />
-      <meshStandardMaterial color={TOKENS.farbe.grau2} {...TOKENS.material.metall} />
-    </mesh>)}
+      castShadow={schatten} receiveShadow={schatten} />)}
   </group>;
 }
 
 function Durchgang({ huelse: h, schatten }: { huelse: Huelse; schatten: boolean }) {
   const geometrie = useMemo(() => huelsenGeometrie(h.radius), [h.radius]);
   useEffect(() => () => geometrie.dispose(), [geometrie]);
-  return <mesh geometry={geometrie} position={h.position} userData={{ durchgang: h.art }}
+  return <mesh geometry={geometrie} material={MATERIAL.metall} position={h.position} userData={{ durchgang: h.art }}
     quaternion={new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...h.normale))}
-    castShadow={schatten} receiveShadow={schatten}>
-    <meshStandardMaterial color={TOKENS.farbe.grau2} {...TOKENS.material.metall} />
-  </mesh>;
+    castShadow={schatten} receiveShadow={schatten} />;
 }
 
 function Flaechenband({ punkte, daten }: { punkte: V3[]; daten: object }) {

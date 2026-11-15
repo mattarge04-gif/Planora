@@ -2,17 +2,20 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
 import { bogenMatrix, bogenSchluessel, FORMSTUECK, zylinderMatrix, type Formstuecke } from "./formstuecke";
+import { ACHSE, achseMitte, achseTorus, achseY, mitRohrStaerke } from "./rohrStaerke";
 
 /** Geteilte Einheitsgeometrien: Zylinder (Achse y, Höhe 1), Kugel, Viertelbogen je Radienverhältnis. */
-const ZYLINDER = new THREE.CylinderGeometry(1, 1, 1, 16, 1);
-const KUGEL = new THREE.SphereGeometry(1, 16, 12);
+const ZYLINDER = achseY(new THREE.CylinderGeometry(1, 1, 1, 16, 1));
+const KUGEL = achseMitte(new THREE.SphereGeometry(1, 16, 12));
 const BOEGEN = new Map<number, THREE.BufferGeometry>();
 /** Viertelbogen mit Ecke im Ursprung: von (-1, 0, 0) entlang +x nach (0, 1, 0) entlang +y, Bogenradius 1. */
 function bogenGeometrie(schluessel: number) {
   let g = BOEGEN.get(schluessel);
   if (!g) {
-    g = new THREE.TorusGeometry(1, schluessel * FORMSTUECK.koerper, 12, 12, Math.PI / 2);
-    g.rotateZ(-Math.PI / 2).translate(-1, 1, 0);
+    g = achseTorus(new THREE.TorusGeometry(1, schluessel * FORMSTUECK.koerper, 12, 12, Math.PI / 2), 1);
+    const lage = new THREE.Matrix4().makeTranslation(-1, 1, 0).multiply(new THREE.Matrix4().makeRotationZ(-Math.PI / 2));
+    g.applyMatrix4(lage);
+    g.getAttribute(ACHSE).applyMatrix4(lage);
     BOEGEN.set(schluessel, g);
   }
   return g;
@@ -25,8 +28,8 @@ export interface FormstueckFarben { normal: string; gedimmt: string }
  * der Hervorhebung ihres Rohres gedimmt, Pressringe in Metallgrau. Nicht anwählbar; Klicks treffen das Rohr darunter.
  */
 export function Formstuecke3({ f, schatten, gruppe, farben }: { f: Formstuecke; schatten: boolean; gruppe: string | null; farben: FormstueckFarben }) {
-  const koerper = useMemo(() => new THREE.MeshStandardMaterial({ color: "#ffffff", ...TOKENS.material.leitung }), []);
-  const ring = useMemo(() => new THREE.MeshStandardMaterial({ color: TOKENS.farbe.grau2, ...TOKENS.material.metall }), []);
+  const koerper = useMemo(() => mitRohrStaerke(new THREE.MeshStandardMaterial({ color: "#ffffff", ...TOKENS.material.leitung })), []);
+  const ring = useMemo(() => mitRohrStaerke(new THREE.MeshStandardMaterial({ color: TOKENS.farbe.grau2, ...TOKENS.material.metall })), []);
   useEffect(() => () => { koerper.dispose(); ring.dispose(); }, [koerper, ring]);
   const boegen = useMemo(() => {
     const m = new Map<number, typeof f.boegen>();

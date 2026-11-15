@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { V3 } from "../szene2/huelle";
 import { rohrPfad } from "./technik";
 import type { Rohrstueck } from "./netz";
+import { ACHSE, achseZ } from "./rohrStaerke";
 
 /** Stetiger Übergang vom Stutzen über den Abgang zum Hauptrohr, ohne verdeckende Endscheibe. */
 export function rohrGeometrie(stueck: Pick<Rohrstueck, "punkte" | "radius" | "startRadius" | "endRadius" | "boden">) {
@@ -14,6 +15,7 @@ export function rohrGeometrie(stueck: Pick<Rohrstueck, "punkte" | "radius" | "st
   for (let i = 1; i <= n; i++) laengen.push(laengen[i - 1] + punkte[i].distanceTo(punkte[i - 1]));
   const position = geometrie.getAttribute("position");
   const adapter = stueck.radius < stueck.endRadius;
+  const achse = new Float32Array(position.count * 3);
   for (let i = 0; i <= n; i++) {
     // Reduzierungen sind kurze gerade Fittings direkt an den Enden, keine konischen Bögen.
     let r = THREE.MathUtils.lerp(stueck.startRadius, stueck.radius, Math.min(1, laengen[i] / 0.025));
@@ -23,8 +25,11 @@ export function rohrGeometrie(stueck: Pick<Rohrstueck, "punkte" | "radius" | "st
       const index = i * 13 + j, p = new THREE.Vector3().fromBufferAttribute(position, index);
       p.sub(punkte[i]).multiplyScalar(r).add(punkte[i]);
       position.setXYZ(index, p.x, p.y, p.z);
+      achse.set([punkte[i].x, punkte[i].y, punkte[i].z], index * 3);
     }
   }
+  // Achse je Ring für die Bildschirm-Mindeststärke (rohrStaerke.ts).
+  geometrie.setAttribute(ACHSE, new THREE.BufferAttribute(achse, 3));
   geometrie.computeVertexNormals(); geometrie.computeBoundingSphere();
   return geometrie;
 }
@@ -52,5 +57,5 @@ export function huelsenGeometrie(radius: number) {
   loch.absarc(0, 0, radius * 1.03, 0, Math.PI * 2, true); form.holes.push(loch);
   const geometrie = new THREE.ExtrudeGeometry(form, { depth: 0.04, bevelEnabled: false, curveSegments: 16 });
   geometrie.translate(0, 0, -0.02);
-  return geometrie;
+  return achseZ(geometrie);
 }
