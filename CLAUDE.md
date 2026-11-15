@@ -21,6 +21,8 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ### Tagesabschluss 15.11.2026 – Leitungsrouter abgeschlossen [F]
 
+- Lokal testen ohne Login (`0ba28c1`): nach dem Start `http://localhost:<port>/entwicklung/anmelden` oeffnen -> als Admin angemeldet; nur Entwicklungsstart, abschalten mit `PLANORA_OHNE_LOGIN=0`. Testinstanz: `bash werkzeug/design/instanz.sh start|stop` (Port 3100), PO oeffnet sie in Orca.
+
 - Einstieg naechste Sitzung: "weiter" -> diesen Block lesen. Branch `m2c-interview` auf PO-Auftrag gepusht bis `d0e509d`; kein Merge nach `main` (nur auf PO-Auftrag).
 - Router fertig: T9 `384eca0` (alte Schablonenfuehrung entfernt, Router Pflicht). T10 (`3a574ae`, `d2c7229`, `2391a3e`): Pressbogen/T-Stueck/Winkel auch an Strangecken, FBH-Kasten geschlossen (GLB), Rohre aus Distanz per Shader verdickt [A]; visual-critic r1 "verbessern", r2 "bereit"; PO-Sichtung "passt". Bilder `docs/abnahme/2026-11-15-leitungsrouter/`, Lessons Learned ergaenzt.
 - Befunde behoben: Heizkoerper in der Aussenwand (Generator `HK_WAND` 0.1 -> 0.35 m, `5688b4a`); Assistent-Vorschau mittig (`zielKorrektur` klemmte verschobenes Kameraziel, `68b5995`); Kamera auf Gruppenverlauf, Panels 0.94 deckend (`c540de2`); Rohr-Klickflaeche wie sichtbar (`d90d698`); Temp-Ordner werden beim Beenden geloescht (`start.ts`, `instanz.sh`; `6f307b0`). Betreiber-Ablauf im Browser geprueft. Alte Temp-/Abnahmeordner (~10 GB, inkl. `planora-abnahme-b*`) geloescht.
