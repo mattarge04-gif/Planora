@@ -24,7 +24,8 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 - Heizkoerper steckten in der Aussenwand (Generator `HK_WAND` 0.1 -> 0.35 m, Wand 0.3 im Grundriss), Fixtures neu (`5688b4a`).
 - Assistent-Vorschau mittig im freien Bereich (`68b5995`); Kamera auf Gruppenverlauf, Panels 0.94 deckend, Hinweis seitenverhaeltnis lesbar (`c540de2`); Rohr-Klickflaeche wie sichtbar (`d90d698`); Temp-Ordner werden geloescht (`6f307b0`). Betreiber-Ablauf im Browser geprueft.
 - Pruefstand: Backend 569/569, Web 373/373, tsc gruen. Anschlussbilder aller Bauteile als Artifact-Galerie (privat), PNGs lokal unter `docs/abnahme/2026-11-15-anschluesse/` (nicht committet, 37 MB).
-- PO-Entscheide 15.11. umgesetzt: Direktverbindung naher Geraete (Spec 10, `router/direkt.ts`, 2000er-Lauf 42 Welten wie vorher), fremde Leitungen bei Geraeteauswahl gedimmt, Hinweis seitenverhaeltnis nur intern, Band-Effekt bleibt, Temp-/Abnahmeordner geloescht. Naechstes: Gesamtreview des Branches.
+- PO-Entscheide 15.11. umgesetzt: Direktverbindung naher Geraete (Spec 10, `router/direkt.ts`, 2000er-Lauf 42 Welten wie vorher), fremde Leitungen bei Geraeteauswahl gedimmt, Hinweis seitenverhaeltnis nur intern, Band-Effekt bleibt, Temp-/Abnahmeordner geloescht.
+- Gesamtreview Leitungsrouter (15.11.): "Mit Korrekturen", 0 kritisch, 3 wichtig behoben (`6a2a681`: Formstuecke dimmen wie Rohre, Leitungshinweis aus derselben Berechnung wie das Bild, Tests Direktverbindung). 12 geringe Befunde offen: `.superpowers/sdd/2026-11-13-leitungsrouter/gesamtreview.md` (lokal). Web 384/384. Naechstes: PO entscheidet Push/Merge; offen Brainstorming Heizungserfassung (Integrationsplan Punkt 12).
 
 ### Leitungsrouter (15.11.) [F]
 
