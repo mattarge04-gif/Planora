@@ -906,7 +906,7 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
   }
 }
 
-/** Teile "an anderem Ort" (Schritt 7): Ort vor einem Bauteil, ohne die WMZ der Unterverteiler (Schritt 6). */
+/** Teile "an anderem Ort" (Schritt 6, ohne WMZ der FBH-Verteiler). */
 export function weitereTeile(z: AssistentZustand): ZBauteil[] {
   const unter = new Set(unterverteiler(z).map((t) => t.schluessel));
   return z.bauteile.filter((t) => t.ort && "vorBauteil" in t.ort && !(t.katalogId === K.wmz && unter.has(t.ort.vorBauteil)));
@@ -921,7 +921,7 @@ export function bestueckungVon(z: AssistentZustand, gruppe: string): { katalogId
   });
 }
 
-/** Einheiten mit wirksamer FBH, in denen ein Unterverteiler sinnvoll ist (Schritt 6). */
+/** Einheiten mit wirksamer FBH, in denen ein FBH-Verteiler sinnvoll ist (Schritt 5). */
 export function unterverteilerVorschlaege(z: AssistentZustand): ZEinheit[] {
   return z.einheiten.filter((e) => wirksam(z, e).fbh === "ja" && (ERLAUBT[e.art] ?? []).includes(K.verteiler) && e.art !== "technik");
 }
@@ -939,7 +939,7 @@ export function verbraucherKandidaten(z: AssistentZustand): { geschoss: string; 
   })).filter((g) => g.einheiten.length > 0);
 }
 
-/** Bezugsgeräte für "Teil vor Bauteil X" (Schritt 7): Erzeuger, Speicher und Verteiler. */
+/** Bezugsgeräte für "Teil vor Bauteil X" (Schritt 6): Erzeuger, Speicher und Verteiler. */
 export function vorKandidaten(z: AssistentZustand): ZBauteil[] {
   return z.bauteile.filter((t) => istZentralgeraet(t) || t.katalogId === K.verteiler);
 }

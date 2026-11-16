@@ -103,7 +103,7 @@
 /* Bausteine */
 .as-abschnitt { display: grid; gap: 10px; }
 .as-abschnitt-kopf { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.as-abschnitt-kopf h2 { margin: 0; font-size: 13px; font-weight: 600; }
+.as-abschnitt-kopf h2 { margin: 0; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .as-abschnitt-zusatz { font-size: 12px; color: var(--tw-sekundaer); }
 .as-abschnitt-aktion { margin-left: auto; display: inline-flex; gap: 4px; }
 .as-label { font-size: 12px; font-weight: 500; color: var(--tw-text); }
@@ -272,14 +272,24 @@
 .as-badge-leise { background: var(--tw-flaeche-2); color: var(--tw-sekundaer-kachel); box-shadow: inset 0 0 0 1px var(--tw-grau-1); }
 .as-verbraucher { margin: 0; padding: 0; border: 0; display: grid; gap: 8px; min-width: 0; }
 .as-verbraucher legend { margin-bottom: 6px; padding: 0; display: flex; gap: 8px; align-items: baseline; }
-.as-verbraucher-geschoss { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: start; }
+.as-gruppe-satz { color: var(--tw-sekundaer); margin-top: -4px; }
+.as-gruppe-felder { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 14px; align-items: start; }
+.as-teilen { display: grid; gap: 8px; padding: 10px 12px; border-radius: var(--tw-radius-kachel); background: var(--tw-flaeche-2); }
+.as .as-teilen .as-chip:not([aria-pressed="true"]) { background: #fff; }
+.as-gruppe-aufklapp { display: grid; gap: 10px; padding-top: 10px; border-top: 1px solid var(--tw-grau-1); }
+.as-verbraucher-geschosse { display: grid; gap: 6px; }
+.as-aufklapp.as-verbraucher-geschoss > summary { color: var(--tw-text); font-weight: 500; gap: 8px; }
+.as-verbraucher-geschoss > summary .as-zahl { color: var(--tw-sekundaer); font-weight: 400; }
+.as-verbraucher-geschoss > .as-verbraucher-liste { padding-left: 12px; }
 .as-verbraucher-liste { display: grid; gap: 2px; }
 .as-check.as-verbraucher-eintrag { display: flex; width: 100%; padding: 5px 8px; border-radius: 6px; color: var(--tw-text); white-space: normal; }
 .as-verbraucher-eintrag:hover { background: rgb(31 38 48 / 0.04); }
 .as-verbraucher-text { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; min-width: 0; font-size: 13px; }
 .as-verbraucher-eintrag .as-badge { margin-left: auto; }
 
-/* Schritt 6: Unterverteiler */
+/* Schritt 5: FBH-Verteiler */
+.as-fbh-kopf { display: grid; gap: 10px; }
+.as-fbh-liste { display: grid; gap: 6px; }
 .as-uv { padding: 10px 12px; gap: 8px; }
 .as-uv-kopf { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .as-uv-name { font-size: 13px; font-weight: 500; }
@@ -287,10 +297,10 @@
 .as-uv-weitere .as-uv-details { padding-left: 0; }
 .as-speisung { min-width: 220px; }
 
-/* Schritt 7: Teile */
+/* Schritt 6: Teile */
 .as-zeile-teil { grid-template-columns: minmax(0, 0.8fr) auto minmax(0, 1.2fr) 28px; }
 
-/* Schritt 8: Prüfen */
+/* Schritt 7: Prüfen */
 .as-zusammenfassung { margin: 0; display: grid; border-radius: var(--tw-radius-kachel); box-shadow: inset 0 0 0 1px var(--tw-grau-1); background: rgb(255 255 255 / 0.8); }
 .as-zusammenfassung-zeile { display: grid; grid-template-columns: 128px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 6px 8px 6px 12px; }
 .as-zusammenfassung-zeile + .as-zusammenfassung-zeile { border-top: 1px solid var(--tw-grau-1); }

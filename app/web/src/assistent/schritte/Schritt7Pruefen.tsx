@@ -1,34 +1,23 @@
 import { ArrowRight, CircleCheck, TriangleAlert } from "lucide-react";
-import { K, teilName } from "../bestueckung";
-import { pruefHinweise } from "../hinweise";
-import { SCHRITTE, erzeuger, type SchrittNr, hauptverteiler, istAbgabe, unterverteiler, weitereTeile } from "../zustand";
+import { pruefHinweise, zusammenfassung } from "../hinweise";
+import { SCHRITTE, type SchrittNr } from "../zustand";
 import { Abschnitt } from "./gemeinsam";
 import type { SchrittInhaltProps } from "./index";
 
-export function Schritt8Pruefen({ z, dispatch, katalog, welt, vorschauFehler, positionen }: SchrittInhaltProps) {
+export function Schritt7Pruefen({ z, dispatch, katalog, welt, vorschauFehler, positionen }: SchrittInhaltProps) {
   const hinweise = pruefHinweise(z, welt, positionen, katalog);
-  const abgaben = z.bauteile.filter(istAbgabe);
-  const bekannt = abgaben.filter((t) => t.menge !== null).reduce((s, t) => s + (t.menge ?? 0), 0);
-  const offen = abgaben.filter((t) => t.menge === null).length;
-  const h = hauptverteiler(z);
-  const gruppen = z.gruppen.filter((g) => g.verteiler === h?.schluessel).sort((a, b) => a.nummer - b.nummer);
-  const zeilen: [string, string, SchrittNr][] = [
-    ["Geschosse", z.gebaeude.geschosse.map((g) => g.code).join(", "), 1],
-    ["Einheiten", String(z.einheiten.length), 2],
-    ["Abgaben", `${abgaben.length} Positionen · ${bekannt} Stück${offen ? ` · ${offen} ohne Menge` : ""}`, 3],
-    ["Zentrale", [...erzeuger(z).map((t) => teilName(t.katalogId, katalog)), ...(z.bauteile.some((t) => t.katalogId === K.speicher) ? ["Speicher"] : [])].join(", ") || "–", 4],
-    ["Gruppen", gruppen.length ? gruppen.map((g) => g.bezeichnung || `Gruppe ${g.nummer}`).join(", ") : "–", 5],
-    ["FBH-Verteiler", String(unterverteiler(z).length), 5],
-    ["Weitere Teile", String(weitereTeile(z).length), 6],
+  const zeilen: { titel: string; text: string; schritt: SchrittNr }[] = [
+    { titel: "Geschosse", text: z.gebaeude.geschosse.map((g) => g.code).join(", "), schritt: 1 },
+    ...zusammenfassung(z, katalog),
   ];
   return <>
     <Abschnitt titel="Zusammenfassung">
       <dl className="as-zusammenfassung">
-        {zeilen.map(([titel, wert, nr]) => (
+        {zeilen.map(({ titel, text, schritt }) => (
           <div key={titel} className="as-zusammenfassung-zeile">
             <dt>{titel}</dt>
-            <dd>{wert}</dd>
-            <button type="button" className="as-textknopf" onClick={() => dispatch({ typ: "schritt", nr })} aria-label={`${titel} bearbeiten (Schritt ${nr})`}>Ändern</button>
+            <dd>{text}</dd>
+            <button type="button" className="as-textknopf" onClick={() => dispatch({ typ: "schritt", nr: schritt })} aria-label={`${titel} bearbeiten (Schritt ${schritt})`}>Ändern</button>
           </div>
         ))}
       </dl>

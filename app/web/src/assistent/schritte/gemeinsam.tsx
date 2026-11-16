@@ -65,10 +65,11 @@ export function Hinweis({ children, art = "info" }: { children: ReactNode; art?:
   return <p className={`as-hinweis as-hinweis-${art}`} role={art === "warnung" ? "alert" : undefined}>{children}</p>;
 }
 
-export function Schalter({ label, an, onAn, deaktiviert }: { label: string; an: boolean; onAn: (an: boolean) => void; deaktiviert?: boolean }) {
+/** `name`: eindeutiger Name für Screenreader, wenn das sichtbare Label sich wiederholt (z. B. «Wärmezähler» je Karte). */
+export function Schalter({ label, an, onAn, deaktiviert, name }: { label: string; an: boolean; onAn: (an: boolean) => void; deaktiviert?: boolean; name?: string }) {
   return (
     <label className="as-schalter">
-      <input type="checkbox" role="switch" checked={an} disabled={deaktiviert} onChange={(e) => onAn(e.target.checked)} />
+      <input type="checkbox" role="switch" checked={an} disabled={deaktiviert} aria-label={name} onChange={(e) => onAn(e.target.checked)} />
       <span className="as-schalter-bahn" aria-hidden="true" />
       <span>{label}</span>
     </label>

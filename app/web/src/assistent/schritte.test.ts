@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { K } from "./bestueckung";
 import { ZAEHLBAR, anzahlJeArt, geschosseAbsteigend, zaehlerAufteilen } from "./schritte/Schritt2Einheiten";
 import { geschossAusnahmeWert } from "./schritte/Schritt3Heizung";
+import { verbraucherSatz } from "./schritte/Schritt5Gruppen";
 import { erzeuger, geschossCodes, leererZustand, reduziere, zentraleRaumHinweis, zentraleGeraete, hauptverteiler, type Aktion, type AssistentZustand } from "./zustand";
 
 function angelegt(ug: number, og: number, ...aktionen: Aktion[]): AssistentZustand {
@@ -102,5 +103,13 @@ describe("Schritt 3 – Heizung", () => {
     expect(geschossAusnahmeWert([e(), e()], "fbh")).toBe("");
     expect(geschossAusnahmeWert([e("ja"), e()], "fbh")).toBe("gemischt");
     expect(geschossAusnahmeWert([], "fbh")).toBe("");
+  });
+});
+
+describe("Schritt 5 – Gruppen", () => {
+  it("Verbraucher einer Gruppe als Satz", () => {
+    let z = angelegt(0, 2, { typ: "einheitAnzahl", geschoss: "OG1", art: "buero", anzahl: 2 }, { typ: "einheitAnzahl", geschoss: "OG2", art: "buero", anzahl: 1 },
+      { typ: "einheitAnzahl", geschoss: "EG", art: "technik", anzahl: 1 }, { typ: "erzeuger", katalogId: K.waermepumpe }, { typ: "schritt", nr: 5 });
+    expect(verbraucherSatz(z, z.gruppen[0])).toBe("3 Heizkörper in OG2, OG1");
   });
 });

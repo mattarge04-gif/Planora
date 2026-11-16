@@ -51,7 +51,7 @@ export function Schritt4Zentrale({ z, dispatch, katalog }: SchrittInhaltProps) {
           {unten.map((g) => {
             const es = z.einheiten.filter((e) => e.geschoss === g.code);
             return es.length ? <optgroup key={g.code} label={g.code}>
-              {es.map((e) => <option key={e.schluessel} value={e.schluessel}>{e.bezeichnung} · {artName(e.art)}</option>)}
+              {es.map((e) => <option key={e.schluessel} value={e.schluessel}>{g.code} · {e.bezeichnung} · {artName(e.art)}</option>)}
             </optgroup> : null;
           })}
         </select>

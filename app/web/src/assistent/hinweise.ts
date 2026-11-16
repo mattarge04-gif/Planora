@@ -17,11 +17,6 @@ export function bauteilText(z: AssistentZustand, t: ZBauteil, katalog?: readonly
   return e ? `${name}, ${e.bezeichnung}` : name;
 }
 
-/** Einheiten, die ein Unterverteiler versorgt (deren Abgaben hängen am Unterverteiler, nicht direkt an einer Gruppe). */
-export function ueberUnterverteiler(z: AssistentZustand): Set<string> {
-  return new Set(unterverteiler(z).flatMap((t) => t.versorgt));
-}
-
 /**
  * Hinweise für "Prüfen" (nicht blockierend): eigene Prüfungen am Zustand plus Hinweise der Vorschau-Welt,
  * deren Bezug über die Platzhalter-IDs (`neu-<art>-<i>`) bzw. gespeicherte IDs auf Schlüssel abgebildet wird.

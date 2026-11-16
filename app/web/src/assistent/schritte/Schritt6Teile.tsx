@@ -5,7 +5,7 @@ import { vorKandidaten, weitereTeile } from "../zustand";
 import { Hinweis, ICON } from "./gemeinsam";
 import type { SchrittInhaltProps } from "./index";
 
-export function Schritt7Teile({ z, dispatch, katalog }: SchrittInhaltProps) {
+export function Schritt6Teile({ z, dispatch, katalog }: SchrittInhaltProps) {
   const teile = weitereTeile(z);
   const ziele = vorKandidaten(z);
   return <>
