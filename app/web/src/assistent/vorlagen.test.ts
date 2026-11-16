@@ -1,0 +1,105 @@
+import { describe, expect, it } from "vitest";
+import { K } from "./bestueckung";
+import { abweichungen, leererZustand, reduziere, vorlageVonGeschoss, type Aktion, type AssistentZustand } from "./zustand";
+
+function haus(...aktionen: Aktion[]): AssistentZustand {
+  let z = reduziere(leererZustand("l"), { typ: "geschosse", ug: 1, og: 5 });
+  z = reduziere(z, { typ: "gebaeudeAngelegt", id: "00000000-0000-4000-8000-000000000900", stand: 0,
+    geschosse: z.gebaeude.geschosse.map((g, i) => ({ id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`, code: g.code })) });
+  for (const a of aktionen) z = reduziere(z, a);
+  return z;
+}
+const v1 = (z: AssistentZustand) => z.vorlagen[0].schluessel;
+const im = (z: AssistentZustand, code: string) => z.einheiten.filter((e) => e.geschoss === code);
+/** Regelgeschoss mit 4 Büros, OG1–OG5 zugewiesen. */
+function regelhaus(): AssistentZustand {
+  let z = haus({ typ: "vorlageNeu", name: "Regel-OG" });
+  z = reduziere(z, { typ: "platzAnzahl", vorlage: v1(z), art: "buero", anzahl: 4 });
+  for (const g of ["OG1", "OG2", "OG3", "OG4", "OG5"]) z = reduziere(z, { typ: "vorlageZuweisen", vorlage: v1(z), geschoss: g, an: true });
+  return z;
+}
+
+describe("Regelgeschoss", () => {
+  it("rollt Plätze in allen zugewiesenen Geschossen aus und nummeriert", () => {
+    const z = regelhaus();
+    expect(z.einheiten).toHaveLength(20);
+    expect(im(z, "OG3").map((e) => e.bezeichnung)).toEqual(["Büro 3.01", "Büro 3.02", "Büro 3.03", "Büro 3.04"]);
+    expect(im(z, "OG3").every((e) => e.vorlage?.schluessel === v1(z))).toBe(true);
+    expect(vorlageVonGeschoss(z, "OG3")?.name).toBe("Regel-OG");
+    expect(z.bauteile.filter((t) => t.katalogId === K.hk)).toHaveLength(20);
+  });
+  it("Vorlage ändern wirkt in allen Geschossen", () => {
+    let z = regelhaus();
+    z = reduziere(z, { typ: "platzAnzahl", vorlage: v1(z), art: "kern", anzahl: 1 });
+    expect(im(z, "OG5").map((e) => e.bezeichnung)).toContain("Kern 5.05");
+    const p = z.vorlagen[0].plaetze[0].schluessel;
+    z = reduziere(z, { typ: "platzMenge", vorlage: v1(z), platz: p, art: "hk", menge: 6 });
+    const hkVon = (code: string) => z.bauteile.find((t) => t.katalogId === K.hk && "einheit" in t.standort && t.standort.einheit === im(z, code)[0].schluessel)!;
+    expect(hkVon("OG1").menge).toBe(6);
+    expect(hkVon("OG5").menge).toBe(6);
+  });
+  it("direkte Änderung markiert Abweichung; Vorlage überschreibt sie nicht; Zurücksetzen hebt sie auf", () => {
+    let z = regelhaus();
+    const e = im(z, "OG2")[0];
+    z = reduziere(z, { typ: "einheitAendern", schluessel: e.schluessel, bezeichnung: "Empfang" });
+    expect(z.einheiten.find((x) => x.schluessel === e.schluessel)!.abweichend).toEqual(["bezeichnung"]);
+    z = reduziere(z, { typ: "platzAnzahl", vorlage: v1(z), art: "kern", anzahl: 1 });
+    expect(z.einheiten.find((x) => x.schluessel === e.schluessel)!.bezeichnung).toBe("Empfang");
+    expect(abweichungen(z, v1(z))).toBe(1);
+    z = reduziere(z, { typ: "einheitZuruecksetzen", einheit: e.schluessel });
+    expect(z.einheiten.find((x) => x.schluessel === e.schluessel)!.bezeichnung).toBe("Büro 2.01");
+    expect(abweichungen(z, v1(z))).toBe(0);
+  });
+  it("Einheit in einem Geschoss löschen bleibt gelöscht (OG5 mit 3 Büros)", () => {
+    let z = regelhaus();
+    z = reduziere(z, { typ: "einheitLoeschen", schluessel: im(z, "OG5")[3].schluessel });
+    z = reduziere(z, { typ: "platzMenge", vorlage: v1(z), platz: z.vorlagen[0].plaetze[0].schluessel, art: "hk", menge: 2 });
+    expect(im(z, "OG5")).toHaveLength(3);
+    expect(abweichungen(z, v1(z))).toBe(1);
+    z = reduziere(z, { typ: "geschossZuruecksetzen", geschoss: "OG5" });
+    expect(im(z, "OG5")).toHaveLength(4);
+  });
+  it("Ausnahme am Platz gilt für alle Geschosse; Ausnahme je Geschoss nur dort", () => {
+    let z = regelhaus();
+    z = reduziere(z, { typ: "geschossAusnahme", geschoss: "OG4", art: "fbh", wert: "ja" });
+    expect(im(z, "OG4").every((e) => e.ausnahme.fbh === "ja" && e.abweichend?.includes("ausnahme"))).toBe(true);
+    expect(im(z, "OG3").every((e) => e.ausnahme.fbh === undefined)).toBe(true);
+    z = reduziere(z, { typ: "platzAusnahme", vorlage: v1(z), platz: z.vorlagen[0].plaetze[0].schluessel, art: "tabs", wert: "ja" });
+    expect(im(z, "OG1")[0].ausnahme.tabs).toBe("ja");
+    expect(im(z, "OG4")[0].ausnahme.tabs).toBeUndefined();
+  });
+  it("Vorlage aus bestehendem Geschoss übernimmt dessen Einheiten (IDs bleiben)", () => {
+    let z = haus({ typ: "einheitAnzahl", geschoss: "OG1", art: "buero", anzahl: 2 });
+    const vorher = im(z, "OG1").map((e) => e.schluessel);
+    z = reduziere(z, { typ: "vorlageNeu", ausGeschoss: "OG1" });
+    z = reduziere(z, { typ: "vorlageZuweisen", vorlage: v1(z), geschoss: "OG2", an: true });
+    expect(im(z, "OG1").map((e) => e.schluessel)).toEqual(vorher);
+    expect(im(z, "OG2").map((e) => e.bezeichnung)).toEqual(["Büro 2.01", "Büro 2.02"]);
+  });
+  it("Zuweisen nutzt freie Einheiten gleicher Art; überzählige bleiben eigenständig", () => {
+    let z = haus({ typ: "einheitAnzahl", geschoss: "OG2", art: "buero", anzahl: 5 }, { typ: "vorlageNeu" });
+    z = reduziere(z, { typ: "platzAnzahl", vorlage: v1(z), art: "buero", anzahl: 4 });
+    z = reduziere(z, { typ: "vorlageZuweisen", vorlage: v1(z), geschoss: "OG2", an: true });
+    expect(im(z, "OG2")).toHaveLength(5);
+    expect(im(z, "OG2").filter((e) => e.vorlage)).toHaveLength(4);
+  });
+  it("Geschoss lösen und Vorlage löschen lassen Einheiten stehen", () => {
+    let z = regelhaus();
+    z = reduziere(z, { typ: "vorlageZuweisen", vorlage: v1(z), geschoss: "OG1", an: false });
+    expect(im(z, "OG1")).toHaveLength(4);
+    expect(im(z, "OG1").some((e) => e.vorlage)).toBe(false);
+    z = reduziere(z, { typ: "vorlageLoeschen", vorlage: v1(z) });
+    expect(z.vorlagen).toEqual([]);
+    expect(z.einheiten).toHaveLength(20);
+    expect(z.einheiten.some((e) => e.vorlage)).toBe(false);
+  });
+  it("ein Geschoss gehört höchstens einer Vorlage", () => {
+    let z = regelhaus();
+    z = reduziere(z, { typ: "vorlageNeu", name: "Attika" });
+    const v2 = z.vorlagen[1].schluessel;
+    z = reduziere(z, { typ: "platzAnzahl", vorlage: v2, art: "wohnung", anzahl: 1 });
+    z = reduziere(z, { typ: "vorlageZuweisen", vorlage: v2, geschoss: "OG5", an: true });
+    expect(z.vorlagen[0].geschosse).not.toContain("OG5");
+    expect(vorlageVonGeschoss(z, "OG5")?.name).toBe("Attika");
+  });
+});

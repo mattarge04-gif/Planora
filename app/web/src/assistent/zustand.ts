@@ -221,7 +221,17 @@ export type Aktion =
   | { typ: "unterverteiler"; einheit: string; an: boolean }
   | { typ: "unterverteilerWmz"; verteiler: string; an: boolean }
   | { typ: "teilNeu"; katalogId: string; vor: string }
-  | { typ: "teilAendern"; schluessel: string; katalogId?: string; vor?: string };
+  | { typ: "teilAendern"; schluessel: string; katalogId?: string; vor?: string }
+  | { typ: "vorlageNeu"; name?: string; ausGeschoss?: string }
+  | { typ: "vorlageName"; vorlage: string; name: string }
+  | { typ: "platzAnzahl"; vorlage: string; art: string; anzahl: number }
+  | { typ: "platzAusnahme"; vorlage: string; platz: string; art: HeizArt; wert: Dreiwertig | null }
+  | { typ: "platzMenge"; vorlage: string; platz: string; art: HeizArt; menge: number | null }
+  | { typ: "vorlageZuweisen"; vorlage: string; geschoss: string; an: boolean }
+  | { typ: "vorlageLoeschen"; vorlage: string }
+  | { typ: "einheitZuruecksetzen"; einheit: string }
+  | { typ: "geschossZuruecksetzen"; geschoss: string }
+  | { typ: "geschossAusnahme"; geschoss: string; art: HeizArt; wert: Dreiwertig | null };
 
 const neuerSchluessel = (z: AssistentZustand): [string, AssistentZustand] => [`k${z.zaehler + 1}`, { ...z, zaehler: z.zaehler + 1 }];
 
@@ -338,9 +348,121 @@ function zentraleVerschieben(z: AssistentZustand, raum: string): AssistentZustan
   return { ...z, zentraleRaum: raum, bauteile: z.bauteile.map((t) => (bewegen.has(t.schluessel) ? { ...t, standort: { einheit: raum } } : t)) };
 }
 
-/** Öffentlicher Reducer: Kernaktion, danach Ableitungen (Task 4 und 6 ergänzen Markierung und Ableitung). */
+// --- Regelgeschoss ---
+export const vorlageVonGeschoss = (z: AssistentZustand, code: string) => z.vorlagen.find((v) => v.geschosse.includes(code));
+const vorlageVon = (z: AssistentZustand, s: string) => z.vorlagen.find((v) => v.schluessel === s);
+const vorlageSetzen = (z: AssistentZustand, s: string, f: (v: ZVorlage) => ZVorlage): AssistentZustand =>
+  ({ ...z, vorlagen: z.vorlagen.map((v) => (v.schluessel === s ? f(v) : v)) });
+const einheitSetzen = (z: AssistentZustand, s: string, f: (e: ZEinheit) => ZEinheit): AssistentZustand =>
+  ({ ...z, einheiten: z.einheiten.map((e) => (e.schluessel === s ? f(e) : e)) });
+function ohneVorlage(e: ZEinheit): ZEinheit {
+  const { vorlage: _v, abweichend: _a, ...rest } = e;
+  return rest;
+}
+const gleicheAusnahme = (x: Partial<Heizung>, y: Partial<Heizung>) => HEIZ_ARTEN.every((a) => x[a] === y[a]);
+export const platzWirksam = (z: AssistentZustand, p: ZPlatz): Heizung => ({ ...z.heizungStandard, ...p.ausnahme });
+
+/** Einheiten mit Abweichung plus ausgelassene Plätze einer Vorlage. */
+export function abweichungen(z: AssistentZustand, vorlage: string): number {
+  const v = vorlageVon(z, vorlage);
+  if (!v) return 0;
+  return z.einheiten.filter((e) => e.vorlage?.schluessel === vorlage && (e.abweichend?.length ?? 0) > 0).length + v.ausgelassen.length;
+}
+
+function mengenVon(z: AssistentZustand, einheit: string): Partial<Record<HeizArt, number>> {
+  const r: Partial<Record<HeizArt, number>> = {};
+  for (const art of HEIZ_ARTEN) {
+    const t = abgabenVon(z, einheit).find((x) => x.katalogId === ABGABE_VON[art]);
+    if (t && t.menge !== null) r[art] = t.menge;
+  }
+  return r;
+}
+
+/**
+ * Vorlage in allen zugewiesenen Geschossen durchsetzen: fehlende Plätze anlegen (freie Einheit gleicher Art bevorzugt),
+ * Einheiten entfallener Plätze löschen (mit Abweichung: lösen), Felder ohne Abweichung übernehmen.
+ */
+function vorlageAnwenden(z: AssistentZustand, vs: string): AssistentZustand {
+  const v = vorlageVon(z, vs);
+  if (!v) return z;
+  let neu = z;
+  const verknuepfe = (s: string, platz: string) => { neu = einheitSetzen(neu, s, (e) => ({ ...e, vorlage: { schluessel: vs, platz }, abweichend: [] })); };
+  for (const code of v.geschosse) {
+    v.plaetze.forEach((p, i) => {
+      if (v.ausgelassen.some((x) => x.geschoss === code && x.platz === p.schluessel)) return;
+      if (neu.einheiten.some((e) => e.geschoss === code && e.vorlage?.schluessel === vs && e.vorlage.platz === p.schluessel)) return;
+      const frei = neu.einheiten.find((e) => e.geschoss === code && !e.vorlage && e.art === p.art);
+      if (frei) { verknuepfe(frei.schluessel, p.schluessel); return; }
+      neu = reduziereKern(neu, { typ: "einheitNeu", geschoss: code, art: p.art, bezeichnung: nummerieren(code, p.art, i + 1) });
+      verknuepfe(neu.einheiten[neu.einheiten.length - 1].schluessel, p.schluessel);
+    });
+  }
+  const plaetze = new Set(v.plaetze.map((p) => p.schluessel));
+  for (const e of neu.einheiten.filter((x) => x.vorlage?.schluessel === vs && !plaetze.has(x.vorlage.platz)))
+    neu = e.abweichend?.length ? einheitSetzen(neu, e.schluessel, ohneVorlage) : reduziereKern(neu, { typ: "einheitLoeschen", schluessel: e.schluessel });
+  v.plaetze.forEach((p, i) => {
+    for (const e of neu.einheiten.filter((x) => x.vorlage?.schluessel === vs && x.vorlage.platz === p.schluessel)) {
+      const ab = new Set(e.abweichend ?? []);
+      if (!ab.has("art") && e.art !== p.art) neu = reduziereKern(neu, { typ: "einheitAendern", schluessel: e.schluessel, art: p.art });
+      if (!ab.has("bezeichnung")) {
+        const b = nummerieren(e.geschoss, p.art, i + 1);
+        neu = einheitSetzen(neu, e.schluessel, (x) => (x.bezeichnung === b ? x : { ...x, bezeichnung: b }));
+      }
+      if (!ab.has("ausnahme") && !gleicheAusnahme(e.ausnahme, p.ausnahme)) {
+        neu = einheitSetzen(neu, e.schluessel, (x) => ({ ...x, ausnahme: { ...p.ausnahme } }));
+        neu = abgabenAbgleichen(neu, e.schluessel);
+      }
+      if (!ab.has("mengen")) for (const art of HEIZ_ARTEN) {
+        const t = abgabenVon(neu, e.schluessel).find((x) => x.katalogId === ABGABE_VON[art]);
+        const m = p.mengen[art] ?? null;
+        if (!t || t.menge === m) continue;
+        neu = m === null ? reduziereKern(neu, { typ: "abgabeWeissNicht", schluessel: t.schluessel }) : reduziereKern(neu, { typ: "abgabeAendern", schluessel: t.schluessel, menge: m });
+      }
+    }
+  });
+  return neu;
+}
+
+/** Ausnahme normalisieren: gleich wie Standard oder null → keine Ausnahme. */
+function ausnahmeSetzen(aus: Partial<Heizung>, art: HeizArt, wert: Dreiwertig | null, standard: Heizung): Partial<Heizung> {
+  const r = { ...aus };
+  if (wert === null || wert === standard[art]) delete r[art]; else r[art] = wert;
+  return r;
+}
+
+/** Direkte Änderungen an Einheiten eines Regelgeschosses als Abweichung merken (vor der Kernaktion). */
+function abweichungMarkieren(z: AssistentZustand, a: Aktion): AssistentZustand {
+  const markiere = (zz: AssistentZustand, einheit: string | undefined, feld: VorlageFeld) => {
+    const e = einheit ? zz.einheiten.find((x) => x.schluessel === einheit) : undefined;
+    if (!e?.vorlage || e.abweichend?.includes(feld)) return zz;
+    return einheitSetzen(zz, e.schluessel, (x) => ({ ...x, abweichend: [...(x.abweichend ?? []), feld] }));
+  };
+  const einheitDes = (bauteil: string) => { const t = z.bauteile.find((x) => x.schluessel === bauteil); return t ? einheitVon(z, t)?.schluessel : undefined; };
+  switch (a.typ) {
+    case "einheitAendern": {
+      let n = z;
+      if (a.bezeichnung !== undefined) n = markiere(n, a.schluessel, "bezeichnung");
+      if (a.art !== undefined) n = markiere(n, a.schluessel, "art");
+      return n;
+    }
+    case "ausnahme": return markiere(z, a.einheit, "ausnahme");
+    case "geschossAusnahme": return z.einheiten.filter((e) => e.geschoss === a.geschoss).reduce((n, e) => markiere(n, e.schluessel, "ausnahme"), z);
+    case "abgabeAendern": return a.menge === undefined ? z : markiere(z, einheitDes(a.schluessel), "mengen");
+    case "abgabeWeissNicht": return markiere(z, einheitDes(a.schluessel), "mengen");
+    case "einheitLoeschen": {
+      const e = z.einheiten.find((x) => x.schluessel === a.schluessel);
+      if (!e?.vorlage) return z;
+      const { schluessel, platz } = e.vorlage;
+      return vorlageSetzen(z, schluessel, (v) => ({ ...v, ausgelassen: [...v.ausgelassen, { geschoss: e.geschoss, platz }] }));
+    }
+    default: return z;
+  }
+}
+
+/** Öffentlicher Reducer: Abweichung markieren, dann Kernaktion (Task 6 ergänzt die Ableitung). */
 export function reduziere(z: AssistentZustand, a: Aktion): AssistentZustand {
-  return reduziereKern(z, a);
+  if (a.typ === "laden") return a.zustand;
+  return reduziereKern(abweichungMarkieren(z, a), a);
 }
 
 function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
@@ -364,6 +486,7 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
       const einheitenWeg = z.einheiten.filter((e) => !codes.has(e.geschoss)).map((e) => e.schluessel);
       let neu: AssistentZustand = { ...z, gebaeude: { ...z.gebaeude, geschosse } };
       for (const s of einheitenWeg) neu = reduziereKern(neu, { typ: "einheitLoeschen", schluessel: s });
+      neu = { ...neu, vorlagen: neu.vorlagen.map((v) => ({ ...v, geschosse: v.geschosse.filter((g) => codes.has(g)), ausgelassen: v.ausgelassen.filter((o) => codes.has(o.geschoss)) })) };
       return neu;
     }
     case "gebaeudeAngelegt": {
@@ -543,6 +666,86 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
         return { ...t, ...(a.katalogId && { katalogId: a.katalogId }),
           ...(a.vor !== undefined && standort && a.vor !== t.schluessel && { ort: { vorBauteil: a.vor }, standort }) };
       });
+    case "vorlageNeu": {
+      let [vs, neu] = neuerSchluessel(z);
+      const name = a.name ?? (z.vorlagen.length ? `Regelgeschoss ${z.vorlagen.length + 1}` : "Regelgeschoss");
+      const quelle = a.ausGeschoss ? z.einheiten.filter((e) => e.geschoss === a.ausGeschoss && !e.vorlage) : [];
+      const plaetze: ZPlatz[] = [];
+      const links: { einheit: string; platz: string; abweichend: VorlageFeld[] }[] = [];
+      quelle.forEach((e, i) => {
+        let ps: string;
+        [ps, neu] = neuerSchluessel(neu);
+        plaetze.push({ schluessel: ps, art: e.art, ausnahme: { ...e.ausnahme }, mengen: mengenVon(neu, e.schluessel) });
+        links.push({ einheit: e.schluessel, platz: ps, abweichend: e.bezeichnung === nummerieren(e.geschoss, e.art, i + 1) ? [] : ["bezeichnung"] });
+      });
+      let r: AssistentZustand = neu;
+      if (a.ausGeschoss) for (const v of r.vorlagen.filter((x) => x.geschosse.includes(a.ausGeschoss!)))
+        r = reduziereKern(r, { typ: "vorlageZuweisen", vorlage: v.schluessel, geschoss: a.ausGeschoss, an: false });
+      r = { ...r, vorlagen: [...r.vorlagen, { schluessel: vs, name, plaetze, geschosse: a.ausGeschoss ? [a.ausGeschoss] : [], ausgelassen: [] }] };
+      for (const l of links) r = einheitSetzen(r, l.einheit, (e) => ({ ...e, vorlage: { schluessel: vs, platz: l.platz }, abweichend: l.abweichend }));
+      return r;
+    }
+    case "vorlageName": return vorlageSetzen(z, a.vorlage, (v) => ({ ...v, name: a.name }));
+    case "platzAnzahl": {
+      const v = vorlageVon(z, a.vorlage);
+      if (!v) return z;
+      const soll = Math.max(0, Math.min(50, Math.floor(a.anzahl)));
+      const gleiche = v.plaetze.filter((p) => p.art === a.art);
+      let neu = z;
+      let plaetze = v.plaetze;
+      if (soll > gleiche.length) for (let i = gleiche.length; i < soll; i++) {
+        const [ps, z2] = neuerSchluessel(neu);
+        neu = z2;
+        plaetze = [...plaetze, { schluessel: ps, art: a.art, ausnahme: {}, mengen: {} }];
+      } else {
+        const weg = new Set(gleiche.slice(soll).map((p) => p.schluessel));
+        plaetze = plaetze.filter((p) => !weg.has(p.schluessel));
+      }
+      neu = vorlageSetzen(neu, a.vorlage, (x) => ({ ...x, plaetze, ausgelassen: x.ausgelassen.filter((o) => plaetze.some((p) => p.schluessel === o.platz)) }));
+      return vorlageAnwenden(neu, a.vorlage);
+    }
+    case "platzAusnahme":
+      return vorlageAnwenden(vorlageSetzen(z, a.vorlage, (v) => ({ ...v, plaetze: v.plaetze.map((p) =>
+        (p.schluessel === a.platz ? { ...p, ausnahme: ausnahmeSetzen(p.ausnahme, a.art, a.wert, z.heizungStandard) } : p)) })), a.vorlage);
+    case "platzMenge":
+      return vorlageAnwenden(vorlageSetzen(z, a.vorlage, (v) => ({ ...v, plaetze: v.plaetze.map((p) => {
+        if (p.schluessel !== a.platz) return p;
+        const mengen = { ...p.mengen };
+        if (a.menge === null) delete mengen[a.art]; else mengen[a.art] = Math.max(0, Math.round(a.menge));
+        return { ...p, mengen };
+      }) })), a.vorlage);
+    case "vorlageZuweisen": {
+      if (a.an) {
+        let neu = z;
+        for (const andere of z.vorlagen.filter((v) => v.schluessel !== a.vorlage && v.geschosse.includes(a.geschoss)))
+          neu = reduziereKern(neu, { typ: "vorlageZuweisen", vorlage: andere.schluessel, geschoss: a.geschoss, an: false });
+        neu = vorlageSetzen(neu, a.vorlage, (v) => (v.geschosse.includes(a.geschoss) ? v : { ...v, geschosse: [...v.geschosse, a.geschoss] }));
+        return vorlageAnwenden(neu, a.vorlage);
+      }
+      const neu = vorlageSetzen(z, a.vorlage, (v) => ({ ...v, geschosse: v.geschosse.filter((g) => g !== a.geschoss), ausgelassen: v.ausgelassen.filter((o) => o.geschoss !== a.geschoss) }));
+      return { ...neu, einheiten: neu.einheiten.map((e) => (e.geschoss === a.geschoss && e.vorlage?.schluessel === a.vorlage ? ohneVorlage(e) : e)) };
+    }
+    case "vorlageLoeschen":
+      return { ...z, vorlagen: z.vorlagen.filter((v) => v.schluessel !== a.vorlage),
+        einheiten: z.einheiten.map((e) => (e.vorlage?.schluessel === a.vorlage ? ohneVorlage(e) : e)) };
+    case "einheitZuruecksetzen": {
+      const e = z.einheiten.find((x) => x.schluessel === a.einheit);
+      if (!e?.vorlage) return z;
+      return vorlageAnwenden(einheitSetzen(z, e.schluessel, (x) => ({ ...x, abweichend: [] })), e.vorlage.schluessel);
+    }
+    case "geschossZuruecksetzen": {
+      const v = vorlageVonGeschoss(z, a.geschoss);
+      if (!v) return z;
+      let neu = vorlageSetzen(z, v.schluessel, (x) => ({ ...x, ausgelassen: x.ausgelassen.filter((o) => o.geschoss !== a.geschoss) }));
+      neu = { ...neu, einheiten: neu.einheiten.map((e) => (e.geschoss === a.geschoss && e.vorlage ? { ...e, abweichend: [] } : e)) };
+      return vorlageAnwenden(neu, v.schluessel);
+    }
+    case "geschossAusnahme": {
+      let neu = z;
+      for (const e of z.einheiten.filter((x) => x.geschoss === a.geschoss))
+        neu = reduziereKern(neu, { typ: "ausnahme", einheit: e.schluessel, art: a.art, wert: a.wert });
+      return neu;
+    }
   }
 }
 
