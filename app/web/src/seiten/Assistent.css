@@ -219,7 +219,7 @@
 /* Listen und Zeilen */
 .as-liste-roh { list-style: none; margin: 0; padding: 0; }
 .as-zeile { display: grid; gap: 6px; align-items: center; }
-.as-zeile-einheit { grid-template-columns: minmax(0, 1fr) minmax(0, 168px) 28px; }
+.as-zeile-einheit { grid-template-columns: minmax(0, 1fr) minmax(0, 196px) 28px 28px; gap: 4px 6px; }
 .as-zeile-abgabe { grid-template-columns: auto minmax(0, 1fr) minmax(0, 0.8fr) 72px auto 28px; }
 .as .as-textknopf-rand { box-shadow: inset 0 0 0 1px var(--tw-grau-1); background: #fff; color: var(--tw-text); }
 .as .as-textknopf-rand:hover:not(:disabled) { background: var(--tw-eis); box-shadow: inset 0 0 0 1px rgb(95 136 176 / 0.35); color: var(--tw-text); }
@@ -296,3 +296,35 @@
 .as-check input:focus-visible { outline-offset: 1px; }
 .as .as-schritt:focus-visible { outline-offset: 0; }
 .as-formular-inhalt { scroll-padding-block: 16px; }
+
+/* Regelgeschoss und Geschosswahl (Grundlage Schritte 2, 3, 5).
+   Knopfklassen mit .as davor, sonst gewinnt die Grundrücksetzung «.as button». */
+.as-geschoss-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.as .as-chip { height: 28px; padding: 0 10px; border-radius: 999px; border: 0; font: inherit; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+  background: var(--tw-flaeche-2); color: var(--tw-text); box-shadow: inset 0 0 0 1px var(--tw-grau-1); cursor: pointer;
+  transition: background var(--tw-hover-ms) var(--tw-kurve), box-shadow var(--tw-hover-ms) var(--tw-kurve), transform 120ms var(--tw-kurve); }
+.as .as-chip:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--tw-grau-2); }
+.as .as-chip:active:not(:disabled) { transform: scale(0.97); }
+.as .as-chip[aria-pressed="true"] { background: var(--tw-eis); color: var(--tw-sekundaer-eis); box-shadow: inset 0 0 0 1px var(--tw-eis-akzent); }
+.as .as-chip:focus-visible { outline: 2px solid var(--tw-link); outline-offset: 2px; }
+.as-nutzungen { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 12px; }
+.as-aufklapp > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--tw-link); list-style: none;
+  display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; }
+.as-aufklapp > summary::-webkit-details-marker { display: none; }
+.as-aufklapp > summary::before { content: ""; width: 5px; height: 5px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg); transition: transform var(--tw-hover-ms) var(--tw-kurve); }
+.as-aufklapp[open] > summary::before { transform: translateY(-2px) rotate(45deg); }
+.as-aufklapp > summary:hover { color: var(--tw-link-hover); }
+.as-aufklapp[open] > summary { margin-bottom: 8px; }
+.as-satz { margin: 0; font-size: 13px; color: var(--tw-text); }
+
+/* Schritt 2: Regelgeschosse und Geschosse */
+.as-nutzung-block { display: grid; gap: 10px; }
+.as-angebote { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin-left: -2px; }
+.as-angebote-titel { display: inline-flex; align-items: center; gap: 4px; padding-right: 4px; font-size: 12px; font-weight: 500; color: var(--tw-sekundaer); }
+.as-angebote .as-textknopf { padding: 0 6px; }
+.as-vorlage { gap: 14px; padding: 14px; }
+.as-vorlage-teil { display: grid; gap: 8px; }
+.as-karte-vorlage { background: rgb(255 255 255 / 0.62); }
+.as-karte-vorlage > .as-aufklapp:not([open]) { margin-top: -2px; }
+.as-aufklapp-inhalt { display: grid; gap: 12px; }

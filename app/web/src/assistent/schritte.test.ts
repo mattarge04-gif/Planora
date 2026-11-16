@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { K } from "./bestueckung";
-import { SCHNELL, geschosseAbsteigend, schnellAktion } from "./schritte/Schritt2Einheiten";
+import { ZAEHLBAR, anzahlJeArt, geschosseAbsteigend, zaehlerAufteilen } from "./schritte/Schritt2Einheiten";
 import { erzeuger, geschossCodes, leererZustand, reduziere, zentraleRaumHinweis, zentraleGeraete, hauptverteiler, type Aktion, type AssistentZustand } from "./zustand";
 
 function angelegt(ug: number, og: number, ...aktionen: Aktion[]): AssistentZustand {
@@ -36,11 +36,19 @@ describe("Schritt 1 – Geschosse", () => {
 });
 
 describe("Schritt 2 – Einheiten", () => {
-  it("«+3 Büros» erzeugt drei Einheiten «Büro 0.01–0.03»", () => {
-    const drei = SCHNELL.find((s) => s.text === "3 Büros")!;
-    let z = angelegt(0, 1, schnellAktion("EG", drei));
+  it("Nutzungszähler: Reihenfolge und Zählung", () => {
+    expect(ZAEHLBAR).toEqual(["buero", "wohnung", "gastro", "allgemein", "kern", "technik"]);
+    expect(anzahlJeArt([{ art: "buero" }, { art: "kern" }, { art: "buero" }], "buero")).toBe(2);
+  });
+  it("Zähler nur für vorhandene oder geöffnete Nutzungen, Rest als Angebot", () => {
+    const liste = [{ art: "kern" }, { art: "buero" }];
+    expect(zaehlerAufteilen(liste, new Set(["gastro"]))).toEqual({ zaehler: ["buero", "gastro", "kern"], angebote: ["wohnung", "allgemein", "technik"] });
+    expect(zaehlerAufteilen([], new Set())).toEqual({ zaehler: [], angebote: [...ZAEHLBAR] });
+  });
+  it("Anzahl je Nutzung erzeugt nummerierte Einheiten «Büro 0.01–0.03»", () => {
+    let z = angelegt(0, 1, { typ: "einheitAnzahl", geschoss: "EG", art: "buero", anzahl: 3 });
     expect(z.einheiten.map((e) => [e.geschoss, e.bezeichnung, e.art])).toEqual([["EG", "Büro 0.01", "buero"], ["EG", "Büro 0.02", "buero"], ["EG", "Büro 0.03", "buero"]]);
-    z = reduziere(z, schnellAktion("OG1", drei));
+    z = reduziere(z, { typ: "einheitAnzahl", geschoss: "OG1", art: "buero", anzahl: 3 });
     expect(z.einheiten.slice(3).map((e) => e.bezeichnung)).toEqual(["Büro 1.01", "Büro 1.02", "Büro 1.03"]);
     expect(new Set(z.einheiten.map((e) => e.schluessel)).size).toBe(6);
   });
