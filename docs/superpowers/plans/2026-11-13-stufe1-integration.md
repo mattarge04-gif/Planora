@@ -49,5 +49,6 @@ Branch gepusht (PO-Auftrag); kein Merge nach `main`, kein Deployment. Worktrees 
 - Punkt 9 Betreiber-Ablauf: im Browser durchgeklickt (Liegenschaft, Name, "Gebäude anlegen", Meldung an Kunde). 401/404 in der Konsole sind erwartete Pruefungen.
 - Punkt 11 Hinweis seitenverhaeltnis: verstaendlicher Satz in Twin, Panel und Assistent (`c540de2`). [?] PO: soll der Kunde den Hinweis sehen oder bleibt er intern?
 - Zusaetzlich: Heizkoerper standen in der Aussenwand (Generator `HK_WAND`), jetzt davor (`5688b4a`); Panels deckender; Klickflaeche der Rohre wie sichtbar (`d90d698`); Temp-Ordner werden beim Beenden geloescht (`6f307b0`).
-- Offen: Punkt 12 (Brainstorming Heizungserfassung), Punkt 5/7 (Annahmen und Doku-Nachtraege), Punkt 6 (Ordner `wt-b-assistent/...`, PO).
+- 16.11.: Punkt 12 Brainstorming erledigt -> Spec `docs/superpowers/specs/2026-11-16-heizungserfassung-design.md` (PO-Entscheide H1–H7), Umsetzungsplan offen.
+- Offen: Punkt 12 (Plan und Umsetzung Heizungserfassung), Punkt 5/7 (Annahmen und Doku-Nachtraege), Punkt 6 (Ordner `wt-b-assistent/...`, PO).
 

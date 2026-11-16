@@ -3,6 +3,25 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-16 – FM-Review und Spec Heizungserfassung
+
+### 1. Was gemacht wurde
+
+- [F] FM-Manager-Review per Agent im echten Browser: Buerohaus mit 7 Geschossen brauchte rund 165 Klicks/Eingaben. Bilder und README `docs/abnahme/2026-11-16-fm-review/`.
+- [F] Brainstorming mit PO (Integrationsplan Punkt 12) -> Spec `docs/superpowers/specs/2026-11-16-heizungserfassung-design.md` (`c660047`), PO-Entscheide H1–H7.
+- [F] Kein Code geaendert; Pruefstand unveraendert (Backend 569/569, Web 384/384).
+
+### 2. Was inhaltlich gelernt wurde
+
+- [F] Klicktreiber: keine Mehrfachbearbeitung je Geschoss, Gruppen-Verbraucher als Einzel-Checkboxen, FBH-Verteiler je Einheit einzeln.
+- [F] PO-Begriff: es gibt keine Unterverteiler, nur FBH-Verteiler, die automatisch je Einheit mit FBH entstehen (H4).
+- [F] Regelgeschoss-Zuordnung wird dauerhaft gespeichert (H2, neue Tabelle `geschoss_vorlage`, Migration 015 geplant).
+- [A] Ziel hoechstens 40 Klicks fuer das Review-Gebaeude; Aufwand 4–5 Arbeitstage.
+
+### 3. Was ueber die Zusammenarbeit gelernt wurde
+
+- [F] Ein Rollen-Review (FM-Manager) mit Klickzaehlung machte das PO-Gefuehl "zu aufwendig" messbar und lieferte die Ursachen im Code.
+
 ## 2026-11-15 – Leitungsrouter T9/T10, Befunde, Gesamtreview
 
 ### 1. Was gemacht wurde

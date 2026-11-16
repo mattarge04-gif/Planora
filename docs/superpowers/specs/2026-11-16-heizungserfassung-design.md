@@ -6,7 +6,7 @@ Kennzeichnung: [F] Fakt/PO-Entscheid, [A] Annahme, [?] offen.
 ## 1. Anlass
 
 - [F] PO 14.11.: Erfassung "zu aufwendig", "je Geschoss zu muehsam". PO 16.11.: Hauptproblem sind zu viele Klicks je Geschoss, obwohl die Geschosse fast gleich sind.
-- [F] FM-Manager-Review 16.11. (Agent, echter Browserdurchlauf, Bilder `docs/abnahme/2026-11-16-fm-review/`, nicht committet): Buerohaus UG1+EG+OG1–OG5, 4 Bueros je OG, Gastro EG, Technik UG, WP+Speicher, HK Standard, FBH in OG4/OG5/Gastro, 3 Gruppen, 9 FBH-Verteiler. **Rund 165 Klicks/Eingaben**, davon Einheiten 30, Abgaben 41, Gruppen 39 (30 einzelne Haekchen), Unterverteiler 36.
+- [F] FM-Manager-Review 16.11. (Agent, echter Browserdurchlauf, Bilder und README `docs/abnahme/2026-11-16-fm-review/`): Buerohaus UG1+EG+OG1–OG5, 4 Bueros je OG, Gastro EG, Technik UG, WP+Speicher, HK Standard, FBH in OG4/OG5/Gastro, 3 Gruppen, 9 FBH-Verteiler. **Rund 165 Klicks/Eingaben**, davon Einheiten 30, Abgaben 41, Gruppen 39 (30 einzelne Haekchen), Unterverteiler 36.
 - [F] Ursachen im Code: keine Mehrfachbearbeitung je Geschoss; Gruppen-Verbraucher nur als Einzel-Checkbox (`Schritt5Gruppen.tsx:57-80`); FBH-Verteiler je Einheit einzeln einschalten, speisen, WMZ (`Schritt6Unterverteiler.tsx:25-49`); Hersteller/Typ nur je Abgabe.
 
 ## 2. PO-Entscheide 16.11. [F]

@@ -17,7 +17,15 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 **Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
 
-## 0b. Stand – zuletzt aktualisiert 15.11.2026
+## 0b. Stand – zuletzt aktualisiert 16.11.2026
+
+### Heizungserfassung vereinfachen (16.11.2026) [F]
+
+- Einstieg naechste Sitzung: "weiter" -> diesen Block lesen, dann Spec `docs/superpowers/specs/2026-11-16-heizungserfassung-design.md`.
+- FM-Manager-Review im Browser: 165 Klicks fuer Buerohaus UG1+EG+OG1–OG5 (`docs/abnahme/2026-11-16-fm-review/`).
+- PO-Entscheide H1–H7: Regelgeschoss als Vorlage, dauerhaft gespeichert (Migration 015 `geschoss_vorlage`); Gruppen-Vorschlag je Heizart; keine Unterverteiler, FBH-Verteiler automatisch; Hersteller/Typ am Gebaeudestandard; angefasst = bestaetigt, sonst vorgeschlagen. Ablauf 7 statt 8 Schritte, Ziel [A] <= 40 Klicks, Aufwand [A] 4–5 Tage.
+- Naechstes: Umsetzungsplan schreiben (superpowers:writing-plans), dann umsetzen; Gestaltung ueber `planora-design` Stufe mittel. Spec Abschnitt 8 listet 5 Befunde ausserhalb (2 kritisch: Eingabeverlust beim Anlegen, Twin-Steigzonen/Legende).
+- Branch `m2c-interview` gepusht; kein Merge nach `main`. Pruefstand unveraendert (Backend 569/569, Web 384/384).
 
 ### Tagesabschluss 15.11.2026 – Leitungsrouter abgeschlossen [F]
 
@@ -148,7 +156,7 @@ Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Ges
 
 ### Naechste Coding-Aufgabe
 
-**Aktuell (15.11.):** siehe Block "Tagesabschluss 15.11.2026" (Brainstorming Heizungserfassung mit PO).
+**Aktuell (16.11.):** siehe Block "Heizungserfassung vereinfachen (16.11.2026)" (Umsetzungsplan schreiben).
 
 *Ueberholt (Stand 14.11.):* Leitungsrouter T8 abschliessen (Rest-Seeds, 2000er-Lauf, Review), dann T9–T10 (siehe Plan, Abschnitt "Fortsetzung (Stand 14.11.2026)"). Danach Vorschau-Zoom im Assistenten, Kamerafahrt auf Gruppenverlauf, danach I2 – Details in `docs/superpowers/plans/2026-11-13-stufe1-integration.md`.
 
