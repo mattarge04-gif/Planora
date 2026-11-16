@@ -487,6 +487,16 @@ function mengenVon(z: AssistentZustand, einheit: string): Partial<Record<HeizArt
   return r;
 }
 
+/** Felder einer bestehenden Einheit, die vom Platz abweichen (beim Verknüpfen einer freien Einheit). */
+function abweichendVomPlatz(z: AssistentZustand, e: ZEinheit, p: ZPlatz, code: string, i: number): VorlageFeld[] {
+  const r: VorlageFeld[] = [];
+  if (e.bezeichnung !== nummerieren(code, p.art, i + 1)) r.push("bezeichnung");
+  if (!gleicheAusnahme(e.ausnahme, p.ausnahme)) r.push("ausnahme");
+  const m = mengenVon(z, e.schluessel);
+  if (HEIZ_ARTEN.some((art) => (m[art] ?? null) !== (p.mengen[art] ?? null))) r.push("mengen");
+  return r;
+}
+
 /**
  * Vorlage in allen zugewiesenen Geschossen durchsetzen: fehlende Plätze anlegen (freie Einheit gleicher Art bevorzugt),
  * Einheiten entfallener Plätze löschen (mit Abweichung: lösen), Felder ohne Abweichung übernehmen.
@@ -495,13 +505,14 @@ function vorlageAnwenden(z: AssistentZustand, vs: string): AssistentZustand {
   const v = vorlageVon(z, vs);
   if (!v) return z;
   let neu = z;
-  const verknuepfe = (s: string, platz: string) => { neu = einheitSetzen(neu, s, (e) => ({ ...e, vorlage: { schluessel: vs, platz }, abweichend: [] })); };
+  const verknuepfe = (s: string, platz: string, abweichend: VorlageFeld[] = []) => { neu = einheitSetzen(neu, s, (e) => ({ ...e, vorlage: { schluessel: vs, platz }, abweichend })); };
   for (const code of v.geschosse) {
     v.plaetze.forEach((p, i) => {
       if (v.ausgelassen.some((x) => x.geschoss === code && x.platz === p.schluessel)) return;
       if (neu.einheiten.some((e) => e.geschoss === code && e.vorlage?.schluessel === vs && e.vorlage.platz === p.schluessel)) return;
       const frei = neu.einheiten.find((e) => e.geschoss === code && !e.vorlage && e.art === p.art);
-      if (frei) { verknuepfe(frei.schluessel, p.schluessel); return; }
+      // Freie Einheit übernehmen, ihre Daten aber behalten: alles, was vom Platz abweicht, gilt als Abweichung
+      if (frei) { verknuepfe(frei.schluessel, p.schluessel, abweichendVomPlatz(neu, frei, p, code, i)); return; }
       neu = reduziereKern(neu, { typ: "einheitNeu", geschoss: code, art: p.art, bezeichnung: nummerieren(code, p.art, i + 1) });
       verknuepfe(neu.einheiten[neu.einheiten.length - 1].schluessel, p.schluessel);
     });
@@ -539,6 +550,12 @@ function ausnahmeSetzen(aus: Partial<Heizung>, art: HeizArt, wert: Dreiwertig | 
   return r;
 }
 
+/** Einheiten eines Geschosses, in denen die Heizart erlaubt ist und deren Ausnahme sich durch den Wert tatsächlich ändert. */
+function geschossAusnahmeBetroffen(z: AssistentZustand, geschoss: string, art: HeizArt, wert: Dreiwertig | null): ZEinheit[] {
+  return z.einheiten.filter((e) => e.geschoss === geschoss && (ERLAUBT[e.art] ?? []).includes(ABGABE_VON[art])
+    && ausnahmeSetzen(e.ausnahme, art, wert, z.heizungStandard)[art] !== e.ausnahme[art]);
+}
+
 /** Direkte Änderungen an Einheiten eines Regelgeschosses als Abweichung merken (vor der Kernaktion). */
 function abweichungMarkieren(z: AssistentZustand, a: Aktion): AssistentZustand {
   const markiere = (zz: AssistentZustand, einheit: string | undefined, feld: VorlageFeld) => {
@@ -555,7 +572,7 @@ function abweichungMarkieren(z: AssistentZustand, a: Aktion): AssistentZustand {
       return n;
     }
     case "ausnahme": return markiere(z, a.einheit, "ausnahme");
-    case "geschossAusnahme": return z.einheiten.filter((e) => e.geschoss === a.geschoss).reduce((n, e) => markiere(n, e.schluessel, "ausnahme"), z);
+    case "geschossAusnahme": return geschossAusnahmeBetroffen(z, a.geschoss, a.art, a.wert).reduce((n, e) => markiere(n, e.schluessel, "ausnahme"), z);
     case "abgabeAendern": return a.menge === undefined ? z : markiere(z, einheitDes(a.schluessel), "mengen");
     case "abgabeWeissNicht": return markiere(z, einheitDes(a.schluessel), "mengen");
     case "einheitLoeschen": {
@@ -671,7 +688,9 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
       if (!e) return z;
       const art = HEIZ_ARTEN.find((x) => ABGABE_VON[x] === a.katalogId);
       const g = art ? z.standardGeraet[art] : undefined;
-      return neuesBauteil(z, { katalogId: a.katalogId, standort: { einheit: a.einheit }, menge: null, status: "vorgeschlagen", hersteller: g?.hersteller ?? null, typ: g?.typ ?? null })[0];
+      // Wie abgabenAbgleichen: bestätigt nur bei wirksam «ja» (Prüfregel bestaetigt_bei_unbekannt)
+      const status: BauteilStatus = art && wirksam(z, e)[art] === "ja" ? "bestaetigt" : "vorgeschlagen";
+      return neuesBauteil(z, { katalogId: a.katalogId, standort: { einheit: a.einheit }, menge: null, status, hersteller: g?.hersteller ?? null, typ: g?.typ ?? null })[0];
     }
     case "abgabeAendern":
       return ersetzeBauteil(z, a.schluessel, (t) => {
@@ -779,7 +798,8 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
     case "gruppenVorschlagen": return gruppenVorschlagen(z);
     case "gruppeTeilen": {
       const g = z.gruppen.find((x) => x.schluessel === a.gruppe);
-      if (!g?.regel || a.geschosse.length === 0) return z;
+      // Angefasste Gruppen ordnen nicht mehr neu zu; die neue Gruppe bliebe leer
+      if (!g?.regel || g.angefasst || a.geschosse.length === 0) return z;
       const art = g.regel.heizart;
       const codes = [...a.geschosse].sort((x, y) => geschossRang(x) - geschossRang(y));
       let neu: AssistentZustand = { ...z, gruppen: z.gruppen.map((x) => (x.regel?.heizart === art && x.regel.geschosse
@@ -899,7 +919,7 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
     }
     case "geschossAusnahme": {
       let neu = z;
-      for (const e of z.einheiten.filter((x) => x.geschoss === a.geschoss))
+      for (const e of geschossAusnahmeBetroffen(z, a.geschoss, a.art, a.wert))
         neu = reduziereKern(neu, { typ: "ausnahme", einheit: e.schluessel, art: a.art, wert: a.wert });
       return neu;
     }

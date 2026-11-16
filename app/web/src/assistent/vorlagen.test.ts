@@ -143,3 +143,48 @@ describe("Vorlagen ⇄ API", () => {
     expect(vorlagenEinlesen(z, { version: 7 }).abgeloest).toBe(true);
   });
 });
+
+describe("Fixes aus Gesamtreview", () => {
+  it("I1: kaputte gespeicherte Vorlagen werfen nicht, sondern werden abgelöst", () => {
+    const z = haus();
+    const r = vorlagenEinlesen(z, { version: 1, vorlagen: [{}], zuordnung: { x: {} } });
+    expect(r.abgeloest).toBe(true);
+    expect(r.zustand).toBe(z);
+  });
+  it("I2: Zuweisen übernimmt freie Einheit, behält deren Daten und markiert die Abweichungen", () => {
+    let z = haus({ typ: "einheitAnzahl", geschoss: "OG1", art: "buero", anzahl: 1 });
+    const e = im(z, "OG1")[0];
+    z = reduziere(z, { typ: "einheitAendern", schluessel: e.schluessel, bezeichnung: "Empfang" });
+    const hk = z.bauteile.find((t) => t.katalogId === K.hk && "einheit" in t.standort && t.standort.einheit === e.schluessel)!;
+    z = reduziere(z, { typ: "abgabeAendern", schluessel: hk.schluessel, menge: 7 });
+    z = reduziere(z, { typ: "vorlageNeu", name: "Regel-OG" });
+    z = reduziere(z, { typ: "platzAnzahl", vorlage: v1(z), art: "buero", anzahl: 1 });
+    z = reduziere(z, { typ: "vorlageZuweisen", vorlage: v1(z), geschoss: "OG1", an: true });
+    const x = z.einheiten.find((y) => y.schluessel === e.schluessel)!;
+    expect(x.vorlage?.schluessel).toBe(v1(z));
+    expect(x.bezeichnung).toBe("Empfang");
+    expect(z.bauteile.find((t) => t.schluessel === hk.schluessel)!.menge).toBe(7);
+    expect(x.abweichend).toContain("bezeichnung");
+    expect(x.abweichend).toContain("mengen");
+    expect(x.abweichend).not.toContain("ausnahme");
+    expect(im(z, "OG1")).toHaveLength(1);
+  });
+  it("I2: neu angelegte Einheiten bleiben ohne Abweichung", () => {
+    const z = regelhaus();
+    expect(z.einheiten.every((e) => (e.abweichend ?? []).length === 0)).toBe(true);
+  });
+  it("M3: Ausnahme je Geschoss markiert nur Einheiten, die sich ändern und die Heizart haben", () => {
+    let z = regelhaus();
+    z = reduziere(z, { typ: "platzAnzahl", vorlage: v1(z), art: "kern", anzahl: 1 });
+    z = reduziere(z, { typ: "geschossAusnahme", geschoss: "OG4", art: "fbh", wert: "ja" });
+    const kern = im(z, "OG4").find((e) => e.art === "kern")!;
+    expect(kern.ausnahme.fbh).toBeUndefined();
+    expect(kern.abweichend ?? []).not.toContain("ausnahme");
+    expect(im(z, "OG4").filter((e) => e.art === "buero").every((e) => e.ausnahme.fbh === "ja" && e.abweichend?.includes("ausnahme"))).toBe(true);
+    // Gleicher Wert wie Standard (nein) in einem unberührten Geschoss: nichts ändert sich, nichts wird markiert
+    z = reduziere(z, { typ: "geschossAusnahme", geschoss: "OG3", art: "fbh", wert: "nein" });
+    expect(im(z, "OG3").every((e) => (e.abweichend ?? []).length === 0)).toBe(true);
+    z = reduziere(z, { typ: "geschossAusnahme", geschoss: "OG3", art: "fbh", wert: null });
+    expect(abweichungen(z, v1(z))).toBe(4);
+  });
+});

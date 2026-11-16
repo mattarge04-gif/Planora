@@ -38,7 +38,7 @@ function Nutzungen({ liste, ort, label, angebot, onAnzahl }: {
     <div className="as-nutzung-block" ref={rahmen}>
       {zaehler.length > 0 && <div className="as-nutzungen">
         {zaehler.map((art) => <div key={art} data-art={art}>
-          <Zaehler label={label(art)} wert={anzahlJeArt(liste, art)} min={0} max={50} onWert={(n) => onAnzahl(art, n)} />
+          <Zaehler label={label(art)} name={`${ort}: ${label(art)}`} wert={anzahlJeArt(liste, art)} min={0} max={50} onWert={(n) => onAnzahl(art, n)} />
         </div>)}
       </div>}
       {angebote.length > 0 && <div className="as-angebote" role="group" aria-label={`${angebot}, ${ort}`}>

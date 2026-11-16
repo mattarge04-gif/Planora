@@ -95,3 +95,16 @@ describe("Hersteller und Typ am Standard (H5)", () => {
     expect(hk()[0].hersteller).toBeNull();
   });
 });
+
+describe("abgabeNeu (M1)", () => {
+  it("Status folgt der wirksamen Heizart: ja → bestätigt, weiss nicht → vorgeschlagen", () => {
+    let z = neuesGebaeude({ typ: "einheitNeu", geschoss: "EG", art: "buero" }, { typ: "standard", art: "fbh", wert: "unbekannt" });
+    const e = z.einheiten[0].schluessel;
+    z = reduziere(z, { typ: "abgabeNeu", einheit: e, katalogId: K.hk });
+    z = reduziere(z, { typ: "abgabeNeu", einheit: e, katalogId: K.fbh });
+    const neu = abgabenVon(z, e);
+    expect(neu.filter((t) => t.katalogId === K.hk).every((t) => t.status === "bestaetigt")).toBe(true);
+    expect(neu.filter((t) => t.katalogId === K.fbh).map((t) => t.status)).toEqual(["vorgeschlagen"]);
+    expect(neu.filter((t) => t.katalogId === K.hk)).toHaveLength(2);
+  });
+});

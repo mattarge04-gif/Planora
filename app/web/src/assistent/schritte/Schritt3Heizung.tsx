@@ -1,7 +1,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import type { Dreiwertig, HeizArt } from "../../typen";
 import { teilName } from "../bestueckung";
-import { ABGABE_VON, ERLAUBT, HEIZ_ARTEN, HEIZ_NAME, abgabenVon, artName, platzWirksam, vorlageVonGeschoss, wirksam, type ZBauteil, type ZEinheit } from "../zustand";
+import { ABGABE_VON, ERLAUBT, HEIZ_ARTEN, HEIZ_NAME, abgabenVon, artName, einheitVon, platzWirksam, vorlageVonGeschoss, wirksam, type ZBauteil, type ZEinheit } from "../zustand";
 import { Abschnitt, Hinweis, ICON, Segment } from "./gemeinsam";
 import type { SchrittInhaltProps } from "./index";
 import { geschosseAbsteigend } from "./Schritt2Einheiten";
@@ -32,11 +32,12 @@ function AusnahmeWahl({ label, name, wert, standard, onWert }: { label: string; 
   );
 }
 
-function Menge({ label, wert, onWert, inline }: { label: string; wert: number | null; onWert: (n: number | null) => void; inline?: boolean }) {
+/** `name`: eindeutiger zugänglicher Name (z. B. «Büro 3.01: Heizkörper Anzahl»), `label` der kurze sichtbare Text. */
+function Menge({ label, name, wert, onWert, inline }: { label: string; name?: string; wert: number | null; onWert: (n: number | null) => void; inline?: boolean }) {
   return (
     <label className={`as-ausnahme as-menge${inline ? " as-menge-inline" : ""}`}>
       <span>{label}</span>
-      <input type="number" min={0} inputMode="numeric" placeholder="Weiss nicht" value={wert ?? ""}
+      <input type="number" min={0} inputMode="numeric" placeholder="Weiss nicht" value={wert ?? ""} aria-label={name}
         onChange={(e) => onWert(e.target.value === "" ? null : Number(e.target.value))} />
     </label>
   );
@@ -44,20 +45,22 @@ function Menge({ label, wert, onWert, inline }: { label: string; wert: number | 
 
 function AbgabeZeile({ t, z, dispatch, katalog }: { t: ZBauteil } & Pick<SchrittInhaltProps, "z" | "dispatch" | "katalog">) {
   const name = teilName(t.katalogId, katalog);
+  const ort = einheitVon(z, t)?.bezeichnung;
+  const voll = ort ? `${ort}: ${name}` : name;
   const art = HEIZ_ARTEN.find((a) => ABGABE_VON[a] === t.katalogId);
   const std = art ? z.standardGeraet[art] : undefined;
   const eigen = (t.hersteller ?? null) !== (std?.hersteller ?? null) || (t.typ ?? null) !== (std?.typ ?? null);
   return (
     <li className="as-zeile as-zeile-abgabe">
       <span className="as-badge as-badge-heizung">{name}</span>
-      <Menge inline label="Anzahl" wert={t.menge} onWert={(n) => n === null ? dispatch({ typ: "abgabeWeissNicht", schluessel: t.schluessel }) : dispatch({ typ: "abgabeAendern", schluessel: t.schluessel, menge: n })} />
-      <button type="button" className="as-rundknopf" aria-label={`${name} entfernen`} onClick={() => dispatch({ typ: "bauteilLoeschen", schluessel: t.schluessel })}><Trash2 {...ICON} /></button>
+      <Menge inline label="Anzahl" name={`${voll} Anzahl`} wert={t.menge} onWert={(n) => n === null ? dispatch({ typ: "abgabeWeissNicht", schluessel: t.schluessel }) : dispatch({ typ: "abgabeAendern", schluessel: t.schluessel, menge: n })} />
+      <button type="button" className="as-rundknopf" aria-label={`${voll} entfernen`} onClick={() => dispatch({ typ: "bauteilLoeschen", schluessel: t.schluessel })}><Trash2 {...ICON} /></button>
       <details className="as-aufklapp as-abgabe-geraet" open={eigen}>
         <summary>{eigen ? "Eigener Hersteller" : "Hersteller wie Standard"}</summary>
         <div className="as-reihe">
-          <input type="text" aria-label={`${name}: Hersteller`} placeholder="Hersteller" value={t.hersteller ?? ""} maxLength={200}
+          <input type="text" aria-label={`${voll} Hersteller`} placeholder="Hersteller" value={t.hersteller ?? ""} maxLength={200}
             onChange={(e) => dispatch({ typ: "abgabeAendern", schluessel: t.schluessel, hersteller: e.target.value })} />
-          <input type="text" aria-label={`${name}: Typ`} placeholder="Typ" value={t.typ ?? ""} maxLength={200}
+          <input type="text" aria-label={`${voll} Typ`} placeholder="Typ" value={t.typ ?? ""} maxLength={200}
             onChange={(e) => dispatch({ typ: "abgabeAendern", schluessel: t.schluessel, geraetTyp: e.target.value })} />
         </div>
       </details>
@@ -79,9 +82,9 @@ export function Schritt3Heizung({ z, dispatch, katalog }: SchrittInhaltProps) {
                 <summary>{g?.hersteller || g?.typ ? [g.hersteller, g.typ].filter(Boolean).join(" · ") : "Hersteller und Typ (optional)"}</summary>
                 <div className="as-reihe">
                   <label className="as-feld"><span className="as-label">Hersteller</span>
-                    <input type="text" value={g?.hersteller ?? ""} maxLength={200} onChange={(e) => dispatch({ typ: "standardGeraet", art, hersteller: e.target.value })} /></label>
+                    <input type="text" aria-label={`${HEIZ_NAME[art]}: Hersteller`} value={g?.hersteller ?? ""} maxLength={200} onChange={(e) => dispatch({ typ: "standardGeraet", art, hersteller: e.target.value })} /></label>
                   <label className="as-feld"><span className="as-label">Typ</span>
-                    <input type="text" value={g?.typ ?? ""} maxLength={200} onChange={(e) => dispatch({ typ: "standardGeraet", art, geraetTyp: e.target.value })} /></label>
+                    <input type="text" aria-label={`${HEIZ_NAME[art]}: Typ`} value={g?.typ ?? ""} maxLength={200} onChange={(e) => dispatch({ typ: "standardGeraet", art, geraetTyp: e.target.value })} /></label>
                 </div>
               </details>}
             </div>
@@ -102,11 +105,11 @@ export function Schritt3Heizung({ z, dispatch, katalog }: SchrittInhaltProps) {
                 <header className="as-karte-kopf"><h3>{titel}</h3><span className="as-zahl">{artName(p.art)}</span></header>
                 <div className="as-ausnahmen">
                   {HEIZ_ARTEN.filter((art) => erlaubt.includes(ABGABE_VON[art])).map((art) => (
-                    <AusnahmeWahl key={art} label={HEIZ_NAME[art]} name={`${titel}: ${HEIZ_NAME[art]}`} wert={p.ausnahme[art] ?? ""} standard={z.heizungStandard[art]}
+                    <AusnahmeWahl key={art} label={HEIZ_NAME[art]} name={`${v.name} ${titel}: ${HEIZ_NAME[art]}`} wert={p.ausnahme[art] ?? ""} standard={z.heizungStandard[art]}
                       onWert={(wert) => dispatch({ typ: "platzAusnahme", vorlage: v.schluessel, platz: p.schluessel, art, wert })} />
                   ))}
                   {p.art !== "technik" && HEIZ_ARTEN.filter((art) => w[art] === "ja" && erlaubt.includes(ABGABE_VON[art])).map((art) => (
-                    <Menge key={`m-${art}`} label={`Anzahl ${HEIZ_NAME[art]}`} wert={p.mengen[art] ?? null}
+                    <Menge key={`m-${art}`} label={`Anzahl ${HEIZ_NAME[art]}`} name={`${v.name} ${titel}: Anzahl ${HEIZ_NAME[art]}`} wert={p.mengen[art] ?? null}
                       onWert={(menge) => dispatch({ typ: "platzMenge", vorlage: v.schluessel, platz: p.schluessel, art, menge })} />
                   ))}
                 </div>

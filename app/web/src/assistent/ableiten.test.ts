@@ -99,3 +99,14 @@ describe("Gruppen vorschlagen (H3)", () => {
     expect(z.zentraleRaum).toBe(z.einheiten[0].schluessel);
   });
 });
+
+describe("Teilen angefasster Gruppen (I4)", () => {
+  it("angefasste Gruppe wird nicht geteilt", () => {
+    let z = zu5(basis());
+    const uv = unterverteiler(z)[0];
+    z = reduziere(z, { typ: "verbraucher", gruppe: z.gruppen[0].schluessel, bauteil: uv.schluessel, an: true });
+    const vorher = z.gruppen;
+    z = reduziere(z, { typ: "gruppeTeilen", gruppe: z.gruppen[0].schluessel, geschosse: ["OG2"] });
+    expect(z.gruppen).toEqual(vorher);
+  });
+});

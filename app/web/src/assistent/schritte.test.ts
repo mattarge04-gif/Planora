@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { K } from "./bestueckung";
 import { ZAEHLBAR, anzahlJeArt, geschosseAbsteigend, zaehlerAufteilen } from "./schritte/Schritt2Einheiten";
+import { zaehlerUebernehmen } from "./schritte/gemeinsam";
 import { geschossAusnahmeWert } from "./schritte/Schritt3Heizung";
 import { verbraucherSatz } from "./schritte/Schritt5Gruppen";
 import { erzeuger, geschossCodes, leererZustand, reduziere, zentraleRaumHinweis, zentraleGeraete, hauptverteiler, type Aktion, type AssistentZustand } from "./zustand";
@@ -111,5 +112,18 @@ describe("Schritt 5 – Gruppen", () => {
     let z = angelegt(0, 2, { typ: "einheitAnzahl", geschoss: "OG1", art: "buero", anzahl: 2 }, { typ: "einheitAnzahl", geschoss: "OG2", art: "buero", anzahl: 1 },
       { typ: "einheitAnzahl", geschoss: "EG", art: "technik", anzahl: 1 }, { typ: "erzeuger", katalogId: K.waermepumpe }, { typ: "schritt", nr: 5 });
     expect(verbraucherSatz(z, z.gruppen[0])).toBe("3 Heizkörper in OG2, OG1");
+  });
+});
+
+describe("Zähler übernimmt erst bei Blur/Enter (C1)", () => {
+  it("leer oder ungültig → nichts, sonst gerundet und geklemmt, gleicher Wert → nichts", () => {
+    expect(zaehlerUebernehmen("", 3, 0, 50)).toBeNull();
+    expect(zaehlerUebernehmen("  ", 3, 0, 50)).toBeNull();
+    expect(zaehlerUebernehmen("abc", 3, 0, 50)).toBeNull();
+    expect(zaehlerUebernehmen("4", 3, 0, 50)).toBe(4);
+    expect(zaehlerUebernehmen("99", 3, 0, 50)).toBe(50);
+    expect(zaehlerUebernehmen("-2", 3, 0, 50)).toBe(0);
+    expect(zaehlerUebernehmen("2.6", 0, 0, 50)).toBe(3);
+    expect(zaehlerUebernehmen("3", 3, 0, 50)).toBeNull();
   });
 });

@@ -70,7 +70,7 @@ function GruppenKarte({ g, z, dispatch, katalog }: { g: ZGruppe } & Pick<Schritt
         </label>}
       </div>
 
-      {g.regel && codes.length > 1 && (teilen === null
+      {g.regel && !g.angefasst && codes.length > 1 && (teilen === null
         ? <div><button type="button" className="as-textknopf as-textknopf-rand" aria-label={`${titel}: nach Geschossen teilen`} onClick={() => setTeilen([])}>Nach Geschossen teilen</button></div>
         : <div className="as-teilen" role="group" aria-label={`${titel}: nach Geschossen teilen`}>
           <span className="as-label">Geschosse für die neue Gruppe</span>

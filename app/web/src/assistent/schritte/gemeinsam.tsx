@@ -1,5 +1,5 @@
 import { Minus, Plus } from "lucide-react";
-import { useId, type Dispatch, type ReactNode } from "react";
+import { useEffect, useId, useState, type Dispatch, type ReactNode } from "react";
 import type { KatalogEintrag } from "../../typen";
 import type { Aktion, AssistentZustand } from "../zustand";
 
@@ -11,21 +11,41 @@ export interface SchrittProps {
 
 export const ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
 
-/** Zahl mit −/+ (Tastatur: Pfeile im Eingabefeld, Tab auf die Knöpfe). */
-export function Zaehler({ label, wert, min, max, onWert, deaktiviert, beschreibung }: {
-  label: string; wert: number; min: number; max: number; onWert: (n: number) => void; deaktiviert?: boolean; beschreibung?: string;
+/** Eingetippten Zählerwert übernehmen: gerundet und geklemmt; null = nichts tun (leer, ungültig oder unverändert). */
+export function zaehlerUebernehmen(text: string, aktuell: number, min: number, max: number): number | null {
+  if (text.trim() === "") return null;
+  const n = Number(text);
+  if (!Number.isFinite(n)) return null;
+  const r = Math.max(min, Math.min(max, Math.round(n)));
+  return r === aktuell ? null : r;
+}
+
+/**
+ * Zahl mit −/+ (Tastatur: Pfeile im Eingabefeld, Tab auf die Knöpfe). Getippte Werte gelten erst bei Blur oder Enter,
+ * sonst löschte ein geleertes Feld sofort alle Einheiten. `name`: eindeutiger zugänglicher Name, wenn das Label sich wiederholt.
+ */
+export function Zaehler({ label, name, wert, min, max, onWert, deaktiviert, beschreibung }: {
+  label: string; name?: string; wert: number; min: number; max: number; onWert: (n: number) => void; deaktiviert?: boolean; beschreibung?: string;
 }) {
   const id = useId();
+  const [text, setText] = useState(String(wert));
+  useEffect(() => { setText(String(wert)); }, [wert]);
+  const zugang = name ?? label;
   const setze = (n: number) => { if (Number.isFinite(n)) onWert(Math.max(min, Math.min(max, Math.round(n)))); };
+  const uebernehmen = () => {
+    const n = zaehlerUebernehmen(text, wert, min, max);
+    if (n === null) setText(String(wert)); else onWert(n);
+  };
   return (
     <div className="as-zaehler">
       <label htmlFor={id} className="as-label">{label}</label>
       {beschreibung && <span className="as-hilfe">{beschreibung}</span>}
       <div className="as-zaehler-feld">
-        <button type="button" className="as-rundknopf" aria-label={`${label} verringern`} disabled={deaktiviert || wert <= min} onClick={() => setze(wert - 1)}><Minus {...ICON} /></button>
-        <input id={id} type="number" inputMode="numeric" min={min} max={max} value={wert} disabled={deaktiviert}
-          onChange={(e) => setze(Number(e.target.value))} />
-        <button type="button" className="as-rundknopf" aria-label={`${label} erhöhen`} disabled={deaktiviert || wert >= max} onClick={() => setze(wert + 1)}><Plus {...ICON} /></button>
+        <button type="button" className="as-rundknopf" aria-label={`${zugang} verringern`} disabled={deaktiviert || wert <= min} onClick={() => setze(wert - 1)}><Minus {...ICON} /></button>
+        <input id={id} type="number" inputMode="numeric" min={min} max={max} value={text} disabled={deaktiviert} aria-label={name}
+          onChange={(e) => setText(e.target.value)} onBlur={uebernehmen}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); uebernehmen(); } }} />
+        <button type="button" className="as-rundknopf" aria-label={`${zugang} erhöhen`} disabled={deaktiviert || wert >= max} onClick={() => setze(wert + 1)}><Plus {...ICON} /></button>
       </div>
     </div>
   );

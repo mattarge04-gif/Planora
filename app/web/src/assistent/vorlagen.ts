@@ -35,6 +35,11 @@ export function vorlagenZurEingabe(z: AssistentZustand, positionen: Positionen):
  */
 export function vorlagenEinlesen(z: AssistentZustand, daten: unknown): { zustand: AssistentZustand; abgeloest: boolean } {
   if (daten === null || daten === undefined) return { zustand: z, abgeloest: false };
+  // Kaputte gespeicherte Daten dürfen das Laden nicht abbrechen
+  try { return einlesen(z, daten); } catch { return { zustand: z, abgeloest: true }; }
+}
+
+function einlesen(z: AssistentZustand, daten: unknown): { zustand: AssistentZustand; abgeloest: boolean } {
   const d = daten as Partial<VorlagenGespeichert>;
   if (d.version !== 1 || !Array.isArray(d.vorlagen) || !d.zuordnung || typeof d.zuordnung !== "object") return { zustand: z, abgeloest: true };
   let abgeloest = false;
