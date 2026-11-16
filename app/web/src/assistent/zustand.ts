@@ -203,6 +203,7 @@ export type Aktion =
   | { typ: "einheitAendern"; schluessel: string; bezeichnung?: string; art?: string }
   | { typ: "einheitLoeschen"; schluessel: string }
   | { typ: "standard"; art: HeizArt; wert: Dreiwertig }
+  | { typ: "standardGeraet"; art: HeizArt; hersteller?: string | null; geraetTyp?: string | null }
   | { typ: "ausnahme"; einheit: string; art: HeizArt; wert: Dreiwertig | null }
   | { typ: "abgabeNeu"; einheit: string; katalogId: string }
   | { typ: "abgabeAendern"; schluessel: string; hersteller?: string | null; geraetTyp?: string | null; menge?: number }
@@ -279,6 +280,20 @@ function versorgungNachfuehren(z: AssistentZustand): AssistentZustand {
     const v = einheitenVon(t.schluessel);
     return v.length === t.versorgt.length && v.every((x, i) => x === t.versorgt[i]) ? t : { ...t, versorgt: v };
   }) };
+}
+
+/** Häufigste Hersteller/Typ-Angabe einer Katalog-ID (Zeilen, nicht Stück); bei Gleichstand die zuerst gefundene. */
+export function haeufigstesGeraet(bauteile: readonly ZBauteil[], katalogId: string): { hersteller: string | null; typ: string | null } | undefined {
+  const zaehler = new Map<string, { hersteller: string | null; typ: string | null; n: number }>();
+  for (const t of bauteile) {
+    if (t.katalogId !== katalogId || (!t.hersteller && !t.typ)) continue;
+    const k = JSON.stringify([t.hersteller, t.typ]);
+    const x = zaehler.get(k);
+    if (x) x.n++; else zaehler.set(k, { hersteller: t.hersteller, typ: t.typ, n: 1 });
+  }
+  let best: { hersteller: string | null; typ: string | null; n: number } | undefined;
+  for (const x of zaehler.values()) if (!best || x.n > best.n) best = x;
+  return best && { hersteller: best.hersteller, typ: best.typ };
 }
 
 /** Abgaben einer Einheit an die wirksame Heizung anpassen. Status folgt der Heizart: ja → bestätigt, unbekannt → vorgeschlagen (Entscheid 4). */
@@ -533,6 +548,13 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
       for (const e of neu.einheiten) if (e.ausnahme[a.art] === undefined) neu = abgabenAbgleichen(neu, e.schluessel, [a.art]);
       return neu;
     }
+    case "standardGeraet": {
+      const alt = z.standardGeraet[a.art] ?? { hersteller: null, typ: null };
+      const neuG = { hersteller: a.hersteller !== undefined ? (a.hersteller || null) : alt.hersteller, typ: a.geraetTyp !== undefined ? (a.geraetTyp || null) : alt.typ };
+      const kat = ABGABE_VON[a.art];
+      return { ...z, standardGeraet: { ...z.standardGeraet, [a.art]: neuG },
+        bauteile: z.bauteile.map((t) => (t.katalogId === kat && t.hersteller === alt.hersteller && t.typ === alt.typ ? { ...t, hersteller: neuG.hersteller, typ: neuG.typ } : t)) };
+    }
     case "ausnahme": {
       const neu = { ...z, einheiten: z.einheiten.map((e) => {
         if (e.schluessel !== a.einheit) return e;
@@ -545,7 +567,9 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
     case "abgabeNeu": {
       const e = z.einheiten.find((x) => x.schluessel === a.einheit);
       if (!e) return z;
-      return neuesBauteil(z, { katalogId: a.katalogId, standort: { einheit: a.einheit }, menge: null, status: "vorgeschlagen" })[0];
+      const art = HEIZ_ARTEN.find((x) => ABGABE_VON[x] === a.katalogId);
+      const g = art ? z.standardGeraet[art] : undefined;
+      return neuesBauteil(z, { katalogId: a.katalogId, standort: { einheit: a.einheit }, menge: null, status: "vorgeschlagen", hersteller: g?.hersteller ?? null, typ: g?.typ ?? null })[0];
     }
     case "abgabeAendern":
       return ersetzeBauteil(z, a.schluessel, (t) => {

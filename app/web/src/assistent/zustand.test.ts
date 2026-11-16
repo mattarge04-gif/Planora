@@ -80,3 +80,18 @@ describe("Version 2 – Schritte und Nummerierung", () => {
     expect(hk().status).toBe("bestaetigt");
   });
 });
+
+describe("Hersteller und Typ am Standard (H5)", () => {
+  it("setzt alle Abgaben mit altem Standard, Ausnahmen bleiben, neue erben", () => {
+    let z = neuesGebaeude({ typ: "einheitAnzahl", geschoss: "EG", art: "buero", anzahl: 3 });
+    const hk = () => z.bauteile.filter((t) => t.katalogId === K.hk);
+    z = reduziere(z, { typ: "abgabeAendern", schluessel: hk()[2].schluessel, hersteller: "Prolux" });
+    z = reduziere(z, { typ: "standardGeraet", art: "hk", hersteller: "Zehnder" });
+    z = reduziere(z, { typ: "standardGeraet", art: "hk", geraetTyp: "Charleston" });
+    expect(hk().map((t) => [t.hersteller, t.typ])).toEqual([["Zehnder", "Charleston"], ["Zehnder", "Charleston"], ["Prolux", null]]);
+    z = reduziere(z, { typ: "einheitNeu", geschoss: "EG", art: "buero" });
+    expect(hk()[3].hersteller).toBe("Zehnder");
+    z = reduziere(z, { typ: "standardGeraet", art: "hk", hersteller: "" });
+    expect(hk()[0].hersteller).toBeNull();
+  });
+});

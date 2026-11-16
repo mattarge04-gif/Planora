@@ -1,6 +1,6 @@
 import type { BauteilEingabe, BauteilVerweis, BeschreibungEingabe, EinheitEingabe, EinheitVerweis, Grundform, GruppeEingabe, Heizung, Welt } from "../typen";
 import { ERZEUGER, K } from "./bestueckung";
-import type { AssistentZustand, ZBauteil, ZEinheit, ZGruppe, ZOrt, ZStandort } from "./zustand";
+import { ABGABE_VON, HEIZ_ARTEN, haeufigstesGeraet, type AssistentZustand, type ZBauteil, type ZEinheit, type ZGruppe, type ZOrt, type ZStandort } from "./zustand";
 
 /** Kopf aus anderen Quellen (Gebäudeliste, Welt), weil die Beschreibung Name und Form nicht enthält. */
 export interface GebaeudeKopf { liegenschaftId?: string | null; name?: string; grundform?: Grundform }
@@ -62,7 +62,8 @@ export function ausBeschreibung(b: BeschreibungEingabe, kopf: GebaeudeKopf = {})
     version: 2, schritt: 1, huelleBearbeitbar: false,
     gebaeude: { id: b.gebaeudeId ?? null, liegenschaftId: kopf.liegenschaftId ?? null, name: kopf.name ?? "", grundform: kopf.grundform ?? "quader",
       stand: b.stand, geschosse: geschosse.map((g) => ({ id: g.id, code: g.code })) },
-    heizungStandard: { ...b.heizungStandard }, standardGeraet: {},
+    heizungStandard: { ...b.heizungStandard },
+    standardGeraet: Object.fromEntries(HEIZ_ARTEN.flatMap((art) => { const g = haeufigstesGeraet(bauteile, ABGABE_VON[art]); return g ? [[art, g]] : []; })),
     einheiten, bauteile, gruppen: zGruppen, vorlagen: [], zentraleRaum,
     automatik, gruppenVorgeschlagen: !automatik, fbhWmz: false, fbhVerteilerAus: [], zaehler: 0,
   };

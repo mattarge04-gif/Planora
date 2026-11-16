@@ -5,7 +5,7 @@ import m5 from "./__fixtures__/m5-fbh-ueber-geschosse.json";
 import type { BeschreibungEingabe, Grundform } from "../typen";
 import { ausBeschreibung, grundformAusWelt, zuBeschreibung, zuBeschreibungMitPositionen } from "./beschreibung";
 import { K } from "./bestueckung";
-import { leererZustand, reduziere, type Aktion, type AssistentZustand } from "./zustand";
+import { haeufigstesGeraet, leererZustand, reduziere, type Aktion, type AssistentZustand } from "./zustand";
 
 type Fixture = { huelle: { name: string; grundform: string; geschosse: { id: string; code: string }[] }; beschreibung: BeschreibungEingabe };
 const laden = (f: Fixture) => {
@@ -105,5 +105,13 @@ describe("Rundlauf Beschreibung ↔ Zustand", () => {
     expect(grundformAusWelt({ grundriss: [{ ...r, tiefe: 10 }] })).toBe("quadrat");
     expect(grundformAusWelt({ grundriss: [r, r] })).toBe("l_form");
     expect(grundformAusWelt({ grundriss: [r, r, r] })).toBe("u_form");
+  });
+});
+
+describe("Hersteller und Typ beim Laden (H5)", () => {
+  it("Standardgerät beim Laden = häufigste Angabe je Heizart", () => {
+    const t = (hersteller: string | null, typ: string | null = null) => ({ katalogId: K.hk, hersteller, typ } as any);
+    expect(haeufigstesGeraet([t("A"), t("B"), t("B"), t(null)], K.hk)).toEqual({ hersteller: "B", typ: null });
+    expect(haeufigstesGeraet([t(null)], K.hk)).toBeUndefined();
   });
 });
