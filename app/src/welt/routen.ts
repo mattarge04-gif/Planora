@@ -10,7 +10,8 @@ import { weltErzeugen } from "./generator.js";
 import { FachFehler, aendereHuelle, ladeBeschreibung, ladeBestand, ladeHuelle, legeGebaeudeAn, schreibeBeschreibung } from "./speicher.js";
 import { ladeEntwurf, loescheEntwurf, mitPlatzhalterIds, speichereEntwurf } from "./entwurf.js";
 import { pruefeBeschreibung } from "./pruefung.js";
-import { BESCHREIBUNG_SCHEMA, ENTWURF_SCHEMA, HUELLE_SCHEMA, ID_PARAMS, LID_PARAMS } from "./schema.js";
+import { BESCHREIBUNG_SCHEMA, ENTWURF_SCHEMA, HUELLE_SCHEMA, ID_PARAMS, LID_PARAMS, UEBERNAHME_SCHEMA } from "./schema.js";
+import { ladeVorlagen, schreibeVorlagen, type VorlagenEingabe } from "./vorlage.js";
 import type { BauteilVerweis, Beschreibung, EinheitVerweis, GruppeVerweis, Huelle } from "./typen.js";
 
 /** UUIDs kanonisch klein: Postgres liefert IDs klein, der Abgleich vergleicht Texte. */
@@ -32,6 +33,14 @@ function kanonischeBeschreibung(b: Beschreibung): Beschreibung {
       ...(t.ort && { ort: "gruppe" in t.ort ? { gruppe: gv(t.ort.gruppe) } : { vorBauteil: bv(t.ort.vorBauteil) } }),
     })),
     ...(b.gruppen && { gruppen: b.gruppen.map((g) => ({ ...g, ...(g.id !== undefined && { id: klein(g.id) }), verteiler: bv(g.verteiler), verbraucher: g.verbraucher.map(bv) })) }),
+  };
+}
+
+function kanonischeVorlagen(v: VorlagenEingabe): VorlagenEingabe {
+  return {
+    ...v,
+    vorlagen: v.vorlagen.map((x) => ({ ...x, geschosse: x.geschosse.map((g) => klein(g)!), ausgelassen: x.ausgelassen.map((a) => ({ ...a, geschoss: klein(a.geschoss)! })) })),
+    zuordnung: v.zuordnung.map((z) => ({ ...z, einheit: z.einheit.einheitId !== undefined ? { einheitId: klein(z.einheit.einheitId) } : z.einheit })),
   };
 }
 
@@ -107,21 +116,31 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
     });
   });
 
-  app.put<{ Params: { id: string }; Body: Beschreibung }>("/api/struktur/gebaeude/:id/beschreibung",
-    { schema: { params: ID_PARAMS, body: BESCHREIBUNG_SCHEMA } }, async (req, reply) => {
+  app.put<{ Params: { id: string }; Body: Beschreibung & { vorlagen?: VorlagenEingabe } }>("/api/struktur/gebaeude/:id/beschreibung",
+    { schema: { params: ID_PARAMS, body: UEBERNAHME_SCHEMA } }, async (req, reply) => {
       const k = req.kontext!;
       const z = await mitClient((c) => zugriff(c, k.benutzerId, req.params.id, true));
       if (z !== 200) return verweigert(reply, z);
+      const { vorlagen, ...beschreibung } = req.body;
       try {
         return await inTransaktion(async (c) => {
           const huelle = await ladeHuelle(c, req.params.id);
           const version = huelle?.regelwerkVersion ?? 1;
-          const { zaehler } = await schreibeBeschreibung(c, req.params.id, kanonischeBeschreibung(req.body), regelwerkFuer(version), version === 1 ? KATALOG_V1 : KATALOG_V2);
-          await auditEreignis(c, k.auditId, "gebaeude.beschreibung", { gebaeudeId: req.params.id, ...zaehler });
+          const { zaehler, einheitIds } = await schreibeBeschreibung(c, req.params.id, kanonischeBeschreibung(beschreibung), regelwerkFuer(version), version === 1 ? KATALOG_V1 : KATALOG_V2);
+          const anzahl = await schreibeVorlagen(c, req.params.id, vorlagen && kanonischeVorlagen(vorlagen), einheitIds);
+          await auditEreignis(c, k.auditId, "gebaeude.beschreibung", { gebaeudeId: req.params.id, ...zaehler, vorlagen: anzahl });
           return ladeBeschreibung(c, req.params.id);
         });
       } catch (e) { return fachAntwort(reply, e); }
     });
+
+  app.get<{ Params: { id: string } }>("/api/struktur/gebaeude/:id/vorlagen", { schema: { params: ID_PARAMS } }, async (req, reply) => {
+    return inSnapshot(async (c) => {
+      const z = await zugriff(c, req.kontext!.benutzerId, req.params.id, false);
+      if (z !== 200) return verweigert(reply, z);
+      return (await ladeVorlagen(c, req.params.id)) ?? reply.code(404).send({ fehler: "keine Vorlagen" });
+    });
+  });
 
   app.get<{ Params: { id: string } }>("/api/szene/gebaeude/:id/welt", { schema: { params: ID_PARAMS } }, async (req, reply) => {
     return inSnapshot(async (c) => {

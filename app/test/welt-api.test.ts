@@ -246,3 +246,59 @@ describe("Entwurf und Vorschau (Regelwerk v2)", () => {
     expect(w.json().gruppen).toHaveLength(1);
   });
 });
+
+describe("Vorlagen (Regelgeschoss)", () => {
+  let V: string;
+  const urlB = () => `/api/struktur/gebaeude/${V}/beschreibung`;
+  const urlVo = () => `/api/struktur/gebaeude/${V}/vorlagen`;
+  const vorlagen = (og1: string) => ({
+    version: 1,
+    vorlagen: [{ schluessel: "v1", name: "Regel-OG", geschosse: [og1], ausgelassen: [],
+      plaetze: [{ schluessel: "p1", art: "buero", ausnahme: {}, mengen: { hk: 3 } }] }],
+    zuordnung: [{ einheit: { einheitIndex: 1 }, vorlage: "v1", platz: "p1", abweichend: [] }],
+  });
+  const body = (leer: any) => {
+    const [eg, og1] = leer.geschosse;
+    return { ...leer, heizungStandard: { hk: "ja", fbh: "nein", tabs: "nein" },
+      einheiten: [
+        { geschossId: eg.id, bezeichnung: "Technik", art: "technik", flaecheM2: null },
+        { geschossId: og1.id, bezeichnung: "Büro 1.01", art: "buero", flaecheM2: null },
+      ], bauteile: [] };
+  };
+
+  it("Uebernehmen mit Vorlagen speichert sie mit echten Einheit-IDs; Lesen wie Beschreibung", async () => {
+    const r = await anfrage("POST", `/api/struktur/liegenschaften/${L1}/gebaeude`, kBetr, { name: "Regelhaus", grundform: "quader", geschosse: [{ code: "EG" }, { code: "OG1" }] });
+    V = r.json().id;
+    expect((await anfrage("GET", urlVo(), kBearb)).statusCode).toBe(404);
+    const leer = (await anfrage("GET", urlB(), kBearb)).json();
+    const og1 = leer.geschosse[1].id;
+    const p = await anfrage("PUT", urlB(), kBearb, { ...body(leer), vorlagen: vorlagen(og1) });
+    expect(p.statusCode).toBe(200);
+    const bueroId = p.json().einheiten.find((e: any) => e.art === "buero").id;
+    const g = await anfrage("GET", urlVo(), kLeser);
+    expect(g.statusCode).toBe(200);
+    expect(g.json().zuordnung).toEqual({ [bueroId]: { vorlage: "v1", platz: "p1", abweichend: [] } });
+    expect((await anfrage("GET", urlVo(), kFremd)).statusCode).toBe(404);
+  });
+  it("Uebernehmen ohne Vorlagen loescht den Eintrag", async () => {
+    const b = (await anfrage("GET", urlB(), kBearb)).json();
+    expect((await anfrage("PUT", urlB(), kBearb, b)).statusCode).toBe(200);
+    expect((await anfrage("GET", urlVo(), kBearb)).statusCode).toBe(404);
+  });
+  it("Fehler in der Beschreibung schreibt auch keine Vorlagen (eine Transaktion)", async () => {
+    const b = (await anfrage("GET", urlB(), kBearb)).json();
+    const kaputt = { ...b, stand: b.stand + 5, vorlagen: vorlagen(b.geschosse[1].id) };
+    expect((await anfrage("PUT", urlB(), kBearb, kaputt)).statusCode).toBe(409);
+    expect((await anfrage("GET", urlVo(), kBearb)).statusCode).toBe(404);
+  });
+  it("Schema: unbekanntes Feld und falsches Abweichungsfeld werden abgelehnt", async () => {
+    const b = (await anfrage("GET", urlB(), kBearb)).json();
+    const v = vorlagen(b.geschosse[1].id);
+    expect((await anfrage("PUT", urlB(), kBearb, { ...b, vorlagen: { ...v, extra: 1 } })).statusCode).toBe(400);
+    expect((await anfrage("PUT", urlB(), kBearb, { ...b, vorlagen: { ...v, zuordnung: [{ ...v.zuordnung[0], abweichend: ["farbe"] }] } })).statusCode).toBe(400);
+  });
+  it("Vorschau akzeptiert kein Feld vorlagen (Beschreibungsschema unveraendert)", async () => {
+    const b = (await anfrage("GET", urlB(), kBearb)).json();
+    expect((await anfrage("POST", `/api/szene/gebaeude/${V}/vorschau`, kBearb, { ...b, vorlagen: vorlagen(b.geschosse[1].id) })).statusCode).toBe(400);
+  });
+});

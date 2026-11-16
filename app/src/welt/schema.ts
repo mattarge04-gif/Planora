@@ -74,3 +74,35 @@ export const ENTWURF_SCHEMA = {
   type: "object", additionalProperties: false, required: ["stand", "daten"],
   properties: { stand: { type: "integer", minimum: 0 }, daten: { type: "object" } },
 };
+
+const SCHLUESSEL = { type: "string", minLength: 1, maxLength: 64 };
+const HEIZ_MENGEN = { type: "object", additionalProperties: false,
+  properties: { hk: { type: "integer", minimum: 0, maximum: 10000 }, fbh: { type: "integer", minimum: 0, maximum: 10000 }, tabs: { type: "integer", minimum: 0, maximum: 10000 } } };
+export const VORLAGEN_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["version", "vorlagen", "zuordnung"],
+  properties: {
+    version: { const: 1 },
+    vorlagen: { type: "array", maxItems: 50, items: {
+      type: "object", additionalProperties: false, required: ["schluessel", "name", "plaetze", "geschosse", "ausgelassen"],
+      properties: {
+        schluessel: SCHLUESSEL, name: { type: "string", maxLength: 200 },
+        plaetze: { type: "array", maxItems: 200, items: {
+          type: "object", additionalProperties: false, required: ["schluessel", "art", "ausnahme", "mengen"],
+          properties: { schluessel: SCHLUESSEL, art: { type: "string", maxLength: 50 },
+            ausnahme: { type: "object", additionalProperties: false, properties: HEIZ }, mengen: HEIZ_MENGEN } } },
+        geschosse: { type: "array", maxItems: 100, items: UUID },
+        ausgelassen: { type: "array", maxItems: 2000, items: {
+          type: "object", additionalProperties: false, required: ["geschoss", "platz"], properties: { geschoss: UUID, platz: SCHLUESSEL } } },
+      } } },
+    zuordnung: { type: "array", maxItems: 2000, items: {
+      type: "object", additionalProperties: false, required: ["einheit", "vorlage", "platz", "abweichend"],
+      properties: {
+        einheit: { type: "object", additionalProperties: false, minProperties: 1, maxProperties: 1,
+          properties: { einheitId: UUID, einheitIndex: { type: "integer", minimum: 0 } } },
+        vorlage: SCHLUESSEL, platz: SCHLUESSEL,
+        abweichend: { type: "array", maxItems: 4, uniqueItems: true, items: { enum: ["art", "bezeichnung", "ausnahme", "mengen"] } },
+      } } },
+  },
+};
+/** PUT Beschreibung: Beschreibung plus optionale Vorlagen des Assistenten. Vorschau nutzt weiter BESCHREIBUNG_SCHEMA. */
+export const UEBERNAHME_SCHEMA = { ...BESCHREIBUNG_SCHEMA, properties: { ...BESCHREIBUNG_SCHEMA.properties, vorlagen: VORLAGEN_SCHEMA } };
