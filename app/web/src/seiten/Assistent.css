@@ -220,7 +220,6 @@
 .as-liste-roh { list-style: none; margin: 0; padding: 0; }
 .as-zeile { display: grid; gap: 6px; align-items: center; }
 .as-zeile-einheit { grid-template-columns: minmax(0, 1fr) minmax(0, 196px) 28px 28px; gap: 4px 6px; }
-.as-zeile-abgabe { grid-template-columns: auto minmax(0, 1fr) minmax(0, 0.8fr) 72px auto 28px; }
 .as .as-textknopf-rand { box-shadow: inset 0 0 0 1px var(--tw-grau-1); background: #fff; color: var(--tw-text); }
 .as .as-textknopf-rand:hover:not(:disabled) { background: var(--tw-eis); box-shadow: inset 0 0 0 1px rgb(95 136 176 / 0.35); color: var(--tw-text); }
 .as-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tw-sekundaer); white-space: nowrap; cursor: pointer; }
@@ -231,14 +230,28 @@
 .as-standard-zeile { display: grid; grid-template-columns: 140px auto; align-items: center; gap: 12px; }
 .as-ausnahmen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .as-ausnahme { display: grid; gap: 4px; font-size: 12px; color: var(--tw-sekundaer); }
-.as-ausnahme select { height: 28px; font-size: 12px; }
+.as .as-ausnahme select { height: 28px; font-size: 12px; padding: 0 2px 0 8px; }
+/* Abweichung vom Standard sichtbar, ohne Statusfarbe */
+.as .as-ausnahme-gesetzt { color: var(--tw-text); }
+.as .as-ausnahme-gesetzt select { background-color: var(--tw-eis); border-color: var(--tw-eis-akzent); color: var(--tw-sekundaer-eis); font-weight: 600; }
+.as-standard-zeile > .as-standard-geraet { grid-column: 2; }
+.as-standard-geraet[open] { padding: 10px 12px 12px; border-radius: var(--tw-radius-kachel); background: var(--tw-flaeche-2); }
+.as-standard-geraet[open] > summary { margin-bottom: 10px; }
+.as-platz { padding: 10px 12px; gap: 8px; }
+.as .as-menge input { height: 28px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.as-menge-inline { display: inline-flex; align-items: center; gap: 6px; justify-self: end; }
+.as .as-menge-inline input { width: 104px; }
+.as-einheiten-heizung { gap: 8px; }
+.as-einheit-heizung { display: grid; gap: 8px; padding: 10px 12px; border-radius: var(--tw-radius-kachel); background: var(--tw-flaeche-2); }
+.as-einheit-heizung .as-chips { margin-left: -6px; }
+.as-zeile-abgabe { grid-template-columns: minmax(0, 1fr) auto 28px; padding: 6px 6px 6px 8px; border-radius: var(--tw-radius-kachel); background: rgb(255 255 255 / 0.85); box-shadow: inset 0 0 0 1px var(--tw-grau-1); }
+.as-zeile-abgabe > .as-badge { justify-self: start; }
+.as-abgabe-geraet { grid-column: 1 / -1; }
+.as-abgabe-geraet .as-reihe { gap: 6px; }
 .as-feld-schmal { max-width: 160px; }
 
 @media (max-width: 1360px) {
   .as-formen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .as-zeile-abgabe { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) 28px; }
-  .as-zeile-abgabe input[type="number"] { grid-column: 2; }
-  .as-zeile-abgabe .as-check { grid-column: 3; }
 }
 
 /* Schritt 5: Gruppen */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { K } from "./bestueckung";
 import { ZAEHLBAR, anzahlJeArt, geschosseAbsteigend, zaehlerAufteilen } from "./schritte/Schritt2Einheiten";
+import { geschossAusnahmeWert } from "./schritte/Schritt3Heizung";
 import { erzeuger, geschossCodes, leererZustand, reduziere, zentraleRaumHinweis, zentraleGeraete, hauptverteiler, type Aktion, type AssistentZustand } from "./zustand";
 
 function angelegt(ug: number, og: number, ...aktionen: Aktion[]): AssistentZustand {
@@ -91,5 +92,15 @@ describe("Schritt 4 – Zentrale", () => {
     z = reduziere(z, { typ: "technikraumNeu", geschoss: "EG" });
     expect(zentraleRaumHinweis(z)).toBeNull();
     expect(z.einheiten.filter((e) => e.art === "technik").length).toBe(2);
+  });
+});
+
+describe("Schritt 3 – Heizung", () => {
+  it("Ausnahme je Geschoss: gemeinsamer Wert, leer oder gemischt", () => {
+    const e = (fbh?: "ja" | "nein") => ({ ausnahme: fbh ? { fbh } : {} } as any);
+    expect(geschossAusnahmeWert([e("ja"), e("ja")], "fbh")).toBe("ja");
+    expect(geschossAusnahmeWert([e(), e()], "fbh")).toBe("");
+    expect(geschossAusnahmeWert([e("ja"), e()], "fbh")).toBe("gemischt");
+    expect(geschossAusnahmeWert([], "fbh")).toBe("");
   });
 });
