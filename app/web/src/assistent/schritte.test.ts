@@ -52,7 +52,7 @@ describe("Schritt 2 – Einheiten", () => {
   });
   it("Art Kern entfernt nicht erlaubte FBH", () => {
     let z = angelegt(0, 0, { typ: "standard", art: "fbh", wert: "ja" }, { typ: "einheitNeu", geschoss: "EG", art: "buero" });
-    expect(z.bauteile.map((t) => t.katalogId)).toEqual([K.hk, K.fbh]);
+    expect(z.bauteile.map((t) => t.katalogId)).toEqual([K.hk, K.fbh, K.verteiler]);
     z = reduziere(z, { typ: "einheitAendern", schluessel: z.einheiten[0].schluessel, art: "kern" });
     expect(z.bauteile.map((t) => t.katalogId)).toEqual([K.hk]);
   });

@@ -1,6 +1,6 @@
 import type { KatalogEintrag, Welt } from "../typen";
 import { INTERNE_HINWEISE } from "../panel/daten";
-import { teilName } from "./bestueckung";
+import { K, teilName } from "./bestueckung";
 import type { Positionen } from "./beschreibung";
 import {
   einheitVon, erzeuger, gruppeVonVerbraucher, hauptverteiler, istAbgabe, unterverteiler, zentraleRaumHinweis,
@@ -34,7 +34,7 @@ export function pruefHinweise(z: AssistentZustand, welt: Welt | null, positionen
   const uv = ueberUnterverteiler(z);
   for (const t of z.bauteile) {
     if (!istAbgabe(t) || gruppeVonVerbraucher(z, t.schluessel)) continue;
-    if ("einheit" in t.standort && uv.has(t.standort.einheit)) continue;
+    if (t.katalogId === K.fbh && "einheit" in t.standort && uv.has(t.standort.einheit)) continue;
     h.push({ code: "ohne_gruppe", text: `${bauteilText(z, t, katalog)} gehört zu keiner Gruppe.`, schritt: 5, schluessel: t.schluessel });
   }
   for (const t of unterverteiler(z)) if (!gruppeVonVerbraucher(z, t.schluessel))

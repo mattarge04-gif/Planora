@@ -232,7 +232,13 @@ export type Aktion =
   | { typ: "vorlageLoeschen"; vorlage: string }
   | { typ: "einheitZuruecksetzen"; einheit: string }
   | { typ: "geschossZuruecksetzen"; geschoss: string }
-  | { typ: "geschossAusnahme"; geschoss: string; art: HeizArt; wert: Dreiwertig | null };
+  | { typ: "geschossAusnahme"; geschoss: string; art: HeizArt; wert: Dreiwertig | null }
+  | { typ: "gruppenVorschlagen" }
+  | { typ: "gruppeTeilen"; gruppe: string; geschosse: string[] }
+  | { typ: "sondergruppe"; einheit: string; heizart: HeizArt }
+  | { typ: "gruppeEntfernen"; gruppe: string }
+  | { typ: "gruppeFuerArt"; heizart: HeizArt }
+  | { typ: "fbhWmzAlle"; an: boolean };
 
 const neuerSchluessel = (z: AssistentZustand): [string, AssistentZustand] => [`k${z.zaehler + 1}`, { ...z, zaehler: z.zaehler + 1 }];
 
@@ -354,6 +360,94 @@ function bestueckungSetzen(z: AssistentZustand, gruppe: string, art: GruppenArt)
   return neu;
 }
 
+// --- Automatik: FBH-Verteiler und Gruppen ---
+export const GRUPPEN_ART_VON: Readonly<Record<HeizArt, GruppenArt>> = { hk: "ungeregelt", fbh: "beimisch", tabs: "einspritz" };
+const gruppeSetzen = (z: AssistentZustand, s: string, f: (g: ZGruppe) => ZGruppe): AssistentZustand =>
+  ({ ...z, gruppen: z.gruppen.map((g) => (g.schluessel === s ? f(g) : g)) });
+
+/** Verbraucher einer Heizart: HK- und TABS-Abgaben; für FBH die FBH-Verteiler und FBH-Kreise in Einheiten ohne Verteiler. */
+export function verbraucherDerArt(z: AssistentZustand, art: HeizArt): ZBauteil[] {
+  if (art !== "fbh") return z.bauteile.filter((t) => t.katalogId === ABGABE_VON[art] && "einheit" in t.standort);
+  const uv = unterverteiler(z);
+  const mitUv = new Set(uv.flatMap((t) => t.versorgt));
+  return [...uv, ...z.bauteile.filter((t) => t.katalogId === K.fbh && "einheit" in t.standort && !mitUv.has(t.standort.einheit))];
+}
+
+/** Je Einheit mit wirksamer FBH ein FBH-Verteiler (H4); unberührte entfallen, wenn die FBH wegfällt. */
+export function fbhVerteilerAbleiten(z: AssistentZustand): AssistentZustand {
+  if (!z.automatik) return z;
+  const soll = new Set(unterverteilerVorschlaege(z).map((e) => e.schluessel).filter((s) => !z.fbhVerteilerAus.includes(s)));
+  const einheitDes = (t: ZBauteil) => ("einheit" in t.standort ? t.standort.einheit : "");
+  let neu = entferneBauteile(z, unterverteiler(z).filter((t) => t.auto && !soll.has(einheitDes(t))).map((t) => t.schluessel));
+  for (const e of soll) {
+    if (unterverteiler(neu).some((t) => einheitDes(t) === e)) continue;
+    let s: string;
+    [neu, s] = neuesBauteil(neu, { katalogId: K.verteiler, standort: { einheit: e }, menge: 1, status: "vorgeschlagen", versorgt: [e], auto: true, fbh: true });
+    if (neu.fbhWmz) neu = reduziereKern(neu, { typ: "unterverteilerWmz", verteiler: s, an: true });
+  }
+  return neu;
+}
+
+function gruppeAnlegen(z: AssistentZustand, verteiler: string, regel: ZGruppenRegel, bezeichnung: string): [AssistentZustand, string] {
+  const [s, z1] = neuerSchluessel(z);
+  const nummer = Math.max(0, ...z1.gruppen.filter((g) => g.verteiler === verteiler).map((g) => g.nummer)) + 1;
+  const art = GRUPPEN_ART_VON[regel.heizart];
+  const neu: AssistentZustand = { ...z1, gruppen: [...z1.gruppen, { schluessel: s, verteiler, nummer, art, bezeichnung, verbraucher: [], regel }] };
+  return [bestueckungSetzen(neu, s, art), s];
+}
+
+/** Je Heizart mit Verbrauchern eine Gruppe am Hauptverteiler (H3). */
+export function gruppenVorschlagen(z: AssistentZustand): AssistentZustand {
+  const arten = HEIZ_ARTEN.filter((a) => verbraucherDerArt(z, a).length > 0);
+  if (arten.length === 0) return z;
+  let [neu, v] = mitHauptverteiler(z);
+  if (!v) return neu;
+  for (const art of arten) [neu] = gruppeAnlegen(neu, v, { heizart: art }, HEIZ_NAME[art]);
+  return gruppenVerbraucherNachfuehren({ ...neu, gruppenVorgeschlagen: true });
+}
+
+/** Regel-Gruppen (nicht angefasst) erhalten ihre Verbraucher: Einheit-Regel vor Geschoss-Regel vor Rest-Gruppe. */
+export function gruppenVerbraucherNachfuehren(z: AssistentZustand): AssistentZustand {
+  const regelGruppen = z.gruppen.filter((g) => g.regel && !g.angefasst);
+  if (regelGruppen.length === 0) return z;
+  const fest = new Set(z.gruppen.filter((g) => !(g.regel && !g.angefasst)).flatMap((g) => g.verbraucher));
+  const zuteilung = new Map<string, string[]>(regelGruppen.map((g) => [g.schluessel, []]));
+  for (const art of HEIZ_ARTEN) for (const t of verbraucherDerArt(z, art)) {
+    if (fest.has(t.schluessel)) continue;
+    const einheit = einheitVon(z, t)?.schluessel;
+    const code = geschossVon(z, t);
+    const kand = regelGruppen.filter((g) => g.regel!.heizart === art);
+    const g = kand.find((x) => x.regel!.einheit !== undefined && x.regel!.einheit === einheit)
+      ?? kand.find((x) => x.regel!.einheit === undefined && code !== undefined && (x.regel!.geschosse?.includes(code) ?? false))
+      ?? kand.find((x) => x.regel!.einheit === undefined && x.regel!.geschosse === undefined);
+    if (g) zuteilung.get(g.schluessel)!.push(t.schluessel);
+  }
+  const gruppen = z.gruppen.map((g) => {
+    const v = zuteilung.get(g.schluessel);
+    return v && (v.length !== g.verbraucher.length || v.some((x, i) => x !== g.verbraucher[i])) ? { ...g, verbraucher: v } : g;
+  });
+  return versorgungNachfuehren({ ...z, gruppen });
+}
+
+/** FBH-Verteiler je speisender Gruppe (für den Satz «9 FBH-Verteiler an Gruppe …»). */
+export function fbhSpeisung(z: AssistentZustand): { gruppe: ZGruppe | null; anzahl: number }[] {
+  const m = new Map<ZGruppe | null, number>();
+  for (const t of unterverteiler(z)) { const g = gruppeVonVerbraucher(z, t.schluessel) ?? null; m.set(g, (m.get(g) ?? 0) + 1); }
+  return [...m].map(([gruppe, anzahl]) => ({ gruppe, anzahl }));
+}
+
+/** Nach jeder Aktion: Zentrale-Raum vorbelegen, FBH-Verteiler, einmaliger Gruppenvorschlag, Regel-Verbraucher. */
+function ableiten(z: AssistentZustand): AssistentZustand {
+  let neu = z;
+  if (!neu.zentraleRaum) {
+    const technik = neu.einheiten.filter((e) => e.art === "technik");
+    if (technik.length === 1) neu = { ...neu, zentraleRaum: technik[0].schluessel };
+  }
+  neu = fbhVerteilerAbleiten(neu);
+  if (neu.automatik && !neu.gruppenVorgeschlagen && neu.schritt >= 5 && neu.gruppen.length === 0) neu = gruppenVorschlagen(neu);
+  return gruppenVerbraucherNachfuehren(neu);
+}
+
 /** Verschiebt Zentralgeräte, Hauptverteiler und deren Zubehör in den Raum. */
 function zentraleVerschieben(z: AssistentZustand, raum: string): AssistentZustand {
   const h = hauptverteiler(z);
@@ -470,14 +564,22 @@ function abweichungMarkieren(z: AssistentZustand, a: Aktion): AssistentZustand {
       const { schluessel, platz } = e.vorlage;
       return vorlageSetzen(z, schluessel, (v) => ({ ...v, ausgelassen: [...v.ausgelassen, { geschoss: e.geschoss, platz }] }));
     }
+    case "verbraucher": {
+      const alt = gruppeVonVerbraucher(z, a.bauteil);
+      let n = z;
+      for (const s of [a.gruppe, alt?.schluessel]) if (s) n = gruppeSetzen(n, s, (g) => ({ ...g, angefasst: true }));
+      return ersetzeBauteil(n, a.bauteil, (t) => (t.auto ? { ...t, auto: false, status: "bestaetigt" } : t));
+    }
+    case "unterverteilerWmz":
+      return ersetzeBauteil(z, a.verteiler, (t) => (t.auto ? { ...t, auto: false, status: "bestaetigt" } : t));
     default: return z;
   }
 }
 
-/** Öffentlicher Reducer: Abweichung markieren, dann Kernaktion (Task 6 ergänzt die Ableitung). */
+/** Öffentlicher Reducer: Abweichung markieren, Kernaktion, dann Ableitung (FBH-Verteiler, Gruppen). */
 export function reduziere(z: AssistentZustand, a: Aktion): AssistentZustand {
   if (a.typ === "laden") return a.zustand;
-  return reduziereKern(abweichungMarkieren(z, a), a);
+  return ableiten(reduziereKern(abweichungMarkieren(z, a), a));
 }
 
 function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
@@ -667,10 +769,41 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
       return versorgungNachfuehren({ ...z, gruppen });
     }
     case "unterverteiler": {
-      const vorhanden = unterverteiler(z).filter((t) => "einheit" in t.standort && t.standort.einheit === a.einheit);
-      if (!a.an) return entferneBauteile(z, vorhanden.map((t) => t.schluessel));
-      if (vorhanden.length) return z;
-      return neuesBauteil(z, { katalogId: K.verteiler, standort: { einheit: a.einheit }, menge: 1, status: "bestaetigt", versorgt: [a.einheit], fbh: true })[0];
+      const aus = a.an ? z.fbhVerteilerAus.filter((s) => s !== a.einheit) : [...new Set([...z.fbhVerteilerAus, a.einheit])];
+      const z0 = { ...z, fbhVerteilerAus: aus };
+      const vorhanden = unterverteiler(z0).filter((t) => "einheit" in t.standort && t.standort.einheit === a.einheit);
+      if (!a.an) return entferneBauteile(z0, vorhanden.map((t) => t.schluessel));
+      if (vorhanden.length) return z0;
+      return neuesBauteil(z0, { katalogId: K.verteiler, standort: { einheit: a.einheit }, menge: 1, status: "bestaetigt", versorgt: [a.einheit], fbh: true })[0];
+    }
+    case "gruppenVorschlagen": return gruppenVorschlagen(z);
+    case "gruppeTeilen": {
+      const g = z.gruppen.find((x) => x.schluessel === a.gruppe);
+      if (!g?.regel || a.geschosse.length === 0) return z;
+      const art = g.regel.heizart;
+      const codes = [...a.geschosse].sort((x, y) => geschossRang(x) - geschossRang(y));
+      let neu: AssistentZustand = { ...z, gruppen: z.gruppen.map((x) => (x.regel?.heizart === art && x.regel.geschosse
+        ? { ...x, regel: { ...x.regel, geschosse: x.regel.geschosse.filter((c) => !codes.includes(c)) } } : x)) };
+      const titel = `${HEIZ_NAME[art]} ${codes.length > 3 ? `${codes[0]}–${codes[codes.length - 1]}` : codes.join(", ")}`;
+      [neu] = gruppeAnlegen(neu, g.verteiler, { heizart: art, geschosse: codes }, titel);
+      return neu;
+    }
+    case "sondergruppe": {
+      const e = z.einheiten.find((x) => x.schluessel === a.einheit);
+      const [z1, v] = mitHauptverteiler(z);
+      if (!e || !v) return z1;
+      return gruppeAnlegen(z1, v, { heizart: a.heizart, einheit: a.einheit }, `${HEIZ_NAME[a.heizart]} ${e.bezeichnung}`)[0];
+    }
+    case "gruppeFuerArt": {
+      const [z1, v] = mitHauptverteiler(z);
+      return v ? gruppeAnlegen(z1, v, { heizart: a.heizart }, HEIZ_NAME[a.heizart])[0] : z1;
+    }
+    case "gruppeEntfernen":
+      return entferneBauteile({ ...z, gruppen: z.gruppen.filter((g) => g.schluessel !== a.gruppe) }, zubehoerVon(z, a.gruppe).map((t) => t.schluessel));
+    case "fbhWmzAlle": {
+      let neu: AssistentZustand = { ...z, fbhWmz: a.an };
+      for (const t of unterverteiler(neu)) neu = reduziereKern(neu, { typ: "unterverteilerWmz", verteiler: t.schluessel, an: a.an });
+      return neu;
     }
     case "unterverteilerWmz": {
       const vorhanden = z.bauteile.filter((t) => t.katalogId === K.wmz && t.ort && "vorBauteil" in t.ort && t.ort.vorBauteil === a.verteiler);
