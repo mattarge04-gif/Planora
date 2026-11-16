@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { K } from "./bestueckung";
+import { zuBeschreibungMitPositionen } from "./beschreibung";
+import { vorlagenEinlesen, vorlagenZurEingabe } from "./vorlagen";
 import { abweichungen, leererZustand, reduziere, vorlageVonGeschoss, type Aktion, type AssistentZustand } from "./zustand";
 
 function haus(...aktionen: Aktion[]): AssistentZustand {
@@ -101,5 +103,43 @@ describe("Regelgeschoss", () => {
     z = reduziere(z, { typ: "vorlageZuweisen", vorlage: v2, geschoss: "OG5", an: true });
     expect(z.vorlagen[0].geschosse).not.toContain("OG5");
     expect(vorlageVonGeschoss(z, "OG5")?.name).toBe("Attika");
+  });
+});
+
+describe("Vorlagen ⇄ API", () => {
+  it("Eingabe: Geschoss-IDs, Einheit per Index (neu) oder ID (gespeichert)", () => {
+    let z = regelhaus();
+    z = { ...z, einheiten: z.einheiten.map((e, i) => (i === 0 ? { ...e, id: "00000000-0000-4000-8000-000000000777" } : e)) };
+    const { positionen } = zuBeschreibungMitPositionen(z);
+    const v = vorlagenZurEingabe(z, positionen)!;
+    const og1 = z.gebaeude.geschosse.find((g) => g.code === "OG1")!.id;
+    expect(v.vorlagen[0].geschosse[0]).toBe(og1);
+    expect(v.zuordnung[0].einheit).toEqual({ einheitId: "00000000-0000-4000-8000-000000000777" });
+    expect(v.zuordnung[1].einheit).toEqual({ einheitIndex: positionen.einheiten.indexOf(z.einheiten[1].schluessel) });
+    expect(v.zuordnung).toHaveLength(20);
+  });
+  it("ohne Vorlagen null", () => {
+    expect(vorlagenZurEingabe(haus(), zuBeschreibungMitPositionen(haus()).positionen)).toBeNull();
+  });
+  it("Einlesen: gespeicherte IDs → Schlüssel; Veraltetes wird abgelöst", () => {
+    let z = regelhaus();
+    z = { ...z, einheiten: z.einheiten.map((e, i) => ({ ...e, id: `00000000-0000-4000-8000-${String(500 + i).padStart(12, "0")}`, schluessel: `00000000-0000-4000-8000-${String(500 + i).padStart(12, "0")}` })) };
+    const gespeichert = {
+      version: 1,
+      vorlagen: [{ ...z.vorlagen[0], geschosse: [...z.vorlagen[0].geschosse.map((c) => z.gebaeude.geschosse.find((g) => g.code === c)!.id), "00000000-0000-4000-8000-000000000999"], ausgelassen: [] }],
+      zuordnung: { [z.einheiten[0].id!]: { vorlage: z.vorlagen[0].schluessel, platz: z.vorlagen[0].plaetze[0].schluessel, abweichend: ["bezeichnung"] },
+        "00000000-0000-4000-8000-000000000888": { vorlage: z.vorlagen[0].schluessel, platz: z.vorlagen[0].plaetze[0].schluessel, abweichend: [] } },
+    };
+    const ohne = { ...z, vorlagen: [], einheiten: z.einheiten.map(({ vorlage: _v, abweichend: _a, ...e }) => e) };
+    const r = vorlagenEinlesen(ohne, gespeichert);
+    expect(r.abgeloest).toBe(true);
+    expect(r.zustand.vorlagen[0].geschosse).toEqual(["OG1", "OG2", "OG3", "OG4", "OG5"]);
+    expect(r.zustand.einheiten[0].vorlage?.schluessel).toBe(z.vorlagen[0].schluessel);
+    expect(r.zustand.einheiten[0].abweichend).toEqual(["bezeichnung"]);
+  });
+  it("Einlesen: unbekannte Version oder Unsinn → unverändert, nicht abgelöst bei null", () => {
+    const z = haus();
+    expect(vorlagenEinlesen(z, null)).toEqual({ zustand: z, abgeloest: false });
+    expect(vorlagenEinlesen(z, { version: 7 }).abgeloest).toBe(true);
   });
 });

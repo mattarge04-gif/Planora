@@ -6,6 +6,7 @@ import { Szene3 } from "../szene3/Szene3";
 import type { Freiraum } from "../szene3/kamera";
 import type { GebaeudeEintrag, Huelle, KatalogEintrag, Welt } from "../typen";
 import { Marke } from "../ui/Kopfzeile";
+import { vorlagenZurEingabe } from "../assistent/vorlagen";
 import { grundformAusWelt, zuBeschreibung, zuBeschreibungMitPositionen } from "../assistent/beschreibung";
 import { Autosave, entwurfDaten, httpApi, konfliktLaden, ladeAssistent, type AssistentApi, type SpeicherStatus } from "../assistent/sitzung";
 import { LETZTER_SCHRITT, SCHRITTE, leererZustand, reduziere, schrittErreichbar, type AssistentZustand, type SchrittNr } from "../assistent/zustand";
@@ -121,6 +122,7 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
       if (!aktiv) return;
       dispatch({ typ: "laden", zustand: g.zustand });
       if (g.ausEntwurf) setMeldung("Dein Entwurf ist wieder geöffnet.");
+      else if (g.abgeloest) setMeldung("Ein Teil der Regelgeschoss-Zuordnung passte nicht mehr zum Gebäude und wurde gelöst.");
       autosaveStarten(g.entwurfStand, g.zustand);
       setBereit(true);
       api.ladeWelt(gebaeudeId).then((w) => {
@@ -230,7 +232,8 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
     setArbeitet(true); setFehler(null);
     try {
       autosave.current?.beenden();
-      await api.uebernehmen(id, zuBeschreibung(z));
+      const { beschreibung, positionen } = zuBeschreibungMitPositionen(z);
+      await api.uebernehmen(id, beschreibung, vorlagenZurEingabe(z, positionen));
       try { await api.loescheEntwurf(id); } catch { /* Entwurf bleibt liegen; beim nächsten Öffnen überschreibbar */ }
       onFertig(id, z.gebaeude.name || gebaeudeName || "Gebäude");
     } catch (e) {

@@ -2,6 +2,7 @@ import { ApiFehler, ersetzeJson, holeJson, loescheJson, sendeJson } from "../api
 import type { BeschreibungEingabe, Huelle, Katalog, Welt } from "../typen";
 import { ausBeschreibung, type GebaeudeKopf } from "./beschreibung";
 import type { AssistentZustand } from "./zustand";
+import { vorlagenEinlesen, type VorlagenEingabe } from "./vorlagen";
 
 /** Server-Schnittstelle des Assistenten (für Tests austauschbar). */
 export interface AssistentApi {
@@ -9,9 +10,10 @@ export interface AssistentApi {
   speichereEntwurf(id: string, stand: number, daten: unknown): Promise<number>;
   loescheEntwurf(id: string): Promise<void>;
   ladeBeschreibung(id: string): Promise<BeschreibungEingabe>;
+  ladeVorlagen(id: string): Promise<unknown | null>;
   ladeWelt(id: string): Promise<Welt>;
   vorschau(id: string, b: BeschreibungEingabe): Promise<Welt>;
-  uebernehmen(id: string, b: BeschreibungEingabe): Promise<BeschreibungEingabe>;
+  uebernehmen(id: string, b: BeschreibungEingabe, vorlagen: VorlagenEingabe | null): Promise<BeschreibungEingabe>;
   legeAn(liegenschaftId: string, h: Huelle): Promise<string>;
   katalog(): Promise<Katalog>;
 }
@@ -28,7 +30,11 @@ export const httpApi: AssistentApi = {
   ladeBeschreibung: (id) => holeJson<BeschreibungEingabe>(`/api/struktur/gebaeude/${id}/beschreibung`),
   ladeWelt: (id) => holeJson<Welt>(`/api/szene/gebaeude/${id}/welt`),
   vorschau: (id, b) => sendeJson<Welt>(`/api/szene/gebaeude/${id}/vorschau`, b),
-  uebernehmen: (id, b) => ersetzeJson<BeschreibungEingabe>(`/api/struktur/gebaeude/${id}/beschreibung`, b),
+  async ladeVorlagen(id) {
+    try { return await holeJson<unknown>(`/api/struktur/gebaeude/${id}/vorlagen`); }
+    catch (e) { if (e instanceof ApiFehler && e.status === 404) return null; throw e; }
+  },
+  uebernehmen: (id, b, vorlagen) => ersetzeJson<BeschreibungEingabe>(`/api/struktur/gebaeude/${id}/beschreibung`, vorlagen ? { ...b, vorlagen } : b),
   async legeAn(lid, h) { return (await sendeJson<{ id: string }>(`/api/struktur/liegenschaften/${lid}/gebaeude`, h)).id; },
   katalog: () => holeJson<Katalog>("/api/katalog/v2"),
 };
@@ -63,17 +69,19 @@ export function entwurfDaten(z: AssistentZustand): AssistentZustand {
   return { ...z, gebaeude: { ...z.gebaeude, name: "", grundform: "quader", liegenschaftId: null } };
 }
 
-export interface Geladen { zustand: AssistentZustand; entwurfStand: number; ausEntwurf: boolean }
+export interface Geladen { zustand: AssistentZustand; entwurfStand: number; ausEntwurf: boolean; abgeloest: boolean }
 
 /** Laden: zuerst der Entwurf, sonst die gespeicherte Beschreibung (Spec §7). */
 export async function ladeAssistent(api: AssistentApi, gebaeudeId: string, kopf: GebaeudeKopf): Promise<Geladen> {
   const entwurf = await api.ladeEntwurf(gebaeudeId);
   const ausEntwurf = entwurf ? entwurfLesen(entwurf.daten, gebaeudeId) : null;
   if (entwurf && ausEntwurf) {
-    return { zustand: { ...ausEntwurf, gebaeude: { ...ausEntwurf.gebaeude, name: kopf.name || ausEntwurf.gebaeude.name } }, entwurfStand: entwurf.stand, ausEntwurf: true };
+    return { zustand: { ...ausEntwurf, gebaeude: { ...ausEntwurf.gebaeude, name: kopf.name || ausEntwurf.gebaeude.name } }, entwurfStand: entwurf.stand, ausEntwurf: true, abgeloest: false };
   }
   const b = await api.ladeBeschreibung(gebaeudeId);
-  return { zustand: ausBeschreibung(b, kopf), entwurfStand: entwurf?.stand ?? 0, ausEntwurf: false };
+  const v = await api.ladeVorlagen(gebaeudeId).catch(() => null);
+  const r = vorlagenEinlesen(ausBeschreibung(b, kopf), v);
+  return { zustand: r.zustand, entwurfStand: entwurf?.stand ?? 0, ausEntwurf: false, abgeloest: r.abgeloest };
 }
 
 export const KONFLIKT_MELDUNG = "Der Entwurf wurde inzwischen an anderer Stelle geändert. Der neueste Stand ist geladen.";

@@ -14,9 +14,18 @@ const BESCHREIBUNG: BeschreibungEingabe = {
 };
 function fakeApi(over: Partial<AssistentApi> = {}): AssistentApi {
   const nie = () => Promise.reject(new Error("nicht erwartet"));
-  return { ladeEntwurf: async () => null, speichereEntwurf: nie, loescheEntwurf: nie, ladeBeschreibung: async () => BESCHREIBUNG,
+  return { ladeEntwurf: async () => null, speichereEntwurf: nie, loescheEntwurf: nie, ladeBeschreibung: async () => BESCHREIBUNG, ladeVorlagen: async () => null,
     ladeWelt: nie, vorschau: nie, uebernehmen: nie, legeAn: nie, katalog: nie, ...over };
 }
+
+describe("Vorlagen laden", () => {
+  it("lädt Vorlagen zur Beschreibung, Fehler beim Laden der Vorlagen sind kein Abbruch", async () => {
+    const api = fakeApi({ ladeEntwurf: async () => null, ladeVorlagen: async () => { throw new Error("weg"); } });
+    const r = await ladeAssistent(api, ID, {});
+    expect(r.abgeloest).toBe(false);
+    expect(r.zustand.vorlagen).toEqual([]);
+  });
+});
 
 describe("Navigation", () => {
   it("vor und zurück innerhalb 1–7", () => {
