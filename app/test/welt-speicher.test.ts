@@ -15,7 +15,7 @@ async function tx<T>(f: (c: pg.PoolClient) => Promise<T>): Promise<T> {
   try { await c.query("begin"); const r = await f(c); await c.query("commit"); return r; }
   catch (e) { await c.query("rollback"); throw e; } finally { c.release(); }
 }
-const schreibe = (g: string, b: Beschreibung) => tx((c) => schreibeBeschreibung(c, g, b, REGELWERK_V1, KATALOG_V1));
+const schreibe = (g: string, b: Beschreibung) => tx((c) => schreibeBeschreibung(c, g, b, REGELWERK_V1, KATALOG_V1)).then((r) => r.zaehler);
 const lade = async (g: string) => (await tx((c) => ladeBeschreibung(c, g)))!;
 async function neuesGebaeude() {
   const g = await tx((c) => legeGebaeudeAn(c, L1, HUELLE, REGELWERK_V1));

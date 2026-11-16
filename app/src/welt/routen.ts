@@ -116,7 +116,7 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
         return await inTransaktion(async (c) => {
           const huelle = await ladeHuelle(c, req.params.id);
           const version = huelle?.regelwerkVersion ?? 1;
-          const zaehler = await schreibeBeschreibung(c, req.params.id, kanonischeBeschreibung(req.body), regelwerkFuer(version), version === 1 ? KATALOG_V1 : KATALOG_V2);
+          const { zaehler } = await schreibeBeschreibung(c, req.params.id, kanonischeBeschreibung(req.body), regelwerkFuer(version), version === 1 ? KATALOG_V1 : KATALOG_V2);
           await auditEreignis(c, k.auditId, "gebaeude.beschreibung", { gebaeudeId: req.params.id, ...zaehler });
           return ladeBeschreibung(c, req.params.id);
         });
