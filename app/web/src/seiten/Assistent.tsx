@@ -8,7 +8,7 @@ import type { GebaeudeEintrag, Huelle, KatalogEintrag, Welt } from "../typen";
 import { Marke } from "../ui/Kopfzeile";
 import { grundformAusWelt, zuBeschreibung, zuBeschreibungMitPositionen } from "../assistent/beschreibung";
 import { Autosave, entwurfDaten, httpApi, konfliktLaden, ladeAssistent, type AssistentApi, type SpeicherStatus } from "../assistent/sitzung";
-import { SCHRITTE, leererZustand, reduziere, schrittErreichbar, type AssistentZustand, type SchrittNr } from "../assistent/zustand";
+import { LETZTER_SCHRITT, SCHRITTE, leererZustand, reduziere, schrittErreichbar, type AssistentZustand, type SchrittNr } from "../assistent/zustand";
 import type { AssistentRoute } from "../assistent/route";
 import { SCHRITT_INHALT } from "../assistent/schritte";
 import { tasteBehandeln } from "../assistent/tastatur";
@@ -298,7 +298,7 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
         </nav>
 
         <section className="as-formular ui-glas" aria-labelledby="as-titel" onKeyDown={(e) => {
-          const kannWeiter = z.schritt < 8 && bereit && !arbeitet;
+          const kannWeiter = z.schritt < LETZTER_SCHRITT && bereit && !arbeitet;
           if (tasteBehandeln(e, e.target, () => { if (kannWeiter) void weiter(); })) e.preventDefault();
         }}>
           <header className="as-formular-kopf">
@@ -317,7 +317,7 @@ export function Assistent({ route, api = httpApi, onAngelegt, onFertig, onSchlie
             <div className="as-fuss-knoepfe">
               <button type="button" className="as-knopf" onClick={() => dispatch({ typ: "zurueck" })} disabled={z.schritt === 1 || arbeitet}>
                 <ArrowLeft size={16} strokeWidth={1.75} aria-hidden />Zurück</button>
-              {z.schritt < 8
+              {z.schritt < LETZTER_SCHRITT
                 ? <button type="button" className="as-knopf as-knopf-primaer" onClick={weiter} disabled={!bereit || arbeitet}
                   aria-keyshortcuts="Control+Enter" title="Ctrl+Enter">
                   {z.schritt === 1 && !z.gebaeude.id ? "Gebäude anlegen" : "Weiter"}<ArrowRight size={16} strokeWidth={1.75} aria-hidden /></button>

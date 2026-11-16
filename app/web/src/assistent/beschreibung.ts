@@ -57,12 +57,14 @@ export function ausBeschreibung(b: BeschreibungEingabe, kopf: GebaeudeKopf = {})
     ?? bauteile.find((t) => t.katalogId === K.speicher && "einheit" in t.standort);
   const zentraleRaum = ersterErzeuger && "einheit" in ersterErzeuger.standort
     ? ersterErzeuger.standort.einheit : einheiten.find((e) => e.art === "technik")?.schluessel ?? null;
+  const automatik = zGruppen.length === 0 && !bauteile.some((t) => t.katalogId === K.verteiler);
   return {
-    version: 1, schritt: 1, huelleBearbeitbar: false,
+    version: 2, schritt: 1, huelleBearbeitbar: false,
     gebaeude: { id: b.gebaeudeId ?? null, liegenschaftId: kopf.liegenschaftId ?? null, name: kopf.name ?? "", grundform: kopf.grundform ?? "quader",
       stand: b.stand, geschosse: geschosse.map((g) => ({ id: g.id, code: g.code })) },
-    heizungStandard: { ...b.heizungStandard },
-    einheiten, bauteile, gruppen: zGruppen, zentraleRaum, zaehler: 0,
+    heizungStandard: { ...b.heizungStandard }, standardGeraet: {},
+    einheiten, bauteile, gruppen: zGruppen, vorlagen: [], zentraleRaum,
+    automatik, gruppenVorgeschlagen: !automatik, fbhWmz: false, fbhVerteilerAus: [], zaehler: 0,
   };
 }
 

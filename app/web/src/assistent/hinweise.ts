@@ -38,10 +38,10 @@ export function pruefHinweise(z: AssistentZustand, welt: Welt | null, positionen
     h.push({ code: "ohne_gruppe", text: `${bauteilText(z, t, katalog)} gehört zu keiner Gruppe.`, schritt: 5, schluessel: t.schluessel });
   }
   for (const t of unterverteiler(z)) if (!gruppeVonVerbraucher(z, t.schluessel))
-    h.push({ code: "ohne_gruppe", text: `Unterverteiler ${einheitVon(z, t)?.bezeichnung ?? ""} wird von keiner Gruppe gespeist.`.replace("  ", " "), schritt: 6, schluessel: t.schluessel });
+    h.push({ code: "ohne_gruppe", text: `Unterverteiler ${einheitVon(z, t)?.bezeichnung ?? ""} wird von keiner Gruppe gespeist.`.replace("  ", " "), schritt: 5, schluessel: t.schluessel });
   const haupt = hauptverteiler(z);
   for (const g of z.gruppen) if (g.verbraucher.length === 0)
-    h.push({ code: "gruppe_leer", text: `Gruppe «${g.bezeichnung || g.nummer}» hat keine Verbraucher.`, schritt: g.verteiler === haupt?.schluessel ? 5 : 6, schluessel: g.schluessel });
+    h.push({ code: "gruppe_leer", text: `Gruppe «${g.bezeichnung || g.nummer}» hat keine Verbraucher.`, schritt: g.verteiler === haupt?.schluessel ? 5 : 5, schluessel: g.schluessel });
 
   // Hinweise der Vorschau-Welt, die nicht schon oben stehen
   const eigene = new Set(h.map((x) => x.code));

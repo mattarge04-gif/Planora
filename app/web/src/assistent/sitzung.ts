@@ -33,12 +33,25 @@ export const httpApi: AssistentApi = {
   katalog: () => holeJson<Katalog>("/api/katalog/v2"),
 };
 
-/** Entwurfsinhalt prüfen: nur Zustände dieser Version und dieses Gebäudes übernehmen. */
-export function entwurfLesen(daten: unknown, gebaeudeId: string): AssistentZustand | null {
+const SCHRITT_V1: Record<number, AssistentZustand["schritt"]> = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 5, 7: 6, 8: 7 };
+
+/** Entwurfsinhalt auf Version 2 bringen (Entscheid 9). Unbekannte Inhalte → null. */
+export function zustandMigrieren(daten: unknown): AssistentZustand | null {
   if (!daten || typeof daten !== "object") return null;
-  const z = daten as Partial<AssistentZustand>;
-  if (z.version !== 1 || !z.gebaeude || z.gebaeude.id !== gebaeudeId || !Array.isArray(z.einheiten) || !Array.isArray(z.bauteile)) return null;
-  return { ...(z as AssistentZustand), huelleBearbeitbar: false };
+  const z = daten as Partial<AssistentZustand> & { version?: number; schritt?: number };
+  if (z.version === 2) return z as AssistentZustand;
+  if (z.version !== 1) return null;
+  return {
+    ...(z as unknown as AssistentZustand), version: 2, schritt: SCHRITT_V1[z.schritt ?? 1] ?? 1,
+    standardGeraet: {}, vorlagen: [], automatik: false, gruppenVorgeschlagen: true, fbhWmz: false, fbhVerteilerAus: [],
+  };
+}
+
+/** Entwurfsinhalt prüfen: nur Zustände dieses Gebäudes übernehmen (Version 1 wird migriert). */
+export function entwurfLesen(daten: unknown, gebaeudeId: string): AssistentZustand | null {
+  const z = zustandMigrieren(daten);
+  if (!z || !z.gebaeude || z.gebaeude.id !== gebaeudeId || !Array.isArray(z.einheiten) || !Array.isArray(z.bauteile)) return null;
+  return { ...z, vorlagen: z.vorlagen ?? [], huelleBearbeitbar: false };
 }
 
 /**

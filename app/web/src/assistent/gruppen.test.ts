@@ -123,9 +123,9 @@ describe("Schritt 8 – Hinweise", () => {
     const { positionen } = zuBeschreibungMitPositionen(z);
     const welt = { hinweise: [{ code: "ueberlappung", bezug: "neu-e-1" }, { code: "ohne_gruppe", bezug: "x" }], symbole: [] } as unknown as Welt;
     const h = pruefHinweise(z, welt, positionen);
-    expect(h.filter((x) => x.code === "ohne_gruppe").map((x) => x.text)).toEqual(["Heizkörper, Büro 1 gehört zu keiner Gruppe.", "Heizkörper, Büro 2 gehört zu keiner Gruppe."]);
+    expect(h.filter((x) => x.code === "ohne_gruppe").map((x) => x.text)).toEqual(["Heizkörper, Büro 0.01 gehört zu keiner Gruppe.", "Heizkörper, Büro 0.02 gehört zu keiner Gruppe."]);
     expect(h.filter((x) => x.code === "gruppe_leer").length).toBe(2);
-    expect(h.find((x) => x.code === "ueberlappung")).toMatchObject({ text: "«Büro 2» überlappt mit einer manuell platzierten Einheit.", schritt: 2 });
+    expect(h.find((x) => x.code === "ueberlappung")).toMatchObject({ text: "«Büro 0.02» überlappt mit einer manuell platzierten Einheit.", schritt: 2 });
   });
   it("vollständige Beschreibung ohne Hinweise", () => {
     let z = basis();

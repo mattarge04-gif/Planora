@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiFehler } from "../api";
-import { Autosave, KONFLIKT_MELDUNG, konfliktLaden, ladeAssistent, type AssistentApi, type SpeicherStatus } from "./sitzung";
+import { Autosave, KONFLIKT_MELDUNG, konfliktLaden, ladeAssistent, zustandMigrieren, type AssistentApi, type SpeicherStatus } from "./sitzung";
 import { routeAusPfad, pfadFuer } from "./route";
 import { leererZustand, reduziere, type AssistentZustand } from "./zustand";
 import type { BeschreibungEingabe } from "../typen";
@@ -19,14 +19,14 @@ function fakeApi(over: Partial<AssistentApi> = {}): AssistentApi {
 }
 
 describe("Navigation", () => {
-  it("vor und zurück innerhalb 1–8", () => {
+  it("vor und zurück innerhalb 1–7", () => {
     let z: AssistentZustand = { ...leererZustand(), gebaeude: { ...leererZustand().gebaeude, id: ID } };
     z = reduziere(z, { typ: "zurueck" });
     expect(z.schritt).toBe(1);
     for (let i = 0; i < 10; i++) z = reduziere(z, { typ: "weiter" });
-    expect(z.schritt).toBe(8);
-    z = reduziere(z, { typ: "zurueck" });
     expect(z.schritt).toBe(7);
+    z = reduziere(z, { typ: "zurueck" });
+    expect(z.schritt).toBe(6);
     z = reduziere(z, { typ: "schritt", nr: 3 });
     expect(z.schritt).toBe(3);
   });
@@ -139,5 +139,23 @@ describe("Autosave", () => {
     await vi.advanceTimersByTimeAsync(1500);
     expect(speichern).toHaveBeenCalledTimes(2);
     expect(speichern).toHaveBeenLastCalledWith(9, { n: 3 });
+  });
+});
+
+
+describe("Entwurf Version 1 → 2", () => {
+  it("verschiebt Schritte und setzt Automatik aus", () => {
+    const alt = { version: 1, schritt: 8, gebaeude: { id: ID }, einheiten: [], bauteile: [], gruppen: [] };
+    const z = zustandMigrieren(alt)!;
+    expect(z.version).toBe(2);
+    expect(z.schritt).toBe(7);
+    expect(z.automatik).toBe(false);
+    expect(z.vorlagen).toEqual([]);
+    expect(zustandMigrieren({ ...alt, schritt: 6 })!.schritt).toBe(5);
+    expect(zustandMigrieren({ ...alt, schritt: 7 })!.schritt).toBe(6);
+  });
+  it("lehnt unbekannte Versionen ab", () => {
+    expect(zustandMigrieren({ version: 9 })).toBeNull();
+    expect(zustandMigrieren(null)).toBeNull();
   });
 });

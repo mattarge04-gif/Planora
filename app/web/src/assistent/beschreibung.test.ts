@@ -61,13 +61,13 @@ describe("Rundlauf Beschreibung ↔ Zustand", () => {
     expect(ausBeschreibung(zuBeschreibung(z1))).toEqual(z1);
   });
 
-  it("weiss nicht → status vorgeschlagen, menge null", () => {
+  it("weiss nicht → menge null, Status folgt der Heizart (ja → bestätigt)", () => {
     let z = neuesGebaeude({ typ: "einheitNeu", geschoss: "EG", art: "buero" });
     const hk = z.bauteile.find((t) => t.katalogId === K.hk)!;
     z = reduziere(z, { typ: "abgabeAendern", schluessel: hk.schluessel, menge: 6 });
     expect(zuBeschreibung(z).bauteile[0]).toMatchObject({ menge: 6, status: "bestaetigt" });
     z = reduziere(z, { typ: "abgabeWeissNicht", schluessel: hk.schluessel });
-    expect(zuBeschreibung(z).bauteile[0]).toMatchObject({ katalogId: K.hk, menge: null, status: "vorgeschlagen" });
+    expect(zuBeschreibung(z).bauteile[0]).toMatchObject({ katalogId: K.hk, menge: null, status: "bestaetigt" });
   });
 
   it("vorgeschlagene Bestückung → vorgeschlagen, geänderte → bestätigt", () => {

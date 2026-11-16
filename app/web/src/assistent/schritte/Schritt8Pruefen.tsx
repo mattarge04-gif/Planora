@@ -18,8 +18,8 @@ export function Schritt8Pruefen({ z, dispatch, katalog, welt, vorschauFehler, po
     ["Abgaben", `${abgaben.length} Positionen · ${bekannt} Stück${offen ? ` · ${offen} ohne Menge` : ""}`, 3],
     ["Zentrale", [...erzeuger(z).map((t) => teilName(t.katalogId, katalog)), ...(z.bauteile.some((t) => t.katalogId === K.speicher) ? ["Speicher"] : [])].join(", ") || "–", 4],
     ["Gruppen", gruppen.length ? gruppen.map((g) => g.bezeichnung || `Gruppe ${g.nummer}`).join(", ") : "–", 5],
-    ["Unterverteiler", String(unterverteiler(z).length), 6],
-    ["Weitere Teile", String(weitereTeile(z).length), 7],
+    ["FBH-Verteiler", String(unterverteiler(z).length), 5],
+    ["Weitere Teile", String(weitereTeile(z).length), 6],
   ];
   return <>
     <Abschnitt titel="Zusammenfassung">

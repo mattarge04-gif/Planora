@@ -22,6 +22,7 @@ export interface SchrittInhaltProps extends SchrittProps {
   arbeitet: boolean;
 }
 
+function Schritt5Vorlaeufig(p: SchrittInhaltProps) { return <><Schritt5Gruppen {...p} /><Schritt6Unterverteiler {...p} /></>; }
 export const SCHRITT_INHALT: Record<SchrittNr, ComponentType<SchrittInhaltProps>> = {
-  1: Schritt1Gebaeude, 2: Schritt2Einheiten, 3: Schritt3Abgaben, 4: Schritt4Zentrale, 5: Schritt5Gruppen, 6: Schritt6Unterverteiler, 7: Schritt7Teile, 8: Schritt8Pruefen,
+  1: Schritt1Gebaeude, 2: Schritt2Einheiten, 3: Schritt3Abgaben, 4: Schritt4Zentrale, 5: Schritt5Vorlaeufig, 6: Schritt7Teile, 7: Schritt8Pruefen,
 };

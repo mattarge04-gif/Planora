@@ -36,12 +36,12 @@ describe("Schritt 1 – Geschosse", () => {
 });
 
 describe("Schritt 2 – Einheiten", () => {
-  it("«+3 Büros» erzeugt drei Einheiten «Büro 1–3»", () => {
+  it("«+3 Büros» erzeugt drei Einheiten «Büro 0.01–0.03»", () => {
     const drei = SCHNELL.find((s) => s.text === "3 Büros")!;
     let z = angelegt(0, 1, schnellAktion("EG", drei));
-    expect(z.einheiten.map((e) => [e.geschoss, e.bezeichnung, e.art])).toEqual([["EG", "Büro 1", "buero"], ["EG", "Büro 2", "buero"], ["EG", "Büro 3", "buero"]]);
+    expect(z.einheiten.map((e) => [e.geschoss, e.bezeichnung, e.art])).toEqual([["EG", "Büro 0.01", "buero"], ["EG", "Büro 0.02", "buero"], ["EG", "Büro 0.03", "buero"]]);
     z = reduziere(z, schnellAktion("OG1", drei));
-    expect(z.einheiten.slice(3).map((e) => e.bezeichnung)).toEqual(["Büro 4", "Büro 5", "Büro 6"]);
+    expect(z.einheiten.slice(3).map((e) => e.bezeichnung)).toEqual(["Büro 1.01", "Büro 1.02", "Büro 1.03"]);
     expect(new Set(z.einheiten.map((e) => e.schluessel)).size).toBe(6);
   });
   it("Einheit entfernen entfernt ihre Bauteile", () => {

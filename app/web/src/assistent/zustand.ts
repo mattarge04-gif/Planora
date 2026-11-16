@@ -6,23 +6,30 @@ import { BESTUECKUNG_TEILE, ERZEUGER, K, bestueckungVorschlag } from "./bestueck
  * Schlüsseln statt Indizes: bestehende Elemente tragen ihre ID als Schlüssel, neue einen lokalen Schlüssel.
  * Der Zustand ist zugleich der Inhalt des Entwurfs (Autosave).
  */
-export type SchrittNr = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type SchrittNr = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export const SCHRITTE: readonly { nr: SchrittNr; titel: string; kurz: string }[] = [
   { nr: 1, titel: "Gebäude", kurz: "Name, Form und Geschosse" },
-  { nr: 2, titel: "Einheiten", kurz: "Nutzungen je Geschoss" },
-  { nr: 3, titel: "Abgaben", kurz: "Heizkörper, Fussbodenheizung, TABS" },
+  { nr: 2, titel: "Geschosse & Einheiten", kurz: "Regelgeschosse und Nutzungen" },
+  { nr: 3, titel: "Heizung", kurz: "Standard, Hersteller und Ausnahmen" },
   { nr: 4, titel: "Zentrale", kurz: "Erzeuger, Speicher und Raum" },
-  { nr: 5, titel: "Hauptverteiler", kurz: "Heizgruppen und Verbraucher" },
-  { nr: 6, titel: "Unterverteiler", kurz: "FBH-Verteiler je Einheit" },
-  { nr: 7, titel: "Weitere Teile", kurz: "Teile an anderem Ort" },
-  { nr: 8, titel: "Prüfen", kurz: "Zusammenfassung und Übernahme" },
+  { nr: 5, titel: "Gruppen & FBH-Verteiler", kurz: "Heizgruppen und Verteiler" },
+  { nr: 6, titel: "Weitere Teile", kurz: "Teile an anderem Ort" },
+  { nr: 7, titel: "Prüfen", kurz: "Zusammenfassung und Übernahme" },
 ];
+export const LETZTER_SCHRITT: SchrittNr = 7;
+
+export type VorlageFeld = "art" | "bezeichnung" | "ausnahme" | "mengen";
+export interface ZPlatz { schluessel: string; art: string; ausnahme: Partial<Heizung>; mengen: Partial<Record<HeizArt, number>> }
+/** Regelgeschoss: Plätze werden in jedem zugewiesenen Geschoss (Code) als Einheit ausgerollt. */
+export interface ZVorlage { schluessel: string; name: string; plaetze: ZPlatz[]; geschosse: string[]; ausgelassen: { geschoss: string; platz: string }[] }
 
 export interface ZGeschoss { id?: string; code: string }
 export interface ZEinheit {
   schluessel: string; id?: string; geschoss: string; // Geschoss-Code
   bezeichnung: string; art: string; flaecheM2: number | null; layoutManuell?: Rechteck | null;
   ausnahme: Partial<Heizung>;
+  /** Herkunft aus einem Regelgeschoss und die Felder, die der Kunde hier abweichend gesetzt hat. */
+  vorlage?: { schluessel: string; platz: string }; abweichend?: VorlageFeld[];
 }
 export type ZStandort = { einheit: string } | { geschoss: string };
 export type ZOrt = { gruppe: string } | { vorBauteil: string } | null;
@@ -30,32 +37,49 @@ export interface ZBauteil {
   schluessel: string; id?: string; katalogId: string; standort: ZStandort;
   menge: number | null; status: BauteilStatus; hersteller: string | null; typ: string | null; baujahr: number | null;
   positionManuell: Punkt | null; versorgt: string[]; ort: ZOrt;
+  /** Automatisch erzeugt und vom Kunden nicht angefasst (H6: bleibt «vorgeschlagen»). */
+  auto?: boolean;
+  /** Vom Assistenten angelegter FBH-Verteiler (nie Hauptverteiler). */
+  fbh?: boolean;
 }
+export interface ZGruppenRegel { heizart: HeizArt; geschosse?: string[]; einheit?: string }
 export interface ZGruppe {
   schluessel: string; id?: string; verteiler: string; nummer: number; art: GruppenArt; bezeichnung: string; verbraucher: string[];
+  /** Vorgeschlagene Gruppe: Verbraucher werden nach Regel zugeordnet, bis der Kunde einzelne umhängt (`angefasst`). */
+  regel?: ZGruppenRegel; angefasst?: boolean;
 }
 export interface AssistentZustand {
-  version: 1;
+  version: 2;
   schritt: SchrittNr;
   /** Schritt 1 nur mit Recht `huelle.verwalten` und solange das Gebäude noch nicht angelegt ist. */
   huelleBearbeitbar: boolean;
   gebaeude: { id: string | null; liegenschaftId: string | null; name: string; grundform: Grundform; stand: number; geschosse: ZGeschoss[] };
   heizungStandard: Heizung;
+  /** Hersteller/Typ je Heizart am Gebäudestandard (H5); nicht gespeichert, beim Laden abgeleitet. */
+  standardGeraet: Partial<Record<HeizArt, { hersteller: string | null; typ: string | null }>>;
   einheiten: ZEinheit[];
   bauteile: ZBauteil[];
   gruppen: ZGruppe[];
+  vorlagen: ZVorlage[];
   zentraleRaum: string | null;
+  /** FBH-Verteiler und Gruppen automatisch ableiten (neue oder leere Gebäude). */
+  automatik: boolean;
+  gruppenVorgeschlagen: boolean;
+  /** Wärmezähler an allen FBH-Verteilern (Vorgabe für neue). */
+  fbhWmz: boolean;
+  /** Einheiten, in denen der Kunde den automatischen FBH-Verteiler abgewählt hat. */
+  fbhVerteilerAus: string[];
   zaehler: number;
 }
 
 // --- Regelwerk-Spiegel (app/src/welt/regelwerk.v1.ts / v2.ts) ---
-export const EINHEIT_ARTEN: readonly { art: string; name: string; mehrzahl: string }[] = [
-  { art: "buero", name: "Büro", mehrzahl: "Büros" },
-  { art: "wohnung", name: "Wohnung", mehrzahl: "Wohnungen" },
-  { art: "gastro", name: "Gastro", mehrzahl: "Gastro" },
-  { art: "allgemein", name: "Allgemein", mehrzahl: "Allgemein" },
-  { art: "technik", name: "Technik", mehrzahl: "Technik" },
-  { art: "kern", name: "Kern (Treppenhaus/Lift)", mehrzahl: "Kerne" },
+export const EINHEIT_ARTEN: readonly { art: string; name: string; mehrzahl: string; kurz: string }[] = [
+  { art: "buero", name: "Büro", mehrzahl: "Büros", kurz: "Büro" },
+  { art: "wohnung", name: "Wohnung", mehrzahl: "Wohnungen", kurz: "Wohnung" },
+  { art: "gastro", name: "Gastro", mehrzahl: "Gastro", kurz: "Gastro" },
+  { art: "allgemein", name: "Allgemein", mehrzahl: "Allgemein", kurz: "Allgemein" },
+  { art: "technik", name: "Technik", mehrzahl: "Technik", kurz: "Technik" },
+  { art: "kern", name: "Kern (Treppenhaus/Lift)", mehrzahl: "Kerne", kurz: "Kern" },
 ];
 export const artName = (art: string) => EINHEIT_ARTEN.find((a) => a.art === art)?.name ?? art;
 const RAUM = [K.verteiler, K.hk, K.fbh, K.tabs];
@@ -108,7 +132,7 @@ export const gruppeVonVerbraucher = (z: AssistentZustand, bauteil: string) => z.
 
 /** Hauptverteiler: Verteiler, der selbst keiner Gruppe angehört; bevorzugt mit Gruppen, dann im Zentraleraum. */
 export function hauptverteiler(z: AssistentZustand): ZBauteil | undefined {
-  const frei = verteilerListe(z).filter((t) => !gruppeVonVerbraucher(z, t.schluessel));
+  const frei = verteilerListe(z).filter((t) => !t.fbh && !gruppeVonVerbraucher(z, t.schluessel));
   return frei.find((t) => z.gruppen.some((g) => g.verteiler === t.schluessel))
     ?? frei.find((t) => "einheit" in t.standort && t.standort.einheit === z.zentraleRaum)
     ?? frei[0];
@@ -131,17 +155,34 @@ export function zentraleRaumHinweis(z: AssistentZustand): string | null {
 // --- Erzeugen ---
 export function leererZustand(liegenschaftId: string | null = null): AssistentZustand {
   return {
-    version: 1, schritt: 1, huelleBearbeitbar: true,
+    version: 2, schritt: 1, huelleBearbeitbar: true,
     gebaeude: { id: null, liegenschaftId, name: "", grundform: "quader", stand: 0, geschosse: geschossCodes(0, 1).map((code) => ({ code })) },
-    heizungStandard: { hk: "ja", fbh: "nein", tabs: "nein" },
-    einheiten: [], bauteile: [], gruppen: [], zentraleRaum: null, zaehler: 0,
+    heizungStandard: { hk: "ja", fbh: "nein", tabs: "nein" }, standardGeraet: {},
+    einheiten: [], bauteile: [], gruppen: [], vorlagen: [], zentraleRaum: null,
+    automatik: true, gruppenVorgeschlagen: false, fbhWmz: false, fbhVerteilerAus: [], zaehler: 0,
   };
 }
 
-/** Nächste freie Nummer für "Büro n" (gebäudeweit, damit Namen eindeutig bleiben). */
-export function naechsteNummer(einheiten: readonly ZEinheit[], basis: string): number {
-  const re = new RegExp(`^${basis.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} (\\d+)$`);
-  return einheiten.reduce((m, e) => { const r = re.exec(e.bezeichnung); return r ? Math.max(m, Number(r[1])) : m; }, 0) + 1;
+/** Kurzform des Geschosses für Bezeichnungen: EG → 0, OG3 → 3, UG1 → U1, sonst der Code. */
+export function geschossKurz(code: string): string {
+  if (code === "EG") return "0";
+  const og = /^OG(\d+)$/.exec(code);
+  if (og) return og[1];
+  const ug = /^UG(\d+)$/.exec(code);
+  return ug ? `U${ug[1]}` : code;
+}
+/** Bezeichnung nach Geschoss und laufender Nummer, z. B. «Büro 3.01» (Entscheid 3). */
+export function nummerieren(geschoss: string, art: string, lfd: number): string {
+  const basis = EINHEIT_ARTEN.find((a) => a.art === art)?.kurz ?? art;
+  return `${basis} ${geschossKurz(geschoss)}.${String(lfd).padStart(2, "0")}`;
+}
+/** Nächste laufende Nummer im Geschoss: grösste vergebene plus 1, sonst Anzahl Einheiten plus 1. */
+export function naechsteLfd(einheiten: readonly ZEinheit[], geschoss: string): number {
+  const kurz = geschossKurz(geschoss).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(` ${kurz}\\.(\\d{2,})$`);
+  const imGeschoss = einheiten.filter((e) => e.geschoss === geschoss);
+  const max = imGeschoss.reduce((m, e) => { const r = re.exec(e.bezeichnung); return r ? Math.max(m, Number(r[1])) : m; }, 0);
+  return max > 0 ? max + 1 : imGeschoss.length + 1;
 }
 
 /** Ab Schritt 2 braucht es ein angelegtes Gebäude (Geschoss-IDs für Einheiten). */
@@ -158,6 +199,7 @@ export type Aktion =
   | { typ: "geschosse"; ug: number; og: number }
   | { typ: "gebaeudeAngelegt"; id: string; stand: number; geschosse: { id: string; code: string }[] }
   | { typ: "einheitNeu"; geschoss: string; art: string; anzahl?: number; bezeichnung?: string }
+  | { typ: "einheitAnzahl"; geschoss: string; art: string; anzahl: number }
   | { typ: "einheitAendern"; schluessel: string; bezeichnung?: string; art?: string }
   | { typ: "einheitLoeschen"; schluessel: string }
   | { typ: "standard"; art: HeizArt; wert: Dreiwertig }
@@ -229,7 +271,7 @@ function versorgungNachfuehren(z: AssistentZustand): AssistentZustand {
   }) };
 }
 
-/** Abgaben einer Einheit an die wirksame Heizung anpassen: ja → mindestens eine (vorgeschlagen), nein/nicht erlaubt → entfernen, unbekannt → nur vorgeschlagen. */
+/** Abgaben einer Einheit an die wirksame Heizung anpassen. Status folgt der Heizart: ja → bestätigt, unbekannt → vorgeschlagen (Entscheid 4). */
 function abgabenAbgleichen(z: AssistentZustand, einheit: string, arten: readonly HeizArt[] = HEIZ_ARTEN): AssistentZustand {
   const e = z.einheiten.find((x) => x.schluessel === einheit);
   if (!e) return z;
@@ -239,10 +281,13 @@ function abgabenAbgleichen(z: AssistentZustand, einheit: string, arten: readonly
   for (const art of arten) {
     const kat = ABGABE_VON[art];
     const vorhanden = abgabenVon(neu, einheit).filter((t) => t.katalogId === kat);
-    if (w[art] === "nein" || !erlaubt.includes(kat)) neu = entferneBauteile(neu, vorhanden.map((t) => t.schluessel));
-    else if (w[art] === "unbekannt") for (const t of vorhanden) neu = ersetzeBauteil(neu, t.schluessel, (x) => ({ ...x, status: "vorgeschlagen" }));
-    else if (vorhanden.length === 0 && e.art !== "technik")
-      [neu] = neuesBauteil(neu, { katalogId: kat, standort: { einheit }, menge: null, status: "vorgeschlagen" });
+    if (w[art] === "nein" || !erlaubt.includes(kat)) { neu = entferneBauteile(neu, vorhanden.map((t) => t.schluessel)); continue; }
+    const status: BauteilStatus = w[art] === "ja" ? "bestaetigt" : "vorgeschlagen";
+    for (const t of vorhanden) if (t.status !== status) neu = ersetzeBauteil(neu, t.schluessel, (x) => ({ ...x, status }));
+    if (w[art] === "ja" && vorhanden.length === 0 && e.art !== "technik") {
+      const g = neu.standardGeraet[art];
+      [neu] = neuesBauteil(neu, { katalogId: kat, standort: { einheit }, menge: null, status, hersteller: g?.hersteller ?? null, typ: g?.typ ?? null });
+    }
   }
   return neu;
 }
@@ -254,7 +299,7 @@ function mitZentraleRaum(z: AssistentZustand): AssistentZustand {
   if (technik) return { ...z, zentraleRaum: technik.schluessel };
   const unten = [...z.gebaeude.geschosse].sort((a, b) => geschossRang(a.code) - geschossRang(b.code))[0];
   if (!unten) return z;
-  const z2 = reduziere(z, { typ: "einheitNeu", geschoss: unten.code, art: "technik", bezeichnung: "Technik" });
+  const z2 = reduziereKern(z, { typ: "einheitNeu", geschoss: unten.code, art: "technik", bezeichnung: "Technik" });
   return { ...z2, zentraleRaum: z2.einheiten[z2.einheiten.length - 1].schluessel };
 }
 
@@ -293,16 +338,21 @@ function zentraleVerschieben(z: AssistentZustand, raum: string): AssistentZustan
   return { ...z, zentraleRaum: raum, bauteile: z.bauteile.map((t) => (bewegen.has(t.schluessel) ? { ...t, standort: { einheit: raum } } : t)) };
 }
 
+/** Öffentlicher Reducer: Kernaktion, danach Ableitungen (Task 4 und 6 ergänzen Markierung und Ableitung). */
 export function reduziere(z: AssistentZustand, a: Aktion): AssistentZustand {
+  return reduziereKern(z, a);
+}
+
+function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
   switch (a.typ) {
     case "laden": return a.zustand;
     case "schritt": return schrittErreichbar(z, a.nr) ? { ...z, schritt: a.nr } : z;
-    case "weiter": return z.schritt < 8 && schrittErreichbar(z, (z.schritt + 1) as SchrittNr) ? { ...z, schritt: (z.schritt + 1) as SchrittNr } : z;
+    case "weiter": return z.schritt < LETZTER_SCHRITT && schrittErreichbar(z, (z.schritt + 1) as SchrittNr) ? { ...z, schritt: (z.schritt + 1) as SchrittNr } : z;
     case "zurueck": return z.schritt > 1 ? { ...z, schritt: (z.schritt - 1) as SchrittNr } : z;
     case "huelleBearbeitbar": return { ...z, huelleBearbeitbar: a.wert };
     case "gebaeude":
       if (!z.huelleBearbeitbar) return z;
-      return reduziere(z, { ...a, typ: "kopf" });
+      return reduziereKern(z, { ...a, typ: "kopf" });
     case "kopf":
       return { ...z, gebaeude: { ...z.gebaeude, ...(a.name !== undefined && { name: a.name }), ...(a.grundform && { grundform: a.grundform }),
         ...(a.liegenschaftId && { liegenschaftId: a.liegenschaftId }) } };
@@ -313,7 +363,7 @@ export function reduziere(z: AssistentZustand, a: Aktion): AssistentZustand {
       const codes = new Set(geschosse.map((g) => g.code));
       const einheitenWeg = z.einheiten.filter((e) => !codes.has(e.geschoss)).map((e) => e.schluessel);
       let neu: AssistentZustand = { ...z, gebaeude: { ...z.gebaeude, geschosse } };
-      for (const s of einheitenWeg) neu = reduziere(neu, { typ: "einheitLoeschen", schluessel: s });
+      for (const s of einheitenWeg) neu = reduziereKern(neu, { typ: "einheitLoeschen", schluessel: s });
       return neu;
     }
     case "gebaeudeAngelegt": {
@@ -322,16 +372,22 @@ export function reduziere(z: AssistentZustand, a: Aktion): AssistentZustand {
         geschosse: z.gebaeude.geschosse.map((g) => ({ ...g, id: ids.get(g.code) ?? g.id })) } };
     }
     case "einheitNeu": {
-      const art = EINHEIT_ARTEN.find((x) => x.art === a.art);
       const anzahl = Math.max(1, Math.min(50, a.anzahl ?? 1));
       let neu = z;
       for (let i = 0; i < anzahl; i++) {
         const [s, z2] = neuerSchluessel(neu);
-        const name = art?.name ?? a.art;
-        const bezeichnung = a.bezeichnung ?? `${name} ${naechsteNummer(z2.einheiten, name)}`;
+        const bezeichnung = a.bezeichnung ?? nummerieren(a.geschoss, a.art, naechsteLfd(z2.einheiten, a.geschoss));
         neu = { ...z2, einheiten: [...z2.einheiten, { schluessel: s, geschoss: a.geschoss, bezeichnung, art: a.art, flaecheM2: null, ausnahme: {} }] };
         neu = abgabenAbgleichen(neu, s);
       }
+      return neu;
+    }
+    case "einheitAnzahl": {
+      const vorhanden = z.einheiten.filter((e) => e.geschoss === a.geschoss && e.art === a.art && !e.vorlage);
+      const soll = Math.max(0, Math.min(50, Math.floor(a.anzahl)));
+      if (soll > vorhanden.length) return reduziereKern(z, { typ: "einheitNeu", geschoss: a.geschoss, art: a.art, anzahl: soll - vorhanden.length });
+      let neu = z;
+      for (const e of vorhanden.slice(soll)) neu = reduziereKern(neu, { typ: "einheitLoeschen", schluessel: e.schluessel });
       return neu;
     }
     case "einheitAendern": {
@@ -378,11 +434,16 @@ export function reduziere(z: AssistentZustand, a: Aktion): AssistentZustand {
         const sicher = !e || !art || wirksam(z, e)[art] === "ja";
         return { ...n, menge: Math.max(0, Math.round(a.menge)), status: sicher ? "bestaetigt" : "vorgeschlagen" };
       });
-    case "abgabeWeissNicht": return ersetzeBauteil(z, a.schluessel, (t) => ({ ...t, menge: null, status: "vorgeschlagen" }));
+    case "abgabeWeissNicht": return ersetzeBauteil(z, a.schluessel, (t) => {
+      const e = einheitVon(z, t);
+      const art = HEIZ_ARTEN.find((x) => ABGABE_VON[x] === t.katalogId);
+      const sicher = !e || !art || wirksam(z, e)[art] === "ja";
+      return { ...t, menge: null, status: sicher ? "bestaetigt" : "vorgeschlagen" };
+    });
     case "bauteilLoeschen": return entferneBauteile(z, [a.schluessel]);
     case "zentraleRaum": return zentraleVerschieben(z, a.einheit);
     case "technikraumNeu": {
-      const z2 = reduziere(z, { typ: "einheitNeu", geschoss: a.geschoss, art: "technik", bezeichnung: "Technik" });
+      const z2 = reduziereKern(z, { typ: "einheitNeu", geschoss: a.geschoss, art: "technik", bezeichnung: "Technik" });
       return zentraleVerschieben(z2, z2.einheiten[z2.einheiten.length - 1].schluessel);
     }
     case "erzeuger": {
@@ -462,7 +523,7 @@ export function reduziere(z: AssistentZustand, a: Aktion): AssistentZustand {
       const vorhanden = unterverteiler(z).filter((t) => "einheit" in t.standort && t.standort.einheit === a.einheit);
       if (!a.an) return entferneBauteile(z, vorhanden.map((t) => t.schluessel));
       if (vorhanden.length) return z;
-      return neuesBauteil(z, { katalogId: K.verteiler, standort: { einheit: a.einheit }, menge: 1, status: "bestaetigt", versorgt: [a.einheit] })[0];
+      return neuesBauteil(z, { katalogId: K.verteiler, standort: { einheit: a.einheit }, menge: 1, status: "bestaetigt", versorgt: [a.einheit], fbh: true })[0];
     }
     case "unterverteilerWmz": {
       const vorhanden = z.bauteile.filter((t) => t.katalogId === K.wmz && t.ort && "vorBauteil" in t.ort && t.ort.vorBauteil === a.verteiler);
