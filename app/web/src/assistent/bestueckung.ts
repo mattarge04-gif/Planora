@@ -57,7 +57,7 @@ export const GRUPPEN_ART_TEXT: Readonly<Record<GruppenArt, { name: string; text:
 const NAMEN: Record<string, string> = {
   [K.waermepumpe]: "Wärmepumpe", [K.gaskessel]: "Gaskessel", [K.oelkessel]: "Ölkessel",
   [K.fernwaerme]: "Fernwärme-Übergabe", [K.speicher]: "Speicher", [K.pumpe]: "Umwälzpumpe",
-  [K.verteiler]: "Heizungsverteiler", [K.hk]: "Heizkörper", [K.fbh]: "FBH-Kreis", [K.tabs]: "TABS-Feld",
+  [K.verteiler]: "Verteiler", [K.hk]: "Heizkörper", [K.fbh]: "FBH-Kreis", [K.tabs]: "TABS-Feld",
   [K.ventil3]: "3-Weg-Ventil", [K.ventil2]: "Durchgangsventil", [K.wmz]: "Wärmezähler",
 };
 export function teilName(katalogId: string, katalog?: readonly KatalogEintrag[] | null): string {

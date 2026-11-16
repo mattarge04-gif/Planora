@@ -16,7 +16,7 @@ import { TwinTooltip } from "../karten/TwinTooltip";
 import { TwinSzenenTasten } from "../karten/TwinSzenenTasten";
 import { speicher } from "../ui/speicher";
 import type { BildschirmPunkt } from "../szene3/Interaktion";
-import { anlagenZeilen, anzeigeName, geschossListe, hinweisListe, kennzahlen, objektKarte, zentraleGeschoss, type AnlagenZeile, type Zielort } from "../dashboard";
+import { anlagenZeilen, anzeigeName, symbolName, geschossListe, hinweisListe, kennzahlen, objektKarte, zentraleGeschoss, type AnlagenZeile, type Zielort } from "../dashboard";
 import { leitungsHinweise } from "../szene3/router/hinweise";
 import "./Twin.css";
 
@@ -190,7 +190,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
     ? gruppenKarte(welt, katalog.eintraege, auswahl, straenge) : null, [welt, katalog, auswahl, karte, straenge]);
   const hoverName = useMemo(() => {
     const s = hover && welt?.symbole.find((x) => x.schluessel === hover);
-    if (s) return anzeigeName(s.katalogId, katalog?.eintraege);
+    if (s) return symbolName(welt!, s, katalog?.eintraege);
     const g = hover && welt && katalog ? gruppenKarte(welt, katalog.eintraege, hover, straenge) : null;
     return g ? `${g.titel} · ${g.art}` : null;
   }, [hover, welt, katalog, straenge]);

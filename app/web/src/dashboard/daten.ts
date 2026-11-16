@@ -6,6 +6,7 @@ const NAMEN: Record<string, string> = {
   "heizung.fernwaerme_uebergabe": "Fernwärme-Übergabe", "heizung.speicher": "Speicher",
   "heizung.umwaelzpumpe": "Umwälzpumpe", "heizung.verteiler": "Heizungsverteiler", "heizung.heizkoerper": "Heizkörper",
   "heizung.fbh_kreis": "FBH-Kreis", "heizung.tabs_feld": "TABS-Feld",
+  "heizung.wmz": "Wärmezähler", "heizung.ventil_3weg": "3-Weg-Ventil", "heizung.ventil_2weg": "Durchgangsventil",
 };
 export type IconSchluessel = "waermepumpe" | "kessel" | "fernwaerme" | "speicher" | "pumpe" | "verteiler" | "heizkoerper" | "flaechenheizung" | "anlage";
 const ICONS: Record<string, IconSchluessel> = {
@@ -17,6 +18,12 @@ const ERZEUGER = new Set(["heizung.waermepumpe", "heizung.gaskessel", "heizung.o
 
 export function anzeigeName(katalogId: string, katalog: KatalogEintrag[] = []): string {
   return Object.hasOwn(NAMEN, katalogId) ? NAMEN[katalogId] : katalog.find((k) => k.id === katalogId)?.name ?? katalogId;
+}
+
+/** Anzeigename eines Symbols: Verteiler, die eine Gruppe speist, heissen «FBH-Verteiler» (H4). */
+export function symbolName(welt: Welt, s: WeltSymbol, katalog: KatalogEintrag[] = []): string {
+  if (s.katalogId === "heizung.verteiler" && (welt.gruppen ?? []).some((g) => g.verbraucher.includes(s.schluessel))) return "FBH-Verteiler";
+  return anzeigeName(s.katalogId, katalog);
 }
 
 export interface Kennzahlen {
@@ -60,7 +67,7 @@ export interface AnlagenZeile extends Zielort {
 }
 function anlagenZeile(welt: Welt, beschreibung: Beschreibung, katalog: KatalogEintrag[], s: WeltSymbol, panel: PanelDaten): AnlagenZeile {
   const ort = standortVon(welt, beschreibung, s);
-  return { schluessel: s.schluessel, bauteilIds: [...s.bauteilIds], katalogId: s.katalogId, name: anzeigeName(s.katalogId, katalog),
+  return { schluessel: s.schluessel, bauteilIds: [...s.bauteilIds], katalogId: s.katalogId, name: symbolName(welt, s, katalog),
     hersteller: s.hersteller, typ: s.typ, herstellerTyp: panel.herstellerTyp, ...ort, position: { ...s.position },
     standort: panel.standort, menge: mengeText(s.mengeSumme, s.mengeUnbekannt), status: s.status };
 }

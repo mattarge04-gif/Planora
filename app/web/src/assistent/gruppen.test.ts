@@ -123,7 +123,7 @@ describe("Schritt 8 – Hinweise", () => {
     const { positionen } = zuBeschreibungMitPositionen(z);
     const welt = { hinweise: [{ code: "ueberlappung", bezug: "neu-e-1" }, { code: "ohne_gruppe", bezug: "x" }], symbole: [] } as unknown as Welt;
     const h = pruefHinweise(z, welt, positionen);
-    expect(h.filter((x) => x.code === "ohne_gruppe").map((x) => x.text)).toEqual(["Heizkörper, Büro 0.01 gehört zu keiner Gruppe.", "Heizkörper, Büro 0.02 gehört zu keiner Gruppe."]);
+    expect(h.filter((x) => x.code === "ohne_gruppe").map((x) => x.text)).toEqual(["2 Heizkörper gehören zu keiner Gruppe."]);
     expect(h.filter((x) => x.code === "gruppe_leer").length).toBe(2);
     expect(h.find((x) => x.code === "ueberlappung")).toMatchObject({ text: "«Büro 0.02» überlappt mit einer manuell platzierten Einheit.", schritt: 2 });
   });
@@ -131,6 +131,7 @@ describe("Schritt 8 – Hinweise", () => {
     let z = basis();
     for (const [i, e] of z.einheiten.filter((x) => x.art === "buero").entries())
       z = reduziere(z, { typ: "verbraucher", gruppe: z.gruppen[i].schluessel, bauteil: abgabenVon(z, e.schluessel)[0].schluessel, an: true });
-    expect(pruefHinweise(z, null, zuBeschreibungMitPositionen(z).positionen)).toEqual([]);
+    // Mengen sind im Fixture unbekannt: nur der gebündelte Mengenhinweis (H7) bleibt
+    expect(pruefHinweise(z, null, zuBeschreibungMitPositionen(z).positionen).map((x) => x.code)).toEqual(["menge_offen"]);
   });
 });
