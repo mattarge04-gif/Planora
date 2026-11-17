@@ -25,6 +25,7 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 - PO-Antworten E42 (`00-kontext.md`): Automatik jetzt beheben (erledigt), Pruefhinweis statt Vorbelegung (erledigt), Plan-Annahmen 1–9 und "Standard (offen)" bestaetigt. [?] Kerne: Antwort "wir entschieden" mehrdeutig, Kern behaelt Heizkoerper bis Klaerung.
 - Commits `d6698fd`, `55c48ef`, `488cad2` auf `m2c-interview`, nicht gepusht, kein Merge. Merker in `geschoss_vorlage.daten.automatik`; alte Gebaeude ohne Merker behalten Automatik aus [A].
 - Browser: FBH in OG3 nach Wiederoeffnen 5 statt 17 Klicks. Pruefstand: Backend 585/585, Web 457/457, tsc und Webbuild gruen.
+- PO-Befunde 17.11. (spaeter): Leitungsfuehrung ueberlappt noch (Beimischschaltung, Sammelleitung); bei FBH soll kein Hauptverteiler entstehen, FBH-Verteiler an dessen Stelle; Assistent fuer FM weiterhin zu umstaendlich; echte Heizung in der Zentrale spaeter. PO will jetzt Richtung Demo weiterbauen (Brainstorming M7 Lebensdauer/Ampel).
 - Offen: PO-Sichtung der Heizungserfassung im Browser; Twin-Hinweis Rohcode "ohne_gruppe"; Router-Konflikte nach Nachbesserung; Vorschau B15; Spec Abschnitt 8.
 
 ### Heizungserfassung umgesetzt (17.11.2026) [F, ergaenzt durch E42]
