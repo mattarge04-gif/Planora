@@ -2801,3 +2801,11 @@ git commit -m "Abnahme Heizungserfassung: Klickzaehlung, Bildkritik, Stand"
 | §5 Fehlerfälle (lösen, löschen, veraltet, ohne Vorlage) | 4, 7 |
 | §6 Tests, Browser, FM-Review, Gestaltung | alle, 12 |
 | §8 ausserhalb | nicht umgesetzt (Liste bleibt) |
+
+---
+
+## Umsetzungsstand (17.11.2026)
+
+- [F] Tasks 1–12 umgesetzt, Commits `3fbdfc5`..`c10146e` auf `m2c-interview`. Je Task Review, Gesamtreview mit Fixwelle (`23398b9`), zwei Designrunden nach visual-critic (`f6cc9e3`, `817ff91`).
+- [F] Abweichungen vom Plan: Gesamtreview vor Task 12 gezogen; Zuruecksetzen/Abweichung je Schritt nach Feldgruppen (Schritt 2: art/bezeichnung, Schritt 3: ausnahme/mengen); `geschossAusnahme` mit `nurMit` (Kern behaelt Heizkoerper); Gruppen-Merker `vorgeschlagen`; Zaehlerfeld uebernimmt erst bei Blur/Enter.
+- [F] Ergebnis und offene PO-Fragen: `docs/abnahme/2026-11-16-heizungserfassung/README.md`.
