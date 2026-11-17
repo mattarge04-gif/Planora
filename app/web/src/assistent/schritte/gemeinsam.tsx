@@ -91,7 +91,7 @@ export function Schalter({ label, an, onAn, deaktiviert, name }: { label: string
     <label className="as-schalter">
       <input type="checkbox" role="switch" checked={an} disabled={deaktiviert} aria-label={name} onChange={(e) => onAn(e.target.checked)} />
       <span className="as-schalter-bahn" aria-hidden="true" />
-      <span>{label}</span>
+      {label && <span>{label}</span>}
     </label>
   );
 }

@@ -1,6 +1,6 @@
 import { Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { EINHEIT_ARTEN, abweichungen, geschossRang, vorlageVonGeschoss, type AssistentZustand, type ZEinheit, type ZVorlage } from "../zustand";
+import { EINHEIT_ARTEN, FELDER_EINHEITEN, FELDER_HEIZUNG, abweichendIn, abweichungen, geschossRang, vorlageVonGeschoss, type AssistentZustand, type ZEinheit, type ZVorlage } from "../zustand";
 import { Abschnitt, Hinweis, ICON, Zaehler } from "./gemeinsam";
 import type { SchrittInhaltProps } from "./index";
 
@@ -61,9 +61,9 @@ function EinheitZeilen({ einheiten, code, dispatch }: { einheiten: ZEinheit[]; c
           <select aria-label={`Nutzung Einheit ${i + 1}, ${code}`} value={e.art} onChange={(ev) => dispatch({ typ: "einheitAendern", schluessel: e.schluessel, art: ev.target.value })}>
             {EINHEIT_ARTEN.map((a) => <option key={a.art} value={a.art}>{a.name}</option>)}
           </select>
-          {(e.abweichend?.length ?? 0) > 0
-            ? <button type="button" className="as-rundknopf" aria-label={`${e.bezeichnung} auf Regelgeschoss zurücksetzen`} title="Auf Regelgeschoss zurücksetzen"
-                onClick={() => dispatch({ typ: "einheitZuruecksetzen", einheit: e.schluessel })}><RotateCcw {...ICON} /></button>
+          {e.vorlage && abweichendIn(e, FELDER_EINHEITEN).length > 0
+            ? <button type="button" className="as-rundknopf" aria-label={`${e.bezeichnung} auf Regelgeschoss zurücksetzen`} title="Name und Nutzung auf Regelgeschoss zurücksetzen"
+                onClick={() => dispatch({ typ: "einheitZuruecksetzen", einheit: e.schluessel, felder: FELDER_EINHEITEN })}><RotateCcw {...ICON} /></button>
             : <span aria-hidden="true" />}
           <button type="button" className="as-rundknopf" aria-label={`${e.bezeichnung} entfernen`} onClick={() => dispatch({ typ: "einheitLoeschen", schluessel: e.schluessel })}><Trash2 {...ICON} /></button>
         </li>
@@ -74,7 +74,7 @@ function EinheitZeilen({ einheiten, code, dispatch }: { einheiten: ZEinheit[]; c
 
 function VorlageKarte({ v, z, dispatch }: { v: ZVorlage } & Pick<SchrittInhaltProps, "z" | "dispatch">) {
   const [loeschen, setLoeschen] = useState(false);
-  const ab = abweichungen(z, v.schluessel);
+  const ab = abweichungen(z, v.schluessel, FELDER_EINHEITEN);
   const anzahl = z.einheiten.filter((e) => e.vorlage?.schluessel === v.schluessel).length;
   return (
     <section className="as-karte as-vorlage" aria-label={`Regelgeschoss ${v.name}`}>
@@ -124,17 +124,21 @@ export function Schritt2Einheiten({ z, dispatch }: SchrittInhaltProps) {
         const einheiten = z.einheiten.filter((e) => e.geschoss === g.code);
         const v = vorlageVonGeschoss(z, g.code);
         const eigene = einheiten.filter((e) => !e.vorlage);
-        const abweichend = v && (einheiten.some((e) => (e.abweichend?.length ?? 0) > 0) || v.ausgelassen.some((o) => o.geschoss === g.code));
+        // Nur Abweichungen aus diesem Schritt (Name, Nutzung, ausgelassene Plätze); Heizung zählt und setzt Schritt 3 zurück (B1)
+        const ab = v ? abweichungen(z, v.schluessel, FELDER_EINHEITEN, g.code) : 0;
+        const heizungAnders = !!v && abweichungen(z, v.schluessel, FELDER_HEIZUNG, g.code) > 0;
         const anzahl = (art: string, n: number) => dispatch({ typ: "einheitAnzahl", geschoss: g.code, art, anzahl: n });
         return (
           <section key={g.code} className={`as-karte${v ? " as-karte-vorlage" : ""}`} aria-label={`Geschoss ${g.code}`}>
-            <header className="as-karte-kopf">
+            <header className="as-karte-kopf as-kopf-umbruch">
               <span className="as-code">{g.code}</span>
               <span className="as-zahl">{einheiten.length === 1 ? "1 Einheit" : `${einheiten.length} Einheiten`}</span>
-              {v && <span className="as-badge">wie {v.name}</span>}
-              {abweichend && <span className="as-badge as-badge-leise">Abweichung</span>}
-              <span className="as-abschnitt-aktion">
-                {abweichend && <button type="button" className="as-textknopf" onClick={() => dispatch({ typ: "geschossZuruecksetzen", geschoss: g.code })}>Zurücksetzen</button>}
+              {v && <span className="as-badge">{v.name}{ab > 0 && ` · ${ab} abweichend`}</span>}
+              {heizungAnders && <button type="button" className="as-badge as-badge-leise as-badge-knopf" title="In Schritt 3 ändern oder zurücksetzen" aria-label={`Heizung in ${g.code} abweichend, in Schritt 3 ändern`}
+                onClick={() => dispatch({ typ: "schritt", nr: 3 })}>Heizung abweichend</button>}
+              <span className="as-abschnitt-aktion as-kopf-ende">
+                {ab > 0 && <button type="button" className="as-textknopf" aria-label={`Einheiten in ${g.code} auf Regelgeschoss zurücksetzen`} title="Namen, Nutzung und Anzahl auf Regelgeschoss zurücksetzen"
+                  onClick={() => dispatch({ typ: "geschossZuruecksetzen", geschoss: g.code, felder: FELDER_EINHEITEN })}><RotateCcw size={14} strokeWidth={1.75} aria-hidden />Zurücksetzen</button>}
                 {!v && einheiten.length > 0 && <button type="button" className="as-textknopf" onClick={() => dispatch({ typ: "vorlageNeu", ausGeschoss: g.code })}>Als Regelgeschoss</button>}
               </span>
             </header>

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { K } from "./bestueckung";
 import { zuBeschreibungMitPositionen } from "./beschreibung";
 import { vorlagenEinlesen, vorlagenZurEingabe } from "./vorlagen";
-import { abweichungen, leererZustand, reduziere, vorlageVonGeschoss, type Aktion, type AssistentZustand } from "./zustand";
+import { FELDER_EINHEITEN, FELDER_HEIZUNG, abweichungen, leererZustand, reduziere, vorlageVonGeschoss, type Aktion, type AssistentZustand } from "./zustand";
 
 function haus(...aktionen: Aktion[]): AssistentZustand {
   let z = reduziere(leererZustand("l"), { typ: "geschosse", ug: 1, og: 5 });
@@ -186,5 +186,59 @@ describe("Fixes aus Gesamtreview", () => {
     expect(im(z, "OG3").every((e) => (e.abweichend ?? []).length === 0)).toBe(true);
     z = reduziere(z, { typ: "geschossAusnahme", geschoss: "OG3", art: "fbh", wert: null });
     expect(abweichungen(z, v1(z))).toBe(4);
+  });
+});
+
+describe("B1: Zurücksetzen je Schritt (nur eigene Felder)", () => {
+  /** OG4: FBH statt HK im ganzen Geschoss (Schritt 3) und eine umbenannte Einheit (Schritt 2). */
+  function og4(): AssistentZustand {
+    let z = regelhaus();
+    z = reduziere(z, { typ: "geschossAusnahme", geschoss: "OG4", art: "fbh", wert: "ja" });
+    z = reduziere(z, { typ: "geschossAusnahme", geschoss: "OG4", art: "hk", wert: "nein" });
+    z = reduziere(z, { typ: "einheitAendern", schluessel: im(z, "OG4")[0].schluessel, bezeichnung: "Empfang" });
+    return z;
+  }
+  it("abweichungen zählt je Feldgruppe", () => {
+    const z = og4();
+    expect(abweichungen(z, v1(z), FELDER_EINHEITEN)).toBe(1);
+    expect(abweichungen(z, v1(z), FELDER_HEIZUNG)).toBe(4);
+    expect(abweichungen(z, v1(z))).toBe(4);
+  });
+  it("Schritt 2: Geschoss zurücksetzen stellt den Namen her und behält FBH", () => {
+    let z = og4();
+    z = reduziere(z, { typ: "geschossZuruecksetzen", geschoss: "OG4", felder: FELDER_EINHEITEN });
+    expect(im(z, "OG4")[0].bezeichnung).toBe("Büro 4.01");
+    expect(im(z, "OG4").every((e) => e.ausnahme.fbh === "ja" && e.ausnahme.hk === "nein")).toBe(true);
+    expect(im(z, "OG4").every((e) => e.abweichend?.includes("ausnahme"))).toBe(true);
+    expect(abweichungen(z, v1(z), FELDER_EINHEITEN)).toBe(0);
+    expect(abweichungen(z, v1(z), FELDER_HEIZUNG)).toBe(4);
+  });
+  it("Schritt 3: Geschoss zurücksetzen hebt FBH auf und behält den Namen", () => {
+    let z = og4();
+    z = reduziere(z, { typ: "geschossZuruecksetzen", geschoss: "OG4", felder: FELDER_HEIZUNG });
+    expect(im(z, "OG4")[0].bezeichnung).toBe("Empfang");
+    expect(im(z, "OG4").every((e) => e.ausnahme.fbh === undefined && e.ausnahme.hk === undefined)).toBe(true);
+    expect(abweichungen(z, v1(z), FELDER_HEIZUNG)).toBe(0);
+    expect(abweichungen(z, v1(z), FELDER_EINHEITEN)).toBe(1);
+  });
+  it("Einheit zurücksetzen je Feldgruppe", () => {
+    let z = og4();
+    const e = im(z, "OG4")[0].schluessel;
+    z = reduziere(z, { typ: "einheitZuruecksetzen", einheit: e, felder: FELDER_EINHEITEN });
+    const x = z.einheiten.find((y) => y.schluessel === e)!;
+    expect([x.bezeichnung, x.ausnahme.fbh]).toEqual(["Büro 4.01", "ja"]);
+    z = reduziere(z, { typ: "einheitZuruecksetzen", einheit: e, felder: FELDER_HEIZUNG });
+    expect(z.einheiten.find((y) => y.schluessel === e)!.ausnahme.fbh).toBeUndefined();
+    expect(im(z, "OG4").filter((y) => y.ausnahme.fbh === "ja")).toHaveLength(3);
+  });
+  it("ausgelassene Plätze gehören zu Schritt 2", () => {
+    let z = og4();
+    z = reduziere(z, { typ: "einheitLoeschen", schluessel: im(z, "OG4")[3].schluessel });
+    expect(abweichungen(z, v1(z), FELDER_EINHEITEN)).toBe(2);
+    expect(abweichungen(z, v1(z), FELDER_HEIZUNG)).toBe(3);
+    z = reduziere(z, { typ: "geschossZuruecksetzen", geschoss: "OG4", felder: FELDER_HEIZUNG });
+    expect(im(z, "OG4")).toHaveLength(3);
+    z = reduziere(z, { typ: "geschossZuruecksetzen", geschoss: "OG4", felder: FELDER_EINHEITEN });
+    expect(im(z, "OG4")).toHaveLength(4);
   });
 });

@@ -27,6 +27,7 @@ export function verbraucherSatz(z: AssistentZustand, g: ZGruppe, katalog?: reado
 
 function GruppenKarte({ g, z, dispatch, katalog }: { g: ZGruppe } & Pick<SchrittInhaltProps, "z" | "dispatch" | "katalog">) {
   const [teilen, setTeilen] = useState<string[] | null>(null);
+  const [sonder, setSonder] = useState<string | null>(null);
   const titel = g.bezeichnung || `Gruppe ${g.nummer}`;
   const wmz = zubehoerVon(z, g.schluessel).some((t) => t.katalogId === K.wmz);
   const uv = new Set(unterverteiler(z).map((t) => t.schluessel));
@@ -37,6 +38,9 @@ function GruppenKarte({ g, z, dispatch, katalog }: { g: ZGruppe } & Pick<Schritt
   const kandidaten = g.regel ? verbraucherDerArt(z, g.regel.heizart) : HEIZ_ARTEN.flatMap((a) => verbraucherDerArt(z, a));
   const nachGeschoss = [...new Set(kandidaten.map((t) => geschossVon(z, t) ?? ""))].sort((a, b) => geschossRang(b) - geschossRang(a));
   const bestueckung = bestueckungVon(z, g.schluessel);
+  const kannTeilen = !!g.regel && !g.angefasst && codes.length > 1;
+  const kannSonder = !!g.regel && einheiten.length > 1;
+  const teilenOk = teilen !== null && teilen.length > 0 && teilen.length < codes.length;
   const kurz = [...bestueckung.filter((b) => b.menge).map((b) => `${b.menge}× ${teilName(b.katalogId, katalog)}`), ...(wmz ? ["Wärmezähler"] : [])].join(", ") || "keine";
   return (
     <section className="as-karte as-gruppe" aria-label={`Gruppe ${g.nummer}: ${titel}`}>
@@ -45,45 +49,55 @@ function GruppenKarte({ g, z, dispatch, katalog }: { g: ZGruppe } & Pick<Schritt
         <input type="text" className="as-gruppe-name" aria-label={`Bezeichnung Gruppe ${g.nummer}`} value={g.bezeichnung} maxLength={200}
           placeholder={`Gruppe ${g.nummer}, z. B. HK Restaurant`}
           onChange={(e) => dispatch({ typ: "gruppeName", schluessel: g.schluessel, bezeichnung: e.target.value })} />
-        {g.regel && !g.angefasst && <span className="as-badge">Vorschlag</span>}
+        {g.vorgeschlagen && !g.angefasst && <span className="as-badge">Vorschlag</span>}
         <button type="button" className="as-rundknopf" aria-label={`Gruppe ${titel} entfernen`} onClick={() => dispatch({ typ: "gruppeEntfernen", gruppe: g.schluessel })}><Trash2 {...ICON} /></button>
       </header>
       <p className="as-satz as-gruppe-satz">{verbraucherSatz(z, g, katalog)}</p>
 
-      <div className="as-gruppe-felder">
+      <label className="as-feld">
+        <span className="as-label">Art</span>
+        <select value={g.art} aria-label={`${titel}: Art der Gruppe`}
+          onChange={(e) => dispatch({ typ: "gruppeArt", schluessel: g.schluessel, art: e.target.value as ZGruppe["art"] })}>
+          {GRUPPEN_ARTEN.map((a) => <option key={a} value={a}>{GRUPPEN_ART_TEXT[a].name}</option>)}
+        </select>
+        <span className="as-hilfe">{GRUPPEN_ART_TEXT[g.art].text}</span>
+      </label>
+
+      {/* Aktionen erzeugen neue Gruppen: einheitlich als Knöpfe, Auswahl erst im aufgeklappten Bereich (B3) */}
+      {(kannTeilen || kannSonder) && teilen === null && sonder === null && <div className="as-aktionen" role="group" aria-label={`${titel}: aufteilen`}>
+        <span className="as-label">Aufteilen</span>
+        {kannTeilen && <button type="button" className="as-textknopf as-textknopf-rand" aria-label={`${titel}: nach Geschossen teilen`} onClick={() => setTeilen([])}>Nach Geschossen</button>}
+        {kannSonder && <button type="button" className="as-textknopf as-textknopf-rand" aria-label={`${titel}: eigene Gruppe für eine Einheit`} onClick={() => setSonder("")}>Eigene Gruppe für Einheit</button>}
+      </div>}
+      {teilen !== null && <div className="as-teilen" role="group" aria-label={`${titel}: nach Geschossen teilen`}>
+        <span className="as-label">Geschosse für die neue Gruppe</span>
+        <div className="as-geschoss-chips">
+          {codes.map((c) => <button key={c} type="button" className="as-chip" aria-pressed={teilen.includes(c)}
+            onClick={() => setTeilen(teilen.includes(c) ? teilen.filter((x) => x !== c) : [...teilen, c])}>{c}</button>)}
+        </div>
+        <div className="as-chips as-chips-mitte">
+          <button type="button" className="as-knopf as-knopf-klein" disabled={!teilenOk}
+            onClick={() => { dispatch({ typ: "gruppeTeilen", gruppe: g.schluessel, geschosse: teilen }); setTeilen(null); }}>Neue Gruppe</button>
+          <button type="button" className="as-textknopf" onClick={() => setTeilen(null)}>Abbrechen</button>
+          {!teilenOk && <span className="as-hilfe">{teilen.length === 0 ? "Mindestens ein Geschoss wählen." : "Nicht alle Geschosse – sonst bleibt diese Gruppe leer."}</span>}
+        </div>
+      </div>}
+      {sonder !== null && <div className="as-teilen" role="group" aria-label={`${titel}: eigene Gruppe für eine Einheit`}>
         <label className="as-feld">
-          <span className="as-label">Art</span>
-          <select value={g.art} aria-label={`${titel}: Art der Gruppe`}
-            onChange={(e) => dispatch({ typ: "gruppeArt", schluessel: g.schluessel, art: e.target.value as ZGruppe["art"] })}>
-            {GRUPPEN_ARTEN.map((a) => <option key={a} value={a}>{GRUPPEN_ART_TEXT[a].name}</option>)}
-          </select>
-          <span className="as-hilfe">{GRUPPEN_ART_TEXT[g.art].text}</span>
-        </label>
-        {g.regel && einheiten.length > 1 && <label className="as-feld">
-          <span className="as-label">Eigene Gruppe für</span>
-          <select value="" aria-label={`${titel}: eigene Gruppe für Einheit`}
-            onChange={(e) => e.target.value && dispatch({ typ: "sondergruppe", einheit: e.target.value, heizart: g.regel!.heizart })}>
+          <span className="as-label">Einheit mit eigener Gruppe</span>
+          <select value={sonder} aria-label={`${titel}: Einheit für die eigene Gruppe`} onChange={(e) => setSonder(e.target.value)}>
             <option value="">Einheit wählen …</option>
             {einheiten.map((e) => <option key={e.schluessel} value={e.schluessel}>{e.geschoss} · {e.bezeichnung}</option>)}
           </select>
           <span className="as-hilfe">Zum Beispiel ein Restaurant mit eigenem Abgang.</span>
-        </label>}
-      </div>
-
-      {g.regel && !g.angefasst && codes.length > 1 && (teilen === null
-        ? <div><button type="button" className="as-textknopf as-textknopf-rand" aria-label={`${titel}: nach Geschossen teilen`} onClick={() => setTeilen([])}>Nach Geschossen teilen</button></div>
-        : <div className="as-teilen" role="group" aria-label={`${titel}: nach Geschossen teilen`}>
-          <span className="as-label">Geschosse für die neue Gruppe</span>
-          <div className="as-geschoss-chips">
-            {codes.map((c) => <button key={c} type="button" className="as-chip" aria-pressed={teilen.includes(c)}
-              onClick={() => setTeilen(teilen.includes(c) ? teilen.filter((x) => x !== c) : [...teilen, c])}>{c}</button>)}
-          </div>
-          <div className="as-chips">
-            <button type="button" className="as-knopf as-knopf-klein" disabled={teilen.length === 0 || teilen.length === codes.length}
-              onClick={() => { dispatch({ typ: "gruppeTeilen", gruppe: g.schluessel, geschosse: teilen }); setTeilen(null); }}>Neue Gruppe</button>
-            <button type="button" className="as-textknopf" onClick={() => setTeilen(null)}>Abbrechen</button>
-          </div>
-        </div>)}
+        </label>
+        <div className="as-chips as-chips-mitte">
+          <button type="button" className="as-knopf as-knopf-klein" disabled={!sonder}
+            onClick={() => { if (sonder) dispatch({ typ: "sondergruppe", einheit: sonder, heizart: g.regel!.heizart }); setSonder(null); }}>Neue Gruppe</button>
+          <button type="button" className="as-textknopf" onClick={() => setSonder(null)}>Abbrechen</button>
+          {!sonder && <span className="as-hilfe">Einheit wählen.</span>}
+        </div>
+      </div>}
 
       <div className="as-gruppe-aufklapp">
         <details className="as-aufklapp">

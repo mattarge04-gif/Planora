@@ -124,7 +124,7 @@
 .as-zaehler-feld input[type="number"] { width: 56px; text-align: center; padding: 0 4px; -moz-appearance: textfield; appearance: textfield; }
 .as-zaehler-feld input::-webkit-outer-spin-button, .as-zaehler-feld input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-.as-segment { display: inline-flex; gap: 2px; padding: 3px; margin: 0; border: 0; border-radius: 999px; background: var(--tw-flaeche-2); box-shadow: inset 0 0 0 1px rgb(31 38 48 / 0.04); min-width: 0; }
+.as-segment { justify-self: start; display: inline-flex; gap: 2px; padding: 3px; margin: 0; border: 0; border-radius: 999px; background: var(--tw-flaeche-2); box-shadow: inset 0 0 0 1px rgb(31 38 48 / 0.04); min-width: 0; }
 .as-segment-option { position: relative; display: inline-flex; }
 .as-segment-option input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .as-segment-option span {
@@ -140,7 +140,8 @@
 
 .as-schalter { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; cursor: pointer; position: relative; }
 .as-schalter input { position: absolute; opacity: 0; width: 30px; height: 18px; margin: 0; cursor: pointer; }
-.as-schalter-bahn { width: 30px; height: 18px; border-radius: 999px; background: var(--tw-grau-2); position: relative; flex: none; transition: background-color var(--tw-hover-ms) var(--tw-kurve); }
+/* Spur «aus» in grau-3: 3.1 : 1 auf Weiss (WCAG 1.4.11), damit der Schalter nicht als leeres Oval liest (B5) */
+.as-schalter-bahn { width: 30px; height: 18px; border-radius: 999px; background: var(--tw-grau-3); position: relative; flex: none; transition: background-color var(--tw-hover-ms) var(--tw-kurve); }
 .as-schalter-bahn::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 999px; background: #fff; box-shadow: 0 1px 2px rgb(31 38 48 / 0.2); transition: transform var(--tw-hover-ms) var(--tw-kurve); }
 .as-schalter input:checked + .as-schalter-bahn { background: var(--tw-text); }
 .as-schalter input:checked + .as-schalter-bahn::after { transform: translateX(12px); }
@@ -237,7 +238,6 @@
 .as-standard-zeile > .as-standard-geraet { grid-column: 2; }
 .as-standard-geraet[open] { padding: 10px 12px 12px; border-radius: var(--tw-radius-kachel); background: var(--tw-flaeche-2); }
 .as-standard-geraet[open] > summary { margin-bottom: 10px; }
-.as-platz { padding: 10px 12px; gap: 8px; }
 .as .as-menge input { height: 28px; font-size: 12px; font-variant-numeric: tabular-nums; }
 .as-menge-inline { display: inline-flex; align-items: center; gap: 6px; justify-self: end; }
 .as .as-menge-inline input { width: 104px; }
@@ -273,7 +273,6 @@
 .as-verbraucher { margin: 0; padding: 0; border: 0; display: grid; gap: 8px; min-width: 0; }
 .as-verbraucher legend { margin-bottom: 6px; padding: 0; display: flex; gap: 8px; align-items: baseline; }
 .as-gruppe-satz { color: var(--tw-sekundaer); margin-top: -4px; }
-.as-gruppe-felder { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 14px; align-items: start; }
 .as-teilen { display: grid; gap: 8px; padding: 10px 12px; border-radius: var(--tw-radius-kachel); background: var(--tw-flaeche-2); }
 .as .as-teilen .as-chip:not([aria-pressed="true"]) { background: #fff; }
 .as-gruppe-aufklapp { display: grid; gap: 10px; padding-top: 10px; border-top: 1px solid var(--tw-grau-1); }
@@ -289,13 +288,6 @@
 
 /* Schritt 5: FBH-Verteiler */
 .as-fbh-kopf { display: grid; gap: 10px; }
-.as-fbh-liste { display: grid; gap: 6px; }
-.as-uv { padding: 10px 12px; gap: 8px; }
-.as-uv-kopf { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.as-uv-name { font-size: 13px; font-weight: 500; }
-.as-uv-details { display: flex; align-items: end; gap: 16px; flex-wrap: wrap; padding-left: 46px; }
-.as-uv-weitere .as-uv-details { padding-left: 0; }
-.as-speisung { min-width: 220px; }
 
 /* Schritt 6: Teile */
 .as-zeile-teil { grid-template-columns: minmax(0, 0.8fr) auto minmax(0, 1.2fr) 28px; }
@@ -351,3 +343,51 @@
 .as-karte-vorlage { background: rgb(255 255 255 / 0.62); }
 .as-karte-vorlage > .as-aufklapp:not([open]) { margin-top: -2px; }
 .as-aufklapp-inhalt { display: grid; gap: 12px; }
+
+/* Verbesserungsrunde 1 (Bildkritik 17.11.) */
+.as .as-kopf-ende { margin-left: auto; }
+.as-kopf-umbruch { flex-wrap: wrap; row-gap: 4px; }
+.as-kopf-umbruch .as-zahl, .as-kopf-umbruch .as-textknopf { white-space: nowrap; }
+/* Badge als Knopf: «.as button» setzt Fläche und Schrift zurück, daher hier vollständig */
+.as .as-badge-knopf { height: 20px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 500;
+  background: var(--tw-flaeche-2); color: var(--tw-sekundaer-kachel); box-shadow: inset 0 0 0 1px var(--tw-grau-1); cursor: pointer; transition: background-color var(--tw-hover-ms) var(--tw-kurve), color var(--tw-hover-ms) var(--tw-kurve); }
+.as .as-badge-knopf:hover { background: var(--tw-eis); color: var(--tw-sekundaer-eis); }
+
+/* Schritt 3: Regelgeschoss als Tabelle, Geschoss als eine Zeile */
+.as-tabelle { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+.as-tabelle th, .as-tabelle td { padding: 4px 6px 4px 0; text-align: left; vertical-align: middle; }
+.as-tabelle thead th { font-weight: 500; color: var(--tw-text); padding-bottom: 6px; vertical-align: bottom; }
+.as-tabelle thead th:first-child { width: 64px; }
+.as-tabelle thead th.as-tabelle-zahl { width: 92px; }
+.as-tabelle-std { display: block; font-weight: 400; color: var(--tw-sekundaer); }
+.as-tabelle tbody th { font-weight: 500; white-space: nowrap; }
+.as-tabelle tbody tr + tr > * { border-top: 1px solid var(--tw-grau-1); }
+.as-tabelle td .as-ausnahme, .as-tabelle td .as-menge { display: block; }
+.as-tabelle-mengen { display: grid; gap: 4px; }
+.as-tabelle .as-menge-inline { display: flex; justify-self: stretch; }
+.as .as-tabelle .as-menge-inline input { width: 100%; }
+.as-regel-heizung[open] > summary { margin-bottom: 6px; }
+.as-geschoss-heizung { padding: 10px 12px; gap: 8px; }
+.as-geschoss-zeile { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.as-ausnahme-quer { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; max-width: 340px; }
+.as-ausnahme-quer > span { flex: none; }
+.as .as-einzeln { margin-left: auto; }
+.as-untertitel { margin-bottom: -6px; color: var(--tw-sekundaer); }
+.as .as-kopf-umbruch .as-textknopf { padding: 0 6px; }
+.as-einzeln svg { transition: transform var(--tw-hover-ms) var(--tw-kurve); }
+.as-einzeln[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+/* Schritt 5: Aktionen einheitlich, FBH-Verteiler je Geschoss als Zeilen */
+.as-aktionen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.as-aktionen > .as-label { margin-right: 2px; color: var(--tw-sekundaer); }
+.as-chips-mitte { align-items: center; }
+.as-uv-tabelle { display: grid; gap: 2px; padding-left: 12px; }
+.as-uv-zeile { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 200px) 72px; gap: 10px; align-items: center; min-height: 36px; padding: 2px 8px; border-radius: 6px; }
+.as-uv-kopfzeile { min-height: 0; padding-bottom: 0; font-size: 12px; color: var(--tw-sekundaer); }
+.as-uv-zeile > [role="cell"] { display: flex; align-items: center; min-width: 0; }
+.as-uv-zeile .as-schalter { min-width: 0; }
+.as-uv-zeile .as-schalter > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.as .as-uv-speisung { height: 28px; font-size: 12px; padding: 0 2px 0 8px; }
+/* Abweichende Einträge: Markierung am Rand, Fläche bleibt weiss (Schalter-Kontrast) */
+.as-uv-abweichend { box-shadow: inset 2px 0 0 var(--tw-eis-akzent); }
+.as-uv-zeile:has(:focus-visible) { box-shadow: inset 0 0 0 1px rgb(95 136 176 / 0.35); }

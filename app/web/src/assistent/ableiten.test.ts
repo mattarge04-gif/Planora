@@ -110,3 +110,27 @@ describe("Teilen angefasster Gruppen (I4)", () => {
     expect(z.gruppen).toEqual(vorher);
   });
 });
+
+describe("Badge «Vorschlag» nur an vorgeschlagenen Gruppen (H6)", () => {
+  it("gruppenVorschlagen setzt vorgeschlagen, Kundenaktionen nicht", () => {
+    let z = zu5(basis());
+    expect(z.gruppen.every((g) => g.vorgeschlagen)).toBe(true);
+    const zahl = z.gruppen.length;
+    z = reduziere(z, { typ: "gruppeTeilen", gruppe: z.gruppen[0].schluessel, geschosse: ["OG2"] });
+    const gastro = z.einheiten.find((e) => e.art === "gastro")!;
+    z = reduziere(z, { typ: "sondergruppe", einheit: gastro.schluessel, heizart: "fbh" });
+    z = reduziere(z, { typ: "gruppenAnzahl", anzahl: z.gruppen.length + 1 });
+    const neue = z.gruppen.slice(zahl);
+    expect(neue).toHaveLength(3);
+    expect(neue.every((g) => !g.vorgeschlagen)).toBe(true);
+  });
+  it("gruppeFuerArt trägt kein «Vorschlag»; Namen ändern bestätigt die Gruppe", () => {
+    let z = zu5(basis());
+    const fbh = z.gruppen.find((g) => g.regel?.heizart === "fbh")!;
+    z = reduziere(z, { typ: "gruppeEntfernen", gruppe: fbh.schluessel });
+    z = reduziere(z, { typ: "gruppeFuerArt", heizart: "fbh" });
+    expect(z.gruppen.find((g) => g.regel?.heizart === "fbh")!.vorgeschlagen).toBeFalsy();
+    z = reduziere(z, { typ: "gruppeName", schluessel: z.gruppen[0].schluessel, bezeichnung: "HK Büros" });
+    expect(z.gruppen[0].vorgeschlagen).toBeFalsy();
+  });
+});

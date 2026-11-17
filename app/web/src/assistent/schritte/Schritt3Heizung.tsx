@@ -1,7 +1,11 @@
-import { Plus, Trash2 } from "lucide-react";
-import type { Dreiwertig, HeizArt } from "../../typen";
+import { ChevronDown, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { useState } from "react";
+import type { Dreiwertig, HeizArt, Heizung } from "../../typen";
 import { teilName } from "../bestueckung";
-import { ABGABE_VON, ERLAUBT, HEIZ_ARTEN, HEIZ_NAME, abgabenVon, artName, einheitVon, platzWirksam, vorlageVonGeschoss, wirksam, type ZBauteil, type ZEinheit } from "../zustand";
+import {
+  ABGABE_VON, ERLAUBT, FELDER_HEIZUNG, HEIZ_ARTEN, HEIZ_NAME, abgabenVon, abweichendIn, abweichungen, artName, einheitVon, platzWirksam, vorlageVonGeschoss, wirksam,
+  EINHEIT_ARTEN, type Aktion, type ZBauteil, type ZEinheit, type ZVorlage,
+} from "../zustand";
 import { Abschnitt, Hinweis, ICON, Segment } from "./gemeinsam";
 import type { SchrittInhaltProps } from "./index";
 import { geschosseAbsteigend } from "./Schritt2Einheiten";
@@ -19,12 +23,14 @@ export function geschossAusnahmeWert(einheiten: readonly ZEinheit[], art: HeizAr
 }
 
 /** Auswahl Standard/Ja/Nein/Weiss nicht; abweichende Werte sind hervorgehoben. `name` ist der zugängliche Name, `label` der sichtbare. */
-function AusnahmeWahl({ label, name, wert, standard, onWert }: { label: string; name?: string; wert: Dreiwertig | "" | "gemischt"; standard: Dreiwertig; onWert: (w: Dreiwertig | null) => void }) {
+function AusnahmeWahl({ label, name, wert, standard, onWert, kurz }: {
+  label?: string; name?: string; wert: Dreiwertig | "" | "gemischt"; standard: Dreiwertig; onWert: (w: Dreiwertig | null) => void; kurz?: boolean;
+}) {
   return (
     <label className={`as-ausnahme${wert ? " as-ausnahme-gesetzt" : ""}`}>
-      <span>{label}</span>
+      {label && <span>{label}</span>}
       <select value={wert} aria-label={name} onChange={(e) => e.target.value !== "gemischt" && onWert((e.target.value || null) as Dreiwertig | null)}>
-        <option value="">{STANDARD_TEXT[standard]}</option>
+        <option value="">{kurz ? "Standard" : STANDARD_TEXT[standard]}</option>
         {wert === "gemischt" && <option value="gemischt" disabled>Unterschiedlich</option>}
         {DREI.map((d) => <option key={d.wert} value={d.wert}>{d.text}</option>)}
       </select>
@@ -33,11 +39,13 @@ function AusnahmeWahl({ label, name, wert, standard, onWert }: { label: string; 
 }
 
 /** `name`: eindeutiger zugänglicher Name (z. B. «Büro 3.01: Heizkörper Anzahl»), `label` der kurze sichtbare Text. */
-function Menge({ label, name, wert, onWert, inline }: { label: string; name?: string; wert: number | null; onWert: (n: number | null) => void; inline?: boolean }) {
+function Menge({ label, name, wert, onWert, inline, leer = "Weiss nicht" }: {
+  label?: string; name?: string; wert: number | null; onWert: (n: number | null) => void; inline?: boolean; leer?: string;
+}) {
   return (
     <label className={`as-ausnahme as-menge${inline ? " as-menge-inline" : ""}`}>
-      <span>{label}</span>
-      <input type="number" min={0} inputMode="numeric" placeholder="Weiss nicht" value={wert ?? ""} aria-label={name}
+      {label && <span>{label}</span>}
+      <input type="number" min={0} inputMode="numeric" placeholder={leer} value={wert ?? ""} aria-label={name}
         onChange={(e) => onWert(e.target.value === "" ? null : Number(e.target.value))} />
     </label>
   );
@@ -68,6 +76,172 @@ function AbgabeZeile({ t, z, dispatch, katalog }: { t: ZBauteil } & Pick<Schritt
   );
 }
 
+/** Heizung eines Geschosses als eine Auswahl (B2): Standard, nur HK, nur FBH, beides; alles andere ist «eigen» (Feineinstellung). */
+export type HeizungWahl = "standard" | "hk" | "fbh" | "beide" | "eigen";
+const WAHL_PAAR: Record<Exclude<HeizungWahl, "standard" | "eigen">, { hk: Dreiwertig; fbh: Dreiwertig }> = {
+  hk: { hk: "ja", fbh: "nein" }, fbh: { hk: "nein", fbh: "ja" }, beide: { hk: "ja", fbh: "ja" },
+};
+const WAHL_TEXT: Record<Exclude<HeizungWahl, "standard">, string> = { hk: "Heizkörper", fbh: "Fussbodenheizung", beide: "Heizkörper und Fussbodenheizung", eigen: "Eigene Angaben (unten)" };
+
+/** Kombination aus den Ausnahmen; gezählt werden nur Einheiten mit FBH-Möglichkeit (Kern hat nur Heizkörper). */
+export function geschossHeizungWahl(einheiten: readonly ZEinheit[], standard: Heizung): HeizungWahl {
+  const mitFbh = einheiten.filter((e) => (ERLAUBT[e.art] ?? []).includes(ABGABE_VON.fbh));
+  const basis = mitFbh.length ? mitFbh : einheiten;
+  if (basis.length === 0 || einheiten.every((e) => HEIZ_ARTEN.every((a) => e.ausnahme[a] === undefined))) return "standard";
+  if (basis.some((e) => e.ausnahme.tabs !== undefined)) return "eigen";
+  const paare = new Set(basis.map((e) => { const w = { ...standard, ...e.ausnahme }; return `${w.hk}/${w.fbh}`; }));
+  if (paare.size !== 1) return "eigen";
+  const paar = [...paare][0];
+  const treffer = (Object.keys(WAHL_PAAR) as (keyof typeof WAHL_PAAR)[]).find((k) => `${WAHL_PAAR[k].hk}/${WAHL_PAAR[k].fbh}` === paar);
+  return treffer ?? "eigen";
+}
+
+/** Aktionen zur Auswahl; «Ja» zuerst, damit keine Einheit zwischendurch ohne Heizung ist (Abgaben blieben sonst nicht erhalten). */
+export function heizungWahlAktionen(geschoss: string, wahl: Exclude<HeizungWahl, "eigen">): Extract<Aktion, { typ: "geschossAusnahme" }>[] {
+  if (wahl === "standard") return HEIZ_ARTEN.map((art) => ({ typ: "geschossAusnahme", geschoss, art, wert: null }));
+  const p = WAHL_PAAR[wahl];
+  return (["hk", "fbh"] as const).map((art) => ({ typ: "geschossAusnahme" as const, geschoss, art, wert: p[art] }))
+    .sort((a, b) => (a.wert === "ja" ? 0 : 1) - (b.wert === "ja" ? 0 : 1));
+}
+
+/** «Heizkörper» oder «Heizkörper und FBH»: was der Standard tatsächlich vorsieht. */
+function standardKurz(h: Heizung): string {
+  const ja = HEIZ_ARTEN.filter((a) => h[a] === "ja").map((a) => (a === "fbh" ? "FBH" : HEIZ_NAME[a]));
+  return ja.length ? ja.join(" und ") : "offen";
+}
+
+const SPALTE: Record<HeizArt, string> = { hk: "Heizkörper", fbh: "FBH", tabs: "TABS" };
+const DREI_TEXT: Record<Dreiwertig, string> = { ja: "Ja", nein: "Nein", unbekannt: "offen" };
+const anzahlText = (n: number, art: string) => {
+  const a = EINHEIT_ARTEN.find((x) => x.art === art);
+  return `${n} ${n === 1 ? (a?.name ?? art) : (a?.mehrzahl ?? art)}`;
+};
+
+/** Plätze des Regelgeschosses als kompakte Tabelle, standardmässig eingeklappt mit Kurzsatz (B2). */
+function RegelTabelle({ v, z, dispatch }: { v: ZVorlage } & Pick<SchrittInhaltProps, "z" | "dispatch">) {
+  const spalten = HEIZ_ARTEN.filter((art) => v.plaetze.some((p) => (ERLAUBT[p.art] ?? []).includes(ABGABE_VON[art])));
+  const arten = [...new Set(v.plaetze.map((p) => p.art))];
+  const mitAusnahme = v.plaetze.filter((p) => Object.keys(p.ausnahme).length > 0 || Object.keys(p.mengen).length > 0).length;
+  const satz = `${arten.map((a) => anzahlText(v.plaetze.filter((p) => p.art === a).length, a)).join(", ")} · ${mitAusnahme === 0 ? "Heizung wie Standard" : `${mitAusnahme} mit eigenen Angaben`}`;
+  return (
+    <details className="as-aufklapp as-regel-heizung">
+      <summary>{satz}</summary>
+      <table className="as-tabelle">
+        <thead>
+          <tr>
+            <th scope="col">Platz</th>
+            {spalten.map((art) => <th key={art} scope="col">{SPALTE[art]}<span className="as-tabelle-std">Standard {DREI_TEXT[z.heizungStandard[art]]}</span></th>)}
+            <th scope="col" className="as-tabelle-zahl">Anzahl</th>
+          </tr>
+        </thead>
+        <tbody>
+          {v.plaetze.map((p, i) => {
+            const w = platzWirksam(z, p);
+            const erlaubt = ERLAUBT[p.art] ?? [];
+            const titel = `${KURZ(p.art)} ${i + 1}`;
+            const mengen = p.art === "technik" ? [] : HEIZ_ARTEN.filter((art) => w[art] === "ja" && erlaubt.includes(ABGABE_VON[art]));
+            return (
+              <tr key={p.schluessel}>
+                <th scope="row">{titel}</th>
+                {spalten.map((art) => <td key={art}>{erlaubt.includes(ABGABE_VON[art])
+                  ? <AusnahmeWahl kurz name={`${v.name} ${titel}: ${HEIZ_NAME[art]}`} wert={p.ausnahme[art] ?? ""} standard={z.heizungStandard[art]}
+                      onWert={(wert) => dispatch({ typ: "platzAusnahme", vorlage: v.schluessel, platz: p.schluessel, art, wert })} />
+                  : <span className="as-gedimmt" aria-label="nicht möglich">–</span>}</td>)}
+                <td className="as-tabelle-zahl"><div className="as-tabelle-mengen">
+                  {mengen.length === 0 && <span className="as-gedimmt">–</span>}
+                  {mengen.map((art) => <Menge key={art} leer="offen" inline={mengen.length > 1} label={mengen.length > 1 ? SPALTE[art] : undefined}
+                    name={`${v.name} ${titel}: Anzahl ${HEIZ_NAME[art]}`} wert={p.mengen[art] ?? null}
+                    onWert={(menge) => dispatch({ typ: "platzMenge", vorlage: v.schluessel, platz: p.schluessel, art, menge })} />)}
+                </div></td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </details>
+  );
+}
+
+function EinheitHeizung({ e, z, dispatch, katalog }: { e: ZEinheit } & Pick<SchrittInhaltProps, "z" | "dispatch" | "katalog">) {
+  const w = wirksam(z, e);
+  const erlaubt = ERLAUBT[e.art] ?? [];
+  const abgaben = abgabenVon(z, e.schluessel);
+  const angebote = HEIZ_ARTEN.filter((art) => w[art] !== "nein" && erlaubt.includes(ABGABE_VON[art]));
+  const abweichend = !!e.vorlage && abweichendIn(e, FELDER_HEIZUNG).length > 0;
+  return (
+    <section className="as-einheit-heizung" aria-label={e.bezeichnung}>
+      <header className="as-karte-kopf">
+        <h3>{e.bezeichnung}</h3><span className="as-zahl">{artName(e.art)}</span>
+        {abweichend && <button type="button" className="as-rundknopf as-kopf-ende" aria-label={`Heizung von ${e.bezeichnung} auf Regelgeschoss zurücksetzen`}
+          title="Heizung auf Regelgeschoss zurücksetzen" onClick={() => dispatch({ typ: "einheitZuruecksetzen", einheit: e.schluessel, felder: FELDER_HEIZUNG })}><RotateCcw {...ICON} /></button>}
+      </header>
+      <div className="as-ausnahmen">
+        {HEIZ_ARTEN.filter((art) => erlaubt.includes(ABGABE_VON[art])).map((art) => (
+          <AusnahmeWahl key={art} label={HEIZ_NAME[art]} name={`${e.bezeichnung}: ${HEIZ_NAME[art]}`} wert={e.ausnahme[art] ?? ""} standard={z.heizungStandard[art]}
+            onWert={(wert) => dispatch({ typ: "ausnahme", einheit: e.schluessel, art, wert })} />
+        ))}
+      </div>
+      {abgaben.length > 0 && <ul className="as-zeilen as-liste-roh">{abgaben.map((t) => <AbgabeZeile key={t.schluessel} t={t} z={z} dispatch={dispatch} katalog={katalog} />)}</ul>}
+      {angebote.length > 0 && <div className="as-chips">
+        {angebote.map((art) => (
+          <button key={art} type="button" className="as-textknopf" onClick={() => dispatch({ typ: "abgabeNeu", einheit: e.schluessel, katalogId: ABGABE_VON[art] })}>
+            <Plus size={14} strokeWidth={1.75} aria-hidden />{teilName(ABGABE_VON[art], katalog)}</button>
+        ))}
+      </div>}
+    </section>
+  );
+}
+
+/** Ein Geschoss in zwei Zeilen: Kopf mit Herkunft/Abweichung, darunter eine Auswahl «Heizung» und «Einzeln» (B2). */
+function GeschossHeizung({ code, einheiten, z, dispatch, katalog }: { code: string; einheiten: ZEinheit[] } & Pick<SchrittInhaltProps, "z" | "dispatch" | "katalog">) {
+  const [offen, setOffen] = useState(false);
+  const v = vorlageVonGeschoss(z, code);
+  const mitArt = (art: HeizArt) => einheiten.filter((e) => (ERLAUBT[e.art] ?? []).includes(ABGABE_VON[art]));
+  const arten = HEIZ_ARTEN.filter((art) => mitArt(art).length > 0);
+  const werte = arten.map((art) => geschossAusnahmeWert(mitArt(art), art));
+  const wahl = geschossHeizungWahl(einheiten, z.heizungStandard);
+  const fbhMoeglich = arten.includes("fbh");
+  const ab = v ? abweichungen(z, v.schluessel, FELDER_HEIZUNG, code) : 0;
+  const inhalt = `as-heizung-${code}`;
+  return (
+    <section className={`as-karte as-geschoss-heizung${v ? " as-karte-vorlage" : ""}`} aria-label={`Geschoss ${code}`}>
+      <header className="as-karte-kopf as-kopf-umbruch">
+        <span className="as-code">{code}</span>
+        <span className="as-zahl">{einheiten.length === 1 ? "1 Einheit" : `${einheiten.length} Einheiten`}</span>
+        {v && <span className="as-badge">{v.name}{ab > 0 && ` · ${ab} abweichend`}</span>}
+        {!v && werte.some(Boolean) && <span className="as-badge as-badge-leise">Ausnahme</span>}
+        {ab > 0 && <button type="button" className="as-textknopf as-kopf-ende" aria-label={`Heizung in ${code} auf Regelgeschoss zurücksetzen`}
+          title="Heizung auf Regelgeschoss zurücksetzen" onClick={() => dispatch({ typ: "geschossZuruecksetzen", geschoss: code, felder: FELDER_HEIZUNG })}>
+          <RotateCcw size={14} strokeWidth={1.75} aria-hidden />Zurücksetzen</button>}
+      </header>
+      <div className="as-geschoss-zeile">
+        {fbhMoeglich
+          ? <label className={`as-ausnahme as-ausnahme-quer${wahl !== "standard" ? " as-ausnahme-gesetzt" : ""}`}>
+              <span>Heizung</span>
+              <select value={wahl} aria-label={`Heizung im ganzen Geschoss ${code}`}
+                onChange={(ev) => { const w = ev.target.value as HeizungWahl; if (w !== "eigen") for (const a of heizungWahlAktionen(code, w)) dispatch(a); }}>
+                <option value="standard">Wie Standard ({standardKurz(z.heizungStandard)})</option>
+                {(["hk", "fbh", "beide"] as const).map((k) => <option key={k} value={k}>{WAHL_TEXT[k]}</option>)}
+                {wahl === "eigen" && <option value="eigen" disabled>{WAHL_TEXT.eigen}</option>}
+              </select>
+            </label>
+          : <span className="as-zahl">Nur Heizkörper möglich</span>}
+        <button type="button" className="as-textknopf as-einzeln" aria-expanded={offen} aria-controls={inhalt}
+          aria-label={`Heizung in ${code} einzeln einstellen`} onClick={() => setOffen(!offen)}>
+          Einzeln<ChevronDown size={14} strokeWidth={1.75} aria-hidden /></button>
+      </div>
+      {offen && <div id={inhalt} className="as-aufklapp-inhalt as-einheiten-heizung">
+        <span className="as-label as-untertitel" id={`${inhalt}-alle`}>Ganzes Geschoss, je Heizart</span>
+        <div className="as-ausnahmen" role="group" aria-labelledby={`${inhalt}-alle`}>
+          {arten.map((art, i) => <AusnahmeWahl key={art} label={HEIZ_NAME[art]} name={`${HEIZ_NAME[art]} im ganzen Geschoss ${code}`} wert={werte[i]}
+            standard={z.heizungStandard[art]} onWert={(wert) => dispatch({ typ: "geschossAusnahme", geschoss: code, art, wert })} />)}
+        </div>
+        {einheiten.map((e) => <EinheitHeizung key={e.schluessel} e={e} z={z} dispatch={dispatch} katalog={katalog} />)}
+      </div>}
+    </section>
+  );
+}
+
 export function Schritt3Heizung({ z, dispatch, katalog }: SchrittInhaltProps) {
   return <>
     <Abschnitt titel="Gebäudestandard" zusatz="Gilt für alle Einheiten, ausser bei Ausnahmen.">
@@ -95,82 +269,13 @@ export function Schritt3Heizung({ z, dispatch, katalog }: SchrittInhaltProps) {
     {z.einheiten.length === 0 && <Hinweis art="warnung">Noch keine Einheiten erfasst. Lege sie in Schritt 2 an.</Hinweis>}
     {z.vorlagen.filter((v) => v.plaetze.length).map((v) => (
       <Abschnitt key={v.schluessel} titel={v.name} zusatz={v.geschosse.length ? `gilt für ${[...v.geschosse].join(", ")}` : "keinem Geschoss zugewiesen"}>
-        <ul className="as-zeilen as-liste-roh">
-          {v.plaetze.map((p, i) => {
-            const w = platzWirksam(z, p);
-            const erlaubt = ERLAUBT[p.art] ?? [];
-            const titel = `${KURZ(p.art)} ${i + 1}`;
-            return (
-              <li key={p.schluessel} className="as-karte as-platz">
-                <header className="as-karte-kopf"><h3>{titel}</h3><span className="as-zahl">{artName(p.art)}</span></header>
-                <div className="as-ausnahmen">
-                  {HEIZ_ARTEN.filter((art) => erlaubt.includes(ABGABE_VON[art])).map((art) => (
-                    <AusnahmeWahl key={art} label={HEIZ_NAME[art]} name={`${v.name} ${titel}: ${HEIZ_NAME[art]}`} wert={p.ausnahme[art] ?? ""} standard={z.heizungStandard[art]}
-                      onWert={(wert) => dispatch({ typ: "platzAusnahme", vorlage: v.schluessel, platz: p.schluessel, art, wert })} />
-                  ))}
-                  {p.art !== "technik" && HEIZ_ARTEN.filter((art) => w[art] === "ja" && erlaubt.includes(ABGABE_VON[art])).map((art) => (
-                    <Menge key={`m-${art}`} label={`Anzahl ${HEIZ_NAME[art]}`} name={`${v.name} ${titel}: Anzahl ${HEIZ_NAME[art]}`} wert={p.mengen[art] ?? null}
-                      onWert={(menge) => dispatch({ typ: "platzMenge", vorlage: v.schluessel, platz: p.schluessel, art, menge })} />
-                  ))}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <RegelTabelle v={v} z={z} dispatch={dispatch} />
       </Abschnitt>
     ))}
-    <Abschnitt titel="Geschosse und Einheiten" zusatz="Ausnahmen gelten für alle Einheiten im Geschoss.">
+    <Abschnitt titel="Geschosse und Einheiten" zusatz="Die Auswahl gilt für alle Einheiten im Geschoss.">
       {geschosseAbsteigend(z).map((g) => {
         const einheiten = z.einheiten.filter((e) => e.geschoss === g.code);
-        if (einheiten.length === 0) return null;
-        const v = vorlageVonGeschoss(z, g.code);
-        // Nur Einheiten, in denen die Heizart erlaubt ist (z. B. Kern nur Heizkörper), sonst stünde FBH im EG immer auf «Unterschiedlich».
-        const mitArt = (art: HeizArt) => einheiten.filter((e) => (ERLAUBT[e.art] ?? []).includes(ABGABE_VON[art]));
-        const arten = HEIZ_ARTEN.filter((art) => mitArt(art).length > 0);
-        const werte = arten.map((art) => geschossAusnahmeWert(mitArt(art), art));
-        return (
-          <section key={g.code} className={`as-karte${v ? " as-karte-vorlage" : ""}`} aria-label={`Geschoss ${g.code}`}>
-            <header className="as-karte-kopf">
-              <span className="as-code">{g.code}</span>
-              <span className="as-zahl">{einheiten.length === 1 ? "1 Einheit" : `${einheiten.length} Einheiten`}</span>
-              {v && <span className="as-badge">wie {v.name}</span>}
-              {werte.some(Boolean) && <span className="as-badge as-badge-leise">Ausnahme</span>}
-            </header>
-            <div className="as-ausnahmen" role="group" aria-label={`Ausnahme für alle Einheiten in ${g.code}`}>
-              {arten.map((art, i) => <AusnahmeWahl key={art} label={HEIZ_NAME[art]} name={`${HEIZ_NAME[art]} im ganzen Geschoss ${g.code}`} wert={werte[i]}
-                standard={z.heizungStandard[art]} onWert={(wert) => dispatch({ typ: "geschossAusnahme", geschoss: g.code, art, wert })} />)}
-            </div>
-            <details className="as-aufklapp" open={!v && einheiten.length <= 3}>
-              <summary>{einheiten.length === 1 ? "1 Einheit" : `${einheiten.length} Einheiten`} einzeln</summary>
-              <div className="as-aufklapp-inhalt as-einheiten-heizung">
-                {einheiten.map((e) => {
-                  const w = wirksam(z, e);
-                  const erlaubt = ERLAUBT[e.art] ?? [];
-                  const abgaben = abgabenVon(z, e.schluessel);
-                  const angebote = HEIZ_ARTEN.filter((art) => w[art] !== "nein" && erlaubt.includes(ABGABE_VON[art]));
-                  return (
-                    <section key={e.schluessel} className="as-einheit-heizung" aria-label={e.bezeichnung}>
-                      <header className="as-karte-kopf"><h3>{e.bezeichnung}</h3><span className="as-zahl">{artName(e.art)}</span></header>
-                      <div className="as-ausnahmen">
-                        {HEIZ_ARTEN.filter((art) => erlaubt.includes(ABGABE_VON[art])).map((art) => (
-                          <AusnahmeWahl key={art} label={HEIZ_NAME[art]} name={`${e.bezeichnung}: ${HEIZ_NAME[art]}`} wert={e.ausnahme[art] ?? ""} standard={z.heizungStandard[art]}
-                            onWert={(wert) => dispatch({ typ: "ausnahme", einheit: e.schluessel, art, wert })} />
-                        ))}
-                      </div>
-                      {abgaben.length > 0 && <ul className="as-zeilen as-liste-roh">{abgaben.map((t) => <AbgabeZeile key={t.schluessel} t={t} z={z} dispatch={dispatch} katalog={katalog} />)}</ul>}
-                      {angebote.length > 0 && <div className="as-chips">
-                        {angebote.map((art) => (
-                          <button key={art} type="button" className="as-textknopf" onClick={() => dispatch({ typ: "abgabeNeu", einheit: e.schluessel, katalogId: ABGABE_VON[art] })}>
-                            <Plus size={14} strokeWidth={1.75} aria-hidden />{teilName(ABGABE_VON[art], katalog)}</button>
-                        ))}
-                      </div>}
-                    </section>
-                  );
-                })}
-              </div>
-            </details>
-          </section>
-        );
+        return einheiten.length === 0 ? null : <GeschossHeizung key={g.code} code={g.code} einheiten={einheiten} z={z} dispatch={dispatch} katalog={katalog} />;
       })}
     </Abschnitt>
   </>;

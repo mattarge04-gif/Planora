@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { K } from "./bestueckung";
 import { ZAEHLBAR, anzahlJeArt, geschosseAbsteigend, zaehlerAufteilen } from "./schritte/Schritt2Einheiten";
 import { zaehlerUebernehmen } from "./schritte/gemeinsam";
-import { geschossAusnahmeWert } from "./schritte/Schritt3Heizung";
+import { geschossAusnahmeWert, geschossHeizungWahl, heizungWahlAktionen } from "./schritte/Schritt3Heizung";
+import { fbhSatz } from "./schritte/FbhVerteiler";
 import { verbraucherSatz } from "./schritte/Schritt5Gruppen";
 import { erzeuger, geschossCodes, leererZustand, reduziere, zentraleRaumHinweis, zentraleGeraete, hauptverteiler, type Aktion, type AssistentZustand } from "./zustand";
 
@@ -125,5 +126,45 @@ describe("Zähler übernimmt erst bei Blur/Enter (C1)", () => {
     expect(zaehlerUebernehmen("-2", 3, 0, 50)).toBe(0);
     expect(zaehlerUebernehmen("2.6", 0, 0, 50)).toBe(3);
     expect(zaehlerUebernehmen("3", 3, 0, 50)).toBeNull();
+  });
+});
+
+describe("Schritt 3: eine Auswahl je Geschoss (B2)", () => {
+  const std = { hk: "ja", fbh: "nein", tabs: "nein" } as const;
+  const e = (ausnahme: object, art = "buero") => ({ schluessel: "x", geschoss: "OG1", bezeichnung: "B", art, flaecheM2: null, ausnahme });
+  it("liest die Kombination aus den Ausnahmen", () => {
+    expect(geschossHeizungWahl([e({}), e({})], std)).toBe("standard");
+    expect(geschossHeizungWahl([e({ hk: "nein", fbh: "ja" }), e({ hk: "nein", fbh: "ja" })], std)).toBe("fbh");
+    expect(geschossHeizungWahl([e({ fbh: "ja" })], std)).toBe("beide");
+    expect(geschossHeizungWahl([e({ fbh: "ja" }), e({})], std)).toBe("eigen");
+    expect(geschossHeizungWahl([e({ tabs: "ja" })], std)).toBe("eigen");
+    expect(geschossHeizungWahl([e({ fbh: "unbekannt" })], std)).toBe("eigen");
+    // Kern (nur Heizkörper) zählt nicht mit, sonst stünde FBH immer auf «eigen»
+    expect(geschossHeizungWahl([e({ hk: "nein", fbh: "ja" }), e({}, "kern")], std)).toBe("fbh");
+  });
+  it("Aktionen: Ja zuerst, damit keine Einheit kurz ohne Heizung ist", () => {
+    expect(heizungWahlAktionen("OG4", "fbh").map((a) => [a.art, a.wert])).toEqual([["fbh", "ja"], ["hk", "nein"]]);
+    expect(heizungWahlAktionen("OG4", "standard").map((a) => a.wert)).toEqual([null, null, null]);
+  });
+});
+
+describe("Schritt 5: FBH-Satz (B14)", () => {
+  it("nennt die Aufteilung je Gruppe", () => {
+    let z = reduziere(leererZustand("l"), { typ: "geschosse", ug: 1, og: 2 });
+    z = reduziere(z, { typ: "gebaeudeAngelegt", id: "00000000-0000-4000-8000-000000000900", stand: 0,
+      geschosse: z.gebaeude.geschosse.map((g, i) => ({ id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`, code: g.code })) });
+    for (const a of [
+      { typ: "einheitAnzahl", geschoss: "UG1", art: "technik", anzahl: 1 },
+      { typ: "einheitAnzahl", geschoss: "EG", art: "gastro", anzahl: 1 },
+      { typ: "einheitAnzahl", geschoss: "OG2", art: "buero", anzahl: 2 },
+      { typ: "geschossAusnahme", geschoss: "OG2", art: "fbh", wert: "ja" },
+      { typ: "geschossAusnahme", geschoss: "EG", art: "fbh", wert: "ja" },
+      { typ: "erzeuger", katalogId: K.waermepumpe },
+      { typ: "schritt", nr: 5 },
+    ] as Aktion[]) z = reduziere(z, a);
+    expect(fbhSatz(z)).toBe("3 FBH-Verteiler, automatisch an «Fussbodenheizung».");
+    const gastro = z.einheiten.find((x) => x.art === "gastro")!;
+    z = reduziere(z, { typ: "sondergruppe", einheit: gastro.schluessel, heizart: "fbh" });
+    expect(fbhSatz(z)).toBe(`3 FBH-Verteiler, automatisch: 2 an «Fussbodenheizung», 1 an «Fussbodenheizung ${gastro.bezeichnung}».`);
   });
 });

@@ -19,6 +19,9 @@ export const SCHRITTE: readonly { nr: SchrittNr; titel: string; kurz: string }[]
 export const LETZTER_SCHRITT: SchrittNr = 7;
 
 export type VorlageFeld = "art" | "bezeichnung" | "ausnahme" | "mengen";
+/** Felder je Schritt: Schritt 2 (Einheiten) und Schritt 3 (Heizung) zählen und setzen nur ihre eigenen zurück. */
+export const FELDER_EINHEITEN: readonly VorlageFeld[] = ["art", "bezeichnung"];
+export const FELDER_HEIZUNG: readonly VorlageFeld[] = ["ausnahme", "mengen"];
 export interface ZPlatz { schluessel: string; art: string; ausnahme: Partial<Heizung>; mengen: Partial<Record<HeizArt, number>> }
 /** Regelgeschoss: Plätze werden in jedem zugewiesenen Geschoss (Code) als Einheit ausgerollt. */
 export interface ZVorlage { schluessel: string; name: string; plaetze: ZPlatz[]; geschosse: string[]; ausgelassen: { geschoss: string; platz: string }[] }
@@ -47,6 +50,8 @@ export interface ZGruppe {
   schluessel: string; id?: string; verteiler: string; nummer: number; art: GruppenArt; bezeichnung: string; verbraucher: string[];
   /** Vorgeschlagene Gruppe: Verbraucher werden nach Regel zugeordnet, bis der Kunde einzelne umhängt (`angefasst`). */
   regel?: ZGruppenRegel; angefasst?: boolean;
+  /** Von Planora vorgeschlagen (nur `gruppenVorschlagen`) und vom Kunden nicht geändert: Badge «Vorschlag» (H6). */
+  vorgeschlagen?: boolean;
 }
 export interface AssistentZustand {
   version: 2;
@@ -230,8 +235,8 @@ export type Aktion =
   | { typ: "platzMenge"; vorlage: string; platz: string; art: HeizArt; menge: number | null }
   | { typ: "vorlageZuweisen"; vorlage: string; geschoss: string; an: boolean }
   | { typ: "vorlageLoeschen"; vorlage: string }
-  | { typ: "einheitZuruecksetzen"; einheit: string }
-  | { typ: "geschossZuruecksetzen"; geschoss: string }
+  | { typ: "einheitZuruecksetzen"; einheit: string; felder?: readonly VorlageFeld[] }
+  | { typ: "geschossZuruecksetzen"; geschoss: string; felder?: readonly VorlageFeld[] }
   | { typ: "geschossAusnahme"; geschoss: string; art: HeizArt; wert: Dreiwertig | null }
   | { typ: "gruppenVorschlagen" }
   | { typ: "gruppeTeilen"; gruppe: string; geschosse: string[] }
@@ -402,7 +407,9 @@ export function gruppenVorschlagen(z: AssistentZustand): AssistentZustand {
   if (arten.length === 0) return z;
   let [neu, v] = mitHauptverteiler(z);
   if (!v) return neu;
+  const vorher = new Set(neu.gruppen.map((g) => g.schluessel));
   for (const art of arten) [neu] = gruppeAnlegen(neu, v, { heizart: art }, HEIZ_NAME[art]);
+  neu = { ...neu, gruppen: neu.gruppen.map((g) => (vorher.has(g.schluessel) ? g : { ...g, vorgeschlagen: true })) };
   return gruppenVerbraucherNachfuehren({ ...neu, gruppenVorgeschlagen: true });
 }
 
@@ -471,11 +478,19 @@ function ohneVorlage(e: ZEinheit): ZEinheit {
 const gleicheAusnahme = (x: Partial<Heizung>, y: Partial<Heizung>) => HEIZ_ARTEN.every((a) => x[a] === y[a]);
 export const platzWirksam = (z: AssistentZustand, p: ZPlatz): Heizung => ({ ...z.heizungStandard, ...p.ausnahme });
 
-/** Einheiten mit Abweichung plus ausgelassene Plätze einer Vorlage. */
-export function abweichungen(z: AssistentZustand, vorlage: string): number {
+/** Ausgelassene Plätze sind eine Abweichung der Einheiten (Schritt 2): zählen nur ohne Feldangabe oder mit `art`/`bezeichnung`. */
+const mitAusgelassen = (felder?: readonly VorlageFeld[]) => !felder || felder.includes("art") || felder.includes("bezeichnung");
+/** Abweichende Felder einer Einheit, eingeschränkt auf `felder` (ohne Angabe: alle). */
+export const abweichendIn = (e: ZEinheit, felder?: readonly VorlageFeld[]): VorlageFeld[] =>
+  (e.abweichend ?? []).filter((f) => !felder || felder.includes(f));
+
+/** Einheiten mit Abweichung (in `felder`, ohne Angabe: alle) plus ausgelassene Plätze einer Vorlage, optional nur in einem Geschoss. */
+export function abweichungen(z: AssistentZustand, vorlage: string, felder?: readonly VorlageFeld[], geschoss?: string): number {
   const v = vorlageVon(z, vorlage);
   if (!v) return 0;
-  return z.einheiten.filter((e) => e.vorlage?.schluessel === vorlage && (e.abweichend?.length ?? 0) > 0).length + v.ausgelassen.length;
+  const hier = (code: string) => geschoss === undefined || code === geschoss;
+  return z.einheiten.filter((e) => e.vorlage?.schluessel === vorlage && hier(e.geschoss) && abweichendIn(e, felder).length > 0).length
+    + (mitAusgelassen(felder) ? v.ausgelassen.filter((o) => hier(o.geschoss)).length : 0);
 }
 
 function mengenVon(z: AssistentZustand, einheit: string): Partial<Record<HeizArt, number>> {
@@ -542,6 +557,9 @@ function vorlageAnwenden(z: AssistentZustand, vs: string): AssistentZustand {
   });
   return neu;
 }
+
+/** Abweichung ohne die zurückgesetzten Felder (ohne Angabe: alle zurücksetzen). */
+const ohneFelder = (e: ZEinheit, felder?: readonly VorlageFeld[]): VorlageFeld[] => (felder ? (e.abweichend ?? []).filter((f) => !felder.includes(f)) : []);
 
 /** Ausnahme normalisieren: gleich wie Standard oder null → keine Ausnahme. */
 function ausnahmeSetzen(aus: Partial<Heizung>, art: HeizArt, wert: Dreiwertig | null, standard: Heizung): Partial<Heizung> {
@@ -748,9 +766,9 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
       }
       return neu;
     }
-    case "gruppeName": return { ...z, gruppen: z.gruppen.map((g) => (g.schluessel === a.schluessel ? { ...g, bezeichnung: a.bezeichnung } : g)) };
+    case "gruppeName": return { ...z, gruppen: z.gruppen.map((g) => (g.schluessel === a.schluessel ? { ...g, bezeichnung: a.bezeichnung, vorgeschlagen: false } : g)) };
     case "gruppeArt": {
-      const neu = { ...z, gruppen: z.gruppen.map((g) => (g.schluessel === a.schluessel ? { ...g, art: a.art } : g)) };
+      const neu = { ...z, gruppen: z.gruppen.map((g) => (g.schluessel === a.schluessel ? { ...g, art: a.art, vorgeschlagen: false } : g)) };
       return bestueckungSetzen(neu, a.schluessel, a.art);
     }
     case "bestueckung": {
@@ -908,13 +926,14 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
     case "einheitZuruecksetzen": {
       const e = z.einheiten.find((x) => x.schluessel === a.einheit);
       if (!e?.vorlage) return z;
-      return vorlageAnwenden(einheitSetzen(z, e.schluessel, (x) => ({ ...x, abweichend: [] })), e.vorlage.schluessel);
+      return vorlageAnwenden(einheitSetzen(z, e.schluessel, (x) => ({ ...x, abweichend: ohneFelder(x, a.felder) })), e.vorlage.schluessel);
     }
     case "geschossZuruecksetzen": {
       const v = vorlageVonGeschoss(z, a.geschoss);
       if (!v) return z;
-      let neu = vorlageSetzen(z, v.schluessel, (x) => ({ ...x, ausgelassen: x.ausgelassen.filter((o) => o.geschoss !== a.geschoss) }));
-      neu = { ...neu, einheiten: neu.einheiten.map((e) => (e.geschoss === a.geschoss && e.vorlage ? { ...e, abweichend: [] } : e)) };
+      let neu = mitAusgelassen(a.felder)
+        ? vorlageSetzen(z, v.schluessel, (x) => ({ ...x, ausgelassen: x.ausgelassen.filter((o) => o.geschoss !== a.geschoss) })) : z;
+      neu = { ...neu, einheiten: neu.einheiten.map((e) => (e.geschoss === a.geschoss && e.vorlage ? { ...e, abweichend: ohneFelder(e, a.felder) } : e)) };
       return vorlageAnwenden(neu, v.schluessel);
     }
     case "geschossAusnahme": {
