@@ -3,8 +3,8 @@ import { INTERNE_HINWEISE } from "../panel/daten";
 import { K, teilName } from "./bestueckung";
 import type { Positionen } from "./beschreibung";
 import {
-  ABGABE_VON, HEIZ_ARTEN, HEIZ_NAME, einheitVon, erzeuger, fbhSpeisung, gruppeVonVerbraucher, hauptverteiler, unterverteiler, verbraucherDerArt, weitereTeile, zentraleRaumHinweis,
-  type AssistentZustand, type SchrittNr, type ZBauteil,
+  ABGABE_VON, HEIZ_ARTEN, HEIZ_NAME, einheitVon, erzeuger, fbhSpeisung, gruppeVonVerbraucher, hauptverteiler, unterverteiler, verbraucherDerArt, weitereTeile, zentraleRaumHinweis, zubehoerVon,
+  type AssistentZustand, type SchrittNr, type ZBauteil, type ZGruppe,
 } from "./zustand";
 
 export interface PruefHinweis { code: string; text: string; schritt: SchrittNr; schluessel?: string }
@@ -87,14 +87,54 @@ export function zusammenfassung(z: AssistentZustand, katalog?: readonly KatalogE
   const haupt = hauptverteiler(z);
   const gruppen = z.gruppen.filter((g) => g.verteiler === haupt?.schluessel).sort((a, b) => a.nummer - b.nummer)
     .map((g) => `${g.bezeichnung || `Gruppe ${g.nummer}`} (${g.verbraucher.length})`);
-  const fbh = unterverteiler(z).length;
-  const speisung = fbhSpeisung(z).filter((s) => s.gruppe).map((s) => `«${s.gruppe!.bezeichnung}»`);
+  const weitere = weitereTeile(z).length;
   return [
     { titel: "Einheiten", text: einheiten, schritt: 2 },
-    { titel: "Heizung", text: heizung + (ausnahmen ? ` · ${ausnahmen} Einheiten mit Ausnahme` : ""), schritt: 3 },
+    { titel: "Heizung", text: heizung + (ausnahmen ? ` · ${ausnahmen === 1 ? "1 Einheit" : `${ausnahmen} Einheiten`} mit Ausnahme` : ""), schritt: 3 },
+    { titel: "Hersteller", text: herstellerText(z), schritt: 3 },
     { titel: "Zentrale", text: zentrale, schritt: 4 },
     { titel: "Gruppen", text: gruppen.length ? gruppen.join(", ") : "noch keine", schritt: 5 },
-    { titel: "FBH-Verteiler", text: fbh ? `${fbh}${speisung.length ? `, an ${speisung.join(", ")}` : ""}` : "keine", schritt: 5 },
-    { titel: "Weitere Teile", text: String(weitereTeile(z).length), schritt: 6 },
+    { titel: "FBH-Verteiler", text: fbhVerteilerText(z), schritt: 5 },
+    { titel: "Wärmezähler", text: wmzText(z), schritt: 5 },
+    { titel: "Weitere Teile", text: weitere ? (weitere === 1 ? "1 Teil" : `${weitere} Teile`) : "keine", schritt: 6 },
   ];
+}
+
+const gruppenName = (g: ZGruppe) => g.bezeichnung || `Gruppe ${g.nummer}`;
+const aufzaehlen = (xs: readonly string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} und ${xs[xs.length - 1]}`);
+
+/** Hersteller/Typ am Gebäudestandard je Heizart, die der Standard vorsieht (H5). */
+function herstellerText(z: AssistentZustand): string {
+  const teile = HEIZ_ARTEN.filter((a) => z.heizungStandard[a] !== "nein").flatMap((a) => {
+    const g = z.standardGeraet[a];
+    const text = [g?.hersteller, g?.typ].filter(Boolean).join(" ");
+    return text ? [`${HEIZ_NAME[a]}: ${text}`] : [];
+  });
+  return teile.length ? teile.join(" · ") : "keine Angabe";
+}
+
+/** «8: 7 an «A», 1 an «B»» plus FBH-Kreise ohne eigenen Verteiler (B13/B14). */
+function fbhVerteilerText(z: AssistentZustand): string {
+  const uv = unterverteiler(z);
+  const versorgt = new Set(uv.flatMap((t) => t.versorgt));
+  const ohne = [...new Set(z.bauteile.filter((t) => t.katalogId === K.fbh && "einheit" in t.standort && !versorgt.has(t.standort.einheit))
+    .map((t) => einheitVon(z, t)?.bezeichnung).filter((b): b is string => !!b))];
+  const ohneText = ohne.length ? `${ohne.length === 1 ? "1 FBH-Kreis" : `${ohne.length} FBH-Kreise`} ohne Verteiler (${aufzaehlen(ohne)})` : "";
+  if (uv.length === 0) return ohneText || "keine";
+  const speisung = fbhSpeisung(z).sort((a, b) => b.anzahl - a.anzahl);
+  const ziel = (g: ZGruppe | null) => (g ? `an «${gruppenName(g)}»` : "ohne Gruppe");
+  const satz = speisung.length === 1 ? `${uv.length}, ${ziel(speisung[0].gruppe)}` : `${uv.length}: ${speisung.map((s) => `${s.anzahl} ${ziel(s.gruppe)}`).join(", ")}`;
+  return ohneText ? `${satz} · ${ohneText}` : satz;
+}
+
+/** Wärmezähler an Gruppen und an FBH-Verteilern, «keine» ohne (B13). */
+function wmzText(z: AssistentZustand): string {
+  const mitWmz = z.gruppen.filter((g) => zubehoerVon(z, g.schluessel).some((t) => t.katalogId === K.wmz)).sort((a, b) => a.nummer - b.nummer).map((g) => `«${gruppenName(g)}»`);
+  const uv = unterverteiler(z);
+  const anUv = uv.filter((v) => z.bauteile.some((t) => t.katalogId === K.wmz && t.ort && "vorBauteil" in t.ort && t.ort.vorBauteil === v.schluessel)).length;
+  const teile = [
+    ...(mitWmz.length ? [`an ${mitWmz.length === 1 ? "Gruppe" : `${mitWmz.length} Gruppen`} ${aufzaehlen(mitWmz)}`] : []),
+    ...(anUv ? [anUv === uv.length ? `an ${anUv === 1 ? "dem FBH-Verteiler" : `allen ${anUv} FBH-Verteilern`}` : `an ${anUv} von ${uv.length} FBH-Verteilern`] : []),
+  ];
+  return teile.length ? teile.join(" · ") : "keine";
 }

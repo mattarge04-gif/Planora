@@ -81,7 +81,7 @@ export type HeizungWahl = "standard" | "hk" | "fbh" | "beide" | "eigen";
 const WAHL_PAAR: Record<Exclude<HeizungWahl, "standard" | "eigen">, { hk: Dreiwertig; fbh: Dreiwertig }> = {
   hk: { hk: "ja", fbh: "nein" }, fbh: { hk: "nein", fbh: "ja" }, beide: { hk: "ja", fbh: "ja" },
 };
-const WAHL_TEXT: Record<Exclude<HeizungWahl, "standard">, string> = { hk: "Heizkörper", fbh: "Fussbodenheizung", beide: "Heizkörper und Fussbodenheizung", eigen: "Eigene Angaben (unten)" };
+const WAHL_TEXT: Record<Exclude<HeizungWahl, "standard">, string> = { hk: "Heizkörper", fbh: "Fussbodenheizung", beide: "Heizkörper und Fussbodenheizung", eigen: "Eigene Angaben (siehe «Einzeln»)" };
 
 /** Kombination aus den Ausnahmen; gezählt werden nur Einheiten mit FBH-Möglichkeit (Kern hat nur Heizkörper). */
 export function geschossHeizungWahl(einheiten: readonly ZEinheit[], standard: Heizung): HeizungWahl {
@@ -98,10 +98,21 @@ export function geschossHeizungWahl(einheiten: readonly ZEinheit[], standard: He
 
 /** Aktionen zur Auswahl; «Ja» zuerst, damit keine Einheit zwischendurch ohne Heizung ist (Abgaben blieben sonst nicht erhalten). */
 export function heizungWahlAktionen(geschoss: string, wahl: Exclude<HeizungWahl, "eigen">): Extract<Aktion, { typ: "geschossAusnahme" }>[] {
-  if (wahl === "standard") return HEIZ_ARTEN.map((art) => ({ typ: "geschossAusnahme", geschoss, art, wert: null }));
+  // «Wie Standard» betrifft nur, was die Auswahl zeigt (Heizkörper, FBH); TABS bleibt eine Feineinstellung
+  if (wahl === "standard") return (["hk", "fbh"] as const).map((art) => ({ typ: "geschossAusnahme", geschoss, art, wert: null }));
   const p = WAHL_PAAR[wahl];
-  return (["hk", "fbh"] as const).map((art) => ({ typ: "geschossAusnahme" as const, geschoss, art, wert: p[art] }))
+  // N1: Heizkörper nur dort abwählen, wo FBH möglich ist – Kerne und Technik behalten ihre Heizkörper
+  return (["hk", "fbh"] as const).map((art) => ({ typ: "geschossAusnahme" as const, geschoss, art, wert: p[art], ...(wahl === "fbh" && art === "hk" && { nurMit: "fbh" as const }) }))
     .sort((a, b) => (a.wert === "ja" ? 0 : 1) - (b.wert === "ja" ? 0 : 1));
+}
+
+/** Leise Zeile unter der Auswahl: Einheiten ohne FBH-Möglichkeit, die bei «Fussbodenheizung» ihre Heizkörper behalten (N1). */
+export function wahlAusgenommen(einheiten: readonly ZEinheit[], wahl: HeizungWahl, standard: Heizung): string | null {
+  if (wahl !== "fbh") return null;
+  const namen = einheiten.filter((e) => e.art !== "technik" && !(ERLAUBT[e.art] ?? []).includes(ABGABE_VON.fbh) && { ...standard, ...e.ausnahme }.hk === "ja").map((e) => e.bezeichnung);
+  if (namen.length === 0) return null;
+  const liste = namen.length === 1 ? namen[0] : `${namen.slice(0, -1).join(", ")} und ${namen[namen.length - 1]}`;
+  return `${liste} ${namen.length === 1 ? "behält" : "behalten"} Heizkörper.`;
 }
 
 /** «Heizkörper» oder «Heizkörper und FBH»: was der Standard tatsächlich vorsieht. */
@@ -201,6 +212,7 @@ function GeschossHeizung({ code, einheiten, z, dispatch, katalog }: { code: stri
   const werte = arten.map((art) => geschossAusnahmeWert(mitArt(art), art));
   const wahl = geschossHeizungWahl(einheiten, z.heizungStandard);
   const fbhMoeglich = arten.includes("fbh");
+  const ausgenommen = wahlAusgenommen(einheiten, wahl, z.heizungStandard);
   const ab = v ? abweichungen(z, v.schluessel, FELDER_HEIZUNG, code) : 0;
   const inhalt = `as-heizung-${code}`;
   return (
@@ -230,6 +242,7 @@ function GeschossHeizung({ code, einheiten, z, dispatch, katalog }: { code: stri
           aria-label={`Heizung in ${code} einzeln einstellen`} onClick={() => setOffen(!offen)}>
           Einzeln<ChevronDown size={14} strokeWidth={1.75} aria-hidden /></button>
       </div>
+      {ausgenommen && <p className="as-hilfe as-geschoss-hinweis">{ausgenommen}</p>}
       {offen && <div id={inhalt} className="as-aufklapp-inhalt as-einheiten-heizung">
         <span className="as-label as-untertitel" id={`${inhalt}-alle`}>Ganzes Geschoss, je Heizart</span>
         <div className="as-ausnahmen" role="group" aria-labelledby={`${inhalt}-alle`}>

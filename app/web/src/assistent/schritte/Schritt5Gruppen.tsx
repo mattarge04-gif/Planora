@@ -75,11 +75,11 @@ function GruppenKarte({ g, z, dispatch, katalog }: { g: ZGruppe } & Pick<Schritt
           {codes.map((c) => <button key={c} type="button" className="as-chip" aria-pressed={teilen.includes(c)}
             onClick={() => setTeilen(teilen.includes(c) ? teilen.filter((x) => x !== c) : [...teilen, c])}>{c}</button>)}
         </div>
+        {!teilenOk && <span className="as-hilfe">{teilen.length === 0 ? "Mindestens ein Geschoss wählen." : "Nicht alle Geschosse – sonst bleibt diese Gruppe leer."}</span>}
         <div className="as-chips as-chips-mitte">
           <button type="button" className="as-knopf as-knopf-klein" disabled={!teilenOk}
             onClick={() => { dispatch({ typ: "gruppeTeilen", gruppe: g.schluessel, geschosse: teilen }); setTeilen(null); }}>Neue Gruppe</button>
           <button type="button" className="as-textknopf" onClick={() => setTeilen(null)}>Abbrechen</button>
-          {!teilenOk && <span className="as-hilfe">{teilen.length === 0 ? "Mindestens ein Geschoss wählen." : "Nicht alle Geschosse – sonst bleibt diese Gruppe leer."}</span>}
         </div>
       </div>}
       {sonder !== null && <div className="as-teilen" role="group" aria-label={`${titel}: eigene Gruppe für eine Einheit`}>
@@ -95,7 +95,6 @@ function GruppenKarte({ g, z, dispatch, katalog }: { g: ZGruppe } & Pick<Schritt
           <button type="button" className="as-knopf as-knopf-klein" disabled={!sonder}
             onClick={() => { if (sonder) dispatch({ typ: "sondergruppe", einheit: sonder, heizart: g.regel!.heizart }); setSonder(null); }}>Neue Gruppe</button>
           <button type="button" className="as-textknopf" onClick={() => setSonder(null)}>Abbrechen</button>
-          {!sonder && <span className="as-hilfe">Einheit wählen.</span>}
         </div>
       </div>}
 

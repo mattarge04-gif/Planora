@@ -237,7 +237,8 @@ export type Aktion =
   | { typ: "vorlageLoeschen"; vorlage: string }
   | { typ: "einheitZuruecksetzen"; einheit: string; felder?: readonly VorlageFeld[] }
   | { typ: "geschossZuruecksetzen"; geschoss: string; felder?: readonly VorlageFeld[] }
-  | { typ: "geschossAusnahme"; geschoss: string; art: HeizArt; wert: Dreiwertig | null }
+  /** `nurMit`: nur Einheiten, in denen auch diese Heizart erlaubt ist (z. B. HK «nein» nur dort, wo FBH möglich ist; Kern behält HK). */
+  | { typ: "geschossAusnahme"; geschoss: string; art: HeizArt; wert: Dreiwertig | null; nurMit?: HeizArt }
   | { typ: "gruppenVorschlagen" }
   | { typ: "gruppeTeilen"; gruppe: string; geschosse: string[] }
   | { typ: "sondergruppe"; einheit: string; heizart: HeizArt }
@@ -568,10 +569,35 @@ function ausnahmeSetzen(aus: Partial<Heizung>, art: HeizArt, wert: Dreiwertig | 
   return r;
 }
 
-/** Einheiten eines Geschosses, in denen die Heizart erlaubt ist und deren Ausnahme sich durch den Wert tatsächlich ändert. */
-function geschossAusnahmeBetroffen(z: AssistentZustand, geschoss: string, art: HeizArt, wert: Dreiwertig | null): ZEinheit[] {
-  return z.einheiten.filter((e) => e.geschoss === geschoss && (ERLAUBT[e.art] ?? []).includes(ABGABE_VON[art])
+const erlaubtIn = (e: ZEinheit, art: HeizArt) => (ERLAUBT[e.art] ?? []).includes(ABGABE_VON[art]);
+
+/**
+ * Einheiten eines Geschosses, in denen die Heizart (und ggf. `nurMit`) erlaubt ist und deren Ausnahme sich durch den Wert
+ * tatsächlich ändert. Gilt für Reducer und Markierung gleichermassen (N1: Kern behält Heizkörper bei «Fussbodenheizung»).
+ */
+function geschossAusnahmeBetroffen(z: AssistentZustand, geschoss: string, art: HeizArt, wert: Dreiwertig | null, nurMit?: HeizArt): ZEinheit[] {
+  return z.einheiten.filter((e) => e.geschoss === geschoss && erlaubtIn(e, art) && (!nurMit || erlaubtIn(e, nurMit))
     && ausnahmeSetzen(e.ausnahme, art, wert, z.heizungStandard)[art] !== e.ausnahme[art]);
+}
+
+/** Erlaubte Abgabe-Arten einer Einheit als Schlüssel (Büro/Wohnung/Gastro/Allgemein gleich, Kern und Technik anders). */
+const abgabeProfil = (e: ZEinheit) => HEIZ_ARTEN.filter((a) => erlaubtIn(e, a)).join("/");
+
+/**
+ * N2: Neu angelegte Einheiten eines Regelgeschosses (z. B. wiederhergestellter Platz) übernehmen die Geschoss-Heizung,
+ * wenn alle übrigen Regel-Einheiten des Geschosses mit gleichem Abgabe-Profil dieselbe markierte Ausnahme tragen.
+ */
+function geschossHeizungErben(z: AssistentZustand, vorher: AssistentZustand): AssistentZustand {
+  const alt = new Set(vorher.einheiten.map((e) => e.schluessel));
+  let neu = z;
+  for (const e of z.einheiten.filter((x) => !alt.has(x.schluessel) && x.vorlage && !(x.abweichend ?? []).includes("ausnahme"))) {
+    const andere = z.einheiten.filter((x) => alt.has(x.schluessel) && x.geschoss === e.geschoss && x.vorlage && abgabeProfil(x) === abgabeProfil(e));
+    if (andere.length === 0 || !andere.every((x) => (x.abweichend ?? []).includes("ausnahme") && gleicheAusnahme(x.ausnahme, andere[0].ausnahme))) continue;
+    const ausnahme = { ...andere[0].ausnahme };
+    neu = einheitSetzen(neu, e.schluessel, (x) => ({ ...x, ausnahme, abweichend: [...(x.abweichend ?? []), "ausnahme"] }));
+    neu = abgabenAbgleichen(neu, e.schluessel);
+  }
+  return neu;
 }
 
 /** Direkte Änderungen an Einheiten eines Regelgeschosses als Abweichung merken (vor der Kernaktion). */
@@ -590,7 +616,7 @@ function abweichungMarkieren(z: AssistentZustand, a: Aktion): AssistentZustand {
       return n;
     }
     case "ausnahme": return markiere(z, a.einheit, "ausnahme");
-    case "geschossAusnahme": return geschossAusnahmeBetroffen(z, a.geschoss, a.art, a.wert).reduce((n, e) => markiere(n, e.schluessel, "ausnahme"), z);
+    case "geschossAusnahme": return geschossAusnahmeBetroffen(z, a.geschoss, a.art, a.wert, a.nurMit).reduce((n, e) => markiere(n, e.schluessel, "ausnahme"), z);
     case "abgabeAendern": return a.menge === undefined ? z : markiere(z, einheitDes(a.schluessel), "mengen");
     case "abgabeWeissNicht": return markiere(z, einheitDes(a.schluessel), "mengen");
     case "einheitLoeschen": {
@@ -926,7 +952,7 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
     case "einheitZuruecksetzen": {
       const e = z.einheiten.find((x) => x.schluessel === a.einheit);
       if (!e?.vorlage) return z;
-      return vorlageAnwenden(einheitSetzen(z, e.schluessel, (x) => ({ ...x, abweichend: ohneFelder(x, a.felder) })), e.vorlage.schluessel);
+      return geschossHeizungErben(vorlageAnwenden(einheitSetzen(z, e.schluessel, (x) => ({ ...x, abweichend: ohneFelder(x, a.felder) })), e.vorlage.schluessel), z);
     }
     case "geschossZuruecksetzen": {
       const v = vorlageVonGeschoss(z, a.geschoss);
@@ -934,11 +960,11 @@ function reduziereKern(z: AssistentZustand, a: Aktion): AssistentZustand {
       let neu = mitAusgelassen(a.felder)
         ? vorlageSetzen(z, v.schluessel, (x) => ({ ...x, ausgelassen: x.ausgelassen.filter((o) => o.geschoss !== a.geschoss) })) : z;
       neu = { ...neu, einheiten: neu.einheiten.map((e) => (e.geschoss === a.geschoss && e.vorlage ? { ...e, abweichend: ohneFelder(e, a.felder) } : e)) };
-      return vorlageAnwenden(neu, v.schluessel);
+      return geschossHeizungErben(vorlageAnwenden(neu, v.schluessel), z);
     }
     case "geschossAusnahme": {
       let neu = z;
-      for (const e of geschossAusnahmeBetroffen(z, a.geschoss, a.art, a.wert))
+      for (const e of geschossAusnahmeBetroffen(z, a.geschoss, a.art, a.wert, a.nurMit))
         neu = reduziereKern(neu, { typ: "ausnahme", einheit: e.schluessel, art: a.art, wert: a.wert });
       return neu;
     }

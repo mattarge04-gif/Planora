@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { K } from "./bestueckung";
 import { ZAEHLBAR, anzahlJeArt, geschosseAbsteigend, zaehlerAufteilen } from "./schritte/Schritt2Einheiten";
 import { zaehlerUebernehmen } from "./schritte/gemeinsam";
-import { geschossAusnahmeWert, geschossHeizungWahl, heizungWahlAktionen } from "./schritte/Schritt3Heizung";
+import { geschossAusnahmeWert, geschossHeizungWahl, heizungWahlAktionen, wahlAusgenommen } from "./schritte/Schritt3Heizung";
 import { fbhSatz } from "./schritte/FbhVerteiler";
 import { verbraucherSatz } from "./schritte/Schritt5Gruppen";
 import { erzeuger, geschossCodes, leererZustand, reduziere, zentraleRaumHinweis, zentraleGeraete, hauptverteiler, type Aktion, type AssistentZustand } from "./zustand";
@@ -143,8 +143,16 @@ describe("Schritt 3: eine Auswahl je Geschoss (B2)", () => {
     expect(geschossHeizungWahl([e({ hk: "nein", fbh: "ja" }), e({}, "kern")], std)).toBe("fbh");
   });
   it("Aktionen: Ja zuerst, damit keine Einheit kurz ohne Heizung ist", () => {
-    expect(heizungWahlAktionen("OG4", "fbh").map((a) => [a.art, a.wert])).toEqual([["fbh", "ja"], ["hk", "nein"]]);
-    expect(heizungWahlAktionen("OG4", "standard").map((a) => a.wert)).toEqual([null, null, null]);
+    expect(heizungWahlAktionen("OG4", "fbh").map((a) => [a.art, a.wert, a.nurMit])).toEqual([["fbh", "ja", undefined], ["hk", "nein", "fbh"]]);
+    // «Wie Standard» betrifft nur Heizkörper und FBH, nicht TABS (N1)
+    expect(heizungWahlAktionen("OG4", "standard").map((a) => [a.art, a.wert])).toEqual([["hk", null], ["fbh", null]]);
+  });
+  it("nennt Einheiten, die von «Fussbodenheizung» ausgenommen sind (N1)", () => {
+    const k = { ...e({}, "kern"), bezeichnung: "Kern 4.05" };
+    expect(wahlAusgenommen([e({ hk: "nein", fbh: "ja" }), k], "fbh", std)).toBe("Kern 4.05 behält Heizkörper.");
+    expect(wahlAusgenommen([e({ hk: "nein", fbh: "ja" }), k, { ...k, bezeichnung: "Kern 4.06" }], "fbh", std)).toBe("Kern 4.05 und Kern 4.06 behalten Heizkörper.");
+    expect(wahlAusgenommen([e({ hk: "nein", fbh: "ja" }), k], "beide", std)).toBeNull();
+    expect(wahlAusgenommen([e({ hk: "nein", fbh: "ja" })], "fbh", std)).toBeNull();
   });
 });
 

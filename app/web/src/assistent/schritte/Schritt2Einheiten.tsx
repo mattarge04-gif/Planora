@@ -22,17 +22,25 @@ function Nutzungen({ liste, ort, label, angebot, onAnzahl }: {
 }) {
   const [offen, setOffen] = useState<ReadonlySet<string>>(() => new Set());
   const [fokus, setFokus] = useState<string | null>(null);
+  // B9: Angebote nur in leeren Blöcken offen, sonst hinter einem Knopf «+ Nutzung» (kein Linkteppich je Karte)
+  const [mehr, setMehr] = useState(false);
   const rahmen = useRef<HTMLDivElement>(null);
   const { zaehler, angebote } = zaehlerAufteilen(liste, offen);
+  const angeboteZeigen = zaehler.length === 0 || mehr;
   useEffect(() => {
     if (!fokus) return;
     rahmen.current?.querySelector<HTMLInputElement>(`[data-art="${fokus}"] input`)?.focus();
     setFokus(null);
   }, [fokus]);
+  useEffect(() => {
+    // Fokus nicht verlieren, wenn der Knopf «+ Nutzung» der Auswahl weicht
+    if (mehr) rahmen.current?.querySelector<HTMLButtonElement>(".as-angebote[role=group] button")?.focus();
+  }, [mehr]);
   const oeffnen = (art: string) => {
     setOffen((o) => new Set(o).add(art));
     if (anzahlJeArt(liste, art) === 0) onAnzahl(art, 1);
     setFokus(art);
+    setMehr(false);
   };
   return (
     <div className="as-nutzung-block" ref={rahmen}>
@@ -41,7 +49,11 @@ function Nutzungen({ liste, ort, label, angebot, onAnzahl }: {
           <Zaehler label={label(art)} name={`${ort}: ${label(art)}`} wert={anzahlJeArt(liste, art)} min={0} max={50} onWert={(n) => onAnzahl(art, n)} />
         </div>)}
       </div>}
-      {angebote.length > 0 && <div className="as-angebote" role="group" aria-label={`${angebot}, ${ort}`}>
+      {angebote.length > 0 && !angeboteZeigen && <div className="as-angebote">
+        <button type="button" className="as-textknopf" aria-expanded={false} aria-label={`${angebot} hinzufügen, ${ort}`} onClick={() => setMehr(true)}>
+          <Plus size={14} strokeWidth={1.75} aria-hidden />{angebot}</button>
+      </div>}
+      {angebote.length > 0 && angeboteZeigen && <div className="as-angebote" role="group" aria-label={`${angebot}, ${ort}`}>
         <span className="as-angebote-titel" aria-hidden="true"><Plus size={14} strokeWidth={1.75} aria-hidden />{angebot}</span>
         {angebote.map((art) => (
           <button key={art} type="button" className="as-textknopf" aria-label={`${label(art)} hinzufügen`} onClick={() => oeffnen(art)}>{MEHRZAHL(art)}</button>
@@ -147,7 +159,7 @@ export function Schritt2Einheiten({ z, dispatch }: SchrittInhaltProps) {
                 <summary>Einheiten anzeigen und abweichend ändern</summary>
                 <div className="as-aufklapp-inhalt">
                   <EinheitZeilen einheiten={einheiten} code={g.code} dispatch={dispatch} />
-                  <Nutzungen liste={eigene} ort={g.code} label={(art) => `Zusätzlich ${MEHRZAHL(art)}`} angebot="Zusätzlich" onAnzahl={anzahl} />
+                  <Nutzungen liste={eigene} ort={g.code} label={(art) => `Zusätzlich ${MEHRZAHL(art)}`} angebot="Nutzung" onAnzahl={anzahl} />
                 </div>
               </details>
             ) : <>

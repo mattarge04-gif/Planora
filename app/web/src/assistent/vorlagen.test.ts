@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { K } from "./bestueckung";
 import { zuBeschreibungMitPositionen } from "./beschreibung";
 import { vorlagenEinlesen, vorlagenZurEingabe } from "./vorlagen";
-import { FELDER_EINHEITEN, FELDER_HEIZUNG, abweichungen, leererZustand, reduziere, vorlageVonGeschoss, type Aktion, type AssistentZustand } from "./zustand";
+import { FELDER_EINHEITEN, FELDER_HEIZUNG, abweichungen, leererZustand, reduziere, unterverteiler, vorlageVonGeschoss, type Aktion, type AssistentZustand } from "./zustand";
+import { heizungWahlAktionen } from "./schritte/Schritt3Heizung";
 
 function haus(...aktionen: Aktion[]): AssistentZustand {
   let z = reduziere(leererZustand("l"), { typ: "geschosse", ug: 1, og: 5 });
@@ -240,5 +241,77 @@ describe("B1: Zurücksetzen je Schritt (nur eigene Felder)", () => {
     expect(im(z, "OG4")).toHaveLength(3);
     z = reduziere(z, { typ: "geschossZuruecksetzen", geschoss: "OG4", felder: FELDER_EINHEITEN });
     expect(im(z, "OG4")).toHaveLength(4);
+  });
+});
+
+describe("N1: Geschoss-Wahl wirkt nur, wo die Heizart erlaubt ist", () => {
+  /** Regelgeschoss mit 4 Büros und 1 Kern (OG1–OG5). */
+  function mitKern(): AssistentZustand {
+    let z = regelhaus();
+    z = reduziere(z, { typ: "platzAnzahl", vorlage: v1(z), art: "kern", anzahl: 1 });
+    return z;
+  }
+  const wahl = (z: AssistentZustand, w: "standard" | "hk" | "fbh" | "beide", code = "OG4") => heizungWahlAktionen(code, w).reduce(reduziere, z);
+  const hkIn = (z: AssistentZustand, einheit: string) => z.bauteile.filter((t) => t.katalogId === K.hk && "einheit" in t.standort && t.standort.einheit === einheit);
+  it("«Fussbodenheizung»: Büros FBH statt HK, Kern behält Heizkörper und bleibt unmarkiert", () => {
+    const z = wahl(mitKern(), "fbh");
+    const kern = im(z, "OG4").find((e) => e.art === "kern")!;
+    expect(kern.ausnahme).toEqual({});
+    expect(kern.abweichend ?? []).toEqual([]);
+    expect(hkIn(z, kern.schluessel)).toHaveLength(1);
+    for (const e of im(z, "OG4").filter((x) => x.art === "buero")) {
+      expect(e.ausnahme).toEqual({ fbh: "ja", hk: "nein" });
+      expect(hkIn(z, e.schluessel)).toHaveLength(0);
+    }
+    expect(abweichungen(z, v1(z), FELDER_HEIZUNG, "OG4")).toBe(4);
+  });
+  it("auch eine freie Kern-Einheit ohne Regelgeschoss behält Heizkörper", () => {
+    let z = regelhaus();
+    z = reduziere(z, { typ: "einheitAnzahl", geschoss: "OG4", art: "kern", anzahl: 1 });
+    z = wahl(z, "fbh");
+    const kern = im(z, "OG4").find((e) => e.art === "kern")!;
+    expect(kern.ausnahme).toEqual({});
+    expect(hkIn(z, kern.schluessel)).toHaveLength(1);
+  });
+  it("«Wie Standard» setzt Heizkörper und FBH zurück, TABS-Ausnahme bleibt", () => {
+    let z = wahl(mitKern(), "fbh");
+    z = reduziere(z, { typ: "geschossAusnahme", geschoss: "OG4", art: "tabs", wert: "ja" });
+    z = wahl(z, "standard");
+    for (const e of im(z, "OG4").filter((x) => x.art === "buero")) expect(e.ausnahme).toEqual({ tabs: "ja" });
+  });
+});
+
+describe("N2: wiederhergestellter Platz übernimmt die Geschoss-Heizung", () => {
+  function og5Fbh(): AssistentZustand {
+    let z = regelhaus();
+    for (const a of [
+      { typ: "einheitAnzahl", geschoss: "UG1", art: "technik", anzahl: 1 },
+      { typ: "erzeuger", katalogId: K.waermepumpe },
+      ...heizungWahlAktionen("OG5", "fbh"),
+      { typ: "schritt", nr: 5 },
+    ] as Aktion[]) z = reduziere(z, a);
+    return z;
+  }
+  it("Schritt-2-Zurücksetzen: Büro 5.04 kommt mit FBH zurück, markiert, mit FBH-Verteiler in der FBH-Gruppe", () => {
+    let z = og5Fbh();
+    z = reduziere(z, { typ: "einheitLoeschen", schluessel: im(z, "OG5")[3].schluessel });
+    expect(im(z, "OG5")).toHaveLength(3);
+    z = reduziere(z, { typ: "geschossZuruecksetzen", geschoss: "OG5", felder: FELDER_EINHEITEN });
+    const e = im(z, "OG5").find((x) => x.bezeichnung === "Büro 5.04")!;
+    expect(e.ausnahme).toEqual({ fbh: "ja", hk: "nein" });
+    expect(e.abweichend).toContain("ausnahme");
+    expect(z.bauteile.some((t) => t.katalogId === K.hk && "einheit" in t.standort && t.standort.einheit === e.schluessel)).toBe(false);
+    const uv = unterverteiler(z).find((t) => t.versorgt.includes(e.schluessel))!;
+    expect(uv).toBeDefined();
+    const fbhGruppe = z.gruppen.find((g) => g.regel?.heizart === "fbh")!;
+    expect(fbhGruppe.verbraucher).toContain(uv.schluessel);
+  });
+  it("ohne einheitliche Geschoss-Heizung bleibt der Platz beim Regelgeschoss", () => {
+    let z = og5Fbh();
+    z = reduziere(z, { typ: "einheitZuruecksetzen", einheit: im(z, "OG5")[0].schluessel, felder: FELDER_HEIZUNG });
+    z = reduziere(z, { typ: "einheitLoeschen", schluessel: im(z, "OG5")[3].schluessel });
+    z = reduziere(z, { typ: "geschossZuruecksetzen", geschoss: "OG5", felder: FELDER_EINHEITEN });
+    const e = im(z, "OG5").find((x) => x.bezeichnung === "Büro 5.04")!;
+    expect(e.ausnahme).toEqual({});
   });
 });

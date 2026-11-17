@@ -47,7 +47,7 @@
 }
 .as .as-knopf:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--tw-grau-2), var(--tw-schatten); }
 .as .as-knopf:active:not(:disabled) { transform: scale(0.97); }
-.as .as-knopf:disabled { color: var(--tw-grau-2); box-shadow: inset 0 0 0 1px var(--tw-grau-1); }
+.as .as-knopf:disabled { color: var(--tw-grau-3); box-shadow: inset 0 0 0 1px var(--tw-grau-1); }
 .as .as-knopf-primaer { color: #fff; background: var(--tw-text); box-shadow: 0 1px 2px rgb(31 38 48 / 0.18), 0 4px 10px rgb(31 38 48 / 0.12); }
 .as .as-knopf-primaer:hover:not(:disabled) { background: #2c3541; box-shadow: 0 1px 2px rgb(31 38 48 / 0.2), 0 6px 14px rgb(31 38 48 / 0.16); }
 .as .as-knopf-primaer:disabled { color: rgb(255 255 255 / 0.75); background: var(--tw-grau-2); box-shadow: none; }
@@ -70,7 +70,7 @@
   transition: background-color var(--tw-hover-ms) var(--tw-kurve);
 }
 .as .as-schritt:hover:not(:disabled) { background: rgb(31 38 48 / 0.04); }
-.as .as-schritt[aria-current="step"] { background: var(--tw-eis); }
+.as .as-schritt[aria-current="step"], .as .as-schritt[aria-current="step"]:hover:not(:disabled) { background: var(--tw-eis); }
 .as-schritt-nr {
   width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
   color: var(--tw-sekundaer); box-shadow: inset 0 0 0 1px var(--tw-grau-2); background: #fff;
@@ -369,6 +369,7 @@
 .as-regel-heizung[open] > summary { margin-bottom: 6px; }
 .as-geschoss-heizung { padding: 10px 12px; gap: 8px; }
 .as-geschoss-zeile { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.as .as-geschoss-hinweis { margin: 0; }
 .as-ausnahme-quer { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; max-width: 340px; }
 .as-ausnahme-quer > span { flex: none; }
 .as .as-einzeln { margin-left: auto; }
