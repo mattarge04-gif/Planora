@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Eigene Planora-Testinstanz fuer Design-Screenshots (nur Entwicklung, Wegwerfdaten).
 # Port 3100 / Postgres 54600, damit der Server des PO (3000) unberuehrt bleibt.
-#   bash werkzeug/design/instanz.sh start [--ohne-build]
+#   bash werkzeug/design/instanz.sh start [--ohne-build] [--muster]   (--muster: Beispiel + Mustergebaeude fuer Szenarien, sonst nur ein leeres Testgebaeude)
 #   bash werkzeug/design/instanz.sh stop
 set -euo pipefail
 hier="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,11 +33,13 @@ case "${1:-}" in
   start)
     mkdir -p "$lauf"
     stoppen >/dev/null
-    if [ "${2:-}" != "--ohne-build" ]; then npm --prefix "$wurzel/app/web" run build >"$lauf/build.log" 2>&1 || { echo "Build fehlgeschlagen, siehe $lauf/build.log"; exit 1; }; fi
+    build=1; muster=0
+    for a in "${@:2}"; do case "$a" in --ohne-build) build=0 ;; --muster) muster=1 ;; *) echo "Unbekannte Option $a"; exit 2 ;; esac; done
+    if [ "$build" = 1 ]; then npm --prefix "$wurzel/app/web" run build >"$lauf/build.log" 2>&1 || { echo "Build fehlgeschlagen, siehe $lauf/build.log"; exit 1; }; fi
     # Vollstaendig abkoppeln (eigener Prozess via PowerShell), damit der Aufrufer nicht auf die Instanz wartet
     # und ein Abbruch des Aufrufers die eingebettete Datenbank nicht mitbeendet.
     powershell.exe -NoProfile -Command "
-      \$env:PLANORA_PORT='$port'; \$env:PLANORA_PG_PORT='$pgport';
+      \$env:PLANORA_PORT='$port'; \$env:PLANORA_PG_PORT='$pgport'; \$env:PLANORA_MUSTER='$muster';
       Start-Process -WindowStyle Hidden -WorkingDirectory '$(cygpath -w "$wurzel/app")' -FilePath 'cmd.exe' -ArgumentList '/c','npx tsx entwicklung/start.ts > \"$(cygpath -w "$lauf/instanz.log")\" 2>&1'
     " >/dev/null
     for _ in $(seq 1 120); do
@@ -49,5 +51,5 @@ case "${1:-}" in
     echo "Instanz laeuft: http://localhost:$port (Passwort im Log $lauf/instanz.log, liest screenshot.mjs automatisch)"
     ;;
   stop) stoppen ;;
-  *) echo "Aufruf: instanz.sh start [--ohne-build] | stop"; exit 2 ;;
+  *) echo "Aufruf: instanz.sh start [--ohne-build] [--muster] | stop"; exit 2 ;;
 esac

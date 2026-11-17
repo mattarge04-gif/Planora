@@ -10,7 +10,7 @@ import { migriere } from "../src/db/migrator.js";
 import { baueServer } from "../src/server.js";
 import { erzeugeSetupToken, loeseSetupTokenEin } from "../src/auth/setup.js";
 import { hashPasswort } from "../src/auth/auth.js";
-import { beispielAnlegen, musterAnlegen } from "../src/welt/beispiel.js";
+import { beispielAnlegen, musterAnlegen, testgebaeudeAnlegen } from "../src/welt/beispiel.js";
 
 if (process.env.NODE_ENV === "production") throw new Error("Entwicklungsstart ist in Produktion gesperrt");
 const port = Number(process.env.PLANORA_PORT ?? 3000);
@@ -57,8 +57,13 @@ try {
   await pool.query("insert into account(id,account_id,provider_id,user_id,password,created_at,updated_at) values($1,$2,'credential',$2,$3,now(),now())", [randomUUID(), betreiberId, await hashPasswort(betreiberPasswort)]);
   await pool.query("insert into konto_status(benutzer_id,status,audit_id) values($1,'aktiv',$2)", [betreiberId, randomUUID()]);
   await pool.query("insert into rolle_zuordnung(benutzer_id,rolle) values($1,'betreiber')", [betreiberId]);
-  await beispielAnlegen(pool);
-  await musterAnlegen(pool);
+  // PO 17.11.: standardmaessig nur ein leeres Testgebaeude; Beispiel und Muster (Design-Szenarien) mit PLANORA_MUSTER=1.
+  if (process.env.PLANORA_MUSTER === "1") {
+    await beispielAnlegen(pool);
+    await musterAnlegen(pool);
+  } else {
+    await testgebaeudeAnlegen(pool);
+  }
   const baseURL = `http://localhost:${port}`;
   app = await baueServer({ pool, stufe: 2, baseURL, secret: randomBytes(32).toString("hex"), ablageWurzel: ablage,
     webWurzel: fileURLToPath(new URL("../web/dist", import.meta.url)) });

@@ -61,3 +61,16 @@ export async function musterAnlegen(pool: pg.Pool): Promise<{ liegenschaftId: st
     return { liegenschaftId, gebaeudeIds };
   } catch (e) { await c.query("rollback"); throw e; } finally { c.release(); }
 }
+
+/** Nur Entwicklung (PO 17.11.): ein leeres Gebaeude (nur Huelle) zum Ausprobieren des Assistenten. */
+export async function testgebaeudeAnlegen(pool: pg.Pool): Promise<{ liegenschaftId: string; gebaeudeId: string }> {
+  const c = await pool.connect();
+  try {
+    await c.query("begin");
+    const liegenschaftId: string = (await c.query("insert into liegenschaft(name) values ('Testliegenschaft') returning id")).rows[0].id;
+    const gebaeudeId = await legeGebaeudeAn(c, liegenschaftId,
+      { name: "Testgebäude", grundform: "quader", geschosse: [{ code: "EG" }, { code: "OG1" }, { code: "OG2" }, { code: "OG3" }] }, REGELWERK_V2);
+    await c.query("commit");
+    return { liegenschaftId, gebaeudeId };
+  } catch (e) { await c.query("rollback"); throw e; } finally { c.release(); }
+}

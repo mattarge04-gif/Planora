@@ -3,7 +3,7 @@
 GPU-Screenshots, Funktions- und fps-Pruefung fuer den Designprozess (`.claude/skills/planora-design`). Nicht Teil des Produkts.
 
 ```bash
-bash werkzeug/design/instanz.sh start            # baut app/web, startet Testinstanz auf Port 3100 (Wegwerfdaten)
+bash werkzeug/design/instanz.sh start --muster   # baut app/web, startet Testinstanz auf Port 3100 mit Beispiel- und Mustergebaeuden (Wegwerfdaten)
 node werkzeug/design/screenshot.mjs --szenario werkzeug/design/szenarien/twin.json --aus docs/design/kritiken/<datum>-<thema>-r1
 bash werkzeug/design/instanz.sh stop             # immer am Ende
 ```
@@ -12,6 +12,7 @@ bash werkzeug/design/instanz.sh stop             # immer am Ende
 - **Ergebnis:** PNGs `<name>-<breite>x<hoehe>.png` und `bericht.json` (Renderer, fps je Fenster, Konsolenfehler/-warnungen inkl. CSP).
 - **Playwright:** wird im npx-Cache gesucht; sonst einmalig `npx -y playwright@1.65.0 install chromium` oder `PLAYWRIGHT_MODUL=<pfad zu playwright/index.mjs>` setzen.
 - **Port 3000** (Server des PO) wird nie angefasst. Ports aenderbar ueber `PLANORA_DESIGN_PORT` / `PLANORA_DESIGN_PG_PORT`.
+- **Testdaten:** ohne `--muster` entsteht nur ein leeres «Testgebäude» (EG, OG1–OG3) zum Ausprobieren des Assistenten (PO 17.11.). Szenarien brauchen `--muster`.
 - Laufzeitdateien in `werkzeug/design/.lauf/` (ignoriert).
 
 ## Lokale Richtungsentwürfe
