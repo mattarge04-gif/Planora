@@ -19,7 +19,15 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 17.11.2026
 
-### Heizungserfassung umgesetzt (17.11.2026) [F]
+### E42 Automatik nach Wiederoeffnen (17.11.2026, abends) [F]
+
+- Einstieg naechste Sitzung: "weiter" -> diesen Block lesen, dann Abnahme-README `docs/abnahme/2026-11-16-heizungserfassung/README.md` Abschnitt "Nachtrag E42".
+- PO-Antworten E42 (`00-kontext.md`): Automatik jetzt beheben (erledigt), Pruefhinweis statt Vorbelegung (erledigt), Plan-Annahmen 1–9 und "Standard (offen)" bestaetigt. [?] Kerne: Antwort "wir entschieden" mehrdeutig, Kern behaelt Heizkoerper bis Klaerung.
+- Commits `d6698fd`, `55c48ef`, `488cad2` auf `m2c-interview`, nicht gepusht, kein Merge. Merker in `geschoss_vorlage.daten.automatik`; alte Gebaeude ohne Merker behalten Automatik aus [A].
+- Browser: FBH in OG3 nach Wiederoeffnen 5 statt 17 Klicks. Pruefstand: Backend 585/585, Web 457/457, tsc und Webbuild gruen.
+- Offen: PO-Sichtung der Heizungserfassung im Browser; Twin-Hinweis Rohcode "ohne_gruppe"; Router-Konflikte nach Nachbesserung; Vorschau B15; Spec Abschnitt 8.
+
+### Heizungserfassung umgesetzt (17.11.2026) [F, ergaenzt durch E42]
 
 - Einstieg naechste Sitzung: "weiter" -> diesen Block lesen, dann `docs/abnahme/2026-11-16-heizungserfassung/README.md` (Ergebnis, PO-Fragen).
 - Plan (12 Tasks) umgesetzt, Commits `3fbdfc5`..`817ff91` auf `m2c-interview`, nicht gepusht, kein Merge. FM-Review: 33 statt 165 Klicks (Ziel <= 40 erreicht). visual-critic 2 Runden, P1/P2 behoben; PO-Sichtung steht aus.

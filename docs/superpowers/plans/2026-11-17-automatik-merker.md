@@ -35,3 +35,8 @@ Summe [A] ca. 1 Tag.
 
 - Gebaeude, die vor dieser Aenderung uebernommen wurden, haben keine Merker: Verhalten wie bisher (`automatik = false`), bis sie einmal neu uebernommen werden. Keine Heuristik ueber Namen.
 - Manuell angelegte Verteiler bleiben unberuehrt (kein `auto`).
+
+## Umsetzungsstand (17.11.2026)
+
+- [F] Tasks 1–6 umgesetzt: `55c48ef` (Backend), `488cad2` (Web, Pruefhinweis). Browsermessung: 5 statt 17 Klicks, Details im Abnahme-README Abschnitt "Nachtrag E42".
+- [F] Abweichung: Merker werden nur gesendet, wenn die Automatik an ist; Einheit-Regeln ohne speicherbare Einheit werden ohne Regel gespeichert (sonst wuerden sie zur Rest-Regel).

@@ -10,7 +10,17 @@ Kennzeichnung: [F] Fakt, [A] Annahme, [?] offen. Branch `m2c-interview`, Endstan
 - [F] Bildkritik (visual-critic, echte GPU RTX 3070 Ti): Runde 1 «verbessern» (1×P1, 6×P2), Runde 2 «verbessern» (neu 1×P1, 1×P2). Beide P1 und alle P2 in zwei Designrunden behoben und per Code-Review bestätigt. Laut Skill keine dritte Kritikrunde; **PO-Sichtung steht aus**. Kritik: `docs/design/kritiken/2026-11-17-heizungserfassung.md`, Endbilder `vk3-*.png`.
 - [F] Leistung: Assistent öffnet in ~340 ms, 60 fps bei 1280/1440/1920, keine CSP-Verletzung.
 
-## Für den PO zu entscheiden
+## Nachtrag E42 (17.11.2026, abends)
+
+PO-Antworten: [E42](../../architektur/00-kontext.md). Umgesetzt in `55c48ef` (Backend) und `488cad2` (Web), Plan `docs/superpowers/plans/2026-11-17-automatik-merker.md`.
+
+- [F] **Automatik nach dem Wiederöffnen behoben.** Die Merker der Automatik werden in `geschoss_vorlage.daten.automatik` gespeichert, auch bei Gebäuden ohne Regelgeschoss. Gemeint sind: Auto-FBH-Verteiler, Gruppenregeln mit angefasst/vorgeschlagen, abgewählte FBH-Verteiler und der Wärmezähler an allen Verteilern.
+- [F] **Im Browser gemessen** (Testinstanz 3100, Playwright, Gebäude EG + OG1–OG3, FBH in OG2, übernommen): Gebäude wieder öffnen und in OG3 die Fussbodenheizung ergänzen braucht **5 Klicks statt 17**: Bearbeiten, Heizung, OG3 «Fussbodenheizung», Prüfen, Übernehmen. Es entstehen 4 FBH-Verteiler, alle an der Gruppe «Fussbodenheizung», alle mit Wärmezähler. Prüfen zeigt keine Verbraucher ohne Gruppe, und der Twin zeigt 0 Hinweise. Bilder: `e42-schritt5-nach-wiederoeffnen.png`, `e42-pruefen.png`.
+- [F] **Prüfhinweis** `keine_abgaben`: Gibt es Einheiten, aber keine Heizkörper, keine FBH und kein TABS, meldet Prüfen das und verweist auf Schritt 3.
+- [A] Gebäude, die vor dieser Änderung übernommen wurden, haben keine Merker. Bei ihnen bleibt die Automatik aus, bis sie einmal mit eingeschalteter Automatik übernommen werden.
+- [F] Prüfstand `488cad2`: Backend 585/585, Web 457/457, beide Typprüfungen und der Webbuild sind grün.
+
+## Für den PO zu entscheiden (Stand vor E42; 1, 3, 4, 5 beantwortet)
 
 1. **[?] Automatik nach dem ersten Übernehmen (kritisch laut FM-Review).** Wird ein gespeichertes Gebäude wieder geöffnet und z. B. FBH in OG3 ergänzt, entsteht kein FBH-Verteiler und die neuen Verbraucher gehören zu keiner Gruppe; Schritt 5 warnt nicht. Von Hand 17 statt 6 Klicks. Ursache: Plan-Annahme 5 (Automatik nur für neue/leere Gebäude), Gruppenregeln werden nicht gespeichert. Vorschlag: Gruppenregeln und FBH-Merker in `geschoss_vorlage` mitspeichern (Folgeauftrag, [A] ca. 1 Tag).
 2. **[?] Sollen Kerne beheizt sein?** Vorläufig ja: Bei Geschoss-Wahl «Fussbodenheizung» behält der Kern seine Heizkörper (Hinweiszeile im Geschoss).

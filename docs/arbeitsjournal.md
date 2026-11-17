@@ -3,6 +3,23 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-17 (abends) – E42: Automatik nach Wiederoeffnen
+
+### 1. Was gemacht wurde
+
+- [F] PO-Antworten zur Abnahme Heizungserfassung als E42 festgehalten (`d6698fd`).
+- [F] Automatik-Merker in `geschoss_vorlage` gespeichert und geladen (`55c48ef`, `488cad2`); Pruefhinweis `keine_abgaben`.
+- [F] Browsermessung: FBH in OG3 nach Wiederoeffnen 5 statt 17 Klicks, FBH-Verteiler und Gruppenzuordnung automatisch, Twin 0 Hinweise. Backend 585/585, Web 457/457.
+
+### 2. Was inhaltlich gelernt wurde
+
+- [F] Assistent-Merker gehoeren nicht in die Beschreibung, aber muessen das Uebernehmen ueberleben; `geschoss_vorlage` traegt sie mit (Index-Verweise per IDs der eben geschriebenen Beschreibung aufloesen).
+
+### 3. Was ueber die Zusammenarbeit gelernt wurde
+
+- [?] PO-Antwort "wir entschieden" zu beheizten Kernen ist mehrdeutig; Verhalten unveraendert, nachfragen.
+- [F] Bash-Heredocs mit Backticks scheitern im Werkzeug; Skripte per Write-Tool anlegen.
+
 ## 2026-11-17 – Heizungserfassung umgesetzt und abgenommen (ohne PO-Sichtung)
 
 ### 1. Was gemacht wurde
