@@ -153,7 +153,7 @@ export async function ladeBestand(c: pg.ClientBase, gebaeudeId: string): Promise
 export type Zaehler = Record<"einheiten" | "bauteile" | "gruppen", { angelegt: number; aktualisiert: number; geloescht: number }>;
 
 /** Abgleich Beschreibung → Tabellen (Spec §6). Laeuft in der Transaktion des Aufrufers. */
-export async function schreibeBeschreibung(c: pg.ClientBase, gebaeudeId: string, b: Beschreibung, rw: Regelwerk, katalog: Katalog): Promise<{ zaehler: Zaehler; einheitIds: string[] }> {
+export async function schreibeBeschreibung(c: pg.ClientBase, gebaeudeId: string, b: Beschreibung, rw: Regelwerk, katalog: Katalog): Promise<{ zaehler: Zaehler; einheitIds: string[]; bauteilIds: string[]; gruppeIds: string[] }> {
   const g = (await c.query("select liegenschaft_id, stand from gebaeude where id=$1 for update", [gebaeudeId])).rows[0];
   if (!g) throw new Error("Gebaeude unbekannt");
   if (b.stand !== g.stand) throw new FachFehler([{ pfad: "stand", code: "stand_veraltet", meldung: "Beschreibung wurde inzwischen geaendert; bitte neu laden" }], 409);
@@ -252,7 +252,7 @@ export async function schreibeBeschreibung(c: pg.ClientBase, gebaeudeId: string,
 
   await c.query("update gebaeude set stand=stand+1 where id=$1", [gebaeudeId]);
   if (rw.version === 2) await speichereAbgeleiteteMasse(c, gebaeudeId, rw);
-  return { zaehler: z, einheitIds };
+  return { zaehler: z, einheitIds, bauteilIds, gruppeIds };
 }
 
 /**

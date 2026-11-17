@@ -102,6 +102,20 @@ export const VORLAGEN_SCHEMA = {
         vorlage: SCHLUESSEL, platz: SCHLUESSEL,
         abweichend: { type: "array", maxItems: 4, uniqueItems: true, items: { enum: ["art", "bezeichnung", "ausnahme", "mengen"] } },
       } } },
+    automatik: {
+      type: "object", additionalProperties: false, required: ["fbhWmz", "gruppenVorgeschlagen", "fbhVerteilerAus", "autoVerteiler", "gruppen"],
+      properties: {
+        fbhWmz: { type: "boolean" }, gruppenVorgeschlagen: { type: "boolean" },
+        fbhVerteilerAus: { type: "array", maxItems: 2000, items: VERWEIS },
+        autoVerteiler: { type: "array", maxItems: 2000, items: BAUTEIL_VERWEIS },
+        gruppen: { type: "array", maxItems: 500, items: {
+          type: "object", additionalProperties: false, required: ["gruppe"],
+          properties: {
+            gruppe: GRUPPE_VERWEIS, angefasst: { type: "boolean" }, vorgeschlagen: { type: "boolean" },
+            regel: { type: "object", additionalProperties: false, required: ["heizart"], properties: {
+              heizart: { enum: ["hk", "fbh", "tabs"] }, geschosse: { type: "array", maxItems: 100, items: UUID }, einheit: VERWEIS } },
+          } } },
+      } },
   },
 };
 /** PUT Beschreibung: Beschreibung plus optionale Vorlagen des Assistenten. Vorschau nutzt weiter BESCHREIBUNG_SCHEMA. */

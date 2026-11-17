@@ -36,11 +36,19 @@ function kanonischeBeschreibung(b: Beschreibung): Beschreibung {
   };
 }
 
+const kleinE = (e: EinheitVerweis): EinheitVerweis => (e.einheitId !== undefined ? { einheitId: klein(e.einheitId) } : e);
 function kanonischeVorlagen(v: VorlagenEingabe): VorlagenEingabe {
   return {
     ...v,
     vorlagen: v.vorlagen.map((x) => ({ ...x, geschosse: x.geschosse.map((g) => klein(g)!), ausgelassen: x.ausgelassen.map((a) => ({ ...a, geschoss: klein(a.geschoss)! })) })),
-    zuordnung: v.zuordnung.map((z) => ({ ...z, einheit: z.einheit.einheitId !== undefined ? { einheitId: klein(z.einheit.einheitId) } : z.einheit })),
+    zuordnung: v.zuordnung.map((z) => ({ ...z, einheit: kleinE(z.einheit) })),
+    ...(v.automatik && { automatik: {
+      ...v.automatik,
+      fbhVerteilerAus: v.automatik.fbhVerteilerAus.map(kleinE),
+      autoVerteiler: v.automatik.autoVerteiler.map((b) => (b.bauteilId !== undefined ? { bauteilId: klein(b.bauteilId) } : b)),
+      gruppen: v.automatik.gruppen.map((g) => ({ ...g, gruppe: g.gruppe.gruppeId !== undefined ? { gruppeId: klein(g.gruppe.gruppeId) } : g.gruppe,
+        ...(g.regel && { regel: { ...g.regel, ...(g.regel.geschosse && { geschosse: g.regel.geschosse.map((x) => klein(x)!) }), ...(g.regel.einheit && { einheit: kleinE(g.regel.einheit) }) } }) })),
+    } }),
   };
 }
 
@@ -126,8 +134,8 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
         return await inTransaktion(async (c) => {
           const huelle = await ladeHuelle(c, req.params.id);
           const version = huelle?.regelwerkVersion ?? 1;
-          const { zaehler, einheitIds } = await schreibeBeschreibung(c, req.params.id, kanonischeBeschreibung(beschreibung), regelwerkFuer(version), version === 1 ? KATALOG_V1 : KATALOG_V2);
-          const anzahl = await schreibeVorlagen(c, req.params.id, vorlagen && kanonischeVorlagen(vorlagen), einheitIds);
+          const { zaehler, ...ids } = await schreibeBeschreibung(c, req.params.id, kanonischeBeschreibung(beschreibung), regelwerkFuer(version), version === 1 ? KATALOG_V1 : KATALOG_V2);
+          const anzahl = await schreibeVorlagen(c, req.params.id, vorlagen && kanonischeVorlagen(vorlagen), ids);
           await auditEreignis(c, k.auditId, "gebaeude.beschreibung", { gebaeudeId: req.params.id, ...zaehler, vorlagen: anzahl });
           return ladeBeschreibung(c, req.params.id);
         });

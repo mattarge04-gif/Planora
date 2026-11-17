@@ -285,6 +285,29 @@ describe("Vorlagen (Regelgeschoss)", () => {
     expect((await anfrage("PUT", urlB(), kBearb, b)).statusCode).toBe(200);
     expect((await anfrage("GET", urlVo(), kBearb)).statusCode).toBe(404);
   });
+  it("Automatik-Merker ohne Vorlagen: Index-Verweise auf eben geschriebene Bauteile und Gruppen (E42)", async () => {
+    const leer = (await anfrage("GET", urlB(), kBearb)).json();
+    const b = { ...body({ ...leer, einheiten: [], bauteile: [], gruppen: [] }),
+      bauteile: [
+        { katalogId: "heizung.heizkoerper", standort: { einheitIndex: 1 }, menge: 3, status: "bestaetigt", versorgt: [] },
+        { katalogId: "heizung.verteiler", standort: { einheitIndex: 0 }, menge: 1, status: "bestaetigt", versorgt: [{ einheitIndex: 1 }] },
+      ],
+      gruppen: [{ verteiler: { bauteilIndex: 1 }, nummer: 1, art: "ungeregelt", bezeichnung: "Heizkörper", verbraucher: [{ bauteilIndex: 0 }] }],
+    };
+    const automatik = { fbhWmz: false, gruppenVorgeschlagen: true, fbhVerteilerAus: [], autoVerteiler: [],
+      gruppen: [{ gruppe: { gruppeIndex: 0 }, regel: { heizart: "hk", geschosse: [leer.geschosse[1].id.toUpperCase()] }, vorgeschlagen: true }] };
+    const p = await anfrage("PUT", urlB(), kBearb, { ...b, vorlagen: { version: 1, vorlagen: [], zuordnung: [], automatik } });
+    expect(p.statusCode).toBe(200);
+    const gruppeId = p.json().gruppen[0].id;
+    const g = await anfrage("GET", urlVo(), kBearb);
+    expect(g.statusCode).toBe(200);
+    expect(g.json().automatik.gruppen).toEqual([{ gruppe: gruppeId, regel: { heizart: "hk", geschosse: [leer.geschosse[1].id] }, vorgeschlagen: true }]);
+    const falsch = { ...automatik, gruppen: [{ gruppe: { gruppeIndex: 0 }, regel: { heizart: "luft" } }] };
+    const b2 = (await anfrage("GET", urlB(), kBearb)).json();
+    expect((await anfrage("PUT", urlB(), kBearb, { ...b2, vorlagen: { version: 1, vorlagen: [], zuordnung: [], automatik: falsch } })).statusCode).toBe(400);
+    expect((await anfrage("PUT", urlB(), kBearb, b2)).statusCode).toBe(200);
+    expect((await anfrage("GET", urlVo(), kBearb)).statusCode).toBe(404);
+  });
   it("Fehler in der Beschreibung schreibt auch keine Vorlagen (eine Transaktion)", async () => {
     const b = (await anfrage("GET", urlB(), kBearb)).json();
     const kaputt = { ...b, stand: b.stand + 5, vorlagen: vorlagen(b.geschosse[1].id) };
