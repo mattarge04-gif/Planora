@@ -134,4 +134,14 @@ describe("Schritt 8 – Hinweise", () => {
     // Mengen sind im Fixture unbekannt: nur der gebündelte Mengenhinweis (H7) bleibt
     expect(pruefHinweise(z, null, zuBeschreibungMitPositionen(z).positionen).map((x) => x.code)).toEqual(["menge_offen"]);
   });
+  it("E42: Standard «Weiss nicht» ohne Abgaben ergibt einen Hinweis in Schritt 3", () => {
+    let z = reduziere(leererZustand("l"), { typ: "gebaeudeAngelegt", id: "00000000-0000-4000-8000-000000000900", stand: 0,
+      geschosse: [{ id: "00000000-0000-4000-8000-000000000001", code: "EG" }, { id: "00000000-0000-4000-8000-000000000002", code: "OG1" }] });
+    z = reduziere(z, { typ: "standard", art: "hk", wert: "unbekannt" });
+    z = reduziere(z, { typ: "einheitAnzahl", geschoss: "OG1", art: "buero", anzahl: 2 });
+    const h = () => pruefHinweise(z, null, zuBeschreibungMitPositionen(z).positionen).filter((x) => x.code === "keine_abgaben");
+    expect(h()).toEqual([expect.objectContaining({ schritt: 3 })]);
+    z = reduziere(z, { typ: "standard", art: "hk", wert: "ja" });
+    expect(h()).toEqual([]);
+  });
 });

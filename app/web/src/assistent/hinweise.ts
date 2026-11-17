@@ -3,7 +3,7 @@ import { INTERNE_HINWEISE } from "../panel/daten";
 import { K, teilName } from "./bestueckung";
 import type { Positionen } from "./beschreibung";
 import {
-  ABGABE_VON, HEIZ_ARTEN, HEIZ_NAME, einheitVon, erzeuger, fbhSpeisung, gruppeVonVerbraucher, hauptverteiler, unterverteiler, verbraucherDerArt, weitereTeile, zentraleRaumHinweis, zubehoerVon,
+  ABGABE_VON, HEIZ_ARTEN, HEIZ_NAME, einheitVon, erzeuger, fbhSpeisung, gruppeVonVerbraucher, hauptverteiler, istAbgabe, unterverteiler, verbraucherDerArt, weitereTeile, zentraleRaumHinweis, zubehoerVon,
   type AssistentZustand, type SchrittNr, type ZBauteil, type ZGruppe,
 } from "./zustand";
 
@@ -25,6 +25,9 @@ export function pruefHinweise(z: AssistentZustand, welt: Welt | null, positionen
   const h: PruefHinweis[] = [];
   if (z.einheiten.length === 0) h.push({ code: "keine_einheiten", text: "Noch keine Einheiten erfasst.", schritt: 2 });
   if (erzeuger(z).length === 0) h.push({ code: "kein_erzeuger", text: "Noch kein Erzeuger gewählt.", schritt: 4 });
+  // E42: «Weiss nicht» als Standard ergibt keine Abgaben – ohne Hinweis fiele das nicht auf
+  if (z.einheiten.length > 0 && !z.bauteile.some(istAbgabe))
+    h.push({ code: "keine_abgaben", text: "Im Gebäude sind keine Heizkörper, keine Fussbodenheizung und kein TABS erfasst. Prüfen Sie den Heizungsstandard.", schritt: 3 });
   const raum = zentraleRaumHinweis(z);
   if (raum) h.push({ code: "zentrale_raum", text: raum, schritt: 4 });
   // Fehlende Mengen je Abgabeart, gebündelt

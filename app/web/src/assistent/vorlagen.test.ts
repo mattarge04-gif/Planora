@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { K } from "./bestueckung";
-import { zuBeschreibungMitPositionen } from "./beschreibung";
+import type { BauteilVerweis, BeschreibungEingabe, EinheitVerweis, GruppeVerweis } from "../typen";
+import { ausBeschreibung, zuBeschreibungMitPositionen } from "./beschreibung";
 import { vorlagenEinlesen, vorlagenZurEingabe } from "./vorlagen";
 import { FELDER_EINHEITEN, FELDER_HEIZUNG, abweichungen, leererZustand, reduziere, unterverteiler, vorlageVonGeschoss, type Aktion, type AssistentZustand } from "./zustand";
 import { heizungWahlAktionen } from "./schritte/Schritt3Heizung";
@@ -119,8 +120,12 @@ describe("Vorlagen ⇄ API", () => {
     expect(v.zuordnung[1].einheit).toEqual({ einheitIndex: positionen.einheiten.indexOf(z.einheiten[1].schluessel) });
     expect(v.zuordnung).toHaveLength(20);
   });
-  it("ohne Vorlagen null", () => {
-    expect(vorlagenZurEingabe(haus(), zuBeschreibungMitPositionen(haus()).positionen)).toBeNull();
+  it("ohne Vorlagen und ohne Automatik null; mit Automatik nur Merker", () => {
+    const aus = { ...haus(), automatik: false };
+    expect(vorlagenZurEingabe(aus, zuBeschreibungMitPositionen(aus).positionen)).toBeNull();
+    const v = vorlagenZurEingabe(haus(), zuBeschreibungMitPositionen(haus()).positionen)!;
+    expect(v.vorlagen).toEqual([]);
+    expect(v.automatik).toMatchObject({ fbhVerteilerAus: [], autoVerteiler: [], gruppen: [] });
   });
   it("Einlesen: gespeicherte IDs → Schlüssel; Veraltetes wird abgelöst", () => {
     let z = regelhaus();
@@ -313,5 +318,89 @@ describe("N2: wiederhergestellter Platz übernimmt die Geschoss-Heizung", () => 
     z = reduziere(z, { typ: "geschossZuruecksetzen", geschoss: "OG5", felder: FELDER_EINHEITEN });
     const e = im(z, "OG5").find((x) => x.bezeichnung === "Büro 5.04")!;
     expect(e.ausnahme).toEqual({});
+  });
+});
+
+describe("Automatik nach dem Wiederöffnen (E42)", () => {
+  const uuid = (p: number, i: number) => `00000000-0000-4000-8000-${String(p * 1000 + i).padStart(12, "0")}`;
+  /** Simuliert PUT Beschreibung + GET Beschreibung/Vorlagen: IDs vergeben, Index-Verweise der Merker auflösen. */
+  function speichernUndLaden(z: AssistentZustand, merker = true): AssistentZustand {
+    const { beschreibung: b, positionen } = zuBeschreibungMitPositionen(z);
+    const ein = vorlagenZurEingabe(z, positionen);
+    const eIds = b.einheiten.map((e, i) => e.id ?? uuid(1, i));
+    const tIds = b.bauteile.map((t, i) => t.id ?? uuid(2, i));
+    const gIds = (b.gruppen ?? []).map((g, i) => g.id ?? uuid(3, i));
+    const E = (v: EinheitVerweis) => v.einheitId ?? eIds[v.einheitIndex!];
+    const B = (v: BauteilVerweis) => v.bauteilId ?? tIds[v.bauteilIndex!];
+    const G = (v: GruppeVerweis) => v.gruppeId ?? gIds[v.gruppeIndex!];
+    const geladen: BeschreibungEingabe = {
+      ...b, stand: b.stand + 1, geschosse: z.gebaeude.geschosse.map((g) => ({ id: g.id!, code: g.code })),
+      einheiten: b.einheiten.map((e, i) => ({ ...e, id: eIds[i] })),
+      bauteile: b.bauteile.map((t, i) => ({ ...t, id: tIds[i] })),
+      gruppen: (b.gruppen ?? []).map((g, i) => ({ ...g, id: gIds[i] })),
+    };
+    const a = ein?.automatik;
+    const gespeichert = ein && {
+      version: 1, vorlagen: ein.vorlagen,
+      zuordnung: Object.fromEntries(ein.zuordnung.map((x) => [E(x.einheit), { vorlage: x.vorlage, platz: x.platz, abweichend: x.abweichend }])),
+      ...(merker && a && { automatik: {
+        fbhWmz: a.fbhWmz, gruppenVorgeschlagen: a.gruppenVorgeschlagen, fbhVerteilerAus: a.fbhVerteilerAus.map(E), autoVerteiler: a.autoVerteiler.map(B),
+        gruppen: a.gruppen.map((g) => ({ ...g, gruppe: G(g.gruppe), ...(g.regel && { regel: { ...g.regel, ...(g.regel.einheit && { einheit: E(g.regel.einheit) }) } }) })),
+      } }),
+    };
+    return vorlagenEinlesen(ausBeschreibung(geladen), gespeichert).zustand;
+  }
+  /** Review-Gebäude im Kleinen: Technik UG1 mit Wärmepumpe, Regel-OG mit 4 Büros, OG5 FBH, Gruppen vorgeschlagen. */
+  function uebernommen(): AssistentZustand {
+    let z = regelhaus();
+    for (const a of [
+      { typ: "einheitAnzahl", geschoss: "UG1", art: "technik", anzahl: 1 },
+      { typ: "erzeuger", katalogId: K.waermepumpe },
+      ...heizungWahlAktionen("OG5", "fbh"),
+      { typ: "schritt", nr: 5 },
+    ] as Aktion[]) z = reduziere(z, a);
+    return z;
+  }
+  const fbhGruppe = (z: AssistentZustand) => z.gruppen.find((g) => g.regel?.heizart === "fbh")!;
+  const uvIn = (z: AssistentZustand, code: string) => unterverteiler(z).filter((t) => t.versorgt.some((e) => im(z, code).some((x) => x.schluessel === e)));
+
+  it("Merker überstehen Speichern und Laden", () => {
+    const vorher = uebernommen();
+    expect(uvIn(vorher, "OG5")).toHaveLength(4);
+    const z = speichernUndLaden(vorher);
+    expect(z.automatik).toBe(true);
+    expect(z.gruppenVorgeschlagen).toBe(true);
+    expect(uvIn(z, "OG5").every((t) => t.auto && t.fbh)).toBe(true);
+    expect(z.gruppen.map((g) => g.regel?.heizart).sort()).toEqual(["fbh", "hk"]);
+    expect(z.gruppen.every((g) => g.vorgeschlagen)).toBe(true);
+  });
+  it("FBH in OG3 ergänzen: FBH-Verteiler entstehen und hängen an der FBH-Gruppe", () => {
+    let z = speichernUndLaden(uebernommen());
+    z = heizungWahlAktionen("OG3", "fbh").reduce(reduziere, z);
+    const neu = uvIn(z, "OG3");
+    expect(neu).toHaveLength(4);
+    expect(neu.every((t) => t.status === "vorgeschlagen")).toBe(true);
+    for (const t of neu) expect(fbhGruppe(z).verbraucher).toContain(t.schluessel);
+    expect(fbhGruppe(z).verbraucher).toHaveLength(8);
+    // Heizkörper aus OG3 sind nicht mehr in der HK-Gruppe
+    const hk = z.gruppen.find((g) => g.regel?.heizart === "hk")!;
+    expect(hk.verbraucher).toHaveLength(12);
+  });
+  it("angefasste Gruppe bleibt nach dem Laden unberührt", () => {
+    let vorher = uebernommen();
+    const hk = vorher.gruppen.find((g) => g.regel?.heizart === "hk")!;
+    vorher = { ...vorher, gruppen: vorher.gruppen.map((g) => (g === hk ? { ...g, angefasst: true } : g)) };
+    let z = speichernUndLaden(vorher);
+    const hkNeu = z.gruppen.find((g) => g.regel?.heizart === "hk")!;
+    expect(hkNeu.angefasst).toBe(true);
+    const anzahl = hkNeu.verbraucher.length;
+    z = reduziere(z, { typ: "einheitAnzahl", geschoss: "EG", art: "buero", anzahl: 1 });
+    expect(z.gruppen.find((g) => g.schluessel === hkNeu.schluessel)!.verbraucher).toHaveLength(anzahl);
+  });
+  it("ohne gespeicherte Merker (alte Gebäude) bleibt die Automatik aus", () => {
+    let z = speichernUndLaden(uebernommen(), false);
+    expect(z.automatik).toBe(false);
+    z = heizungWahlAktionen("OG3", "fbh").reduce(reduziere, z);
+    expect(uvIn(z, "OG3")).toHaveLength(0);
   });
 });
