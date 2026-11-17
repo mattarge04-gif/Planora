@@ -19,6 +19,12 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 17.11.2026
 
+### Brainstorming Lebensdauer/Ampel (17.11.2026, spaet) [F]
+
+- Einstieg naechste Sitzung: "weiter" -> E43 in `00-kontext.md` und Journal 17.11. (spaet) lesen, dann Entwurf Teil 3 (Pruefung/Abnahme) zeigen, Spec schreiben, PO-Review, dann superpowers:writing-plans.
+- Entscheide E43: Akte light + Ampel, einfache Kosten, Zustandsstufe, je Datensatz, Baujahr Standard + Abweichung, Twin-Modus + Erneuerungsplan, Backend-Modul `lebensdauer`. Aufwand [A] 10–12 PT.
+- Testinstanz legt nur noch ein leeres "Testgebäude" an (`7725a3e`); Muster mit `--muster`. Gestoppt. Alles committet, nicht gepusht.
+
 ### E42 Automatik nach Wiederoeffnen (17.11.2026, abends) [F]
 
 - Einstieg naechste Sitzung: "weiter" -> diesen Block lesen, dann Abnahme-README `docs/abnahme/2026-11-16-heizungserfassung/README.md` Abschnitt "Nachtrag E42".

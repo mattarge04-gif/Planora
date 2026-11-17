@@ -3,6 +3,18 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-17 (spaet) – Testdaten, PO-Befunde, Brainstorming M7
+
+- [F] Entwicklungsstart legt nur noch ein leeres "Testgebäude" an; Muster mit `instanz.sh start --muster` (`7725a3e`).
+- [F] PO-Befunde aus dem Browser in CLAUDE.md (`a38d614`): Leitungsueberlappungen, Hauptverteiler bei FBH, Assistent fuer FM zu umstaendlich.
+- [F] PO will Richtung Demo: Brainstorming Lebensdauer/Ampel, Entscheide als E43. Entwurf Teil 1 (Daten/Rechnung) und Teil 2 (Ansichten) bestaetigt; Teil 3 (Pruefung/Abnahme), Spec und Plan offen.
+- Entwurfsdetails (Tabellen, Standardwerte, Ansichten) stehen im Sitzungsverlauf; naechste Sitzung aus E43 und diesem Eintrag die Spec `docs/superpowers/specs/2026-11-18-lebensdauer-ampel-design.md` schreiben:
+  - Migration 016: `gebaeude_erneuerung` (Heizungs-Baujahr), `bauteil_akte` (Zustand, Lebensdauer, Stueckpreis, Notiz; cascade), `lebensdauer_typ` (L min/mittel/max, Preis, Ampelschwelle je Typ, aus Katalog-Standard kopiert).
+  - Rechenteil rein (Stichtag als Eingabe), Rangfolge Bauteil > Typ > Standard, grau ohne Baujahr, gelb <= 3 J. [A], Kosten im Ersatzjahr, Ueberfaelliges im laufenden Jahr, Quelle je Wert.
+  - Standard [A]: WP 20 J./35'000, Kessel 20/18'000, Fernwaerme 30/15'000, Speicher 25/6'000, Pumpe 12/900, Verteiler 30/2'500, WMZ 10/600, HK 40/800 Stk., FBH-Kreis 50/1'200, TABS 50/1'500.
+  - API `GET/PUT /api/lebensdauer/gebaeude/:id`, `GET .../excel`.
+  - Ansichten: Anlagenkarte mit Ampel/Bearbeiten, Twin-Modus "Erneuerung" (E, Legende mit Zahlen, Summe 5 J.), Seite "Erneuerungsplan" (Baujahr-Standard oben, 10 Jahresbalken, Liste, Excel); Gestaltung ueber planora-design Stufe mittel.
+
 ## 2026-11-17 (abends) – E42: Automatik nach Wiederoeffnen
 
 ### 1. Was gemacht wurde

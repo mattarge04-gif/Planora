@@ -2,6 +2,17 @@
 
 Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
 
+## E43 – Demo-Schnitt Lebensdauer/Ampel (PO, 2026-11-17, Brainstorming, Teil 1+2 des Entwurfs bestaetigt)
+
+Rohantworten (AskUserQuestion): Umfang "Akte light + Ampel (Empfohlen)"; Kosten "Einfache Kosten (Empfohlen)"; Zustand "Einfache Zustandsstufe (Empfohlen)"; Feinheit "Je Datensatz (Empfohlen)"; Baujahr "Standard + Abweichungen (Empfohlen)"; Ansicht "Twin-Modus + Erneuerungsplan (Empfohlen)"; Technik "a" (Backend-Modul `lebensdauer`); Entwurf Teil 1 Daten/Rechnung "passt", Teil 2 Ansichten "passt".
+
+- Akte light (Detailkarte mit Bearbeiten) plus Ampel vor Upload/Viewer; Abweichung von E41 (Akte ganz vor Ampel) bewusst.
+- Einfache Kosten: Stueckpreis je Typ (Planora-Standard, pro Anlage aenderbar), Jahressummen 10 Jahre, ohne Teuerung/Zyklen. Ersetzt fuer die Demo die Rueckstellung in 03-architektur 8.5.
+- Zustand gut/mittel/schlecht/kritisch verschiebt Ersatzjahr um 0/−2/−5/sofort [A]; ZHAW spaeter.
+- Ampel je Bauteil-Datensatz (Menge × Preis). Baujahr: Gebaeude-Standard plus Abweichung in `bauteil.baujahr`.
+- Twin-Modus "Erneuerung" (Taste E) und Seite "Erneuerungsplan" mit Jahresbalken, Liste, Excel.
+- Offen: Entwurf Teil 3 (Pruefung/Abnahme), dann Spec und Plan. Standardwerte Lebensdauer/Preis [A], fachlich nicht freigegeben.
+
 ## E42 – Heizungserfassung: Antworten zur Abnahme (PO, 2026-11-17)
 
 Antworten auf die Fragen in `docs/abnahme/2026-11-16-heizungserfassung/README.md`:
