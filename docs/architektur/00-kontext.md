@@ -2,6 +2,15 @@
 
 Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
 
+## E42 – Heizungserfassung: Antworten zur Abnahme (PO, 2026-11-17)
+
+Antworten auf die Fragen in `docs/abnahme/2026-11-16-heizungserfassung/README.md`:
+
+1. Automatik nach dem ersten Uebernehmen: **jetzt beheben** (Gruppenregeln und FBH-Merker speichern). Plan: `docs/superpowers/plans/2026-11-17-automatik-merker.md`.
+2. Kerne beheizt: PO-Antwort "wir entschieden" – [?] Lesart unklar (spaeter entscheiden oder bereits entschieden); vorlaeufiges Verhalten (Kern behaelt Heizkoerper) bleibt.
+3. Standard beim Kunden: **Pruefhinweis**. "Weiss nicht" bleibt vorbelegt, "Pruefen" warnt, wenn das Gebaeude keine Heizabgaben hat.
+4. Plan-Annahmen 1–9 des Plans Heizungserfassung und Beschriftung "Standard (offen)": **bestaetigt**.
+
 ## E41 – Neue Reihenfolge zu V1, Interview zuerst als Web-Assistent (PO, 2026-11-12)
 
 Der PO lehnt eine Kuerzung ab ("nichts kuerzen einfach bessere reihenfolge"): Alle Meilensteine M2c–M11 bleiben im Umfang, die Reihenfolge wird neu gesetzt (Assistent → Anlagenakte → Ampel → fruehe Teil-Abnahme → Excel → Suche → KI-Auslesen → KI-Interview → Gesamtabnahme). Das Interview kommt zuerst als gefuehrter Web-Assistent ohne KI; das KI-Interview folgt auf demselben Faktenschema. Leitungsfuehrung bleibt schematisch (unter der Decke); detaillierte Leitungsplanung ist nicht Ziel. Raumgroessen sollen dem Inhalt folgen; Zubehoer (Pumpen, Ventile, Zaehler) muss flexibel an beliebigen Orten im Fluss moeglich sein. Plan und Konzept: [Weg zu V1](../superpowers/plans/2026-11-12-weg-zu-v1.md).
