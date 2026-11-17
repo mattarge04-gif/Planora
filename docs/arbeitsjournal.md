@@ -3,6 +3,25 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-17 – Heizungserfassung umgesetzt und abgenommen (ohne PO-Sichtung)
+
+### 1. Was gemacht wurde
+
+- [F] Plan `docs/superpowers/plans/2026-11-16-heizungserfassung.md` (12 Tasks) per Subagenten umgesetzt, je Task Review; Commits `3fbdfc5`..`817ff91`. Backend: Migration 015 `geschoss_vorlage`, Route `GET .../vorlagen`, `PUT .../beschreibung` mit `vorlagen` in einer Transaktion. Web: Zustand v2 (7 Schritte), Regelgeschoss, Standard-Hersteller, FBH-Verteiler automatisch, Gruppenvorschlag, Pruefen in Klartext, neue Schritte 2/3/5.
+- [F] Gesamtreview "mit Korrekturen" -> Fixwelle `23398b9` (u. a. Zaehlerfeld loeschte beim Tippen Einheiten).
+- [F] FM-Review im Browser: 33 statt 165 Klicks (Ziel <= 40). visual-critic 2 Runden "verbessern" -> 2 Designrunden (`f6cc9e3`, `817ff91`), P1/P2 behoben.
+- [F] Pruefstand: Web 452/452, Backend 581/581, Typpruefung und Build gruen. Abnahme `docs/abnahme/2026-11-16-heizungserfassung/README.md`.
+
+### 2. Was inhaltlich gelernt wurde
+
+- [F] Automatik nur fuer neue Gebaeude (Plan-Annahme 5) reicht nicht: Ergaenzungen nach dem ersten Uebernehmen kosten 17 statt 6 Klicks und haben keine Gruppenzuordnung -> PO-Entscheid noetig.
+- [F] Geschossweite Heizungswahl darf nur Einheiten aendern, in denen die Heizart erlaubt ist (sonst wird der Kern unbeheizt).
+- [F] Zuruecksetzen muss je Schritt nur dessen Felder betreffen (Schritt 2 loeschte sonst Heizungs-Ausnahmen aus Schritt 3).
+
+### 3. Was ueber die Zusammenarbeit gelernt wurde
+
+- [F] Gesamtreview vor der Abnahme ziehen: der kritische Datenverlust im Zaehlerfeld waere sonst in Klickzaehlung und Bildkritik eingeflossen.
+
 ## 2026-11-16 – FM-Review und Spec Heizungserfassung
 
 ### 1. Was gemacht wurde

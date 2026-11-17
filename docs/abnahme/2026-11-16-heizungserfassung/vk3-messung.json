@@ -1,0 +1,71 @@
+{
+  "schrittImEntwurf": 3,
+  "og4-wahl-1440x900": "fbh",
+  "og4-hinweis-1440x900": "Kern 4.05 behält Heizkörper.",
+  "og4-kern-hk-1440x900": "",
+  "og5-wahl-nach-reset-1440x900": "fbh",
+  "s2-1440x900": [
+    1456,
+    667
+  ],
+  "s7-1440x900": [
+    719,
+    667
+  ],
+  "aktiv-hover-bg-1440x900": "rgb(219, 230, 240)",
+  "pruefen-1440x900": [
+    "GeschosseUG1, EG, OG1, OG2, OG3, OG4, OG5Ändern",
+    "Einheiten23 Einheiten in 7 Geschossen, 5 Geschosse wie «Regelgeschoss».Ändern",
+    "HeizungHeizkörper: ja · Fussbodenheizung: nein · TABS: nein · 9 Einheiten mit AusnahmeÄndern",
+    "HerstellerHeizkörper: ZehnderÄndern",
+    "ZentraleWärmepumpe, SpeicherÄndern",
+    "GruppenHeizkörper (14), Fussbodenheizung (8), Fussbodenheizung Gastro 0.01 (1)Ändern",
+    "FBH-Verteiler9: 8 an «Fussbodenheizung», 1 an «Fussbodenheizung Gastro 0.01»Ändern",
+    "Wärmezähleran allen 9 FBH-VerteilernÄndern",
+    "Weitere TeilekeineÄndern"
+  ],
+  "meldungen-1440x900": [
+    "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+    "warning: THREE.WebGLProgram: Program Info Log: (817,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value\n(85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value",
+    "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)"
+  ],
+  "scrollbreite-1440x900": 1440,
+  "og4-wahl-1280x720": "fbh",
+  "og4-hinweis-1280x720": "Kern 4.05 behält Heizkörper.",
+  "og4-kern-hk-1280x720": "",
+  "og5-wahl-nach-reset-1280x720": "fbh",
+  "s2-1280x720": [
+    1456,
+    487
+  ],
+  "s7-1280x720": [
+    758,
+    487
+  ],
+  "aktiv-hover-bg-1280x720": "rgb(219, 230, 240)",
+  "pruefen-1280x720": [
+    "GeschosseUG1, EG, OG1, OG2, OG3, OG4, OG5Ändern",
+    "Einheiten23 Einheiten in 7 Geschossen, 5 Geschosse wie «Regelgeschoss».Ändern",
+    "HeizungHeizkörper: ja · Fussbodenheizung: nein · TABS: nein · 9 Einheiten mit AusnahmeÄndern",
+    "HerstellerHeizkörper: ZehnderÄndern",
+    "ZentraleWärmepumpe, SpeicherÄndern",
+    "GruppenHeizkörper (14), Fussbodenheizung (8), Fussbodenheizung Gastro 0.01 (1)Ändern",
+    "FBH-Verteiler9: 8 an «Fussbodenheizung», 1 an «Fussbodenheizung Gastro 0.01»Ändern",
+    "Wärmezähleran allen 9 FBH-VerteilernÄndern",
+    "Weitere TeilekeineÄndern"
+  ],
+  "meldungen-1280x720": [
+    "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+  ],
+  "scrollbreite-1280x720": 1280,
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002207) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "gebaeude": "58136d5a-5473-439f-9186-e646d360d7ae"
+}

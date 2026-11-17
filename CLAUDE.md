@@ -17,9 +17,17 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 **Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
 
-## 0b. Stand – zuletzt aktualisiert 16.11.2026
+## 0b. Stand – zuletzt aktualisiert 17.11.2026
 
-### Heizungserfassung vereinfachen (16.11.2026) [F]
+### Heizungserfassung umgesetzt (17.11.2026) [F]
+
+- Einstieg naechste Sitzung: "weiter" -> diesen Block lesen, dann `docs/abnahme/2026-11-16-heizungserfassung/README.md` (Ergebnis, PO-Fragen).
+- Plan (12 Tasks) umgesetzt, Commits `3fbdfc5`..`817ff91` auf `m2c-interview`, nicht gepusht, kein Merge. FM-Review: 33 statt 165 Klicks (Ziel <= 40 erreicht). visual-critic 2 Runden, P1/P2 behoben; PO-Sichtung steht aus.
+- Pruefstand: Web 452/452, Backend 581/581, tsc und Webbuild gruen. Migration 015 `geschoss_vorlage` neu.
+- Offen fuer PO [?]: (1) Automatik nach erstem Uebernehmen (Ergaenzungen ohne FBH-Verteiler/Gruppe, 17 statt 6 Klicks; Vorschlag Gruppenregeln in `geschoss_vorlage` speichern, [A] ~1 Tag); (2) Kerne beheizt? (vorlaeufig ja); (3) Standard beim Kunden "Weiss nicht" -> 0 HK ohne Warnung; (4) Plan-Annahmen 1–9 bestaetigen.
+- Weitere Befunde: Twin-Hinweis Rohcode "ohne_gruppe"; Router-Konflikte nach manueller Nachbesserung; Spec Abschnitt 8 unveraendert offen.
+
+### Heizungserfassung vereinfachen (16.11.2026) [F, ueberholt durch 17.11.]
 
 - Einstieg naechste Sitzung: "weiter" -> diesen Block lesen, dann Spec `docs/superpowers/specs/2026-11-16-heizungserfassung-design.md`.
 - FM-Manager-Review im Browser: 165 Klicks fuer Buerohaus UG1+EG+OG1–OG5 (`docs/abnahme/2026-11-16-fm-review/`).
