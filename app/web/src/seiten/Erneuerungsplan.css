@@ -1,0 +1,47 @@
+.ep { position: fixed; inset: 0; overflow-y: auto; background: var(--ep-grund); color: var(--ep-text); font: 13px/1.5 var(--ep-schrift); -webkit-font-smoothing: antialiased; }
+.ep-kopf { display: flex; align-items: center; gap: 16px; padding: 16px 24px; position: sticky; top: 0; background: var(--ep-grund); z-index: 1; flex-wrap: wrap; }
+.ep-kopf h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; flex: 1; min-width: 200px; }
+.ep-kopf h1 span { font-weight: 400; color: var(--ep-sekundaer); font-size: 15px; margin-left: 8px; }
+.ep-zurueck, .ep-knopf { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--ep-grau-2); background: var(--ep-flaeche); color: var(--ep-link); cursor: pointer; text-decoration: none; display: inline-block; }
+.ep-zurueck:hover, .ep-knopf:hover { color: var(--ep-link-hover); background: var(--ep-flaeche-2); }
+.ep-knopf:disabled { opacity: 0.5; cursor: default; }
+.ep button:focus-visible, .ep a:focus-visible, .ep input:focus-visible, .ep summary:focus-visible { outline: 2px solid var(--ep-akzent); outline-offset: 2px; }
+.ep-inhalt { display: grid; gap: 16px; padding: 0 24px 32px; max-width: 1200px; margin: 0 auto; }
+.ep-karte { background: var(--ep-flaeche); border-radius: var(--ep-radius); box-shadow: var(--ep-schatten); padding: 16px; display: grid; gap: 8px; }
+.ep-karte h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.ep-meldung { margin: 16px 24px; padding: 12px 16px; background: var(--ep-flaeche); border-radius: 8px; box-shadow: var(--ep-schatten); }
+.ep-zeile { display: flex; gap: 8px; flex-wrap: wrap; }
+.ep input { font: inherit; padding: 6px 10px; border: 1px solid var(--ep-grau-2); border-radius: 8px; background: var(--ep-flaeche); color: var(--ep-text); min-width: 0; }
+.ep input:disabled { background: var(--ep-flaeche-2); }
+.ep input[aria-invalid="true"] { border-color: var(--ep-stoerung); }
+.ep small { color: var(--ep-sekundaer); }
+.ep .ep-fehler { color: var(--ep-stoerung); }
+.ep-warn { color: var(--ep-warnung); margin: 0; font-weight: 500; }
+.ep-ampeln { list-style: none; margin: 0; padding: 0; display: flex; gap: 24px; flex-wrap: wrap; }
+.ep-ampeln li { display: flex; align-items: center; gap: 8px; }
+.ep-ampeln strong { font-variant-numeric: tabular-nums; }
+.ep-punkt { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: baseline; }
+.ep-ampeln .ep-punkt { margin-right: 0; }
+.ep-summe { margin: 0; font-size: 15px; }
+.ep-balken { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; }
+.ep-balken-spalte { display: grid; grid-template-rows: 140px auto auto auto; gap: 2px; justify-items: center; font: inherit; color: inherit; background: none; border: 1px solid transparent; border-radius: 8px; padding: 6px 2px; cursor: pointer; }
+.ep-balken-spalte:hover { background: var(--ep-flaeche-2); }
+.ep-balken-spalte[aria-pressed="true"] { border-color: var(--ep-akzent); background: var(--ep-eis); }
+.ep-balken-flaeche { display: flex; align-items: flex-end; width: 100%; height: 100%; }
+.ep-balken-stab { display: block; width: 100%; min-height: 2px; background: var(--ep-akzent); border-radius: 4px 4px 0 0; }
+.ep-balken-text { font-size: 12px; font-variant-numeric: tabular-nums; }
+.ep-balken-jahr { font-size: 12px; color: var(--ep-sekundaer); }
+.ep-balken-ohne { font-size: 11px; color: var(--ep-warnung); text-align: center; }
+.ep-filter { margin: 0; color: var(--ep-sekundaer); display: flex; gap: 8px; align-items: center; }
+.ep-tabelle-rahmen { overflow-x: auto; }
+.ep-tabelle { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.ep-tabelle th, .ep-tabelle td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--ep-grau-1); white-space: nowrap; }
+.ep-tabelle th { font-weight: 500; color: var(--ep-sekundaer); }
+.ep-tabelle .ep-zahl { text-align: right; }
+.ep-leer { color: var(--ep-sekundaer); margin: 0; }
+.ep-typen summary { cursor: pointer; font-weight: 600; font-size: 15px; }
+.ep-typ-liste { display: grid; gap: 12px; margin: 8px 0; }
+.ep-typ { display: grid; grid-template-columns: minmax(160px, 1fr) 2fr 2fr; gap: 8px 12px; align-items: end; }
+.ep-typ label { display: grid; gap: 2px; color: var(--ep-sekundaer); }
+.ep-typ .ep-fehler { grid-column: 1 / -1; }
+@media (max-width: 720px) { .ep-typ { grid-template-columns: 1fr; } .ep-balken { gap: 2px; } .ep-balken-text { font-size: 10px; } }

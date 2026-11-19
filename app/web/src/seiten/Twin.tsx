@@ -74,10 +74,12 @@ interface Props {
   onGebaeude: (g: GebaeudeEintrag) => void;
   onListe: () => void;
   onBearbeiten?: () => void;
+  /** Öffnet die Seite Erneuerungsplan (nur sichtbar, wenn Lebensdauer geladen ist). */
+  onPlan?: () => void;
   onAbmelden: () => void; onAbgelaufen: () => void;
 }
 
-export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAbmelden, onAbgelaufen }: Props) {
+export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPlan, onAbmelden, onAbgelaufen }: Props) {
   const [welt, setWelt] = useState<Welt | null>(null);
   const [beschreibung, setBeschreibung] = useState<Beschreibung | null>(null);
   const [katalog, setKatalog] = useState<Katalog | null>(null);
@@ -275,7 +277,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
           hinweise={daten ? daten.hinweise.length : null} onHinweise={zeigeHinweise}
           reduziert={reduziert} onReduziert={setReduziert}
           erneuerung={lebensdauer ? { an: erneuerung, onUm: umErneuerung } : undefined}
-          onListe={onListe} onBearbeiten={onBearbeiten} onAbmelden={onAbmelden} />
+          onListe={onListe} onBearbeiten={onBearbeiten} onPlan={lebensdauer ? onPlan : undefined} onAbmelden={onAbmelden} />
 
         {(!webgl || fehler || !daten) && <div className="tw-meldung-platz">
           {!webgl && <p className="ui-glas tw-meldung" role="alert">3D-Darstellung nicht verfügbar. Dein Browser unterstützt WebGL 2 nicht.</p>}
@@ -299,7 +301,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
           <aside className="tw-rechts" ref={rechts} aria-label="Geschosse und Anlage">
             <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
               ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} />
-            {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} />}
+            {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} onPlan={onPlan} />}
             {karte
               ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={schliesseKarte}
                 lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} />

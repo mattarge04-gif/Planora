@@ -1,4 +1,4 @@
-import { Bell, Building2, Check, ChevronDown, LogOut, UserRound, LayoutList, PencilLine } from "lucide-react";
+import { Bell, Building2, Check, ChevronDown, LogOut, UserRound, LayoutList, PencilLine, CalendarClock } from "lucide-react";
 import type { GebaeudeEintrag } from "../typen";
 import { Menue } from "./Menue";
 import "./ui.css";
@@ -20,6 +20,8 @@ interface Props {
   onListe: () => void;
   /** Öffnet den Assistenten für das aktuelle Gebäude. */
   onBearbeiten?: () => void;
+  /** Öffnet den Erneuerungsplan; nur gesetzt, wenn das Modul Daten liefert. */
+  onPlan?: () => void;
   /** Pill «Erneuerung» (Lebensdauer-Ampel); nur wenn das Modul Daten liefert. */
   erneuerung?: { an: boolean; onUm: (an: boolean) => void };
   onAbmelden: () => void;
@@ -78,6 +80,9 @@ export function Kopfzeile(p: Props) {
             </button>
             {p.onBearbeiten && <button type="button" role="menuitem" className="ui-eintrag" onClick={() => { schliessen(); p.onBearbeiten?.(); }}>
               <PencilLine {...ICON} />Gebäude bearbeiten
+            </button>}
+            {p.onPlan && <button type="button" role="menuitem" className="ui-eintrag" onClick={() => { schliessen(); p.onPlan?.(); }}>
+              <CalendarClock {...ICON} />Erneuerungsplan
             </button>}
           </>}
         </Menue>
