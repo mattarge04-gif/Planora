@@ -114,4 +114,12 @@ describe("Lebensdauer-API", () => {
     expect((await anfrage("GET", url(), kBearb)).statusCode).toBe(404);
     await schalteEin(db.pool, "lebensdauer", 2, randomUUID());
   });
+  it("CSV-Export: Rechte, Typ, Dateiname", async () => {
+    const r = await anfrage("GET", `${url()}/export.csv`, kLeser);
+    expect(r.statusCode).toBe(200);
+    expect(r.headers["content-type"]).toMatch(/text\/csv; charset=utf-8/);
+    expect(r.headers["content-disposition"]).toMatch(/attachment; filename="erneuerungsplan-.*\.csv"/);
+    expect(r.body.split("\r\n").length).toBeGreaterThan(3);
+    expect((await anfrage("GET", `${url()}/export.csv`, kFremd)).statusCode).toBe(404);
+  });
 });

@@ -6,6 +6,8 @@ import { FachFehler } from "../welt/speicher.js";
 import { ID_PARAMS } from "../welt/schema.js";
 import { LEBENSDAUER_SCHEMA } from "./schema.js";
 import { ladeLebensdauer, schreibeLebensdauer, type LebensdauerEingabe } from "./speicher.js";
+import { erneuerungCsv } from "./csv.js";
+import { KATALOG_V2 } from "../welt/katalog.v2.js";
 
 export function registriereLebensdauerRouten(app: FastifyInstance, pool: pg.Pool, stichtag = () => new Date().getFullYear()) {
   const mitClient = async <T>(f: (c: pg.PoolClient) => Promise<T>) => { const c = await pool.connect(); try { return await f(c); } finally { c.release(); } };
@@ -26,6 +28,17 @@ export function registriereLebensdauerRouten(app: FastifyInstance, pool: pg.Pool
       const z = await zugriff(c, req.kontext!.benutzerId, req.params.id, false);
       if (z !== 200) return verweigert(reply, z);
       return ladeLebensdauer(c, req.params.id, stichtag());
+    }));
+
+  const NAMEN = Object.fromEntries(KATALOG_V2.eintraege.map((e) => [e.id, e.name]));
+  app.get<{ Params: { id: string } }>("/api/lebensdauer/gebaeude/:id/export.csv", { schema: { params: ID_PARAMS } }, async (req, reply) =>
+    inTx("begin isolation level repeatable read read only", async (c) => {
+      const z = await zugriff(c, req.kontext!.benutzerId, req.params.id, false);
+      if (z !== 200) return verweigert(reply, z);
+      const s = (await ladeLebensdauer(c, req.params.id, stichtag()))!;
+      return reply.type("text/csv; charset=utf-8")
+        .header("content-disposition", `attachment; filename="erneuerungsplan-${req.params.id.slice(0, 8)}-${s.ergebnis.stichtag}.csv"`)
+        .send(erneuerungCsv(s, NAMEN));
     }));
 
   app.put<{ Params: { id: string }; Body: LebensdauerEingabe }>("/api/lebensdauer/gebaeude/:id",
