@@ -9,8 +9,8 @@ import { HEIZ_ARTEN, type BauteilEingabe, type Beschreibung, type EinheitEingabe
 
 export class FachFehler extends Error {
   readonly fehler: Fehler[];
-  readonly status: 409 | 422;
-  constructor(fehler: Fehler[], status: 409 | 422 = 422) {
+  readonly status: 400 | 404 | 409 | 422;
+  constructor(fehler: Fehler[], status: 400 | 404 | 409 | 422 = 422) {
     super(fehler.map((f) => f.code).join(", "));
     this.fehler = fehler;
     this.status = status;
