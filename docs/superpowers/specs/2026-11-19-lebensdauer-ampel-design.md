@@ -93,6 +93,6 @@ Kein automatischer Folgezyklus nach dem Ersatz (E43).
 ## 8. Offen [?]
 
 - Fachliche Freigabe der Lebensdauer-Standardwerte und Zustandsabzuege.
-- Preise aus Dokumenten auslesen: mit Upload/Viewer und KI-Auslesen (E41-Reihenfolge), Quelle `dokument` ist im Datenmodell vorbereitet.
+- Preise aus Dokumenten auslesen: PO 19.11. will das **in der Demo**; eigenes Teilprojekt mit eigener Spec (Upload + KI-Auslesen), Quelle `dokument` ist hier im Datenmodell vorbereitet. Handeingabe bleibt zusaetzlich (PO "ja").
 - Echte .xlsx spaeter (neue Abhaengigkeit, Lizenzliste).
 - Modul `lebensdauer` in Kundeninstanzen schalten (Profil P2) – Lieferthema, nicht Demo.
