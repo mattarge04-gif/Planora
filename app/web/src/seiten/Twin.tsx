@@ -257,7 +257,12 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
     const t = window.setTimeout(() => setTastenMeldung(null), 2400);
     return () => window.clearTimeout(t);
   }, [tastenMeldung]);
-  const umErneuerung = (an: boolean) => { setErneuerung(an); sage(an ? "Erneuerungsansicht an" : "Erneuerungsansicht aus"); };
+  const umErneuerung = (an: boolean) => {
+    setErneuerung(an);
+    // Anlagen sind nur im Technikmodus sichtbar: beim Einschalten aus der Übersicht dorthin wechseln.
+    if (an && fokusId === null) waehleModus("technik");
+    sage(an ? "Erneuerungsansicht an" : "Erneuerungsansicht aus");
+  };
   const technikTaste = () => {
     if (fokusId) {
       const text = `Bereits im Technikmodus, ${geschossCode(fokusId)}`;

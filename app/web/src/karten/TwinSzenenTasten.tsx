@@ -13,7 +13,7 @@ interface Props {
 
 /** Eigene Kürzel des Dashboards auf dem Szenen-Canvas (Szene3 `tastatur`: Pfeile drehen/neigen, +/− zoomen).
  * Ein einziger Tab-Stopp: der Canvas. Hier kommen Geschoss (Bild auf/ab), Technik, Separieren und Übersicht dazu. */
-export const EIGENE_KUERZEL = "PageUp PageDown Home 0 T S E Escape";
+export const EIGENE_KUERZEL = "PageUp PageDown Home 0 T S Escape";
 
 export function TwinSzenenTasten({ name, geschosse, fokusId, onFokus, onTechnik, separiert, onSeparieren, meldung = null, erneuerung = false, onErneuerung }: Props) {
   const [sichtbar, setSichtbar] = useState(false);
@@ -26,7 +26,7 @@ export function TwinSzenenTasten({ name, geschosse, fokusId, onFokus, onTechnik,
     if (!canvas) return;
     const ergaenzen = () => {
       const k = canvas.getAttribute("aria-keyshortcuts") ?? "";
-      if (!k.includes("PageUp")) canvas.setAttribute("aria-keyshortcuts", `${k} ${EIGENE_KUERZEL}`.trim());
+      if (!k.includes("PageUp")) canvas.setAttribute("aria-keyshortcuts", `${k} ${EIGENE_KUERZEL}${stand.current.onErneuerung ? " E" : ""}`.trim());
       canvas.setAttribute("aria-describedby", "tw-szene-kuerzel");
       canvas.setAttribute("aria-roledescription", "3D-Modell");
     };
