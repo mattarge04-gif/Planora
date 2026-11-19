@@ -13,7 +13,7 @@ Rohantworten (AskUserQuestion): Umfang "Akte light + Ampel (Empfohlen)"; Kosten 
 - Twin-Modus "Erneuerung" (Taste E) und Seite "Erneuerungsplan" mit Jahresbalken, Liste, Excel.
 - Teil 3 (Pruefung/Abnahme) "passt"; Export als CSV statt .xlsx (Antwort "a", 19.11.). Spec `docs/superpowers/specs/2026-11-19-lebensdauer-ampel-design.md`.
 - PO-Review Spec 19.11. (roh): "preis ist sehr unabhängig das können wir nicht einfach als standart werte nehmen lebensdauer aber schon / kosten sollten von den abgelegten dokumenten herausgelesen werden / rest ist gut". Folge: keine Standardpreise; bis zum Auslesen aus Dokumenten nur Handeingabe [A], fehlende Preise sichtbar; Quelle `dokument` vorbereitet. Ueberholt "Stueckpreis je Typ (Planora-Standard)" oben.
-- PO 19.11. (roh) auf "Handeingabe bis dahin?": "ja aber bei demo will ich schon das er das selber kann herauslesen". Folge: Handeingabe ja; Preis-Auslesen aus Dokumenten gehoert in die Demo (vorgezogen aus Stufe 7/M10, ADR 0030 KI standardmaessig aus). [?] Zuschnitt als eigenes Teilprojekt offen.
+- PO 19.11. (roh) auf "Handeingabe bis dahin?": "ja aber bei demo will ich schon das er das selber kann herauslesen". Folge: Handeingabe ja; Preis-Auslesen aus Dokumenten gehoert in die Demo (vorgezogen aus Stufe 7/M10, ADR 0030 KI standardmaessig aus). Zuschnitt (PO 19.11., "Zwei Teile (Empfohlen)"): zuerst Lebensdauer/Ampel nach Spec, danach eigenes Teilprojekt "Preis aus Dokument" (PDF-Upload, Claude liest Preis + Fundstelle, FM bestaetigt; eigene Spec, [A] 5–7 PT, Demo mit eigenen Testdokumenten).
 - Standardwerte Lebensdauer [A], fachlich nicht freigegeben.
 
 ## E42 – Heizungserfassung: Antworten zur Abnahme (PO, 2026-11-17)
