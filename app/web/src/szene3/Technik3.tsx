@@ -23,11 +23,13 @@ import { achseY, mitRohrStaerke, ROHR_FAKTOR, rohrFaktor, rohrTreffer } from "./
 
 const FLAECHE = new Set(["heizung.fbh_kreis", "heizung.tabs_feld"]);
 
-export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstellung, interaktion, separiert = false, onBefunde }: {
+export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstellung, interaktion, separiert = false, onBefunde, ampel }: {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; schatten: boolean; onModelle: () => void;
   darstellung?: Darstellung; interaktion?: Interaktion; separiert?: boolean;
   /** Befunde der gezeichneten Leitungsführung (eine Berechnung für Bild und Hinweis). */
   onBefunde?: (befunde: Befund[], weltHash: string) => void;
+  /** Erneuerungsansicht: Schluessel -> Ampelfarbe, nur gesetzt im Modus E. */
+  ampel?: ReadonlyMap<string, string>;
 }) {
   const [anschluesse, setAnschluesse] = useState<Record<string, V3>>({});
   const onModell = useCallback((pfad: string, anschluss: V3) => {
@@ -96,7 +98,7 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
     : geschossBeiY(welt, h.position[1]);
   return <group name="technik">
     {sichtbar.map((id) => <GeschossGruppe key={id} id={id} darstellung={darstellung}>
-      <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} />
+      <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} ampel={ampel} />
       {kappen.filter((k) => geschossBeiY(welt, k.symbol.position.y) === id).map((k, i) =>
         <VerteilerKappe key={`kappe-${i}`} {...k} interaktion={interaktion} schatten={schatten} />)}
       {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} interaktion={interaktion} />)}

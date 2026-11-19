@@ -273,3 +273,13 @@
 .tw-ld-aktionen { display: flex; gap: 6px; }
 .ui-karte .tw-ld-knopf { height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12px; background: var(--tw-flaeche-2); color: var(--tw-text); cursor: pointer; }
 .ui-karte .tw-ld-knopf:disabled { cursor: not-allowed; opacity: 0.6; }
+
+/* Erneuerungslegende (Lebensdauer-Ampel); Feinschliff im Design-Task */
+.ui-karte .tw-ampel-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
+.ui-karte .tw-ampel-liste li { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; }
+.ui-karte .tw-ampel-punkt { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.ui-karte .tw-ampel-zahl { font-variant-numeric: tabular-nums; }
+.ui-karte .tw-ampel-summe { margin: 10px 0 0; font-size: 13px; color: var(--tw-sekundaer); }
+.ui-karte .tw-ampel-summe strong { color: var(--tw-text); }
+.ui-karte .tw-ampel-plan { margin-top: 8px; padding: 0; background: none; border: 0; font: inherit; font-size: 13px; color: var(--tw-link); cursor: pointer; text-decoration: underline; }
+.ui-karte .tw-ampel-plan:hover { color: var(--tw-link-hover); }

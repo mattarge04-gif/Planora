@@ -15,6 +15,8 @@ import { TwinGruppe, TwinObjekt, TwinVerbindung } from "../karten/TwinObjekt";
 import { gruppenKarte, gruppenVon } from "../karten/gruppenKarte";
 import { TwinTooltip } from "../karten/TwinTooltip";
 import { TwinSzenenTasten } from "../karten/TwinSzenenTasten";
+import { TwinErneuerung } from "../karten/TwinErneuerung";
+import { ampelFarben } from "../szene3/ampelFaerbung";
 import { speicher } from "../ui/speicher";
 import type { BildschirmPunkt } from "../szene3/Interaktion";
 import { anlagenZeilen, anzeigeName, symbolName, geschossListe, hinweisListe, kennzahlen, objektKarte, zentraleGeschoss, type AnlagenZeile, type Zielort } from "../dashboard";
@@ -88,6 +90,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
   const [freiraum, setFreiraum] = useState<Freiraum>(FREIRAUM_START);
   const [ausgeblendet, setAusgeblendet] = useState<string[]>([]);
   const [separiert, setSepariert] = useState(false);
+  const [erneuerung, setErneuerung] = useState(false);
   const [auswahl, setAuswahl] = useState<string | null>(null);
   // «Zum Ort» ohne Anlage: Zielpunkt für die Kamera (Szene3-Prop `ziel`, von Codex vorgesehen).
   const [ortZiel, setOrtZiel] = useState<OrtZiel | null>(null);
@@ -104,7 +107,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
   useEffect(() => {
     let aktiv = true;
     setWelt(null); setBeschreibung(null); setKatalog(null); setFehler(null); setFokusId(null);
-    setAuswahl(null); setAusgeblendet([]); setSepariert(false); setOrtZiel(null);
+    setAuswahl(null); setAusgeblendet([]); setSepariert(false); setOrtZiel(null); setErneuerung(false);
     Promise.all([
       holeJson<Welt>(`/api/szene/gebaeude/${gebaeudeId}/welt`),
       holeJson<Beschreibung>(`/api/struktur/gebaeude/${gebaeudeId}/beschreibung`),
@@ -197,6 +200,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
   const karte = useMemo(() => welt && beschreibung && katalog && auswahl
     ? objektKarte(welt, beschreibung, katalog.eintraege, auswahl) : null, [welt, beschreibung, katalog, auswahl]);
   const straenge = useMemo(() => welt && katalog ? gruppenVon(welt, katalog.eintraege) : [], [welt, katalog]);
+  const ampel = useMemo(() => erneuerung && lebensdauer && welt ? ampelFarben(lebensdauer, welt.symbole) : undefined,
+    [erneuerung, lebensdauer, welt]);
   const gruppe = useMemo(() => welt && katalog && auswahl && !karte
     ? gruppenKarte(welt, katalog.eintraege, auswahl, straenge) : null, [welt, katalog, auswahl, karte, straenge]);
   const hoverName = useMemo(() => {
@@ -250,6 +255,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
     const t = window.setTimeout(() => setTastenMeldung(null), 2400);
     return () => window.clearTimeout(t);
   }, [tastenMeldung]);
+  const umErneuerung = (an: boolean) => { setErneuerung(an); sage(an ? "Erneuerungsansicht an" : "Erneuerungsansicht aus"); };
   const technikTaste = () => {
     if (fokusId) {
       const text = `Bereits im Technikmodus, ${geschossCode(fokusId)}`;
@@ -268,6 +274,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
           gebaeudeId={gebaeudeId} gebaeudeName={name} gebaeude={liste} onGebaeude={onGebaeude}
           hinweise={daten ? daten.hinweise.length : null} onHinweise={zeigeHinweise}
           reduziert={reduziert} onReduziert={setReduziert}
+          erneuerung={lebensdauer ? { an: erneuerung, onUm: umErneuerung } : undefined}
           onListe={onListe} onBearbeiten={onBearbeiten} onAbmelden={onAbmelden} />
 
         {(!webgl || fehler || !daten) && <div className="tw-meldung-platz">
@@ -284,13 +291,15 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
           {/* Szene im DOM zwischen linken und rechten Karten: ein Tab-Stopp (Canvas) an der richtigen Stelle. */}
           {bereit && <Szene3 welt={welt!} katalog={katalog!.eintraege} fokusId={fokusId} reduziert={reduziert} freiraum={freiraum}
             ausgeblendet={ausgeblendet} separiert={separiert} auswahl={auswahl}
-            onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} tastatur onLeitungsBefunde={befundeMelden} />}
+            onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} tastatur onLeitungsBefunde={befundeMelden} ampel={ampel} />}
           {bereit && <TwinSzenenTasten name={name} geschosse={daten.geschosse} fokusId={fokusId}
             onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
-            onTechnik={technikTaste} meldung={tastenMeldung} separiert={separiert} onSeparieren={setSepariert} />}
+            onTechnik={technikTaste} meldung={tastenMeldung} separiert={separiert} onSeparieren={setSepariert}
+            erneuerung={erneuerung} onErneuerung={lebensdauer ? umErneuerung : undefined} />}
           <aside className="tw-rechts" ref={rechts} aria-label="Geschosse und Anlage">
             <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
               ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} />
+            {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} />}
             {karte
               ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={schliesseKarte}
                 lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} />

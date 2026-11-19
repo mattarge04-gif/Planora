@@ -20,6 +20,8 @@ interface Props {
   onListe: () => void;
   /** Öffnet den Assistenten für das aktuelle Gebäude. */
   onBearbeiten?: () => void;
+  /** Pill «Erneuerung» (Lebensdauer-Ampel); nur wenn das Modul Daten liefert. */
+  erneuerung?: { an: boolean; onUm: (an: boolean) => void };
   onAbmelden: () => void;
 }
 
@@ -53,6 +55,8 @@ export function Kopfzeile(p: Props) {
             {m === "uebersicht" ? "Übersicht" : "Technik"}
           </button>
         ))}
+        {p.erneuerung && <button type="button" className="ui-pill" aria-pressed={p.erneuerung.an}
+          onClick={() => p.erneuerung!.onUm(!p.erneuerung!.an)}>Erneuerung</button>}
       </nav>
 
       <div className="ui-kopf-rechts">

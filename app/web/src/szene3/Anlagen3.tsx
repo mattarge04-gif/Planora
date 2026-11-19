@@ -12,6 +12,8 @@ interface Props {
   symbole: WeltSymbol[]; schatten: boolean; katalog?: KatalogEintrag[];
   onModell: (pfad: string, anschluss: V3) => void;
   interaktion?: Interaktion;
+  /** Schluessel -> Ampelfarbe (Hex); nur Anlagen mit Eintrag erhalten eine dauerhafte Farbhuelle. */
+  ampel?: ReadonlyMap<string, string>;
 }
 
 /** Eine dargestellte Instanz: Teile in der Leitung (Gruppenstock, «vor Bauteil») erscheinen je Stück einmal. */
@@ -40,7 +42,7 @@ class ModellGrenze extends Component<{ children: ReactNode; ersatz: ReactNode },
   render() { return this.state.fehler ? this.props.ersatz : this.props.children; }
 }
 
-export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion }: Props) {
+export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, ampel }: Props) {
   const gruppen = useMemo(() => {
     const g = new Map<string, Instanz[]>();
     for (const i of instanzen(symbole, katalog)) {
@@ -53,12 +55,12 @@ export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion }: 
     for (const [pfad] of gruppen) if (pfad.startsWith("/modelle/")) useGLTF.preload(pfad, false, false);
   }, [gruppen]);
   return <group name="anlagen">{gruppen.map(([pfad, gruppe]) => {
-    const ersatz = <Ersatz instanzen={gruppe} schatten={schatten} interaktion={interaktion} />;
+    const ersatz = <Ersatz instanzen={gruppe} schatten={schatten} interaktion={interaktion} ampel={ampel} />;
     return pfad.startsWith("/modelle/")
       ? <ModellGrenze key={pfad} ersatz={ersatz}><Suspense fallback={ersatz}>
-        <Modell pfad={pfad} instanzen={gruppe} schatten={schatten} onModell={onModell} interaktion={interaktion} />
+        <Modell pfad={pfad} instanzen={gruppe} schatten={schatten} onModell={onModell} interaktion={interaktion} ampel={ampel} />
       </Suspense></ModellGrenze>
-      : <Ersatz key={pfad} instanzen={gruppe} schatten={schatten} interaktion={interaktion} />;
+      : <Ersatz key={pfad} instanzen={gruppe} schatten={schatten} interaktion={interaktion} ampel={ampel} />;
   })}</group>;
 }
 
@@ -70,10 +72,10 @@ function ereignisse(key: (e: ThreeEvent<PointerEvent | MouseEvent>) => string | 
     onClick: (e: ThreeEvent<MouseEvent>) => { const k = key(e); if (k && e.delta <= 4) { e.stopPropagation(); interaktion.waehlen(k); } },
   };
 }
-function Ersatz({ instanzen, schatten, interaktion }: { instanzen: Instanz[]; schatten: boolean; interaktion?: Interaktion }) {
-  return <>{instanzen.map((i, k) => <ErsatzAnlage key={`${i.s.schluessel}:${k}`} i={i} schatten={schatten} interaktion={interaktion} />)}</>;
+function Ersatz({ instanzen, schatten, interaktion, ampel }: { instanzen: Instanz[]; schatten: boolean; interaktion?: Interaktion; ampel?: ReadonlyMap<string, string> }) {
+  return <>{instanzen.map((i, k) => <ErsatzAnlage key={`${i.s.schluessel}:${k}`} i={i} schatten={schatten} interaktion={interaktion} ampel={ampel} />)}</>;
 }
-function ErsatzAnlage({ i, schatten, interaktion }: { i: Instanz; schatten: boolean; interaktion?: Interaktion }) {
+function ErsatzAnlage({ i, schatten, interaktion, ampel }: { i: Instanz; schatten: boolean; interaktion?: Interaktion; ampel?: ReadonlyMap<string, string> }) {
     const { s } = i, masse = lageMasse(i), ref = useRef<THREE.Group>(null);
     const aktiv = hervorgehoben(s, interaktion);
     const unten = i.mitte[1] - masse[1] / 2;
@@ -88,11 +90,15 @@ function ErsatzAnlage({ i, schatten, interaktion }: { i: Instanz; schatten: bool
       {aktiv && <RoundedBox args={masse} position={[0, masse[1] / 2, 0]} scale={1.04} radius={radius} smoothness={3} raycast={() => {}}>
         <meshBasicMaterial color={TOKENS.farbe.eisAkzent} side={THREE.BackSide} />
       </RoundedBox>}
+      {ampel?.get(s.schluessel) && <RoundedBox args={masse} position={[0, masse[1] / 2, 0]} scale={1.06} radius={radius} smoothness={3} raycast={() => {}}>
+        <meshBasicMaterial color={ampel.get(s.schluessel)} side={THREE.BackSide} />
+      </RoundedBox>}
     </group>;
 }
 
-function Modell({ pfad, instanzen, schatten, onModell, interaktion }: {
+function Modell({ pfad, instanzen, schatten, onModell, interaktion, ampel }: {
   pfad: string; instanzen: Instanz[]; schatten: boolean; onModell: Props["onModell"]; interaktion?: Interaktion;
+  ampel?: ReadonlyMap<string, string>;
 }) {
   const { scene } = useGLTF(pfad, false, false);
   const modell = useMemo(() => {
@@ -119,27 +125,32 @@ function Modell({ pfad, instanzen, schatten, onModell, interaktion }: {
   }, [scene, pfad]);
   useEffect(() => { onModell(pfad, modell.anschluss); }, [pfad, modell, onModell]);
   useEffect(() => () => modell.materialien.forEach((m) => m.dispose()), [modell]);
-  return <group name={pfad}>{modell.teile.map((t, i) => <Modellinstanzen key={i} teil={t} instanzen={instanzen} schatten={schatten} interaktion={interaktion} />)}</group>;
+  return <group name={pfad}>{modell.teile.map((t, i) => <Modellinstanzen key={i} teil={t} instanzen={instanzen} schatten={schatten} interaktion={interaktion} ampel={ampel} />)}</group>;
 }
 
-function Modellinstanzen({ teil, instanzen, schatten, interaktion }: {
+function Modellinstanzen({ teil, instanzen, schatten, interaktion, ampel }: {
   teil: { geometrie: THREE.BufferGeometry; material: THREE.Material | THREE.Material[]; matrix: THREE.Matrix4 };
-  instanzen: Instanz[]; schatten: boolean; interaktion?: Interaktion;
+  instanzen: Instanz[]; schatten: boolean; interaktion?: Interaktion; ampel?: ReadonlyMap<string, string>;
 }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const rand = useRef<THREE.InstancedMesh>(null);
+  const farbig = useRef<THREE.InstancedMesh>(null);
   const aktiv = instanzen.filter((i) => hervorgehoben(i.s, interaktion));
   const material = useMemo(() => new THREE.MeshBasicMaterial({ color: TOKENS.farbe.eisAkzent, side: THREE.BackSide }), []);
   useEffect(() => () => material.dispose(), [material]);
+  const gefaerbt = useMemo(() => instanzen.filter((i) => ampel?.has(i.s.schluessel)), [instanzen, ampel]);
+  // Weisses Material: die Ampelfarbe kommt je Instanz aus instanceColor.
+  const ampelMaterial = useMemo(() => new THREE.MeshBasicMaterial({ side: THREE.BackSide }), []);
+  useEffect(() => () => ampelMaterial.dispose(), [ampelMaterial]);
   const setzen = () => {
     const mesh = ref.current;
     if (!mesh) return;
-    const matrix = (i: Instanz, umriss = false) => {
+    const matrix = (i: Instanz, umriss: number | false = false) => {
       // Teile in der Leitung heben sich nicht ab, sonst lösen sie sich vom Rohr.
       const m = new THREE.Matrix4().makeTranslation(0, i.inline ? 0 : interaktion?.lift.current[i.s.schluessel] ?? 0, 0);
       if (umriss) {
         const [x, y, z] = i.mitte;
-        m.multiply(new THREE.Matrix4().makeTranslation(x, y, z)).multiply(new THREE.Matrix4().makeScale(1.04, 1.04, 1.04)).multiply(new THREE.Matrix4().makeTranslation(-x, -y, -z));
+        m.multiply(new THREE.Matrix4().makeTranslation(x, y, z)).multiply(new THREE.Matrix4().makeScale(umriss, umriss, umriss)).multiply(new THREE.Matrix4().makeTranslation(-x, -y, -z));
       }
       return m.multiply(i.basis).multiply(teil.matrix);
     };
@@ -147,21 +158,34 @@ function Modellinstanzen({ teil, instanzen, schatten, interaktion }: {
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
     if (rand.current) {
-      aktiv.forEach((i, k) => rand.current!.setMatrixAt(k, matrix(i, true)));
+      aktiv.forEach((i, k) => rand.current!.setMatrixAt(k, matrix(i, 1.04)));
       rand.current.instanceMatrix.needsUpdate = true; rand.current.computeBoundingSphere();
     }
+    const f = farbig.current;
+    if (f) {
+      gefaerbt.forEach((i, k) => f.setMatrixAt(k, matrix(i, 1.06)));
+      f.instanceMatrix.needsUpdate = true; f.computeBoundingSphere();
+    }
   };
-  useLayoutEffect(setzen, [instanzen, teil, interaktion]);
+  useLayoutEffect(setzen, [instanzen, teil, interaktion, gefaerbt]);
+  useLayoutEffect(() => {
+    const f = farbig.current;
+    if (!f) return;
+    gefaerbt.forEach((i, k) => f.setColorAt(k, new THREE.Color(ampel?.get(i.s.schluessel))));
+    if (f.instanceColor) f.instanceColor.needsUpdate = true;
+  }, [gefaerbt, ampel]);
   useFrame(setzen, -1);
   useEffect(() => {
     const mesh = ref.current;
     return () => { mesh?.dispose(); };
   }, [instanzen.length]);
   useEffect(() => { const mesh = rand.current; return () => mesh?.dispose(); }, [aktiv.length]);
+  useEffect(() => { const mesh = farbig.current; return () => mesh?.dispose(); }, [gefaerbt.length]);
   return <><instancedMesh key={instanzen.length} ref={ref} args={[teil.geometrie, teil.material, instanzen.length]}
     dispose={null} castShadow={schatten} receiveShadow={schatten}
     {...ereignisse((e) => e.instanceId === undefined ? undefined : instanzen[e.instanceId]?.s.schluessel, interaktion)}
     userData={{ instanzen: instanzen.map((i) => anlagenDaten(i.s)) }} />
     {aktiv.length > 0 && <instancedMesh key={`rand-${aktiv.length}`} ref={rand} args={[teil.geometrie, material, aktiv.length]} dispose={null} raycast={() => {}} />}
+    {gefaerbt.length > 0 && <instancedMesh key={`ampel-${gefaerbt.length}`} ref={farbig} args={[teil.geometrie, ampelMaterial, gefaerbt.length]} dispose={null} raycast={() => {}} />}
   </>;
 }

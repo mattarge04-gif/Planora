@@ -36,6 +36,8 @@ export interface Szene3Props {
   onAuswahlPunkt?: (punkt: BildschirmPunkt | null) => void;
   /** Befunde der automatischen Leitungsführung, wie gezeichnet (Twin-Hinweis). */
   onLeitungsBefunde?: (befunde: Befund[], weltHash: string) => void;
+  /** Erneuerungsansicht: Schluessel -> Ampelfarbe; ohne Prop unveraendert. */
+  ampel?: ReadonlyMap<string, string>;
 }
 const KEINE_GESCHOSSE: string[] = [];
 
@@ -50,7 +52,7 @@ export function Szene3(props: Szene3Props) {
 }
 
 function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblendet = KEINE_GESCHOSSE, separiert = false,
-  auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt, onLeitungsBefunde }: Szene3Props) {
+  auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt, onLeitungsBefunde, ampel }: Szene3Props) {
   const h = useMemo(() => huelle(welt), [welt]);
   /** Darstellungslage der Anlagen (Verteiler mit Gruppen, Teile in der Leitung) für Kamera und Auswahlpunkt. */
   const anzeige = useMemo(() => anzeigeWelt(welt, katalog), [welt, katalog]);
@@ -142,7 +144,7 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       <FreiraumSchnitt freiraum={freiraum} nurUnten>
       <Gebaeude3 welt={welt} h={h} fokusId={fokusId} kameraRichtung={kameraRichtung} schatten={!reduziert} darstellung={darstellung} />
       <Technik3 welt={welt} katalog={katalog} fokusId={fokusId} schatten={!reduziert} onModelle={modelleGeladen}
-        darstellung={darstellung} interaktion={interaktion} separiert={separiert} onBefunde={onLeitungsBefunde} />
+        darstellung={darstellung} interaktion={interaktion} separiert={separiert} onBefunde={onLeitungsBefunde} ampel={ampel} />
       {!auswahl && ziel && <Ortsmarke welt={welt} ziel={ziel} darstellung={darstellung} />}
       </FreiraumSchnitt>
       <NahKulisse basisZoom={basisZoom}><FreiraumSchnitt freiraum={freiraum}><Kulisse3 bereich={h.bereich} schatten={!reduziert} /></FreiraumSchnitt></NahKulisse>
