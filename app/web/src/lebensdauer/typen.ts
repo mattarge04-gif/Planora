@@ -73,4 +73,6 @@ export interface LdStand {
   typen: LdTyp[];
   bauteile: LdBauteil[];
   ergebnis: LdErgebnis;
+  /** Nur in GET/PUT-Antwort der Gebaeude-Route: darf der Benutzer aendern (fach.aendern). */
+  darfAendern?: boolean;
 }

@@ -4,6 +4,8 @@ import type { IconSchluessel, ObjektKarte } from "../dashboard";
 import { useSpeicher, type Speicher } from "../ui/speicher";
 import type { BildschirmPunkt } from "../szene3/Interaktion";
 import type { GruppenKarte } from "./gruppenKarte";
+import type { LdStand } from "../lebensdauer/typen";
+import { TwinLebensdauer } from "./TwinLebensdauer";
 
 export const ANLAGEN_ICON: Record<IconSchluessel, LucideIcon> = {
   waermepumpe: Fan, kessel: Flame, fernwaerme: Waypoints, speicher: Cylinder, pumpe: CircleGauge,
@@ -18,10 +20,10 @@ export function kurzId(ids: string[]): string {
   return ids.length > 1 ? `${erste} +${ids.length - 1}` : erste;
 }
 
-interface Props { karte: ObjektKarte; onSchliessen: () => void }
+interface Props { karte: ObjektKarte; onSchliessen: () => void; lebensdauer?: LdStand | null; darfAendern?: boolean; onLebensdauer?: (s: LdStand) => void }
 
 /** Anlagenkarte rechts, Inhalt aus objektKarte(). Dokumente sind noch nicht angebunden. */
-export function TwinObjekt({ karte, onSchliessen, kartenRef }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
+export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAendern, onLebensdauer }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
   const Icon = ANLAGEN_ICON[karte.icon];
   return (
     <section ref={kartenRef} className="ui-glas ui-karte tw-objekt" aria-labelledby="karte-objekt">
@@ -45,6 +47,7 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef }: Props & { kartenR
         <h3>Versorgt</h3>
         <ul className="tw-versorgt">{karte.versorgt.map((v) => <li key={v}>{v}</li>)}</ul>
       </div>}
+      {lebensdauer && onLebensdauer && <TwinLebensdauer stand={lebensdauer} bauteilIds={karte.bauteilIds} darfAendern={darfAendern === true} onGespeichert={onLebensdauer} />}
       <div className="tw-objekt-block tw-dokumente">
         <h3>Dokumente</h3>
         <button type="button" disabled aria-label="Hochladen, folgt"><Upload size={14} strokeWidth={1.75} aria-hidden="true" />Hochladen<span className="tw-folgt">folgt</span></button>

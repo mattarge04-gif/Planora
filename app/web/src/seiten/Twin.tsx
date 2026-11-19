@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ApiFehler, holeJson } from "../api";
+import type { LdStand } from "../lebensdauer/typen";
 import { TOKENS } from "../design/tokens";
 import { Szene3 } from "../szene3/Szene3";
 import type { Freiraum } from "../szene3/kamera";
@@ -80,6 +81,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
   const [katalog, setKatalog] = useState<Katalog | null>(null);
   const [liste, setListe] = useState<GebaeudeEintrag[] | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [lebensdauer, setLebensdauer] = useState<LdStand | null>(null);
   const [fokusId, setFokusId] = useState<string | null>(null);
   const [reduziert, setReduziert] = useState(false);
   const [webgl] = useState(webglVorhanden);
@@ -113,6 +115,15 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
       if (!aktiv) return;
       if (e instanceof ApiFehler && e.status === 401) onAbgelaufen();
       else setFehler(e.message);
+    });
+    return () => { aktiv = false; };
+  }, [gebaeudeId, onAbgelaufen]);
+
+  // Lebensdauer getrennt laden: 404 = Modul aus, der Twin laeuft ohne weiter.
+  useEffect(() => {
+    let aktiv = true; setLebensdauer(null);
+    holeJson<LdStand>(`/api/lebensdauer/gebaeude/${gebaeudeId}`).then((s) => { if (aktiv) setLebensdauer(s); }, (e: Error) => {
+      if (aktiv && e instanceof ApiFehler && e.status === 401) onAbgelaufen();
     });
     return () => { aktiv = false; };
   }, [gebaeudeId, onAbgelaufen]);
@@ -281,7 +292,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onAb
             <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
               ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} />
             {karte
-              ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={schliesseKarte} />
+              ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={schliesseKarte}
+                lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} />
               : gruppe ? <TwinGruppe key={gruppe.id} karte={gruppe} kartenRef={objektRef} onSchliessen={schliesseKarte} />
               : <p className="tw-objekt-leer">Anlage oder Leitung im Modell wählen, um Details zu sehen.</p>}
           </aside>

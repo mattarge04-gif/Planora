@@ -256,3 +256,20 @@
   box-shadow: var(--tw-schatten); animation: tw-blende-ein var(--tw-hover-ms) var(--tw-kurve);
 }
 @keyframes tw-blende-ein { from { opacity: 0; } }
+
+/* Lebensdauer-Block der Anlagenkarte (funktional; Feinschliff im Design-Task) */
+.tw-ld-kopf { display: flex; align-items: center; gap: 6px; }
+.tw-ld-status { margin-left: auto; color: var(--tw-text); }
+.tw-ld-punkt { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.tw-ld-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; max-height: 260px; overflow-y: auto; }
+.tw-ld-zeile { margin: 0 0 4px; display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.tw-ld-quelle { color: var(--tw-sekundaer); font-size: 11px; margin-left: 4px; }
+.tw-ld-fehlt { color: var(--tw-warnung); }
+.tw-ld-form { display: grid; gap: 6px; margin-top: 6px; }
+.tw-ld-feld { display: grid; gap: 2px; font-size: 12px; }
+.tw-ld-feld label { color: var(--tw-sekundaer); }
+.tw-ld-feld input, .tw-ld-feld select, .tw-ld-feld textarea { font: inherit; padding: 4px 6px; border: 1px solid var(--tw-grau-1); border-radius: 6px; background: var(--tw-flaeche-2); color: var(--tw-text); }
+.tw-ld-fehler { margin: 0; font-size: 12px; color: var(--tw-warnung); }
+.tw-ld-aktionen { display: flex; gap: 6px; }
+.ui-karte .tw-ld-knopf { height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12px; background: var(--tw-flaeche-2); color: var(--tw-text); cursor: pointer; }
+.ui-karte .tw-ld-knopf:disabled { cursor: not-allowed; opacity: 0.6; }

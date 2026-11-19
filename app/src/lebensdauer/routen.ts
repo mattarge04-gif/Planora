@@ -27,7 +27,9 @@ export function registriereLebensdauerRouten(app: FastifyInstance, pool: pg.Pool
     inTx("begin isolation level repeatable read read only", async (c) => {
       const z = await zugriff(c, req.kontext!.benutzerId, req.params.id, false);
       if (z !== 200) return verweigert(reply, z);
-      return ladeLebensdauer(c, req.params.id, stichtag());
+      const stand = await ladeLebensdauer(c, req.params.id, stichtag());
+      const darfAendern = (await zugriff(c, req.kontext!.benutzerId, req.params.id, true)) === 200;
+      return { ...stand, darfAendern };
     }));
 
   const NAMEN = Object.fromEntries(KATALOG_V2.eintraege.map((e) => [e.id, e.name]));
@@ -50,7 +52,7 @@ export function registriereLebensdauerRouten(app: FastifyInstance, pool: pg.Pool
         return await inTx("begin", async (c) => {
           const n = await schreibeLebensdauer(c, req.params.id, req.body);
           await auditEreignis(c, k.auditId, "lebensdauer.geaendert", { gebaeudeId: req.params.id, ...n });
-          return ladeLebensdauer(c, req.params.id, stichtag());
+          return { ...(await ladeLebensdauer(c, req.params.id, stichtag())), darfAendern: true };
         });
       } catch (e) {
         if (e instanceof FachFehler) return reply.code(e.status).send({ fehler: e.fehler });

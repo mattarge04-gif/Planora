@@ -72,7 +72,8 @@ describe("Lebensdauer-API", () => {
   it("Leser liest, Fremde 404, Betreiber 404", async () => {
     const r = await anfrage("GET", url(), kLeser);
     expect(r.statusCode).toBe(200);
-    expect(r.json()).toMatchObject({ gebaeudeId: G, ergebnis: { stichtag: JAHR } });
+    expect(r.json()).toMatchObject({ gebaeudeId: G, ergebnis: { stichtag: JAHR }, darfAendern: false });
+    expect((await anfrage("GET", url(), kBearb)).json().darfAendern).toBe(true);
     expect((await anfrage("GET", url(), kFremd)).statusCode).toBe(404);
     expect((await anfrage("GET", url(), kBetr)).statusCode).toBe(404);
   });
