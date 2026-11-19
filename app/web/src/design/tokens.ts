@@ -76,6 +76,24 @@ export const TOKENS = {
     aoRadiusM: 1.1,
     aoIntensitaet: 1.2,
   },
+  /** Twin-Modus Erneuerung (3D, 19.11.2026): Gewerkefarbe tritt zurück, nur die Ampel ist farbig. Arbeitswerte [A]. */
+  erneuerung: {
+    huelleFaktor: 1.11, // Ampelhülle aussen (Kasten um die Einbaulage); Auswahl/Hover bleibt innen bei 1.04
+    huelleZuschlagM: 0.015, // fester Zuschlag je Seite, damit auch flache Teile (Heizkörper) einen sichtbaren Rand haben
+    sockelRandM: 0.09, // Bodenscheibe steht je Seite mindestens so weit über den Grundriss der Anlage vor
+    sockelRandPx: 8, // aus der Distanz mindestens so viele Bildschirm-px (Lesson: aus der Übersicht prüfen) …
+    sockelRandMaxM: 0.45, // … aber höchstens so viele Meter
+    huelleRandPx: 2, // Hüllenzuschlag aus der Distanz mindestens so viele px …
+    huelleRandMaxM: 0.06, // … höchstens so viele Meter
+    rangVersatzM: 0.002, // überlappende Sockel: dringendere Ampel liegt oben
+    sockelHoeheM: 0.014,
+    sockelBodenM: 0.036, // Unterkante über Geschossboden, über dem Flächenband (0.032)
+    strichM: 0.09, // gestrichelter Rand «Baujahr fehlt» (analog CircleDashed)
+    lueckeM: 0.06,
+    strichBreiteM: 0.03,
+    leitungMischung: 1, // KOO-Rot -> grau2 (1 = rein grau2): Leitungen neutral, Rohrverdickung bleibt
+    flaechenMischung: 0.55, // Flächenband (FBH) flaecheSekundaer -> grau2
+  },
   bewegung: {
     hoverMs: 160,
     panelMs: 280,

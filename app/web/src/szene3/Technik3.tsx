@@ -93,18 +93,21 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
   }, [netz, welt, sichtbar, getrennt]);
   // Bögen, T-Stücke und Winkel je Geschoss aus den sichtbaren Rohrteilen (nur Darstellung, Punkte unverändert).
   const formen = useMemo(() => new Map(sichtbar.map((id) => [id, formstuecke(rohre.filter((r) => r.geschossId === id).map((r) => r.stueck))])), [rohre, sichtbar]);
+  // Modus Erneuerung: Leitungen treten neutral zurück, damit Rot nur die Ampel «Ersetzen» trägt.
+  const erneuerung = ampel !== undefined;
+  const bodenVon = (id: string) => welt.geschosse.find((g) => g.id === id)?.yUnten;
   const huelsenGeschoss = (h: Huelse) => h.art === "decke"
     ? [...welt.geschosse].sort((a, b) => Math.abs(a.yUnten - h.position[1]) - Math.abs(b.yUnten - h.position[1]))[0]?.id
     : geschossBeiY(welt, h.position[1]);
   return <group name="technik">
     {sichtbar.map((id) => <GeschossGruppe key={id} id={id} darstellung={darstellung}>
-      <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} ampel={ampel} />
+      <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} ampel={ampel} bodenY={bodenVon(id)} />
       {kappen.filter((k) => geschossBeiY(welt, k.symbol.position.y) === id).map((k, i) =>
         <VerteilerKappe key={`kappe-${i}`} {...k} interaktion={interaktion} schatten={schatten} />)}
-      {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} interaktion={interaktion} />)}
-      {formen.get(id) && <Formstuecke3 f={formen.get(id)!} schatten={schatten} gruppe={interaktion?.gruppe ?? null} geraet={interaktion?.geraet ?? null} farben={FORM_FARBEN} />}
+      {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} interaktion={interaktion} neutral={erneuerung} />)}
+      {formen.get(id) && <Formstuecke3 f={formen.get(id)!} schatten={schatten} gruppe={interaktion?.gruppe ?? null} geraet={interaktion?.geraet ?? null} farben={erneuerung ? FORM_FARBEN_NEUTRAL : FORM_FARBEN} />}
       {netz.huelsen.filter((h) => huelsenGeschoss(h) === id).map((h, i) => <Durchgang key={i} huelse={h} schatten={schatten} />)}
-      {flaechen.filter((f) => f.geschossId === id).map((f) => <Flaechenband key={f.daten.einheitId} {...f} />)}
+      {flaechen.filter((f) => f.geschossId === id).map((f) => <Flaechenband key={f.daten.einheitId} {...f} neutral={erneuerung} />)}
       {schatten && !darstellung?.bewegung && schnitt.fokus?.id === id && <Technikkontakte key={`${id}:${Object.keys(anschluesse).join(":")}`}
         welt={welt} y={schnitt.fokus.yUnten} />}
     </GeschossGruppe>)}
@@ -127,15 +130,19 @@ const ROHR_UMRISS = 0.012;
 const ROHR_GEDIMMT = new THREE.Color(TOKENS.farbe.kooHeizung).lerp(new THREE.Color(TOKENS.farbe.grau1), 0.72).getStyle();
 
 const FORM_FARBEN = { normal: TOKENS.farbe.kooHeizung, gedimmt: ROHR_GEDIMMT };
+/** Modus Erneuerung: KOO-Rot fast ganz zu grau2 gemischt (TOKENS.erneuerung.leitungMischung). */
+const ROHR_NEUTRAL = new THREE.Color(TOKENS.farbe.kooHeizung).lerp(new THREE.Color(TOKENS.farbe.grau2), TOKENS.erneuerung.leitungMischung).getStyle();
+const FORM_FARBEN_NEUTRAL = { normal: ROHR_NEUTRAL, gedimmt: ROHR_NEUTRAL };
 /** Geteilte Leitungsmaterialien mit Bildschirm-Mindeststärke (rohrStaerke.ts). */
 const MATERIAL = {
   rohr: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: TOKENS.farbe.kooHeizung, ...TOKENS.material.leitung })),
   gedimmt: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: ROHR_GEDIMMT, ...TOKENS.material.leitung })),
+  neutral: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: ROHR_NEUTRAL, ...TOKENS.material.leitung })),
   metall: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: TOKENS.farbe.grau2, ...TOKENS.material.metall })),
   umriss: mitRohrStaerke(new THREE.MeshBasicMaterial({ color: TOKENS.farbe.eisAkzent, side: THREE.BackSide })),
 };
 
-function Rohr({ stueck, schatten, anfangFrei = false, interaktion }: { stueck: Rohrstueck; schatten: boolean; anfangFrei?: boolean; interaktion?: Interaktion }) {
+function Rohr({ stueck, schatten, anfangFrei = false, interaktion, neutral = false }: { stueck: Rohrstueck; schatten: boolean; anfangFrei?: boolean; interaktion?: Interaktion; neutral?: boolean }) {
   const geometrie = useMemo(() => rohrGeometrie(stueck), [stueck]);
   // Klickfläche wie sichtbar: Achse mit Radius × Verdickungsfaktor (rohrStaerke.rohrTreffer).
   const treffer = useMemo(() => rohrTreffer(stueck.punkte, stueck.radius), [stueck]);
@@ -157,7 +164,7 @@ function Rohr({ stueck, schatten, anfangFrei = false, interaktion }: { stueck: R
     onClick: (e: ThreeEvent<MouseEvent>) => { if (e.delta <= 4) { e.stopPropagation(); interaktion.waehlen(gruppeId); } },
   } : {};
   return <group userData={stueck.daten}>
-    <mesh geometry={geometrie} material={gedimmt ? MATERIAL.gedimmt : MATERIAL.rohr} userData={stueck.daten} raycast={treffer}
+    <mesh geometry={geometrie} material={neutral ? MATERIAL.neutral : gedimmt ? MATERIAL.gedimmt : MATERIAL.rohr} userData={stueck.daten} raycast={treffer}
       castShadow={schatten} receiveShadow={schatten} {...ereignisse} />
     {umriss && <mesh geometry={umriss} material={MATERIAL.umriss} raycast={() => {}} userData={{ umriss: gruppeId }} />}
     {ende.map((a, i) => <mesh key={i} position={a.position} geometry={kappe} material={MATERIAL.metall} userData={{ ...stueck.daten, abschluss: true }}
@@ -174,10 +181,12 @@ function Durchgang({ huelse: h, schatten }: { huelse: Huelse; schatten: boolean 
     castShadow={schatten} receiveShadow={schatten} />;
 }
 
-function Flaechenband({ punkte, daten }: { punkte: V3[]; daten: object }) {
+function Flaechenband({ punkte, daten, neutral = false }: { punkte: V3[]; daten: object; neutral?: boolean }) {
   // PO 12.11.2026: Muster war unsichtbar → breiter und deutlich rötlicher, bleibt aber heller als die Rohre.
   const geometrie = useMemo(() => bandGeometrie(punkte, 0.06), [punkte]);
-  const farbe = useMemo(() => new THREE.Color(TOKENS.farbe.flaecheSekundaer).lerp(new THREE.Color(TOKENS.farbe.kooHeizung), 0.32), []);
+  const farbe = useMemo(() => neutral
+    ? new THREE.Color(TOKENS.farbe.flaecheSekundaer).lerp(new THREE.Color(TOKENS.farbe.grau2), TOKENS.erneuerung.flaechenMischung)
+    : new THREE.Color(TOKENS.farbe.flaecheSekundaer).lerp(new THREE.Color(TOKENS.farbe.kooHeizung), 0.32), [neutral]);
   useEffect(() => () => geometrie?.dispose(), [geometrie]);
   if (!geometrie) return null;
   return <mesh geometry={geometrie} userData={daten}>
