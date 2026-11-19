@@ -24,6 +24,10 @@ export const TOKENS = {
     statusOk: "#2f9e6b",
     statusWarnung: "#e08a1e",
     statusStoerung: "#d64541",
+    // Statusfarben als Text auf Weiss/flaecheSekundaer (>= 4.5:1); Flächen, Punkte und 3D nutzen die Grundtöne oben.
+    statusOkText: "#1f7a52",
+    statusWarnungText: "#9a5a0a",
+    statusStoerungText: "#b3362f",
   },
   typografie: {
     familie: "Inter Variable, Inter, sans-serif",

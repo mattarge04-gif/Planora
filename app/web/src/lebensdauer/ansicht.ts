@@ -4,7 +4,11 @@ import type { Ampel, LdErgebnisBauteil, LdStand, Zustand } from "./typen";
 export const AMPEL_FARBE: Record<Ampel, string> = { gruen: TOKENS.farbe.statusOk, gelb: TOKENS.farbe.statusWarnung, rot: TOKENS.farbe.statusStoerung, grau: TOKENS.farbe.grau3 };
 export const AMPEL_TEXT: Record<Ampel, string> = { gruen: "In Ordnung", gelb: "Bald ersetzen", rot: "Ersetzen", grau: "Baujahr fehlt" };
 export const ZUSTAND_TEXT: Record<Zustand, string> = { gut: "Gut", mittel: "Mittel", schlecht: "Schlecht", kritisch: "Kritisch" };
-const RANG: Record<Ampel, number> = { rot: 3, gelb: 2, grau: 1, gruen: 0 };
+export const AMPEL_RANG: Record<Ampel, number> = { rot: 3, gelb: 2, grau: 1, gruen: 0 };
+const RANG = AMPEL_RANG;
+
+/** "1 Jahr" / "n Jahre". */
+export const jahre = (n: number) => (n === 1 ? "1 Jahr" : `${n} Jahre`);
 
 export const chf = (b: number) => `CHF ${Math.round(b).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'")}`;
 
@@ -35,10 +39,10 @@ export function akteZeilen(stand: LdStand, bauteilIds: string[]): AkteZeile[] {
     if (!b || !e) return [];
     return [{ id, ort: b.ort, menge: b.menge === null ? "unbekannt (1 angenommen)" : String(b.menge), ampel: e.ampel,
       ersatzjahr: e.ersatzjahr === null ? "–" : String(e.ersatzjahr),
-      restjahre: e.restjahre === null ? "–" : e.restjahre === 0 ? "fällig" : `${e.restjahre} Jahre`,
+      restjahre: e.restjahre === null ? "–" : e.restjahre === 0 ? "fällig" : jahre(e.restjahre),
       kosten: e.kosten === null ? "–" : chf(e.kosten),
       baujahr: { wert: e.baujahr === null ? "–" : String(e.baujahr), quelle: e.quellen.baujahr ? Q_BAUJAHR[e.quellen.baujahr] : "fehlt" },
-      lebensdauer: { wert: `${e.lebensdauer} Jahre`, quelle: Q_LD[e.quellen.lebensdauer] },
+      lebensdauer: { wert: jahre(e.lebensdauer), quelle: Q_LD[e.quellen.lebensdauer] },
       preis: { wert: e.stueckpreis === null ? "–" : chf(e.stueckpreis), quelle: preisQuelle(e), fehlt: e.stueckpreis === null } }];
   });
 }

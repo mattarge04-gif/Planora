@@ -50,15 +50,20 @@ export function Kopfzeile(p: Props) {
         <span className="ui-marke"><Marke /><span className="ui-wortmarke">Planora</span></span>
       </div>
 
-      <nav className="ui-pills" aria-label="Ansicht">
-        {(["uebersicht", "technik"] as const).map((m) => (
-          <button key={m} type="button" className="ui-pill" aria-pressed={p.modusAktiv && p.modus === m}
-            onClick={() => p.onModus(m)}>
-            {m === "uebersicht" ? "Übersicht" : "Technik"}
-          </button>
-        ))}
-        {p.erneuerung && <button type="button" className="ui-pill" aria-pressed={p.erneuerung.an}
-          onClick={() => p.erneuerung!.onUm(!p.erneuerung!.an)}>Erneuerung</button>}
+      <nav className="ui-ansicht" aria-label="Ansicht">
+        <div className="ui-pills">
+          {(["uebersicht", "technik"] as const).map((m) => (
+            <button key={m} type="button" className="ui-pill" aria-pressed={p.modusAktiv && p.modus === m}
+              onClick={() => p.onModus(m)}>
+              {m === "uebersicht" ? "Übersicht" : "Technik"}
+            </button>
+          ))}
+        </div>
+        {/* Unabhängiger Schalter (legt sich über Übersicht/Technik), daher eigene Pill mit Schalterzeichen */}
+        {p.erneuerung && <button type="button" className="ui-glas ui-schalt-pill" aria-pressed={p.erneuerung.an} aria-keyshortcuts="E"
+          title="Erneuerungsansicht ein/aus (Taste E)" onClick={() => p.erneuerung!.onUm(!p.erneuerung!.an)}>
+          <span className="ui-ampel-mini" aria-hidden="true"><i /><i /><i /></span>Erneuerung
+        </button>}
       </nav>
 
       <div className="ui-kopf-rechts">

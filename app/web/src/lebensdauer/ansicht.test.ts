@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { akteZeilen, ampelJeSymbol, balken, chf, eingabeZahl, legende, planZeilen } from "./ansicht";
+import { akteZeilen, ampelJeSymbol, balken, chf, eingabeZahl, jahre, legende, planZeilen } from "./ansicht";
 import type { LdStand } from "./typen";
 
 const stand: LdStand = {
@@ -32,6 +32,12 @@ describe("Ansicht Lebensdauer", () => {
     expect(a).toMatchObject({ ampel: "rot", ersatzjahr: "2026", kosten: "–", baujahr: { wert: "2008", quelle: "Gebäudestandard" },
       lebensdauer: { wert: "30 Jahre", quelle: "Planora-Richtwert" }, preis: { fehlt: true, quelle: "Preis fehlt" } });
     expect(b).toMatchObject({ kosten: "CHF 8'000", preis: { wert: "CHF 800", quelle: "Eigene Angabe", fehlt: false }, baujahr: { quelle: "Eigene Angabe" } });
+  });
+  it("1 Jahr im Singular, sonst Jahre", () => {
+    expect(jahre(1)).toBe("1 Jahr"); expect(jahre(0)).toBe("0 Jahre"); expect(jahre(12)).toBe("12 Jahre");
+    const s1: LdStand = { ...stand, ergebnis: { ...stand.ergebnis, bauteile: stand.ergebnis.bauteile.map((b) => b.id === "b" ? { ...b, restjahre: 1, lebensdauer: 1 } : b) } };
+    expect(akteZeilen(s1, ["b"])[0]).toMatchObject({ restjahre: "1 Jahr", lebensdauer: { wert: "1 Jahr" } });
+    expect(akteZeilen(stand, ["b"])[0]).toMatchObject({ restjahre: "34 Jahre", lebensdauer: { wert: "40 Jahre" } });
   });
   it("Legende mit Zaehlern und unvollstaendiger Summe", () => {
     expect(legende(stand)).toEqual({ zaehler: { gruen: 1, gelb: 0, rot: 1, grau: 1 }, summe5: "CHF 12'500", ohnePreis: 1 });

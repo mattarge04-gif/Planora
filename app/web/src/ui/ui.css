@@ -46,6 +46,23 @@
 .ui-kopf .ui-pill:active { transform: scale(0.97); }
 .ui-kopf .ui-pill[aria-pressed="true"] { background: var(--tw-text); color: #fff; box-shadow: 0 1px 2px rgb(31 38 48 / 0.18), 0 4px 10px rgb(31 38 48 / 0.12); }
 
+/* Ansicht: Segment Übersicht/Technik plus unabhängiger Schalter Erneuerung */
+.ui-ansicht { display: inline-flex; align-items: center; gap: 8px; }
+.ui-kopf .ui-schalt-pill {
+  display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 14px; border-radius: 999px;
+  font-size: 13px; font-weight: 500; color: var(--tw-sekundaer); background: rgb(255 255 255 / 0.7); border: 0;
+  box-shadow: inset 0 0 0 1px rgb(31 38 48 / 0.06), 0 1px 2px rgb(31 38 48 / 0.04);
+  transition: color var(--tw-hover-ms) var(--tw-kurve), background-color var(--tw-hover-ms) var(--tw-kurve), box-shadow var(--tw-hover-ms) var(--tw-kurve), transform 120ms var(--tw-kurve);
+}
+.ui-kopf .ui-schalt-pill:hover { color: var(--tw-text); background: rgb(255 255 255 / 0.92); }
+.ui-kopf .ui-schalt-pill:active { transform: scale(0.97); }
+.ui-kopf .ui-schalt-pill[aria-pressed="true"] { color: var(--tw-text); background: #fff; box-shadow: inset 0 0 0 1.5px var(--tw-eis-akzent), 0 1px 2px rgb(31 38 48 / 0.06), 0 4px 12px rgb(31 38 48 / 0.08); }
+.ui-ampel-mini { display: inline-flex; gap: 3px; }
+.ui-ampel-mini i { width: 6px; height: 6px; border-radius: 999px; background: var(--tw-grau-2); transition: background-color var(--tw-panel-ms) var(--tw-kurve); }
+.ui-schalt-pill[aria-pressed="true"] .ui-ampel-mini i:nth-child(1) { background: var(--tw-ok); }
+.ui-schalt-pill[aria-pressed="true"] .ui-ampel-mini i:nth-child(2) { background: var(--tw-warnung); transition-delay: 40ms; }
+.ui-schalt-pill[aria-pressed="true"] .ui-ampel-mini i:nth-child(3) { background: var(--tw-stoerung); transition-delay: 80ms; }
+
 /* Gebäudewahl und Rundknöpfe */
 .ui-kopf .ui-wahl {
   display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px 0 14px; max-width: 260px;
@@ -117,7 +134,8 @@
 @media (prefers-reduced-motion: reduce) {
   .ui-popover { animation: ui-blende var(--tw-hover-ms) linear; }
   @keyframes ui-blende { from { opacity: 0; } }
-  .ui-kopf .ui-pill:active, .ui-kopf .ui-rund:active { transform: none; }
+  .ui-kopf .ui-pill:active, .ui-kopf .ui-rund:active, .ui-kopf .ui-schalt-pill:active { transform: none; }
+  .ui-ampel-mini i { transition: none; }
 }
 
 /* Nur für Screenreader sichtbar */

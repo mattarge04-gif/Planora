@@ -51,6 +51,10 @@ const stil = {
   "--tw-sekundaer-eis": F.textSekundaerEis,
   "--tw-ok": F.statusOk,
   "--tw-warnung": F.statusWarnung,
+  "--tw-stoerung": F.statusStoerung,
+  "--tw-ok-text": F.statusOkText,
+  "--tw-warnung-text": F.statusWarnungText,
+  "--tw-stoerung-text": F.statusStoerungText,
   "--tw-panel-alpha": String(TOKENS.flaeche.panelDeckkraft),
   "--tw-panel-rahmen": TOKENS.flaeche.rahmen,
   "--tw-schatten": TOKENS.schatten.panel,
@@ -293,6 +297,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
         {welt && daten && <>
           <aside className="tw-links" ref={links} aria-label="Gebäude und Hinweise">
             <TwinGebaeude name={name} liegenschaft={liegenschaft} welt={welt} zahlen={daten.zahlen} />
+            {/* Legende links: rechts bleibt der Platz für Geschosse und Anlagenkarte */}
+            {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} onPlan={onPlan} />}
             <TwinHinweise ref={hinweisKarte} hinweise={daten.hinweise} geschossCode={geschossCode} onZiel={zumOrt} />
           </aside>
           {/* Szene im DOM zwischen linken und rechten Karten: ein Tab-Stopp (Canvas) an der richtigen Stelle. */}
@@ -306,7 +312,6 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
           <aside className="tw-rechts" ref={rechts} aria-label="Geschosse und Anlage">
             <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
               ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} />
-            {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} onPlan={onPlan} />}
             {karte
               ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={schliesseKarte}
                 lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} />
