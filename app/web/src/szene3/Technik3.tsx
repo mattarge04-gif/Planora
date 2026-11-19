@@ -6,7 +6,9 @@ import { TOKENS } from "../design/tokens";
 import { type V3 } from "../szene2/huelle";
 import { schlange, geschossBeiY } from "../szene2/leitungen";
 import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
-import { Anlagen3 } from "./Anlagen3";
+import { Anlagen3, instanzen, lageMasse } from "./Anlagen3";
+import { AmpelMarker3 } from "./AmpelMarker3";
+import { ampelMarker } from "./ampelSockel";
 import { durchgaenge, einheitVon, freieVerteilerAbgaenge, rohrnetzMitBefunden, type Huelse, type Rohrstueck } from "./netz";
 import type { Befund } from "./router/typen";
 import { geschossSchnitt } from "./schnitt";
@@ -96,10 +98,16 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
   // Modus Erneuerung: Leitungen treten neutral zurück, damit Rot nur die Ampel «Ersetzen» trägt.
   const erneuerung = ampel !== undefined;
   const bodenVon = (id: string) => welt.geschosse.find((g) => g.id === id)?.yUnten;
+  // Ampelmarker aller sichtbaren Geschosse in einem Overlay (eine Hud-Szene, nicht je Geschoss).
+  const marker = useMemo(() => !ampel ? [] : ampelMarker(sichtbar.flatMap((id) =>
+    instanzen(symbole.filter((s) => ampel.has(s.schluessel) && geschossBeiY(welt, s.position.y) === id), katalog).map((i) => ({
+      schluessel: i.s.schluessel, mitte: i.mitte, masse: lageMasse(i), inline: i.inline, farbe: ampel.get(i.s.schluessel)!, geschossId: id,
+    })))), [ampel, sichtbar, symbole, katalog, welt]);
   const huelsenGeschoss = (h: Huelse) => h.art === "decke"
     ? [...welt.geschosse].sort((a, b) => Math.abs(a.yUnten - h.position[1]) - Math.abs(b.yUnten - h.position[1]))[0]?.id
     : geschossBeiY(welt, h.position[1]);
   return <group name="technik">
+    {marker.length > 0 && <AmpelMarker3 marker={marker} darstellung={darstellung} interaktion={interaktion} nachEffekten={schatten} />}
     {sichtbar.map((id) => <GeschossGruppe key={id} id={id} darstellung={darstellung}>
       <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} ampel={ampel} bodenY={bodenVon(id)} />
       {kappen.filter((k) => geschossBeiY(welt, k.symbol.position.y) === id).map((k, i) =>

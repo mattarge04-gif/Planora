@@ -1,67 +1,101 @@
 import { describe, expect, it } from "vitest";
 import { TOKENS } from "../design/tokens";
-import { ampelRaender, ampelSockel, striche1D } from "./ampelSockel";
+import { AMPEL_FARBE } from "../lebensdauer/ansicht";
+import { ampelBereich, ampelMarker, ampelRinge, ampelVonFarbe, ringBreite, striche1D, type AmpelAnlage } from "./ampelSockel";
 
 const E = TOKENS.erneuerung;
-const anlage = (o: Partial<Parameters<typeof ampelSockel>[0][number]> = {}) =>
-  ({ schluessel: "a", mitte: [1, 0.5, 2] as [number, number, number], masse: [0.6, 1, 0.4] as [number, number, number], inline: false, farbe: "#d64541", grau: false, ...o });
+const anlage = (o: Partial<AmpelAnlage> = {}): AmpelAnlage =>
+  ({ schluessel: "a", mitte: [1, 0.5, 2], masse: [0.6, 1, 0.4], inline: false, farbe: AMPEL_FARBE.rot, ...o });
 
-describe("ampelSockel", () => {
-  it("Scheibe unter stehender Anlage, Rand je Seite, knapp über dem Boden", () => {
-    const { scheiben, striche } = ampelSockel([anlage()], 3);
-    expect(striche).toEqual([]);
-    expect(scheiben).toHaveLength(1);
-    const s = scheiben[0];
-    expect(s.breite).toBeCloseTo(0.6 + 2 * E.sockelRandM);
-    expect(s.tiefe).toBeCloseTo(0.4 + 2 * E.sockelRandM);
-    expect(s.position[0]).toBe(1); expect(s.position[2]).toBe(2);
-    expect(s.position[1]).toBeCloseTo(3 + E.sockelBodenM + E.sockelHoeheM / 2);
-    expect(s.farbe).toBe("#d64541");
+describe("ampelVonFarbe", () => {
+  it("Farbe -> Stufe, unbekannt grau", () => {
+    expect(ampelVonFarbe(AMPEL_FARBE.gelb)).toBe("gelb");
+    expect(ampelVonFarbe(AMPEL_FARBE.gruen.toUpperCase())).toBe("gruen");
+    expect(ampelVonFarbe("#123456")).toBe("grau");
   });
-  it("Teile in der Leitung erhalten keinen Sockel; je Schluessel nur einmal", () => {
-    const { scheiben } = ampelSockel([anlage({ inline: true }), anlage({ schluessel: "b" }), anlage({ schluessel: "b" })], 0);
-    expect(scheiben.map((s) => s.schluessel)).toEqual(["b"]);
+});
+
+describe("ampelRinge", () => {
+  it("vier Streifen konstanter Breite, unabhaengig von der Geraetegroesse", () => {
+    const klein = ampelRinge([anlage()], 3), gross = ampelRinge([anlage({ masse: [3, 2, 1.5] })], 3);
+    expect(klein).toHaveLength(4); expect(gross).toHaveLength(4);
+    const aussenX = 0.6 + 2 * (E.ringAbstandM + E.ringBreiteM);
+    expect(klein.find((s) => s.achse === "x")!.laenge).toBeCloseTo(aussenX);
+    expect(klein[0].position[1]).toBeCloseTo(3 + E.ringBodenM + E.ringHoeheM / 2);
+    // Innenkante mit Abstand zum Grundriss
+    const zStreifen = klein.filter((s) => s.achse === "z").map((s) => s.position[0]).sort();
+    expect(zStreifen[1] - 1 - E.ringBreiteM / 2).toBeCloseTo(0.3 + E.ringAbstandM);
   });
-  it("Baujahr fehlt: gestrichelter Rand statt Scheibe, innerhalb des Sockelumrisses", () => {
-    const { scheiben, striche } = ampelSockel([anlage({ grau: true })], 0);
-    expect(scheiben).toEqual([]);
-    expect(striche.length).toBeGreaterThanOrEqual(8);
-    const halbB = (0.6 + 2 * E.sockelRandM) / 2, halbT = (0.4 + 2 * E.sockelRandM) / 2;
-    for (const s of striche) {
-      const halbL = s.laenge / 2;
-      if (s.achse === "x") expect(Math.abs(s.position[0] - 1) + halbL).toBeLessThanOrEqual(halbB + 1e-9);
-      else expect(Math.abs(s.position[2] - 2) + halbL).toBeLessThanOrEqual(halbT + 1e-9);
-    }
+  it("Teile in der Leitung ohne Ring; dringendere Ringe zuletzt", () => {
+    const s = ampelRinge([anlage({ schluessel: "r" }), anlage({ schluessel: "g", farbe: AMPEL_FARBE.gruen }), anlage({ schluessel: "i", inline: true })], 0);
+    expect(s).toHaveLength(8);
+    expect(s.at(-1)!.farbe).toBe(AMPEL_FARBE.rot);
+    expect(s[0].farbe).toBe(AMPEL_FARBE.gruen);
+  });
+  it("Baujahr fehlt: gestrichelt (mehr als vier Streifen)", () => {
+    expect(ampelRinge([anlage({ farbe: AMPEL_FARBE.grau, masse: [1, 1, 1] })], 0).length).toBeGreaterThan(4);
   });
 });
 
 describe("striche1D", () => {
   it("Enden voll, Summe aus Strichen und Luecken ergibt die Laenge", () => {
     const l = 1.0, t = striche1D(l);
-    expect(t.length).toBeGreaterThanOrEqual(2);
     expect(t[0][0] - t[0][1] / 2).toBeCloseTo(-l / 2);
     expect(t.at(-1)![0] + t.at(-1)![1] / 2).toBeCloseTo(l / 2);
     expect(t.reduce((s, [, x]) => s + x, 0) + (t.length - 1) * E.lueckeM).toBeCloseTo(l);
   });
-  it("Massstab k vergroessert Striche und Luecken", () => {
-    const t = striche1D(3, 2);
-    expect(t.reduce((s, [, x]) => s + x, 0) + (t.length - 1) * E.lueckeM * 2).toBeCloseTo(3);
-  });
-  it("kurze Strecke: ein Strich", () => {
-    expect(striche1D(0.05)).toEqual([[0, 0.05]]);
+  it("kurze Strecke: ein Strich", () => { expect(striche1D(0.05)).toEqual([[0, 0.05]]); });
+});
+
+describe("ringBreite", () => {
+  it("nah konstant, fern Mindest-px, gedeckelt", () => {
+    expect(ringBreite(400)).toBe(E.ringBreiteM);
+    expect(ringBreite(1)).toBe(E.ringBreiteMaxM);
+    expect(ringBreite(25)).toBeCloseTo(Math.max(E.ringBreiteM, E.ringBreitePx / 25), 2);
   });
 });
 
-describe("ampelRaender", () => {
-  it("nah: Meterwerte", () => {
-    expect(ampelRaender(400)).toEqual({ sockel: E.sockelRandM, huelle: Math.round(E.huelleZuschlagM * 100) / 100 });
+describe("ampelMarker", () => {
+  it("Groesse nach Dringlichkeit, Rot zuletzt, Anker auf Oberkante", () => {
+    const m = ampelMarker([{ ...anlage({ schluessel: "r" }), geschossId: "eg" }, { ...anlage({ schluessel: "g", farbe: AMPEL_FARBE.gruen, masse: [3, 2, 2] }), geschossId: "eg" }]);
+    expect(m.map((x) => x.ampel)).toEqual(["gruen", "rot"]);
+    expect(m[1].px).toBe(E.markerPx.rot);
+    expect(m[1].px).toBeGreaterThan(m[0].px);
+    expect(m[1].anker[1]).toBeCloseTo(1);
   });
-  it("Distanz: mindestens Bildschirm-px, gedeckelt", () => {
-    expect(ampelRaender(25).sockel).toBeCloseTo(Math.round((E.sockelRandPx / 25) * 100) / 100);
-    expect(ampelRaender(2)).toEqual({ sockel: E.sockelRandMaxM, huelle: E.huelleRandMaxM });
+  it("gleiche Instanz nur einmal", () => {
+    const a = { ...anlage(), geschossId: "eg" };
+    expect(ampelMarker([a, a])).toHaveLength(1);
   });
-  it("Rang hebt ueberlappende Sockel an", () => {
-    const { scheiben } = ampelSockel([anlage({ schluessel: "x", rang: 3 }), anlage({ schluessel: "y", rang: 0 })], 0);
-    expect(scheiben[0].position[1] - scheiben[1].position[1]).toBeCloseTo(3 * E.rangVersatzM);
+});
+
+describe("ampelBereich", () => {
+  it("rahmt Rot/Gelb, mindestens kameraMinM", () => {
+    const b = ampelBereich([anlage({ mitte: [0, 0.5, 0] }), anlage({ farbe: AMPEL_FARBE.gruen, mitte: [50, 0.5, 50] })])!;
+    expect(b.xMax - b.xMin).toBeCloseTo(E.kameraMinM);
+    expect((b.xMin + b.xMax) / 2).toBeCloseTo(0);
+  });
+  it("nur Gruen: alle; leer: null", () => {
+    const b = ampelBereich([anlage({ farbe: AMPEL_FARBE.gruen, mitte: [0, 0.5, 0] }), anlage({ farbe: AMPEL_FARBE.gruen, mitte: [20, 0.5, 0] })])!;
+    expect(b.xMax - b.xMin).toBeCloseTo(20.6);
+    expect(ampelBereich([])).toBeNull();
+  });
+});
+
+describe("vorNeutralToneMapping", () => {
+  it("Umkehr: nach dem Tone Mapping wieder die Tokenfarbe (linear)", async () => {
+    const { Color } = await import("three");
+    const { neutralToneMapping, vorNeutralToneMapping } = await import("./ampelSockel");
+    for (const hex of Object.values(AMPEL_FARBE)) {
+      const c = new Color(hex), lin: [number, number, number] = [c.r, c.g, c.b];
+      const zurueck = neutralToneMapping(vorNeutralToneMapping(lin));
+      zurueck.forEach((v, i) => expect(v).toBeCloseTo(lin[i], 4));
+    }
+  });
+  it("ohne Umkehr verschiebt das Tone Mapping Gruen sichtbar (Ursache der Kritik)", async () => {
+    const { Color } = await import("three");
+    const { neutralToneMapping } = await import("./ampelSockel");
+    const c = new Color(AMPEL_FARBE.gruen), aus = new Color().setRGB(...neutralToneMapping([c.r, c.g, c.b]));
+    expect(aus.getHexString()).not.toBe(c.getHexString());
   });
 });

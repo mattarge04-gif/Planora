@@ -11,9 +11,11 @@ import { anlageEinpassen, einpassen, FIT_ANTEIL, gruppenBereich, ortBereich, typ
 import { fahrtSchritt, kameraEingaben, rueckkehrAnsicht, type Kamerafahrt } from "./kameraFahrt";
 import { modellVon } from "./technik";
 
-export function Kamera3({ welt, fokusId, bereich, freiraum, repKey, auswahl, ziel, darstellung, weniger }: {
+export function Kamera3({ welt, fokusId, bereich, freiraum, repKey, auswahl, ziel, darstellung, weniger, erneuerung }: {
   welt: Welt; fokusId: string | null; bereich: Bereich; freiraum: Freiraum; repKey: string; auswahl: string | null;
   ziel?: SzenenZiel | null; darstellung: Darstellung; weniger: boolean;
+  /** Modus Erneuerung: Bereich der dringendsten Anlagen; ohne Auswahl/Ziel rahmt die Kamera diesen Bereich. */
+  erneuerung?: Bereich | null;
 }) {
   const camera = useThree((s) => s.camera) as THREE.OrthographicCamera;
   const size = useThree((s) => s.size);
@@ -22,7 +24,8 @@ export function Kamera3({ welt, fokusId, bereich, freiraum, repKey, auswahl, zie
   const rueckfahrt = useRef<Einpassung | null>(null);
   const benutzer = useRef(false);
   const stand = useRef<{ rep: string; navigation: string; format: string } | null>(null);
-  const navigation = auswahl ? `anlage:${auswahl}` : ziel ? `ort:${JSON.stringify(ziel)}` : "";
+  const navigation = auswahl ? `anlage:${auswahl}` : ziel ? `ort:${JSON.stringify(ziel)}`
+    : erneuerung ? `erneuerung:${[erneuerung.xMin, erneuerung.xMax, erneuerung.zMin, erneuerung.zMax, erneuerung.yMin].map((n) => n.toFixed(2)).join(":")}` : "";
   const format = JSON.stringify([size.width, size.height, freiraum]);
   const snapshot = useCallback((): Einpassung => ({ position: camera.position.toArray() as V3,
     ziel: controls!.target.toArray() as V3, zoom: camera.zoom }), [camera, controls]);
@@ -62,6 +65,8 @@ export function Kamera3({ welt, fokusId, bereich, freiraum, repKey, auswahl, zie
       } else if (!auswahl && ziel && darstellung.sichtbar.includes(ziel.geschossId)) {
         const b = ortBereich(welt, ziel, darstellung.offsets);
         if (b) nach = einpassen(b, size.width, size.height, freiraum, FIT_ANTEIL, richtung);
+      } else if (!auswahl && !ziel && erneuerung) {
+        nach = einpassen(erneuerung, size.width, size.height, freiraum, FIT_ANTEIL, richtung);
       }
     } else {
       if (vorher?.navigation) nach = rueckkehrAnsicht(rueckfahrt.current, normal, !repNeu && !formatNeu);

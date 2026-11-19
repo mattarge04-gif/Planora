@@ -115,6 +115,21 @@
   },
   {
    "bild": "modus-e-eg-auswahl"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "klick": "Geschosse separieren"
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "modus-e-separiert"
   }
  ]
 }

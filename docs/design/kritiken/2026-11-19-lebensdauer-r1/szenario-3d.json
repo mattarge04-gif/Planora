@@ -1,0 +1,13 @@
+{"fenster":[[1440,900],[1920,1080],[1280,720]],
+"schritte":[
+{"klick":"Muster 6 L-Form viele Gruppen"},{"warte":7000},{"bild":"twin-normal"},
+{"knopf":"Erneuerung","exakt":true},{"warte":3000},{"bild":"modus-e-technik"},{"fps":3000},
+{"ziehen":[0.5,0.5,0.62,0.5]},{"warte":1500},{"bild":"modus-e-gedreht"},
+{"klick":"EG","exakt":true},{"warte":3000},{"bild":"modus-e-eg"},
+{"rad":[0.5,0.55,-900]},{"warte":2000},{"bild":"modus-e-eg-nah"},
+{"klick":"UG","exakt":false},{"warte":3000},{"bild":"modus-e-ug"},
+{"rad":[0.5,0.55,-1200]},{"warte":2000},{"bild":"modus-e-ug-nah"},
+{"maus":[0.5,0.55]},{"warte":800},{"bild":"modus-e-hover"},
+{"bewegung":"reduziert"},{"warte":1500},{"bild":"modus-e-reduziert"},{"bewegung":"normal"},
+{"taste":"e"},{"warte":2500},{"bild":"nach-taste-e"}
+]}

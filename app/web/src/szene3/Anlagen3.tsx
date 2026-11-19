@@ -7,23 +7,18 @@ import type { V3 } from "../szene2/huelle";
 import type { KatalogEintrag, WeltSymbol } from "../typen";
 import { anlagenDaten, inlineMatrix, modellVon, type AnzeigeSymbol } from "./technik";
 import type { Interaktion } from "./Interaktion";
-import { AMPEL_FARBE, AMPEL_RANG } from "../lebensdauer/ansicht";
-import type { Ampel } from "../lebensdauer/typen";
-import { ampelRaender, ampelSockel } from "./ampelSockel";
-
-const RANG_JE_FARBE = new Map(Object.entries(AMPEL_FARBE).map(([a, f]) => [f, AMPEL_RANG[a as Ampel]]));
+import { ampelRinge, ringBreite, vorNeutralToneMapping } from "./ampelSockel";
 
 /** Modus Erneuerung: KOO-Akzent der Modelle neutral, damit Rot nur «Ersetzen» bedeutet (Entscheid 19.11.2026). */
 const KOO_NEUTRAL = TOKENS.farbe.grau2;
-const HUELLE = TOKENS.erneuerung.huelleFaktor;
 
 interface Props {
   symbole: WeltSymbol[]; schatten: boolean; katalog?: KatalogEintrag[];
   onModell: (pfad: string, anschluss: V3) => void;
   interaktion?: Interaktion;
-  /** Schluessel -> Ampelfarbe (Hex); nur Anlagen mit Eintrag erhalten eine dauerhafte Farbhuelle. */
+  /** Modus Erneuerung: Schluessel -> Ampelfarbe (Hex); gesetzt = KOO neutral, Bodenring je Anlage mit Eintrag. */
   ampel?: ReadonlyMap<string, string>;
-  /** Geschossboden (y) für die Ampel-Sockel im Modus Erneuerung. */
+  /** Geschossboden (y) für die Ampel-Bodenringe im Modus Erneuerung. */
   bodenY?: number;
 }
 
@@ -66,7 +61,7 @@ export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, am
     for (const [pfad] of gruppen) if (pfad.startsWith("/modelle/")) useGLTF.preload(pfad, false, false);
   }, [gruppen]);
   const alle = useMemo(() => gruppen.flatMap(([, g]) => g), [gruppen]);
-  return <group name="anlagen">{ampel && <AmpelAnzeige instanzen={alle} ampel={ampel} bodenY={bodenY} interaktion={interaktion} />}
+  return <group name="anlagen">{ampel && bodenY !== undefined && <AmpelRinge instanzen={alle} ampel={ampel} bodenY={bodenY} effekte={schatten} />}
   {gruppen.map(([pfad, gruppe]) => {
     const ersatz = <Ersatz instanzen={gruppe} schatten={schatten} interaktion={interaktion} />;
     return pfad.startsWith("/modelle/")
@@ -77,61 +72,40 @@ export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, am
   })}</group>;
 }
 
-/** Ampel je Anlage: Hülle und Bodensockel, Zuschläge mit Bildschirm-Mindestgrösse aus dem Kamerazoom. */
-function AmpelAnzeige({ instanzen, ampel, bodenY, interaktion }: { instanzen: Instanz[]; ampel: ReadonlyMap<string, string>; bodenY?: number; interaktion?: Interaktion }) {
-  const [raender, setRaender] = useState(() => ampelRaender(0));
-  useFrame(({ camera }) => {
-    const r = ampelRaender((camera as THREE.OrthographicCamera).zoom);
-    if (r.sockel !== raender.sockel || r.huelle !== raender.huelle) setRaender(r);
-  });
-  return <>
-    {bodenY !== undefined && <AmpelSockel instanzen={instanzen} ampel={ampel} bodenY={bodenY} rand={raender.sockel} />}
-    {instanzen.filter((i) => ampel.has(i.s.schluessel)).map((i, k) => <AmpelHuelle key={`${i.s.schluessel}:${k}`} i={i}
-      farbe={ampel.get(i.s.schluessel)!} zuschlag={raender.huelle} interaktion={interaktion} />)}
-  </>;
-}
-
 /**
- * Ampelhülle als ruhiger Kasten um die Einbaulage (BackSide, ungetönt): liest als Rahmen um die Anlage, ohne dass
- * innere Modellteile durch die Hülle stossen. Folgt dem Anheben bei Hover/Auswahl; die Auswahlhülle (1.04) bleibt innen.
+ * Bodenring je Anlage im Modus Erneuerung: konstante Breite (nah in Metern, fern Mindest-px), ungetönt und mit
+ * Abstand zum Grundriss, damit Umgebungsverdeckung die Farbe nicht verfälscht. Der Marker liegt in Technik3 (Overlay).
  */
-function AmpelHuelle({ i, farbe, zuschlag, interaktion }: { i: Instanz; farbe: string; zuschlag: number; interaktion?: Interaktion }) {
-  const ref = useRef<THREE.Mesh>(null);
-  const masse = lageMasse(i).map((m) => m * HUELLE + 2 * zuschlag) as V3;
-  useFrame(() => { if (ref.current) ref.current.position.y = i.mitte[1] + (i.inline ? 0 : interaktion?.lift.current[i.s.schluessel] ?? 0); }, -1);
-  return <RoundedBox ref={ref} args={masse} position={i.mitte} radius={Math.min(TOKENS.radius.geraetM, Math.min(...masse) / 2 - 0.002)} smoothness={3}
-    raycast={() => {}} userData={{ ampelHuelle: i.s.schluessel }}>
-    <meshBasicMaterial color={farbe} side={THREE.BackSide} toneMapped={false} />
-  </RoundedBox>;
-}
-
-/** Bodenscheibe in Ampelfarbe (ungetönt), «Baujahr fehlt» gestrichelt; bleibt beim Anheben der Anlage am Boden. */
-function AmpelSockel({ instanzen, ampel, bodenY, rand }: { instanzen: Instanz[]; ampel: ReadonlyMap<string, string>; bodenY: number; rand: number }) {
-  const { scheiben, striche, strichBreite } = useMemo(() => ampelSockel(instanzen.filter((i) => ampel.has(i.s.schluessel)).map((i) => ({
-    schluessel: i.s.schluessel, mitte: i.mitte, masse: lageMasse(i), inline: i.inline,
-    farbe: ampel.get(i.s.schluessel)!, grau: ampel.get(i.s.schluessel) === AMPEL_FARBE.grau, rang: RANG_JE_FARBE.get(ampel.get(i.s.schluessel)!),
-  })), bodenY, rand), [instanzen, ampel, bodenY, rand]);
-  const strichRef = useRef<THREE.InstancedMesh>(null);
-  const strichGeo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
-  useEffect(() => () => strichGeo.dispose(), [strichGeo]);
+function AmpelRinge({ instanzen, ampel, bodenY, effekte }: { instanzen: Instanz[]; ampel: ReadonlyMap<string, string>; bodenY: number;
+  /** Effektdurchlauf aktiv (nicht reduziert): dessen Tone Mapping wirkt auf alle Pixel, Farbe vorab umkehren. */
+  effekte: boolean }) {
+  const [breite, setBreite] = useState(() => ringBreite(0));
+  useFrame(({ camera }) => {
+    const b = ringBreite((camera as THREE.OrthographicCamera).zoom);
+    if (b !== breite) setBreite(b);
+  });
+  const striche = useMemo(() => ampelRinge(instanzen.filter((i) => ampel.has(i.s.schluessel)).map((i) => ({
+    schluessel: i.s.schluessel, mitte: i.mitte, masse: lageMasse(i), inline: i.inline, farbe: ampel.get(i.s.schluessel)!,
+  })), bodenY, breite), [instanzen, ampel, bodenY, breite]);
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const geo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
+  const material = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), []);
+  useEffect(() => () => { geo.dispose(); material.dispose(); }, [geo, material]);
   useLayoutEffect(() => {
-    const m = strichRef.current;
+    const m = ref.current;
     if (!m) return;
-    const e = TOKENS.erneuerung, mat = new THREE.Matrix4();
-    striche.forEach((s, k) => m.setMatrixAt(k, mat.compose(new THREE.Vector3(...s.position), new THREE.Quaternion(),
-      s.achse === "x" ? new THREE.Vector3(s.laenge, e.sockelHoeheM, strichBreite) : new THREE.Vector3(strichBreite, e.sockelHoeheM, s.laenge))));
-    m.instanceMatrix.needsUpdate = true; m.computeBoundingSphere();
-  }, [striche, strichBreite]);
-  const h = TOKENS.erneuerung.sockelHoeheM;
-  return <group name="ampel-sockel">
-    {scheiben.map((s) => <RoundedBox key={s.schluessel} args={[s.breite, h, s.tiefe]} position={s.position} radius={h / 2 - 0.001} smoothness={2}
-      raycast={() => {}} userData={{ ampelSockel: s.schluessel }}>
-      <meshBasicMaterial color={s.farbe} toneMapped={false} />
-    </RoundedBox>)}
-    {striche.length > 0 && <instancedMesh key={striche.length} ref={strichRef} args={[strichGeo, undefined, striche.length]} raycast={() => {}}>
-      <meshBasicMaterial color={AMPEL_FARBE.grau} toneMapped={false} />
-    </instancedMesh>}
-  </group>;
+    const mat = new THREE.Matrix4(), c = new THREE.Color(), h = TOKENS.erneuerung.ringHoeheM;
+    striche.forEach((s, k) => {
+      m.setMatrixAt(k, mat.compose(new THREE.Vector3(...s.position), new THREE.Quaternion(),
+        s.achse === "x" ? new THREE.Vector3(s.laenge, h, breite) : new THREE.Vector3(breite, h, s.laenge)));
+      c.set(s.farbe);
+      if (effekte) c.setRGB(...vorNeutralToneMapping([c.r, c.g, c.b]));
+      m.setColorAt(k, c);
+    });
+    m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; m.computeBoundingSphere();
+  }, [striche, breite, effekte]);
+  if (!striche.length) return null;
+  return <instancedMesh key={striche.length} ref={ref} args={[geo, material, striche.length]} dispose={null} raycast={() => {}} name="ampel-ringe" />;
 }
 
 function ereignisse(key: (e: ThreeEvent<PointerEvent | MouseEvent>) => string | undefined, interaktion?: Interaktion) {

@@ -26,6 +26,8 @@ import { TastaturKamera } from "./TastaturKamera";
 import { NahKulisse } from "./NahKulisse";
 import { modellVon } from "./technik";
 import { anzeigeWelt, gruppenVerbindungen } from "./gruppenNetz";
+import { instanzen, lageMasse } from "./Anlagen3";
+import { ampelBereich } from "./ampelSockel";
 
 export interface Szene3Props {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; freiraum: Freiraum; reduziert: boolean;
@@ -98,6 +100,16 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       geraet: auswahl && !finde(auswahl) ? { schluessel: auswahl, gruppen: new Set(straenge.filter((s) => s.verteiler === auswahl
         || s.verbraucher.includes(auswahl) || s.zubehoer.includes(auswahl)).map((s) => s.gruppeId)) } : null };
   }, [auswahl, hover, onAuswahl, onHover, waehlen, schweben, straenge]);
+  // Modus Erneuerung: Kamera rahmt beim Einschalten die dringendsten Anlagen der sichtbaren Geschosse.
+  const erneuerungBereich = useMemo(() => {
+    if (!ampel) return null;
+    const b = ampelBereich(instanzen(anzeige.symbole.filter((s) => ampel.has(s.schluessel)
+      && sichtbarIds.includes(geschossBeiY(welt, s.position.y) ?? "")), katalog).map((i) => {
+      const off = offsets[geschossBeiY(welt, i.s.position.y) ?? ""] ?? 0;
+      return { schluessel: i.s.schluessel, mitte: [i.mitte[0], i.mitte[1] + off, i.mitte[2]] as V3, masse: lageMasse(i), inline: i.inline, farbe: ampel.get(i.s.schluessel)! };
+    }));
+    return b;
+  }, [ampel, anzeige, katalog, welt, sichtbarIds, offsets]);
   const gl = useThree((s) => s.gl);
   const size = useThree((s) => s.size);
   const basisZoom = useMemo(() => einpassen(sichtbar, size.width, size.height, freiraum, FIT_ANTEIL, fokusId ? [1, 1.45, 1] : [1, 1, 1]).zoom,
@@ -135,7 +147,7 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.PAN }}
       touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }} />
     <Kamera3 welt={anzeige} fokusId={fokusId} bereich={sichtbar} freiraum={freiraum} repKey={repKey}
-      auswahl={auswahl} ziel={ziel} darstellung={darstellung} weniger={weniger} />
+      auswahl={auswahl} ziel={ziel} darstellung={darstellung} weniger={weniger} erneuerung={erneuerungBereich} />
     <TastaturKamera aktiv={tastatur} freiraum={freiraum} auswahlBereich={auswahlBereich} />
     <InteraktionsBewegung welt={anzeige} interaktion={interaktion} darstellung={darstellung} weniger={weniger} onAuswahlPunkt={onAuswahlPunkt} />
     <Licht bereich={sichtbar} reduziert={reduziert} />
