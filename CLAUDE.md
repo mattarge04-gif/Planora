@@ -19,13 +19,12 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 20.11.2026
 
-### Lebensdauer/Ampel in Umsetzung (19./20.11.2026) [F]
+### Lebensdauer/Ampel umgesetzt (20.11.2026) [F]
 
-- Einstieg naechste Sitzung: "weiter" -> Ledger `.superpowers/sdd/2026-11-19-lebensdauer-ampel/progress.md` lesen (lokal, git-ignoriert; Tasks mit "complete" nicht neu starten), dann Skill superpowers:subagent-driven-development mit Plan `docs/superpowers/plans/2026-11-19-lebensdauer-ampel.md` fortsetzen.
-- Spec `docs/superpowers/specs/2026-11-19-lebensdauer-ampel-design.md`. PO 19.11.: keine Standardpreise (nur Lebensdauer-Richtwerte), Preise spaeter aus Dokumenten; Zuschnitt zwei Teile, naechstes Teilprojekt "Preis aus Dokument" (E43).
-- Tasks 1–10 fertig und reviewt (Commits `3b20832`..`9913488`, Branch `m2c-interview`, nicht gepusht): Migration 016, Rechnung, Speicher, API GET/PUT/CSV, Anlagenkarte, Twin-Modus E, Seite Erneuerungsplan, Gestaltung (visual-critic r3 "bereit"). Pruefstand zuletzt Backend 614, Web 502.
-- Task 11 Browser-Abnahme fertig (`5b829ba`, `docs/abnahme/2026-11-20-lebensdauer/README.md`): Zahlen Karte/Twin/Plan/CSV identisch; Backend 614/614, Web 502/502. Befunde B1 CSV-Namen ohne Umlaute, B2 UI rundet Rappen auf Franken.
-- Offen: Gesamtreview, Liste "Rulings" aus dem Ledger an PO, PO-Sichtung, Entscheid B1/B2.
+- Einstieg naechste Sitzung: "weiter" -> Journal 19./20.11. lesen (Rulings und offene Punkte), dann PO-Sichtung im Browser: `bash werkzeug/design/instanz.sh start --muster`, `node werkzeug/design/lebensdauer-daten.mjs` (Demo-Zustand), `http://localhost:3100/entwicklung/anmelden`, "Muster 6", Taste E bzw. Erneuerungsplan.
+- Spec `docs/superpowers/specs/2026-11-19-lebensdauer-ampel-design.md` (Abschnitt 9 Nachtrag), Plan `docs/superpowers/plans/2026-11-19-lebensdauer-ampel.md`, Abnahme `docs/abnahme/2026-11-20-lebensdauer/README.md`. Commits `3b20832`..`8e331a4` auf `m2c-interview`, nicht gepusht, kein Merge.
+- Pruefstand: Backend 616/616, Web 503/503, Typen und Build gruen. Gesamtreview + Fixwelle abgeschlossen; visual-critic r3 "bereit".
+- Offen: PO-Sichtung, PO-Pruefung der 8 Rulings (Journal), danach Teilprojekt "Preis aus Dokument" (E43, Brainstorming).
 
 ### Brainstorming Lebensdauer/Ampel (17.11.2026, spaet) [F]
 

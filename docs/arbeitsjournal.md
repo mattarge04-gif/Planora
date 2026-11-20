@@ -3,6 +3,32 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-19/20 – Lebensdauer/Ampel umgesetzt
+
+### 1. Was gemacht wurde
+
+- [F] Brainstorming abgeschlossen (Teil 3, CSV statt .xlsx), Spec `docs/superpowers/specs/2026-11-19-lebensdauer-ampel-design.md`, PO-Review: keine Standardpreise, Preise spaeter aus Dokumenten, Zuschnitt zwei Teile (E43).
+- [F] Plan `docs/superpowers/plans/2026-11-19-lebensdauer-ampel.md` (11 Tasks) per Subagenten umgesetzt, je Task Review; Commits `3b20832`..`8e331a4` auf `m2c-interview`, nicht gepusht.
+- [F] Gestaltung planora-design mittel: 3 Runden, visual-critic r3 "bereit"; Entscheid `docs/design/entscheide/2026-11-19-lebensdauer-ampel.md`, Fehler F9 (Tone Mapping).
+- [F] Browser-Abnahme `docs/abnahme/2026-11-20-lebensdauer/README.md`: Zahlen Karte/Twin/Plan/CSV identisch, 8 Klicks + 3 Eingaben fuer Baujahr + 2 Preise. Gesamtreview "bereit mit kleinen Fixes" -> Fixwelle `8e331a4` (Rappen, CSV-Texte mit Umlauten, Preisquelle "dokument" bleibt, Plan-Eingaben). Pruefstand Backend 616/616, Web 503/503, Typen und Build gruen.
+
+### 2. Entscheide des Controllers (Rulings, vom PO zu pruefen)
+
+1. `FachFehler.status` um 400/404 erweitert (Spec verlangt 400 fuer fremde Bauteil-ID).
+2. Plan-Testfehler korrigiert (Akte mit Preis braucht Quelle).
+3. `lebensdauer_typ` haelt nur Kundenwerte; fehlende Zeile = Planora-Richtwert (keine Kopie).
+4. GET-Antwort liefert `darfAendern`, da `/api/ich` nur die ID kennt.
+5. Modus E schaltet aus der Uebersicht in die Technikansicht; Uebersicht beendet E mit Meldung.
+6. Kein Komponententest der Seite Erneuerungsplan; abgedeckt durch reine Tests + Browser-Zahlenvergleich.
+7. Lebensdauer-Aenderung am Baujahr erhoeht `gebaeude.stand` -> Assistent mit altem Stand bekommt 409 (im Browser bestaetigt).
+8. Dritte Designrunde fuer zwei sichtbare Demo-Fehler (verdeckte Marker, Marker ueber Tabelle).
+
+### 3. Offen (geringe Befunde, Kann)
+
+- [?] Rolle Leser im Browser nicht geprueft (API-Test deckt es ab); CSV in Excel nicht geoeffnet.
+- Testluecken, N+1-Selects, dupliziertes `zugriff`, BOM-Literal, `AmpelRinge` ohne eigenes dispose, Vektor-Allokation je Frame in `AmpelMarker3`, Typwerte-`katalogId` nicht gegen Katalog geprueft, Twin verschluckt Ladefehler ausser 401, Zuordnung Markerreihe zu Pumpe nur per Hover, Einstiegsrahmung leicht rechts, AO dunkelt Ringe ~7 %, Backend-Anzeigenamen doppelt zum Web.
+- Fuer die Demo Testdaten `werkzeug/design/lebensdauer-daten.mjs` (Zustand B) verwenden.
+
 ## 2026-11-17 (spaet) – Testdaten, PO-Befunde, Brainstorming M7
 
 - [F] Entwicklungsstart legt nur noch ein leeres "Testgebäude" an; Muster mit `instanz.sh start --muster` (`7725a3e`).
