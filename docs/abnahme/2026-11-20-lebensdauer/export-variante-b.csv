@@ -1,0 +1,30 @@
+Ort;Bauteil;Hersteller;Typ;Menge;Baujahr;Zustand;Lebensdauer;Ersatzjahr;Ampel;Stückpreis;Kosten;Quelle Preis
+UG1 · Technikzentrale;Umwaelzpumpe;;;1;1998;;12;2010;rot;450.5;450.5;kunde
+UG1 · Technikzentrale;Umwaelzpumpe;;;1;1998;;12;2010;rot;450.5;450.5;kunde
+UG1 · Technikzentrale;Umwaelzpumpe;;;1;1998;;12;2010;rot;450.5;450.5;kunde
+UG1 · Technikzentrale;Umwaelzpumpe;;;1;1998;;12;2010;rot;450.5;450.5;kunde
+UG1 · Technikzentrale;3-Weg-Ventil;;;1;1998;;20;2018;rot;;;
+UG1 · Technikzentrale;Durchgangsventil;;;1;1998;;20;2018;rot;;;
+UG1 · Technikzentrale;Durchgangsventil;;;1;1998;;20;2018;rot;;;
+UG1 · Technikzentrale;3-Weg-Ventil;;;1;1998;;20;2018;rot;;;
+UG1 · Technikzentrale;Speicher;;;1;1998;;25;2023;rot;4000;4000;kunde
+UG1 · Technikzentrale;Heizungsverteiler;;;1;1998;schlecht;30;2023;rot;2500;2500;kunde
+EG · Gastro;Heizkoerper;;;4;1990;;40;2030;gruen;800;3200;kunde
+EG · Buero A;Heizkoerper;;;8;1998;;40;2038;gruen;800;6400;kunde
+UG1 · Technikzentrale;Waermepumpe;;;1;2019;;20;2039;gruen;35000;35000;kunde
+EG · Kern;Heizkoerper;;;2;2000;;40;2040;gruen;800;1600;kunde
+EG · Gastro;FBH-Kreis;;;5;1998;;50;2048;gruen;;;
+OG1 · Buero B;TABS-Feld;;;2;1998;;50;2048;gruen;;;
+OG1 · Wohnung;FBH-Kreis;;;4;1998;;50;2048;gruen;;;
+
+Jahr;Betrag;ohne Preis
+2026;8302;4
+2027;0;0
+2028;0;0
+2029;0;0
+2030;3200;0
+2031;0;0
+2032;0;0
+2033;0;0
+2034;0;0
+2035;0;0

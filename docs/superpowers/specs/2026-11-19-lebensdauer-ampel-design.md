@@ -96,3 +96,17 @@ Kein automatischer Folgezyklus nach dem Ersatz (E43).
 - Preise aus Dokumenten auslesen: PO 19.11. will das **in der Demo**; eigenes Teilprojekt mit eigener Spec (Upload + KI-Auslesen), Quelle `dokument` ist hier im Datenmodell vorbereitet. Handeingabe bleibt zusaetzlich (PO "ja").
 - Echte .xlsx spaeter (neue Abhaengigkeit, Lizenzliste).
 - Modul `lebensdauer` in Kundeninstanzen schalten (Profil P2) – Lieferthema, nicht Demo.
+
+## 9. Nachtrag nach Umsetzung (20.11.2026)
+
+Abweichungen von dieser Spec, beim Umsetzen entschieden (Plan `docs/superpowers/plans/2026-11-19-lebensdauer-ampel.md`, Abschnitt "Abweichungen von der Spec"):
+
+1. **`lebensdauer_typ` haelt nur Kundenwerte.** Keine Kopie des Standards beim ersten Zugriff (Abschnitt 2 "Typ-Kopie" entfaellt), die Spalte `quelle_lebensdauer` entfaellt (Zeile mit `l_mittel` = Quelle `typ`). Fehlt eine Zeile, gilt der Standard aus `standard.ts`. Grund: GET laeuft read-only im Snapshot; das Ergebnis fuer die Rangfolge ist identisch.
+2. **Risiko Abschnitt 5 (Assistent ueberschreibt Baujahr) geloest:** `PUT /api/lebensdauer/...` erhoeht bei geaendertem Baujahr `gebaeude.stand`. Ein Assistent mit altem Stand erhaelt beim Uebernehmen 409 statt still zu ueberschreiben. In der Browser-Abnahme bestaetigt (`docs/abnahme/2026-11-20-lebensdauer/README.md`).
+
+Weitere Ergaenzungen:
+
+3. **`darfAendern` in der GET-Antwort** (`fach.aendern` des Benutzers fuer die Liegenschaft; PUT-Antwort immer `true`). Die Oberflaeche zeigt ohne Recht Text statt Eingabefelder und keine Bearbeiten-Knoepfe.
+4. **Modus E ist eine Ebene der Technikansicht** (`app/web/src/seiten/ansichtModus.ts`): Einschalten aus der Uebersicht wechselt in Technik, die Uebersicht beendet den Modus mit sichtbarer Meldung; Pill und Taste E nutzen dieselbe Aktion.
+5. **3D-Darstellung:** Im Modus E sind Anlagen neutral und Leitungen gedimmt; die Ampel steht als Marker mit konstanter Bildschirmgroesse und als Bodenring je Anlage (Ampelfarben aus den UI-Tokens, ungetoent), Marker ausserhalb des Fokus gedimmt. Entscheid und Begruendung `docs/design/entscheide/2026-11-19-lebensdauer-ampel.md`.
+6. **Befunde der Abnahme** (gering, Controller entscheidet): CSV nennt Bauteile ohne Umlaute (Katalognamen ASCII, UI mit Umlauten); Betraege mit Rappen werden in der Oberflaeche auf ganze Franken gerundet, CSV und Summen nicht.
