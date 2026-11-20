@@ -122,3 +122,32 @@ export function vorNeutralToneMapping([r, g, b]: [number, number, number]): [num
   const offset = min >= 0.04 ? 0.04 : (() => { const m = Math.sqrt(min / 6.25); return m - 6.25 * m * m; })();
   return [r + offset, g + offset, b + offset];
 }
+
+/**
+ * Marker, die sich am Bildschirm überlappen würden, zu einer Reihe gruppieren: Gruppen aus Markern mit weniger als
+ * `luecke` px Abstand (Kreis an Kreis), je Gruppe nebeneinander mittig über dem Schwerpunkt, auf Höhe des obersten
+ * Markers, Reihenfolge wie übergeben (dringendste zuerst = links). Rückgabe: Bildschirmversatz je Marker (px, y nach unten).
+ */
+export function markerReihen(punkte: { x: number; y: number; d: number }[], luecke = 3): { dx: number; dy: number }[] {
+  const n = punkte.length, eltern = punkte.map((_, i) => i);
+  const wurzel = (i: number): number => (eltern[i] === i ? i : (eltern[i] = wurzel(eltern[i])));
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    const a = punkte[i], b = punkte[j];
+    if (Math.hypot(a.x - b.x, a.y - b.y) < (a.d + b.d) / 2 + luecke) eltern[wurzel(i)] = wurzel(j);
+  }
+  const gruppen = new Map<number, number[]>();
+  punkte.forEach((_, i) => gruppen.set(wurzel(i), [...(gruppen.get(wurzel(i)) ?? []), i]));
+  const aus = punkte.map(() => ({ dx: 0, dy: 0 }));
+  for (const g of gruppen.values()) {
+    if (g.length < 2) continue;
+    const breite = g.reduce((s, i) => s + punkte[i].d, 0) + luecke * (g.length - 1);
+    const mitteX = g.reduce((s, i) => s + punkte[i].x, 0) / g.length, y = Math.min(...g.map((i) => punkte[i].y));
+    let x = mitteX - breite / 2;
+    for (const i of g) {
+      const p = punkte[i];
+      aus[i] = { dx: x + p.d / 2 - p.x, dy: y - p.y };
+      x += p.d + luecke;
+    }
+  }
+  return aus;
+}

@@ -30,7 +30,6 @@ export function TwinSzenenTasten({ name, geschosse, fokusId, onFokus, onTechnik,
       canvas.setAttribute("aria-describedby", "tw-szene-kuerzel");
       canvas.setAttribute("aria-roledescription", "3D-Modell");
     };
-    let halten = 0;
     const taste = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.altKey || e.metaKey) return;
       const s = stand.current;
@@ -43,26 +42,18 @@ export function TwinSzenenTasten({ name, geschosse, fokusId, onFokus, onTechnik,
       else if (e.key === "s" || e.key === "S") s.onSeparieren(!s.separiert);
       else if ((e.key === "e" || e.key === "E") && s.onErneuerung) {
         s.onErneuerung(!s.erneuerung);
-        // Der Moduswechsel ändert die Kartenränder; Szene3 setzt dabei den tabindex des Canvas neu, was ihn kurz blurt.
-        // In dieser Zeit den Fokus halten, damit ein zweites E wieder ausschaltet.
-        halten = performance.now() + 5000;
       }
       else ok = false;
       if (ok) e.preventDefault();
     };
-    const loslassen = () => { halten = 0; };
     const an = () => { ergaenzen(); setSichtbar(canvas.matches(":focus-visible")); };
-    const aus = (e: FocusEvent) => {
-      if (!e.relatedTarget && performance.now() < halten) { setTimeout(() => { if (canvas.isConnected && !document.activeElement?.closest("input, select, textarea, button, a, [tabindex]:not(canvas)")) canvas.focus({ preventScroll: true }); }, 0); return; }
-      setSichtbar(false);
-    };
+    const aus = () => setSichtbar(false);
     ergaenzen();
     canvas.addEventListener("keydown", taste);
     canvas.addEventListener("focus", an);
     canvas.addEventListener("blur", aus);
-    document.addEventListener("pointerdown", loslassen, true);
     return () => {
-      canvas.removeEventListener("keydown", taste); canvas.removeEventListener("focus", an); canvas.removeEventListener("blur", aus); document.removeEventListener("pointerdown", loslassen, true);
+      canvas.removeEventListener("keydown", taste); canvas.removeEventListener("focus", an); canvas.removeEventListener("blur", aus);
     };
   }, []);
 

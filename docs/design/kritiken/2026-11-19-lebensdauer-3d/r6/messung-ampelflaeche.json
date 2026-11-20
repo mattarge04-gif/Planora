@@ -1,0 +1,422 @@
+[
+ {
+  "datei": "modus-e-auswahl-1280x720.png",
+  "flaeche_px": 290016,
+  "exakt_pm5_prozent": {
+   "rot": 0.487,
+   "gelb": 0.404,
+   "gruen": 0.081,
+   "grau": 0.138
+  },
+  "hsv_prozent": {
+   "rot": 0.506,
+   "gelb": 0.463,
+   "gruen": 0.218
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.96,
+   "gelb": 0.87,
+   "gruen": 0.37
+  }
+ },
+ {
+  "datei": "modus-e-auswahl-1440x900.png",
+  "flaeche_px": 410400,
+  "exakt_pm5_prozent": {
+   "rot": 0.344,
+   "gelb": 0.285,
+   "gruen": 0.06,
+   "grau": 0.106
+  },
+  "hsv_prozent": {
+   "rot": 0.358,
+   "gelb": 0.327,
+   "gruen": 0.155
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.96,
+   "gelb": 0.87,
+   "gruen": 0.38
+  }
+ },
+ {
+  "datei": "modus-e-auswahl-1920x1080.png",
+  "flaeche_px": 758880,
+  "exakt_pm5_prozent": {
+   "rot": 0.187,
+   "gelb": 0.154,
+   "gruen": 0.027,
+   "grau": 0.068
+  },
+  "hsv_prozent": {
+   "rot": 0.193,
+   "gelb": 0.177,
+   "gruen": 0.08
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.97,
+   "gelb": 0.87,
+   "gruen": 0.34
+  }
+ },
+ {
+  "datei": "modus-e-eg-1280x720.png",
+  "flaeche_px": 290016,
+  "exakt_pm5_prozent": {
+   "rot": 0.61,
+   "gelb": 0.403,
+   "gruen": 0.207,
+   "grau": 0.016
+  },
+  "hsv_prozent": {
+   "rot": 0.631,
+   "gelb": 0.419,
+   "gruen": 0.237
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.97,
+   "gelb": 0.96,
+   "gruen": 0.87
+  }
+ },
+ {
+  "datei": "modus-e-eg-1440x900.png",
+  "flaeche_px": 410400,
+  "exakt_pm5_prozent": {
+   "rot": 0.432,
+   "gelb": 0.251,
+   "gruen": 0.145,
+   "grau": 0.026
+  },
+  "hsv_prozent": {
+   "rot": 0.448,
+   "gelb": 0.265,
+   "gruen": 0.17
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.96,
+   "gelb": 0.94,
+   "gruen": 0.85
+  }
+ },
+ {
+  "datei": "modus-e-eg-1920x1080.png",
+  "flaeche_px": 758880,
+  "exakt_pm5_prozent": {
+   "rot": 0.232,
+   "gelb": 0.14,
+   "gruen": 0.079,
+   "grau": 0.017
+  },
+  "hsv_prozent": {
+   "rot": 0.247,
+   "gelb": 0.149,
+   "gruen": 0.097
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.94,
+   "gelb": 0.94,
+   "gruen": 0.81
+  }
+ },
+ {
+  "datei": "modus-e-eg-auswahl-1280x720.png",
+  "flaeche_px": 290016,
+  "exakt_pm5_prozent": {
+   "rot": 0.0,
+   "gelb": 0.0,
+   "gruen": 0.041,
+   "grau": 0.066
+  },
+  "hsv_prozent": {
+   "rot": 0.0,
+   "gelb": 0.0,
+   "gruen": 0.175
+  },
+  "hsv_anteil_exakt": {
+   "rot": null,
+   "gelb": null,
+   "gruen": 0.24
+  }
+ },
+ {
+  "datei": "modus-e-eg-auswahl-1440x900.png",
+  "flaeche_px": 410400,
+  "exakt_pm5_prozent": {
+   "rot": 0.0,
+   "gelb": 0.0,
+   "gruen": 0.029,
+   "grau": 0.05
+  },
+  "hsv_prozent": {
+   "rot": 0.0,
+   "gelb": 0.0,
+   "gruen": 0.124
+  },
+  "hsv_anteil_exakt": {
+   "rot": null,
+   "gelb": null,
+   "gruen": 0.24
+  }
+ },
+ {
+  "datei": "modus-e-eg-auswahl-1920x1080.png",
+  "flaeche_px": 758880,
+  "exakt_pm5_prozent": {
+   "rot": 0.0,
+   "gelb": 0.0,
+   "gruen": 0.016,
+   "grau": 0.028
+  },
+  "hsv_prozent": {
+   "rot": 0.0,
+   "gelb": 0.0,
+   "gruen": 0.068
+  },
+  "hsv_anteil_exakt": {
+   "rot": null,
+   "gelb": null,
+   "gruen": 0.23
+  }
+ },
+ {
+  "datei": "modus-e-og1-1280x720.png",
+  "flaeche_px": 290016,
+  "exakt_pm5_prozent": {
+   "rot": 0.613,
+   "gelb": 0.402,
+   "gruen": 0.204,
+   "grau": 0.08
+  },
+  "hsv_prozent": {
+   "rot": 0.635,
+   "gelb": 0.419,
+   "gruen": 0.222
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.96,
+   "gelb": 0.96,
+   "gruen": 0.92
+  }
+ },
+ {
+  "datei": "modus-e-og1-1440x900.png",
+  "flaeche_px": 410400,
+  "exakt_pm5_prozent": {
+   "rot": 0.434,
+   "gelb": 0.251,
+   "gruen": 0.144,
+   "grau": 0.049
+  },
+  "hsv_prozent": {
+   "rot": 0.447,
+   "gelb": 0.263,
+   "gruen": 0.156
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.97,
+   "gelb": 0.95,
+   "gruen": 0.92
+  }
+ },
+ {
+  "datei": "modus-e-og1-1920x1080.png",
+  "flaeche_px": 758880,
+  "exakt_pm5_prozent": {
+   "rot": 0.233,
+   "gelb": 0.14,
+   "gruen": 0.078,
+   "grau": 0.028
+  },
+  "hsv_prozent": {
+   "rot": 0.243,
+   "gelb": 0.147,
+   "gruen": 0.087
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.96,
+   "gelb": 0.95,
+   "gruen": 0.89
+  }
+ },
+ {
+  "datei": "modus-e-reduziert-1280x720.png",
+  "flaeche_px": 290016,
+  "exakt_pm5_prozent": {
+   "rot": 0.487,
+   "gelb": 0.404,
+   "gruen": 0.081,
+   "grau": 0.139
+  },
+  "hsv_prozent": {
+   "rot": 0.506,
+   "gelb": 0.463,
+   "gruen": 0.218
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.96,
+   "gelb": 0.87,
+   "gruen": 0.37
+  }
+ },
+ {
+  "datei": "modus-e-reduziert-1440x900.png",
+  "flaeche_px": 410400,
+  "exakt_pm5_prozent": {
+   "rot": 0.344,
+   "gelb": 0.285,
+   "gruen": 0.06,
+   "grau": 0.106
+  },
+  "hsv_prozent": {
+   "rot": 0.358,
+   "gelb": 0.327,
+   "gruen": 0.155
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.96,
+   "gelb": 0.87,
+   "gruen": 0.38
+  }
+ },
+ {
+  "datei": "modus-e-reduziert-1920x1080.png",
+  "flaeche_px": 758880,
+  "exakt_pm5_prozent": {
+   "rot": 0.187,
+   "gelb": 0.154,
+   "gruen": 0.027,
+   "grau": 0.068
+  },
+  "hsv_prozent": {
+   "rot": 0.193,
+   "gelb": 0.177,
+   "gruen": 0.08
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.97,
+   "gelb": 0.87,
+   "gruen": 0.34
+  }
+ },
+ {
+  "datei": "modus-e-separiert-1280x720.png",
+  "flaeche_px": 290016,
+  "exakt_pm5_prozent": {
+   "rot": 0.611,
+   "gelb": 0.402,
+   "gruen": 0.206,
+   "grau": 0.034
+  },
+  "hsv_prozent": {
+   "rot": 0.639,
+   "gelb": 0.428,
+   "gruen": 0.231
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.96,
+   "gelb": 0.94,
+   "gruen": 0.89
+  }
+ },
+ {
+  "datei": "modus-e-separiert-1440x900.png",
+  "flaeche_px": 410400,
+  "exakt_pm5_prozent": {
+   "rot": 0.432,
+   "gelb": 0.285,
+   "gruen": 0.146,
+   "grau": 0.028
+  },
+  "hsv_prozent": {
+   "rot": 0.449,
+   "gelb": 0.301,
+   "gruen": 0.171
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.96,
+   "gelb": 0.95,
+   "gruen": 0.86
+  }
+ },
+ {
+  "datei": "modus-e-separiert-1920x1080.png",
+  "flaeche_px": 758880,
+  "exakt_pm5_prozent": {
+   "rot": 0.233,
+   "gelb": 0.137,
+   "gruen": 0.079,
+   "grau": 0.018
+  },
+  "hsv_prozent": {
+   "rot": 0.244,
+   "gelb": 0.147,
+   "gruen": 0.095
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.96,
+   "gelb": 0.93,
+   "gruen": 0.83
+  }
+ },
+ {
+  "datei": "modus-e-technik-1280x720.png",
+  "flaeche_px": 290016,
+  "exakt_pm5_prozent": {
+   "rot": 0.488,
+   "gelb": 0.403,
+   "gruen": 0.086,
+   "grau": 0.132
+  },
+  "hsv_prozent": {
+   "rot": 0.516,
+   "gelb": 0.47,
+   "gruen": 0.227
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.95,
+   "gelb": 0.86,
+   "gruen": 0.38
+  }
+ },
+ {
+  "datei": "modus-e-technik-1440x900.png",
+  "flaeche_px": 410400,
+  "exakt_pm5_prozent": {
+   "rot": 0.346,
+   "gelb": 0.285,
+   "gruen": 0.063,
+   "grau": 0.141
+  },
+  "hsv_prozent": {
+   "rot": 0.358,
+   "gelb": 0.341,
+   "gruen": 0.192
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.97,
+   "gelb": 0.84,
+   "gruen": 0.33
+  }
+ },
+ {
+  "datei": "modus-e-technik-1920x1080.png",
+  "flaeche_px": 758880,
+  "exakt_pm5_prozent": {
+   "rot": 0.187,
+   "gelb": 0.155,
+   "gruen": 0.036,
+   "grau": 0.123
+  },
+  "hsv_prozent": {
+   "rot": 0.193,
+   "gelb": 0.188,
+   "gruen": 0.126
+  },
+  "hsv_anteil_exakt": {
+   "rot": 0.97,
+   "gelb": 0.83,
+   "gruen": 0.29
+  }
+ }
+]

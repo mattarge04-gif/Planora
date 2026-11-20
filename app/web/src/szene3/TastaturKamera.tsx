@@ -29,12 +29,21 @@ export function TastaturKamera({ aktiv, freiraum, auswahlBereich }: { aktiv: boo
     el.addEventListener("wheel", rad, { capture: true, passive: false });
     return () => el.removeEventListener("wheel", rad, { capture: true });
   }, [controls, gl, camera, size.width, size.height, freiraum, auswahlBereich]);
+  // Tab-Stopp und Beschriftung nur beim Ein-/Ausschalten setzen bzw. zurücknehmen: Entfernen des tabindex blurt den
+  // Canvas. Hing das an freiraum/size, verlor der Canvas bei jeder Kartenänderung (z. B. Legende im Modus E) den Fokus.
   useLayoutEffect(() => {
-    if (!aktiv || !controls) return;
-    const el = gl.domElement, vorher = { tab: el.getAttribute("tabindex"), label: el.getAttribute("aria-label"), keys: el.getAttribute("aria-keyshortcuts"), outline: el.style.outline, offset: el.style.outlineOffset };
+    if (!aktiv) return;
+    const el = gl.domElement, vorher = { tab: el.getAttribute("tabindex"), label: el.getAttribute("aria-label"), keys: el.getAttribute("aria-keyshortcuts") };
     el.tabIndex = 0;
     el.setAttribute("aria-label", "Gebäudemodell: Pfeiltasten drehen, Shift und Pfeiltasten verschieben, Plus und Minus vergrössern und verkleinern");
     el.setAttribute("aria-keyshortcuts", "ArrowLeft ArrowRight ArrowUp ArrowDown + -");
+    return () => {
+      for (const [name, wert] of [["tabindex", vorher.tab], ["aria-label", vorher.label], ["aria-keyshortcuts", vorher.keys]]) if (wert === null) el.removeAttribute(name!); else el.setAttribute(name!, wert!);
+    };
+  }, [aktiv, gl]);
+  useLayoutEffect(() => {
+    if (!aktiv || !controls) return;
+    const el = gl.domElement, vorher = { outline: el.style.outline, offset: el.style.outlineOffset };
     const fokus = () => { if (el.matches(":focus-visible")) { el.style.outline = `2px solid ${TOKENS.farbe.eisAkzent}`; el.style.outlineOffset = "-2px"; } };
     const verlassen = () => { el.style.outline = vorher.outline; el.style.outlineOffset = vorher.offset; };
     const zeiger = () => el.focus({ preventScroll: true });
@@ -60,8 +69,7 @@ export function TastaturKamera({ aktiv, freiraum, auswahlBereich }: { aktiv: boo
     el.addEventListener("keydown", taste); el.addEventListener("pointerdown", zeiger); el.addEventListener("focus", fokus); el.addEventListener("blur", verlassen);
     return () => {
       el.removeEventListener("keydown", taste); el.removeEventListener("pointerdown", zeiger); el.removeEventListener("focus", fokus); el.removeEventListener("blur", verlassen);
-      for (const [name, wert] of [["tabindex", vorher.tab], ["aria-label", vorher.label], ["aria-keyshortcuts", vorher.keys]]) if (wert === null) el.removeAttribute(name!); else el.setAttribute(name!, wert!);
-      verlassen();
+      if (document.activeElement !== el) verlassen();
     };
   }, [aktiv, controls, gl, camera, size.width, size.height, freiraum, auswahlBereich]);
   return null;

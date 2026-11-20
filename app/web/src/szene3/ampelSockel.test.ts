@@ -99,3 +99,23 @@ describe("vorNeutralToneMapping", () => {
     expect(aus.getHexString()).not.toBe(c.getHexString());
   });
 });
+
+describe("markerReihen", () => {
+  it("einzelne Marker bleiben, ueberlappende werden eine Reihe ohne Ueberlappung", async () => {
+    const { markerReihen } = await import("./ampelSockel");
+    const p = [{ x: 100, y: 100, d: 22 }, { x: 108, y: 104, d: 18 }, { x: 300, y: 50, d: 13 }];
+    const v = markerReihen(p, 3);
+    expect(v[2]).toEqual({ dx: 0, dy: 0 });
+    const a = { x: p[0].x + v[0].dx, y: p[0].y + v[0].dy }, b = { x: p[1].x + v[1].dx, y: p[1].y + v[1].dy };
+    expect(a.y).toBe(b.y);
+    expect(b.x - a.x).toBeCloseTo((22 + 18) / 2 + 3);
+    expect(a.x).toBeLessThan(b.x); // Reihenfolge wie uebergeben
+    expect((a.x - 11 + b.x + 9) / 2).toBeCloseTo(104); // mittig ueber dem Schwerpunkt
+  });
+  it("Kette: A nahe B, B nahe C -> eine Gruppe", async () => {
+    const { markerReihen } = await import("./ampelSockel");
+    const v = markerReihen([{ x: 0, y: 0, d: 10 }, { x: 10, y: 0, d: 10 }, { x: 20, y: 0, d: 10 }], 3);
+    expect(v.every((o) => o.dy === 0)).toBe(true);
+    expect(v[1].dx).toBeCloseTo(0);
+  });
+});
