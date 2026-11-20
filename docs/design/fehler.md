@@ -53,3 +53,10 @@ Gescheiterte Ansaetze mit Beleg und Ursache. Neue Arbeiten pruefen sich gegen di
 - Bild [F]: grosse graue Quadrat-/Dreiecksausläufer neben der Modellplatte; im reduzierten Modus ohne Schatten verschwinden sie.
 - Ursache [F]: Der installierte Three-VSM-Pfad behandelt auch `receiveShadow`-Objekte als Schattenwerfer. Dadurch kann die Empfängerebene von `AccumulativeShadows` selbst Schatten erzeugen. Im lokalen `WebGLShadowMap`-Code geprüft.
 - Korrektur [F]: BasicShadowMap mit drei-PCSS (`SoftShadows`) für die Sonne, akkumulierte Schatten für weiche Kontakte; dieselben GPU-Ansichten erneut geprüft. Filterweite in Texeln und Lichtquellenradius in Metern sind getrennte Tokens.
+
+## F9 – Ampelfarben im 3D nicht token-treu trotz `toneMapped={false}` (19.11.2026)
+
+- Beleg: [Kritik r1](kritiken/2026-11-19-lebensdauer-r1.md) (gerendert `#b82620`/`#c47708`/`#0e8c5a` statt `#d64541`/`#e08a1e`/`#2f9e6b`), korrigiert in [r2](kritiken/2026-11-19-lebensdauer-r2.md).
+- Ursache [F]: Der `ToneMapping`-Effekt der Nachbearbeitung wirkt auf alle Pixel, auch auf Materialien mit `toneMapped={false}`; Neutral-Tone-Mapping zieht dunkle Anteile ab. Die erste Designer-Messung "pixelgenau" galt nur fuer Teilflaechen.
+- Korrektur [F]: Statusmarker im Hud nach dem Effektdurchlauf; Bodenringe vorab um das Tone Mapping korrigiert. Farbtreue im Bild nachmessen (±5 je Kanal), nicht im Code annehmen.
+- Rest [F]: N8AO dunkelt Ringe nahe Wand/Geraet um ~7 % ab; Einzelobjekte lassen sich nicht ausschliessen.
