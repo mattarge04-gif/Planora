@@ -29,6 +29,19 @@ Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 - Testluecken, N+1-Selects, dupliziertes `zugriff`, BOM-Literal, `AmpelRinge` ohne eigenes dispose, Vektor-Allokation je Frame in `AmpelMarker3`, Typwerte-`katalogId` nicht gegen Katalog geprueft, Twin verschluckt Ladefehler ausser 401, Zuordnung Markerreihe zu Pumpe nur per Hover, Einstiegsrahmung leicht rechts, AO dunkelt Ringe ~7 %, Backend-Anzeigenamen doppelt zum Web.
 - Fuer die Demo Testdaten `werkzeug/design/lebensdauer-daten.mjs` (Zustand B) verwenden.
 
+### 4. Was inhaltlich gelernt wurde
+
+- [F] Postprocessing-ToneMapping wirkt auch auf `toneMapped={false}`-Materialien; Farben weichen im Bild ab (`docs/design/fehler.md` F9).
+- [F] Statusfarbe Rot kollidiert mit dem KOO-Rot der Heizung; im Modus Erneuerung wird die Technik neutralisiert (Entscheid `docs/design/entscheide/2026-11-19-lebensdauer-ampel.md`).
+- [F] Eine Baujahr-Aenderung in der Lebensdauer erhoeht `gebaeude.stand`, damit der Assistent nicht still ueberschreibt.
+
+### 5. Was ueber die Zusammenarbeit gelernt wurde
+
+- [F] Das Claude-Nutzungslimit brach den 3D-Designer mitten in Runde 2 ab. Fortsetzung per Nachricht an denselben Agenten, mit Hinweis auf den ungesicherten Stand im Arbeitsverzeichnis, klappte.
+- [F] Bei knappem Kontingent wuenscht der PO: Stand frueh in CLAUDE.md sichern, Reviews auf guenstigerem Modell.
+- [F] PO-Antworten sind kurz ("ja aber bei demo will ich..."). Folge-Entscheide als Teilprojekt-Zuschnitt mit einer AskUserQuestion klaeren.
+- [F] Die Selbstmessung des Designers "pixelgenau" war falsch (Tone Mapping). Farbtreue immer vom visual-critic im Bild nachmessen lassen.
+
 ## 2026-11-17 (spaet) – Testdaten, PO-Befunde, Brainstorming M7
 
 - [F] Entwicklungsstart legt nur noch ein leeres "Testgebäude" an; Muster mit `instanz.sh start --muster` (`7725a3e`).

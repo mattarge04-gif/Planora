@@ -186,7 +186,9 @@ Vorschlag, vom PO nicht bestaetigt: Der erste M2/M6-Schnitt (Datenmodell bis Ges
 
 ### Naechste Coding-Aufgabe
 
-**Aktuell (16.11.):** siehe Block "Heizungserfassung vereinfachen (16.11.2026)" (Umsetzungsplan schreiben).
+**Aktuell (20.11.):** PO-Sichtung Lebensdauer/Ampel (Block "Lebensdauer/Ampel umgesetzt (20.11.2026)"), danach Teilprojekt "Preis aus Dokument" (E43 Teil 2).
+
+*Ueberholt (Stand 16.11.):* Heizungserfassung-Umsetzungsplan, inzwischen umgesetzt.
 
 *Ueberholt (Stand 14.11.):* Leitungsrouter T8 abschliessen (Rest-Seeds, 2000er-Lauf, Review), dann T9–T10 (siehe Plan, Abschnitt "Fortsetzung (Stand 14.11.2026)"). Danach Vorschau-Zoom im Assistenten, Kamerafahrt auf Gruppenverlauf, danach I2 – Details in `docs/superpowers/plans/2026-11-13-stufe1-integration.md`.
 
