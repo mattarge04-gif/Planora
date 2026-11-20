@@ -1,0 +1,10 @@
+{"fenster":[[1440,900]],"schritte":[
+{"klick":"Muster 6 L-Form viele Gruppen"},{"warte":7000},
+{"fokus":"canvas"},{"taste":"e"},{"warte":2500},{"bild":"f-taste-e-an"},
+{"taste":"e"},{"warte":2500},{"bild":"f-taste-e-aus"},
+{"knopf":"Erneuerung","exakt":true},{"warte":2500},
+{"selektor":".tw-tabelle tbody tr:nth-child(5)"},{"warte":1500},{"bild":"f-karte-pumpe"},
+{"knopf":"Bearbeiten","exakt":true},{"warte":500},{"taste":"Escape"},{"warte":500},{"bild":"f-nach-esc"},
+{"taste":"Escape"},{"warte":1500},{"bild":"f-nach-esc2"},
+{"knopf":"Übersicht","exakt":true},{"warte":2500},{"bild":"f-e-uebersicht"}
+]}

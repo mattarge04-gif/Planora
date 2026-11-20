@@ -1,0 +1,6 @@
+{"fenster":[[1440,900],[1920,1080]],"schritte":[
+{"klick":"Muster 6 L-Form viele Gruppen"},{"warte":7000},
+{"knopf":"Erneuerung","exakt":true},{"warte":2500},
+{"klick":"Geschosse separieren"},{"warte":3500},{"bild":"s-e-separiert"},
+{"klick":"OG1","exakt":true},{"warte":3000},{"bild":"s-e-og1"}
+]}
