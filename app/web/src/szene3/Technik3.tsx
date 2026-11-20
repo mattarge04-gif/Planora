@@ -9,6 +9,7 @@ import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
 import { Anlagen3, instanzen, lageMasse } from "./Anlagen3";
 import { AmpelMarker3 } from "./AmpelMarker3";
 import { ampelMarker } from "./ampelSockel";
+import type { Freiraum } from "./kamera";
 import { durchgaenge, einheitVon, freieVerteilerAbgaenge, rohrnetzMitBefunden, type Huelse, type Rohrstueck } from "./netz";
 import type { Befund } from "./router/typen";
 import { geschossSchnitt } from "./schnitt";
@@ -25,13 +26,15 @@ import { achseY, mitRohrStaerke, ROHR_FAKTOR, rohrFaktor, rohrTreffer } from "./
 
 const FLAECHE = new Set(["heizung.fbh_kreis", "heizung.tabs_feld"]);
 
-export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstellung, interaktion, separiert = false, onBefunde, ampel }: {
+export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstellung, interaktion, separiert = false, onBefunde, ampel, freiraum }: {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; schatten: boolean; onModelle: () => void;
   darstellung?: Darstellung; interaktion?: Interaktion; separiert?: boolean;
   /** Befunde der gezeichneten Leitungsführung (eine Berechnung für Bild und Hinweis). */
   onBefunde?: (befunde: Befund[], weltHash: string) => void;
   /** Erneuerungsansicht: Schluessel -> Ampelfarbe, nur gesetzt im Modus E. */
   ampel?: ReadonlyMap<string, string>;
+  /** Freie Szenenfläche: Ampelmarker (Overlay) werden darauf zugeschnitten. */
+  freiraum?: Freiraum;
 }) {
   const [anschluesse, setAnschluesse] = useState<Record<string, V3>>({});
   const onModell = useCallback((pfad: string, anschluss: V3) => {
@@ -102,12 +105,12 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
   const marker = useMemo(() => !ampel ? [] : ampelMarker(sichtbar.flatMap((id) =>
     instanzen(symbole.filter((s) => ampel.has(s.schluessel) && geschossBeiY(welt, s.position.y) === id), katalog).map((i) => ({
       schluessel: i.s.schluessel, mitte: i.mitte, masse: lageMasse(i), inline: i.inline, farbe: ampel.get(i.s.schluessel)!, geschossId: id,
-    })))), [ampel, sichtbar, symbole, katalog, welt]);
+    }))), fokusId), [ampel, sichtbar, symbole, katalog, welt, fokusId]);
   const huelsenGeschoss = (h: Huelse) => h.art === "decke"
     ? [...welt.geschosse].sort((a, b) => Math.abs(a.yUnten - h.position[1]) - Math.abs(b.yUnten - h.position[1]))[0]?.id
     : geschossBeiY(welt, h.position[1]);
   return <group name="technik">
-    {marker.length > 0 && <AmpelMarker3 marker={marker} darstellung={darstellung} interaktion={interaktion} nachEffekten={schatten} />}
+    {marker.length > 0 && <AmpelMarker3 marker={marker} darstellung={darstellung} interaktion={interaktion} nachEffekten={schatten} freiraum={freiraum} />}
     {sichtbar.map((id) => <GeschossGruppe key={id} id={id} darstellung={darstellung}>
       <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} ampel={ampel} bodenY={bodenVon(id)} />
       {kappen.filter((k) => geschossBeiY(welt, k.symbol.position.y) === id).map((k, i) =>

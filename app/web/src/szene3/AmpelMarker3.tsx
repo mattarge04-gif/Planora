@@ -6,6 +6,8 @@ import { TOKENS } from "../design/tokens";
 import type { Interaktion } from "./Interaktion";
 import type { Darstellung } from "./Bewegung";
 import { markerReihen, type Marker } from "./ampelSockel";
+import { FreiraumSchnitt } from "./FreiraumSchnitt";
+import type { Freiraum } from "./kamera";
 
 const E = TOKENS.erneuerung;
 /** Einheitsformen (Radius 1): Scheibe; Ring für «Baujahr fehlt» (analog CircleDashed, hohl). */
@@ -18,8 +20,10 @@ const weiss = new THREE.MeshBasicMaterial({ color: TOKENS.farbe.flaeche, toneMap
  * nie von Wänden verdeckt; Marker, die sich überlappen würden, stehen als Reihe nebeneinander. Ungetönt und ohne Umgebungsverdeckung, damit das Bild genau die Tokenfarbe zeigt.
  * `nachEffekten`: true, wenn ein EffectComposer (Priorität 1) läuft; sonst rendert das Overlay die Hauptszene selbst.
  */
-export function AmpelMarker3({ marker, darstellung, interaktion, nachEffekten }: {
+export function AmpelMarker3({ marker, darstellung, interaktion, nachEffekten, freiraum }: {
   marker: Marker[]; darstellung?: Darstellung; interaktion?: Interaktion; nachEffekten: boolean;
+  /** Freie Szenenfläche: Marker scheinen nicht durch Panels und Tabelle. */
+  freiraum?: Freiraum;
 }) {
   const gruppen = useRef<(THREE.Group | null)[]>([]);
   const size = useThree((s) => s.size);
@@ -49,19 +53,23 @@ export function AmpelMarker3({ marker, darstellung, interaktion, nachEffekten }:
       g.scale.setScalar(1 / zoom);
     });
   });
+  const inhalt = marker.map((m, k) => <Einzel key={`${m.schluessel}:${m.anker.join(":")}`} m={m} reihe={k}
+    gruppe={(g) => { gruppen.current[k] = g; }} />);
   return <Hud renderPriority={nachEffekten ? 2 : 1}>
-    {marker.map((m, k) => <Einzel key={`${m.schluessel}:${m.anker.join(":")}`} m={m} reihe={k}
-      gruppe={(g) => { gruppen.current[k] = g; }} />)}
+    {freiraum ? <FreiraumSchnitt freiraum={freiraum}>{inhalt}</FreiraumSchnitt> : inhalt}
   </Hud>;
 }
 
 function Einzel({ m, reihe, gruppe }: { m: Marker; reihe: number; gruppe: (g: THREE.Group | null) => void }) {
-  const farbe = useMemo(() => new THREE.MeshBasicMaterial({ color: m.farbe, toneMapped: false, depthTest: false, depthWrite: false }), [m.farbe]);
-  useEffect(() => () => farbe.dispose(), [farbe]);
+  const farbe = useMemo(() => new THREE.MeshBasicMaterial({ color: m.farbe, toneMapped: false, depthTest: false, depthWrite: false,
+    transparent: !!m.gedimmt, opacity: m.gedimmt ? E.markerGedimmtDeckkraft : 1 }), [m.farbe, m.gedimmt]);
+  const grund = useMemo(() => m.gedimmt ? new THREE.MeshBasicMaterial({ color: TOKENS.farbe.flaeche, toneMapped: false, depthTest: false,
+    depthWrite: false, transparent: true, opacity: E.markerGedimmtDeckkraft }) : weiss, [m.gedimmt]);
+  useEffect(() => () => { farbe.dispose(); if (grund !== weiss) grund.dispose(); }, [farbe, grund]);
   const r = m.px / 2, rand = r + E.markerRandPx;
   // Reihenfolge = Dringlichkeit (Marker sortiert): Rot liegt bei Überlappung oben.
   return <group ref={gruppe} visible={false} userData={{ ampelMarker: m.schluessel, ampel: m.ampel }}>
-    <mesh geometry={SCHEIBE} material={weiss} scale={rand} renderOrder={10 + 2 * reihe} raycast={() => {}} />
+    <mesh geometry={SCHEIBE} material={grund} scale={rand} renderOrder={10 + 2 * reihe} raycast={() => {}} />
     <mesh geometry={m.ampel === "grau" ? RING : SCHEIBE} material={farbe} scale={r} renderOrder={11 + 2 * reihe} raycast={() => {}} />
   </group>;
 }

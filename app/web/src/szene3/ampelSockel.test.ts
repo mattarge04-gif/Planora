@@ -119,3 +119,19 @@ describe("markerReihen", () => {
     expect(v[1].dx).toBeCloseTo(0);
   });
 });
+
+describe("Marker ausserhalb des Fokus und Reihen ohne Ueberlappung", () => {
+  it("Geschoss ausserhalb des Fokus: gedimmt und kleiner", () => {
+    const m = ampelMarker([{ ...anlage({ schluessel: "u" }), geschossId: "ug" }, { ...anlage({ schluessel: "e" }), geschossId: "eg" }], "eg");
+    const u = m.find((x) => x.schluessel === "u")!, e = m.find((x) => x.schluessel === "e")!;
+    expect(u.gedimmt).toBe(true); expect(e.gedimmt).toBeUndefined();
+    expect(u.px).toBeLessThan(e.px);
+    expect(ampelMarker([{ ...anlage(), geschossId: "ug" }]).every((x) => !x.gedimmt)).toBe(true);
+  });
+  it("Reihe, die in eine Nachbargruppe ragt, wird zusammengelegt (keine Ueberlappung)", async () => {
+    const { markerReihen } = await import("./ampelSockel");
+    const p = [{ x: 0, y: 0, d: 20 }, { x: 5, y: 0, d: 20 }, { x: 5, y: 0, d: 20 }, { x: 45, y: 0, d: 20 }];
+    const v = markerReihen(p, 3), lage = p.map((q, i) => ({ x: q.x + v[i].dx, y: q.y + v[i].dy }));
+    for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) expect(Math.hypot(lage[i].x - lage[j].x, lage[i].y - lage[j].y)).toBeGreaterThanOrEqual(20 - 1e-9);
+  });
+});

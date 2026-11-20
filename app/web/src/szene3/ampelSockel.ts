@@ -59,10 +59,12 @@ export function ringBreite(zoom: number): number {
   return Math.round(Math.min(E.ringBreiteMaxM, Math.max(E.ringBreiteM, px)) * 200) / 200;
 }
 
-export interface Marker { schluessel: string; anker: V3; geschossId: string; inline: boolean; ampel: Ampel; farbe: string; px: number }
+export interface Marker { schluessel: string; anker: V3; geschossId: string; inline: boolean; ampel: Ampel; farbe: string; px: number;
+  /** Anlage liegt in einem Geschoss ausserhalb des Fokus (verdeckt): Marker kleiner und blasser. */
+  gedimmt?: boolean }
 
 /** Marker je Anlage über der Oberkante; nach Dringlichkeit aufsteigend sortiert (Rot wird zuletzt, also oben gezeichnet). */
-export function ampelMarker(anlagen: (AmpelAnlage & { geschossId: string })[]): Marker[] {
+export function ampelMarker(anlagen: (AmpelAnlage & { geschossId: string })[], fokusId: string | null = null): Marker[] {
   const gesehen = new Set<string>(), eindeutig: typeof anlagen = [];
   for (const a of anlagen) {
     const k = `${a.schluessel}:${a.mitte.join(":")}`;
@@ -70,7 +72,8 @@ export function ampelMarker(anlagen: (AmpelAnlage & { geschossId: string })[]): 
   }
   return eindeutig.map((a) => {
       const ampel = ampelVonFarbe(a.farbe);
-      return { schluessel: a.schluessel, geschossId: a.geschossId, inline: a.inline, ampel, farbe: AMPEL_FARBE[ampel], px: E.markerPx[ampel],
+      return { schluessel: a.schluessel, geschossId: a.geschossId, inline: a.inline, ampel, farbe: AMPEL_FARBE[ampel],
+        ...(fokusId && a.geschossId !== fokusId ? { gedimmt: true, px: Math.round(E.markerPx[ampel] * E.markerGedimmtFaktor) } : { px: E.markerPx[ampel] }),
         anker: [a.mitte[0], a.mitte[1] + a.masse[1] / 2, a.mitte[2]] as V3 };
     })
     .sort((a, b) => AMPEL_RANG[a.ampel] - AMPEL_RANG[b.ampel] || a.schluessel.localeCompare(b.schluessel));
@@ -131,23 +134,31 @@ export function vorNeutralToneMapping([r, g, b]: [number, number, number]): [num
 export function markerReihen(punkte: { x: number; y: number; d: number }[], luecke = 3): { dx: number; dy: number }[] {
   const n = punkte.length, eltern = punkte.map((_, i) => i);
   const wurzel = (i: number): number => (eltern[i] === i ? i : (eltern[i] = wurzel(eltern[i])));
-  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
-    const a = punkte[i], b = punkte[j];
-    if (Math.hypot(a.x - b.x, a.y - b.y) < (a.d + b.d) / 2 + luecke) eltern[wurzel(i)] = wurzel(j);
-  }
-  const gruppen = new Map<number, number[]>();
-  punkte.forEach((_, i) => gruppen.set(wurzel(i), [...(gruppen.get(wurzel(i)) ?? []), i]));
-  const aus = punkte.map(() => ({ dx: 0, dy: 0 }));
-  for (const g of gruppen.values()) {
-    if (g.length < 2) continue;
-    const breite = g.reduce((s, i) => s + punkte[i].d, 0) + luecke * (g.length - 1);
-    const mitteX = g.reduce((s, i) => s + punkte[i].x, 0) / g.length, y = Math.min(...g.map((i) => punkte[i].y));
-    let x = mitteX - breite / 2;
-    for (const i of g) {
-      const p = punkte[i];
-      aus[i] = { dx: x + p.d / 2 - p.x, dy: y - p.y };
-      x += p.d + luecke;
+  const nah = (a: { x: number; y: number; d: number }, b: { x: number; y: number; d: number }) =>
+    Math.hypot(a.x - b.x, a.y - b.y) < (a.d + b.d) / 2 + luecke;
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (nah(punkte[i], punkte[j])) eltern[wurzel(i)] = wurzel(j);
+  let aus = punkte.map(() => ({ dx: 0, dy: 0 }));
+  // Eine Reihe kann in eine Nachbargruppe ragen: solche Gruppen zusammenlegen und neu anordnen (endet, da Gruppen nur wachsen).
+  for (let runde = 0; runde <= n; runde++) {
+    const gruppen = new Map<number, number[]>();
+    punkte.forEach((_, i) => gruppen.set(wurzel(i), [...(gruppen.get(wurzel(i)) ?? []), i]));
+    aus = punkte.map(() => ({ dx: 0, dy: 0 }));
+    for (const g of gruppen.values()) {
+      if (g.length < 2) continue;
+      const breite = g.reduce((s, i) => s + punkte[i].d, 0) + luecke * (g.length - 1);
+      const mitteX = g.reduce((s, i) => s + punkte[i].x, 0) / g.length, y = Math.min(...g.map((i) => punkte[i].y));
+      let x = mitteX - breite / 2;
+      for (const i of g) {
+        const p = punkte[i];
+        aus[i] = { dx: x + p.d / 2 - p.x, dy: y - p.y };
+        x += p.d + luecke;
+      }
     }
+    const lage = punkte.map((p, i) => ({ x: p.x + aus[i].dx, y: p.y + aus[i].dy, d: p.d }));
+    let neu = false;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++)
+      if (wurzel(i) !== wurzel(j) && nah(lage[i], lage[j])) { eltern[wurzel(i)] = wurzel(j); neu = true; }
+    if (!neu) break;
   }
   return aus;
 }

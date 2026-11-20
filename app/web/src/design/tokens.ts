@@ -81,6 +81,8 @@ export const TOKENS = {
     markerPx: { rot: 22, gelb: 18, gruen: 13, grau: 13 }, // Durchmesser am Bildschirm: Fläche nach Dringlichkeit, nicht nach Gerätegrösse
     markerRandPx: 2, // weisser Rand um den Marker
     markerAbstandPx: 8, // Lücke zwischen Anlagenoberkante und Marker
+    markerGedimmtFaktor: 0.6, // Marker verdeckter Geschosse (ausserhalb des Fokus): kleiner …
+    markerGedimmtDeckkraft: 0.45, // … und blasser
     markerLueckePx: 3, // Abstand zwischen gruppierten Markern (Reihe statt Überlappung)
     ringBreiteM: 0.05, // Bodenring konstanter Breite um den Grundriss der Anlage
     ringBreitePx: 3, // aus der Distanz mindestens so viele px …
