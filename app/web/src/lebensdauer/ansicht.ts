@@ -10,7 +10,12 @@ const RANG = AMPEL_RANG;
 /** "1 Jahr" / "n Jahre". */
 export const jahre = (n: number) => (n === 1 ? "1 Jahr" : `${n} Jahre`);
 
-export const chf = (b: number) => `CHF ${Math.round(b).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'")}`;
+export function chf(b: number): string {
+  const rund = Math.round(b * 100) / 100;
+  const [ganz, rest] = rund.toFixed(2).split(".");
+  const g = ganz.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  return `CHF ${g}${rest === "00" ? "" : "." + rest}`;
+}
 
 /** Preis als Eingabetext mit Tausendertrenner ("35'000", "1'200.5"); eingabeZahl liest ihn zurück. */
 export function preisText(n: number | null | undefined): string {

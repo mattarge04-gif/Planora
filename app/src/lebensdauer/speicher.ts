@@ -66,27 +66,29 @@ export async function schreibeLebensdauer(c: pg.ClientBase, gebaeudeId: string, 
       baujahrGeaendert = true;
       await c.query("update bauteil set baujahr=$2 where id=$1", [id, b.baujahr]);
     }
-    const alt = (await c.query("select zustand, lebensdauer_jahre, stueckpreis, notiz from bauteil_akte where bauteil_id=$1", [id])).rows[0] ?? {};
+    const alt = (await c.query("select zustand, lebensdauer_jahre, stueckpreis, quelle_preis, notiz from bauteil_akte where bauteil_id=$1", [id])).rows[0] ?? {};
     const neu = {
       zustand: b.zustand !== undefined ? b.zustand : alt.zustand ?? null,
       lebensdauer: b.lebensdauerJahre !== undefined ? b.lebensdauerJahre : alt.lebensdauer_jahre ?? null,
       preis: b.stueckpreis !== undefined ? b.stueckpreis : zahl(alt.stueckpreis ?? null),
       notiz: b.notiz !== undefined ? b.notiz : alt.notiz ?? null,
     };
+    const quelle = neu.preis === null ? null : b.stueckpreis !== undefined && b.stueckpreis !== zahl(alt.stueckpreis ?? null) ? "kunde" : alt.quelle_preis ?? "kunde";
     if (Object.values(neu).every((v) => v === null)) await c.query("delete from bauteil_akte where bauteil_id=$1", [id]);
     else await c.query(`insert into bauteil_akte(bauteil_id, liegenschaft_id, zustand, lebensdauer_jahre, stueckpreis, quelle_preis, notiz)
       values ($1,$2,$3,$4,$5,$6,$7) on conflict (bauteil_id) do update set zustand=excluded.zustand, lebensdauer_jahre=excluded.lebensdauer_jahre,
       stueckpreis=excluded.stueckpreis, quelle_preis=excluded.quelle_preis, notiz=excluded.notiz`,
-      [id, L, neu.zustand, neu.lebensdauer, neu.preis, neu.preis === null ? null : "kunde", neu.notiz]);
+      [id, L, neu.zustand, neu.lebensdauer, neu.preis, quelle, neu.notiz]);
   }
   for (const t of e.typen ?? []) {
-    const alt = (await c.query("select l_mittel, stueckpreis, gelb_jahre from lebensdauer_typ where liegenschaft_id=$1 and katalog_id=$2", [L, t.katalogId])).rows[0] ?? {};
+    const alt = (await c.query("select l_mittel, stueckpreis, quelle_preis, gelb_jahre from lebensdauer_typ where liegenschaft_id=$1 and katalog_id=$2", [L, t.katalogId])).rows[0] ?? {};
     const neu = { l: t.lMittel !== undefined ? t.lMittel : alt.l_mittel ?? null, preis: t.stueckpreis !== undefined ? t.stueckpreis : zahl(alt.stueckpreis ?? null),
       gelb: t.gelbJahre !== undefined ? t.gelbJahre : alt.gelb_jahre ?? null };
+    const quelle = neu.preis === null ? null : t.stueckpreis !== undefined && t.stueckpreis !== zahl(alt.stueckpreis ?? null) ? "kunde" : alt.quelle_preis ?? "kunde";
     if (Object.values(neu).every((v) => v === null)) await c.query("delete from lebensdauer_typ where liegenschaft_id=$1 and katalog_id=$2", [L, t.katalogId]);
     else await c.query(`insert into lebensdauer_typ(liegenschaft_id, katalog_id, l_mittel, stueckpreis, quelle_preis, gelb_jahre) values ($1,$2,$3,$4,$5,$6)
       on conflict (liegenschaft_id, katalog_id) do update set l_mittel=excluded.l_mittel, stueckpreis=excluded.stueckpreis, quelle_preis=excluded.quelle_preis, gelb_jahre=excluded.gelb_jahre`,
-      [L, t.katalogId, neu.l, neu.preis, neu.preis === null ? null : "kunde", neu.gelb]);
+      [L, t.katalogId, neu.l, neu.preis, quelle, neu.gelb]);
   }
   if (baujahrGeaendert) await c.query("update gebaeude set stand=stand+1 where id=$1", [gebaeudeId]);
   return { bauteile: e.bauteile?.length ?? 0, typen: e.typen?.length ?? 0, baujahrGeaendert };

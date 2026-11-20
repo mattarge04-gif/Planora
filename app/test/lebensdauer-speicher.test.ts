@@ -75,4 +75,16 @@ describe("Lebensdauer-Speicher", () => {
     const s = (await mit((c) => ladeLebensdauer(c, G, S)))!;
     expect(s.bauteile.find((b) => b.id === ids[1])!.akte?.zustand).toBe("mittel");
   });
+  it("Preisquelle bleibt erhalten, wenn der Preis nicht geaendert wird", async () => {
+    const L2 = (await db.pool.query("select liegenschaft_id from gebaeude where id=$1", [G])).rows[0].liegenschaft_id;
+    await db.pool.query("insert into bauteil_akte(bauteil_id, liegenschaft_id, stueckpreis, quelle_preis) values ($1,$2,700,'dokument') on conflict (bauteil_id) do update set stueckpreis=700, quelle_preis='dokument'", [ids[0], L2]);
+    await db.pool.query("insert into lebensdauer_typ(liegenschaft_id, katalog_id, stueckpreis, quelle_preis) values ($1,'heizung.heizkoerper',90,'dokument') on conflict (liegenschaft_id, katalog_id) do update set stueckpreis=90, quelle_preis='dokument'", [L2]);
+    const vor = (await mit((c) => ladeLebensdauer(c, G, S)))!;
+    await mit((c) => schreibeLebensdauer(c, G, { stand: vor.stand, bauteile: [{ id: ids[0], notiz: "x" }], typen: [{ katalogId: "heizung.heizkoerper", lMittel: 40 }] }));
+    const q = async () => [(await db.pool.query("select quelle_preis from bauteil_akte where bauteil_id=$1", [ids[0]])).rows[0].quelle_preis,
+      (await db.pool.query("select quelle_preis from lebensdauer_typ where liegenschaft_id=$1 and katalog_id='heizung.heizkoerper'", [L2])).rows[0].quelle_preis];
+    expect(await q()).toEqual(["dokument", "dokument"]);
+    await mit((c) => schreibeLebensdauer(c, G, { stand: vor.stand, bauteile: [{ id: ids[0], stueckpreis: 800 }], typen: [{ katalogId: "heizung.heizkoerper", stueckpreis: 95 }] }));
+    expect(await q()).toEqual(["kunde", "kunde"]);
+  });
 });

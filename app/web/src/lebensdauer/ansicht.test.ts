@@ -23,6 +23,9 @@ const stand: LdStand = {
 
 describe("Ansicht Lebensdauer", () => {
   it("chf mit Apostroph", () => { expect(chf(12500)).toBe("CHF 12'500"); expect(chf(0)).toBe("CHF 0"); });
+  it("chf zeigt Rappen nur bei nicht ganzzahligem Betrag", () => {
+    expect(chf(450.5)).toBe("CHF 450.50"); expect(chf(1200.5)).toBe("CHF 1'200.50"); expect(chf(1200.004)).toBe("CHF 1'200"); expect(chf(12500)).toBe("CHF 12'500");
+  });
   it("schlechteste Ampel je Symbol, grau vor gruen", () => {
     const m = ampelJeSymbol(stand, [{ schluessel: "s1", bauteilIds: ["a"] }, { schluessel: "s2", bauteilIds: ["b", "c"] }, { schluessel: "s3", bauteilIds: ["x"] }]);
     expect(m.get("s1")).toBe("rot"); expect(m.get("s2")).toBe("grau"); expect(m.has("s3")).toBe(false);

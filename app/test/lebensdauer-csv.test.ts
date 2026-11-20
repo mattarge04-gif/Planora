@@ -19,8 +19,22 @@ describe("CSV", () => {
     const z = csv.split("\r\n");
     expect(csv.startsWith("﻿")).toBe(true);
     expect(z[0]).toBe("﻿Ort;Bauteil;Hersteller;Typ;Menge;Baujahr;Zustand;Lebensdauer;Ersatzjahr;Ampel;Stückpreis;Kosten;Quelle Preis");
-    expect(z[1]).toBe("EG · Technik;Heizungsverteiler;'=Hack;;1;2008;schlecht;30;2033;gruen;2500;2500;kunde");
+    expect(z[1]).toBe("EG · Technik;Heizungsverteiler;'=Hack;;1;2008;Schlecht;30;2033;In Ordnung;2500;2500;Eigene Angabe");
     expect(z).toContain("Jahr;Betrag;ohne Preis");
     expect(z.filter((l) => /^20\d\d;/.test(l))).toHaveLength(10);
+  });
+  it("Umlaute-Namen und Textspalten fuer Ampel und Quelle", () => {
+    const mk = (id: string, katalogId: string, baujahr: number | null, quellePreis: "kunde" | "dokument") => ({ id, katalogId, menge: 1, baujahr, hersteller: null, typ: null, ort: "EG",
+      akte: { zustand: "kritisch" as const, lebensdauerJahre: null, stueckpreis: 100, quellePreis, notiz: null } });
+    const bauteile = [mk("a", "heizung.waermepumpe", 2000, "dokument"), mk("b", "heizung.oelkessel", null, "kunde"), mk("c", "heizung.fernwaerme_uebergabe", 2025, "kunde")];
+    const ergebnis = rechne({ stichtag: 2026, heizungBaujahr: null, typen: [], bauteile });
+    const csv = erneuerungCsv({ gebaeudeId: "g", stand: 0, heizungBaujahr: null, typen: [], bauteile, ergebnis }, { "heizung.waermepumpe": "Waermepumpe" });
+    expect(csv).toContain(";Wärmepumpe;");
+    expect(csv).toContain(";Ölkessel;");
+    expect(csv).toContain(";Fernwärme-Übergabe;");
+    expect(csv).toContain("Ersetzen;100;100;Aus Dokument");
+    expect(csv).toContain("Baujahr fehlt");
+    expect(csv).toMatch(/(In Ordnung|Bald ersetzen|Ersetzen);100;100;Eigene Angabe/);
+    expect(csv).toContain("Kritisch");
   });
 });

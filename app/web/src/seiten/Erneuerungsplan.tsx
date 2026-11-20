@@ -43,10 +43,14 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
   const [typFehler, setTypFehler] = useState<Record<string, string>>({});
   const [laeuft, setLaeuft] = useState(false);
 
-  const uebernehme = useCallback((s: LdStand) => {
-    setStand(s); setBaujahr(s.heizungBaujahr === null ? "" : String(s.heizungBaujahr));
-    setTypFeld(Object.fromEntries(s.typen.map((t) => [t.katalogId, { lMittel: t.lMittel === null ? "" : String(t.lMittel), preis: preisText(t.stueckpreis) }])));
-    setTypFehler({}); setBaujahrFehler(null);
+  // bereich: nur dessen Eingabefelder neu setzen; ungespeicherte Eingaben des anderen Bereichs bleiben.
+  const uebernehme = useCallback((s: LdStand, bereich: "alle" | "baujahr" | "typen" = "alle") => {
+    setStand(s);
+    if (bereich !== "typen") { setBaujahr(s.heizungBaujahr === null ? "" : String(s.heizungBaujahr)); setBaujahrFehler(null); }
+    if (bereich !== "baujahr") {
+      setTypFeld(Object.fromEntries(s.typen.map((t) => [t.katalogId, { lMittel: t.lMittel === null ? "" : String(t.lMittel), preis: preisText(t.stueckpreis) }])));
+      setTypFehler({});
+    }
   }, []);
 
   const laden = useCallback(() => {
@@ -68,9 +72,9 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
   const bal = useMemo(() => (stand ? balken(stand) : []), [stand]);
   const zeilen = useMemo(() => (stand ? planZeilen(stand, nameVon, filter) : []), [stand, nameVon, filter]);
 
-  async function speichere(body: unknown, fehlerSetzen: (m: string) => void) {
+  async function speichere(body: unknown, fehlerSetzen: (m: string) => void, bereich: "baujahr" | "typen") {
     setLaeuft(true);
-    try { uebernehme(await ersetzeJson<LdStand>("/api/lebensdauer/gebaeude/" + gebaeudeId, body)); setKonflikt(false); }
+    try { uebernehme(await ersetzeJson<LdStand>("/api/lebensdauer/gebaeude/" + gebaeudeId, body), bereich); setKonflikt(false); }
     catch (e) {
       if (e instanceof ApiFehler && e.status === 401) onAbgelaufen();
       else if (e instanceof ApiFehler && e.status === 409) setKonflikt(true);
@@ -82,7 +86,7 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
     if (!stand) return;
     const k = baujahrKoerper(stand, baujahr);
     if ("fehler" in k) { setBaujahrFehler(k.fehler); document.getElementById("ep-baujahr")?.focus(); return; }
-    setBaujahrFehler(null); void speichere(k.body, setBaujahrFehler);
+    setBaujahrFehler(null); void speichere(k.body, setBaujahrFehler, "baujahr");
   };
   const speichereTypen = () => {
     if (!stand) return;
@@ -95,7 +99,7 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
     }
     setTypFehler({});
     if (k.body.typen.length === 0) return;
-    void speichere(k.body, (m) => setTypFehler({ "": m }));
+    void speichere(k.body, (m) => setTypFehler({ "": m }), "typen");
   };
 
   const l = stand?.ergebnis;
