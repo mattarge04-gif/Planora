@@ -17,7 +17,15 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 **Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
 
-## 0b. Stand – zuletzt aktualisiert 17.11.2026
+## 0b. Stand – zuletzt aktualisiert 20.11.2026
+
+### Lebensdauer/Ampel in Umsetzung (19./20.11.2026) [F]
+
+- Einstieg naechste Sitzung: "weiter" -> Ledger `.superpowers/sdd/2026-11-19-lebensdauer-ampel/progress.md` lesen (lokal, git-ignoriert; Tasks mit "complete" nicht neu starten), dann Skill superpowers:subagent-driven-development mit Plan `docs/superpowers/plans/2026-11-19-lebensdauer-ampel.md` fortsetzen.
+- Spec `docs/superpowers/specs/2026-11-19-lebensdauer-ampel-design.md`. PO 19.11.: keine Standardpreise (nur Lebensdauer-Richtwerte), Preise spaeter aus Dokumenten; Zuschnitt zwei Teile, naechstes Teilprojekt "Preis aus Dokument" (E43).
+- Tasks 1–10 fertig und reviewt (Commits `3b20832`..`9913488`, Branch `m2c-interview`, nicht gepusht): Migration 016, Rechnung, Speicher, API GET/PUT/CSV, Anlagenkarte, Twin-Modus E, Seite Erneuerungsplan, Gestaltung (visual-critic r3 "bereit"). Pruefstand zuletzt Backend 614, Web 502.
+- Task 11 Browser-Abnahme fertig (`5b829ba`, `docs/abnahme/2026-11-20-lebensdauer/README.md`): Zahlen Karte/Twin/Plan/CSV identisch; Backend 614/614, Web 502/502. Befunde B1 CSV-Namen ohne Umlaute, B2 UI rundet Rappen auf Franken.
+- Offen: Gesamtreview, Liste "Rulings" aus dem Ledger an PO, PO-Sichtung, Entscheid B1/B2.
 
 ### Brainstorming Lebensdauer/Ampel (17.11.2026, spaet) [F]
 
