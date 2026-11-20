@@ -37,6 +37,7 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAe
           <X size={16} strokeWidth={1.75} aria-hidden="true" />
         </button>
       </header>
+      <div className="tw-objekt-inhalt">
       <dl className="tw-zeilen tw-objekt-daten">
         <div><dt>Hersteller / Typ</dt><dd>{karte.herstellerTyp ?? <span className="tw-fehlt" title="Nicht erfasst" aria-label="Nicht erfasst">–</span>}</dd></div>
         <div><dt>Standort</dt><dd>{karte.standort}</dd></div>
@@ -52,6 +53,7 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAe
         <h3>Dokumente</h3>
         <button type="button" disabled aria-label="Hochladen, folgt"><Upload size={14} strokeWidth={1.75} aria-hidden="true" />Hochladen<span className="tw-folgt">folgt</span></button>
         <p><FileText size={16} strokeWidth={1.75} aria-hidden="true" />Noch keine Dokumente</p>
+      </div>
       </div>
     </section>
   );
@@ -71,6 +73,7 @@ export function TwinGruppe({ karte, onSchliessen, kartenRef }: { karte: GruppenK
           <X size={16} strokeWidth={1.75} aria-hidden="true" />
         </button>
       </header>
+      <div className="tw-objekt-inhalt">
       <dl className="tw-zeilen tw-objekt-daten">
         <div><dt>Schaltung</dt><dd>{karte.art}</dd></div>
         <div><dt>Verteiler</dt><dd>{karte.verteiler}</dd></div>
@@ -87,6 +90,7 @@ export function TwinGruppe({ karte, onSchliessen, kartenRef }: { karte: GruppenK
           ? <ul className="tw-versorgt tw-gruppe-verbraucher">{karte.verbraucher.map((v) => <li key={v.schluessel}>
             <span>{v.name}</span>{v.ort && <span className="tw-gruppe-ort">{v.ort}</span>}</li>)}</ul>
           : <p className="tw-gruppe-leer">Keine Verbraucher zugeteilt</p>}
+      </div>
       </div>
     </section>
   );

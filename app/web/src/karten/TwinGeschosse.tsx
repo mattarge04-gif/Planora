@@ -6,10 +6,26 @@ interface Props {
   geschosse: GeschossZeile[]; fokusId: string | null; onFokus: (id: string | null) => void;
   ausgeblendet: string[]; onAusblenden: (id: string) => void;
   separiert: boolean; onSeparieren: (s: boolean) => void;
+  /** Bei offener Anlagenkarte: nur eine Zeile mit Geschosswahl, damit die Karte ins Fenster passt (Kritik r1 P2). */
+  kompakt?: boolean;
 }
 
 /** Geschossliste von oben nach unten: Wahl öffnet den Schnitt, Auge blendet aus, «Separieren» zieht die Geschosse auseinander. */
-export function TwinGeschosse({ geschosse, fokusId, onFokus, ausgeblendet, onAusblenden, separiert, onSeparieren }: Props) {
+export function TwinGeschosse({ geschosse, fokusId, onFokus, ausgeblendet, onAusblenden, separiert, onSeparieren, kompakt = false }: Props) {
+  if (kompakt) return (
+    <section className="ui-glas ui-karte tw-geschosse tw-geschosse-kompakt" aria-label="Geschosse">
+      <Layers size={16} strokeWidth={1.75} aria-hidden="true" className="ui-karte-icon" />
+      <ul className="tw-geschoss-chips">
+        {geschosse.map((g) => (
+          <li key={g.id}>
+            <button type="button" className={`tw-geschoss-chip${ausgeblendet.includes(g.id) ? " tw-weg" : ""}`} aria-pressed={g.id === fokusId}
+              aria-label={`${g.code}, ${g.einheiten === 1 ? "1 Einheit" : `${g.einheiten} Einheiten`}`} onClick={() => onFokus(g.id === fokusId ? null : g.id)}>{g.code}</button>
+          </li>
+        ))}
+      </ul>
+      {separiert && <span className="tw-geschoss-separiert">separiert</span>}
+    </section>
+  );
   return (
     <Karte titel="Geschosse" klasse="tw-geschosse" aktion={<Layers size={16} strokeWidth={1.75} aria-hidden="true" className="ui-karte-icon" />}>
       <ul className="tw-geschossliste">

@@ -61,7 +61,7 @@ export function Kopfzeile(p: Props) {
         </div>
         {/* Unabhängiger Schalter (legt sich über Übersicht/Technik), daher eigene Pill mit Schalterzeichen */}
         {p.erneuerung && <button type="button" className="ui-glas ui-schalt-pill" aria-pressed={p.erneuerung.an} aria-keyshortcuts="E"
-          title="Erneuerungsansicht ein/aus (Taste E)" onClick={() => p.erneuerung!.onUm(!p.erneuerung!.an)}>
+          title="Erneuerungsansicht ein/aus (Taste E). Zeigt die Technik mit Ampel; Übersicht beendet sie." onClick={() => p.erneuerung!.onUm(!p.erneuerung!.an)}>
           <span className="ui-ampel-mini" aria-hidden="true"><i /><i /><i /></span>Erneuerung
         </button>}
       </nav>

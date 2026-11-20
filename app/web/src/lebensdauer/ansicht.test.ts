@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { akteZeilen, ampelJeSymbol, balken, chf, eingabeZahl, jahre, legende, planZeilen } from "./ansicht";
+import { akteZeilen, ampelJeSymbol, balken, chf, eingabeZahl, jahre, legende, planZeilen, preisEingabe, preisText } from "./ansicht";
 import type { LdStand } from "./typen";
 
 const stand: LdStand = {
@@ -54,6 +54,16 @@ describe("Ansicht Lebensdauer", () => {
     expect(planZeilen(stand, n, null).map((z) => z.id)).toEqual(["a", "b", "c"]);
     expect(planZeilen(stand, n, 2026).map((z) => z.id)).toEqual(["a"]);
     expect(planZeilen(stand, n, 2027)).toEqual([]);
+  });
+  it("Preistext mit Tausendertrenner", () => {
+    expect(preisText(35000)).toBe("35'000"); expect(preisText(1200.5)).toBe("1'200.5"); expect(preisText(800)).toBe("800"); expect(preisText(null)).toBe("");
+    expect(preisEingabe("35000")).toBe("35'000"); expect(preisEingabe("abc")).toBe("abc"); expect(preisEingabe("")).toBe("");
+  });
+  it("Zustand mit Wirkung aus Ersatzjahr abgeleitet", () => {
+    const s2: LdStand = { ...stand, bauteile: stand.bauteile.map((b) => b.id === "a" ? { ...b, akte: { zustand: "schlecht", lebensdauerJahre: null, stueckpreis: null, quellePreis: null, notiz: null } } : b),
+      ergebnis: { ...stand.ergebnis, bauteile: stand.ergebnis.bauteile.map((b) => b.id === "a" ? { ...b, ersatzjahr: 2033, restjahre: 7 } : b) } };
+    expect(akteZeilen(s2, ["a"])[0].zustand).toEqual({ text: "Schlecht", wirkung: "5 Jahre früher" });
+    expect(akteZeilen(stand, ["b"])[0].zustand).toBeNull();
   });
   it("Zahleneingabe", () => {
     expect(eingabeZahl("", 1, 150)).toBeNull();

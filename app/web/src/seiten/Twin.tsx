@@ -16,7 +16,9 @@ import { gruppenKarte, gruppenVon } from "../karten/gruppenKarte";
 import { TwinTooltip } from "../karten/TwinTooltip";
 import { TwinSzenenTasten } from "../karten/TwinSzenenTasten";
 import { TwinErneuerung } from "../karten/TwinErneuerung";
+import { naechsteAnsicht, type Ansicht, type AnsichtAktion } from "./ansichtModus";
 import { ampelFarben } from "../szene3/ampelFaerbung";
+import { ampelJeSymbol } from "../lebensdauer/ansicht";
 import { speicher } from "../ui/speicher";
 import type { BildschirmPunkt } from "../szene3/Interaktion";
 import { anlagenZeilen, anzeigeName, symbolName, geschossListe, hinweisListe, kennzahlen, objektKarte, zentraleGeschoss, type AnlagenZeile, type Zielort } from "../dashboard";
@@ -208,6 +210,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
   const straenge = useMemo(() => welt && katalog ? gruppenVon(welt, katalog.eintraege) : [], [welt, katalog]);
   const ampel = useMemo(() => erneuerung && lebensdauer && welt ? ampelFarben(lebensdauer, welt.symbole) : undefined,
     [erneuerung, lebensdauer, welt]);
+  const ampelStufe = useMemo(() => erneuerung && lebensdauer && welt ? ampelJeSymbol(lebensdauer, welt.symbole) : undefined,
+    [erneuerung, lebensdauer, welt]);
   const gruppe = useMemo(() => welt && katalog && auswahl && !karte
     ? gruppenKarte(welt, katalog.eintraege, auswahl, straenge) : null, [welt, katalog, auswahl, karte, straenge]);
   const hoverName = useMemo(() => {
@@ -261,12 +265,22 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
     const t = window.setTimeout(() => setTastenMeldung(null), 2400);
     return () => window.clearTimeout(t);
   }, [tastenMeldung]);
-  const umErneuerung = (an: boolean) => {
-    setErneuerung(an);
-    // Anlagen sind nur im Technikmodus sichtbar: beim Einschalten aus der Übersicht dorthin wechseln.
-    if (an && fokusId === null) waehleModus("technik");
-    sage(an ? "Erneuerungsansicht an" : "Erneuerungsansicht aus");
+  // Ansicht und Erneuerung nach einer Regel (ansichtModus.ts): Pill, Taste E und Übersicht verhalten sich gleich.
+  const [erneuerungVorher, setErneuerungVorher] = useState<Ansicht | null>(null);
+  const ansichtAnwenden = (a: AnsichtAktion) => {
+    const r = naechsteAnsicht({ ansicht: modus, erneuerung, vorher: erneuerungVorher }, a);
+    setErneuerung(r.stand.erneuerung); setErneuerungVorher(r.stand.vorher);
+    if (r.stand.ansicht !== modus) waehleModus(r.stand.ansicht);
+    if (r.meldung) { sage(r.meldung); if (a.art === "ansicht") setTastenMeldung(r.meldung); }
   };
+  const umErneuerung = (an: boolean) => ansichtAnwenden({ art: "erneuerung", an });
+  // Übersicht über andere Wege (Esc, Pos1, Geschoss abwählen) beendet die Erneuerung ebenso sichtbar.
+  useEffect(() => {
+    if (fokusId !== null || !erneuerung) return;
+    const r = naechsteAnsicht({ ansicht: "technik", erneuerung, vorher: erneuerungVorher }, { art: "ansicht", ansicht: "uebersicht" });
+    setErneuerung(r.stand.erneuerung); setErneuerungVorher(r.stand.vorher);
+    if (r.meldung) { sage(r.meldung); setTastenMeldung(r.meldung); }
+  }, [fokusId]); // eslint-disable-line react-hooks/exhaustive-deps
   const technikTaste = () => {
     if (fokusId) {
       const text = `Bereits im Technikmodus, ${geschossCode(fokusId)}`;
@@ -281,7 +295,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
       {(karte || gruppe) && <TwinVerbindung punkt={punkt} kartenRef={objektRef} />}
       {bereit && <TwinTooltip text={hoverName} />}
       <div className="tw-flaeche">
-        <Kopfzeile modus={modus} modusAktiv={!!daten} onModus={waehleModus}
+        <Kopfzeile modus={modus} modusAktiv={!!daten} onModus={(m) => ansichtAnwenden({ art: "ansicht", ansicht: m })}
           gebaeudeId={gebaeudeId} gebaeudeName={name} gebaeude={liste} onGebaeude={onGebaeude}
           hinweise={daten ? daten.hinweise.length : null} onHinweise={zeigeHinweise}
           reduziert={reduziert} onReduziert={setReduziert}
@@ -311,7 +325,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
             erneuerung={erneuerung} onErneuerung={lebensdauer ? umErneuerung : undefined} />}
           <aside className="tw-rechts" ref={rechts} aria-label="Geschosse und Anlage">
             <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
-              ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} />
+              ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} kompakt={!!(karte || gruppe)} />
             {karte
               ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={schliesseKarte}
                 lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} />
@@ -319,7 +333,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
               : <p className="tw-objekt-leer">Anlage oder Leitung im Modell wählen, um Details zu sehen.</p>}
           </aside>
           <div className="tw-unten" ref={unten}>
-            <TwinAnlagen anlagen={daten.anlagen} auswahl={auswahl} fokusId={fokusId} onWahl={waehleZeile} />
+            <TwinAnlagen anlagen={daten.anlagen} auswahl={auswahl} fokusId={fokusId} onWahl={waehleZeile} ampel={ampelStufe} />
           </div>
         </>}
       </div>

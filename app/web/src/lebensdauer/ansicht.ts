@@ -12,6 +12,18 @@ export const jahre = (n: number) => (n === 1 ? "1 Jahr" : `${n} Jahre`);
 
 export const chf = (b: number) => `CHF ${Math.round(b).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'")}`;
 
+/** Preis als Eingabetext mit Tausendertrenner ("35'000", "1'200.5"); eingabeZahl liest ihn zurück. */
+export function preisText(n: number | null | undefined): string {
+  if (n == null) return "";
+  const [ganz, rest] = String(n).split(".");
+  return ganz.replace(/\B(?=(\d{3})+(?!\d))/g, "'") + (rest ? `.${rest}` : "");
+}
+/** Eingabe neu formatieren, wenn sie gültig ist (beim Verlassen des Feldes), sonst unverändert lassen. */
+export function preisEingabe(text: string): string {
+  const n = eingabeZahl(text, 0, 9999999999);
+  return typeof n === "number" ? preisText(n) : text;
+}
+
 export function ampelJeSymbol(stand: LdStand, symbole: { schluessel: string; bauteilIds: string[] }[]): Map<string, Ampel> {
   const je = new Map(stand.ergebnis.bauteile.map((b) => [b.id, b.ampel]));
   const m = new Map<string, Ampel>();
@@ -30,8 +42,18 @@ function preisQuelle(e: LdErgebnisBauteil) {
   return e.quellen.preis === "bauteil" ? "Eigene Angabe" : "Typwert";
 }
 
+function zustandZeile(z: Zustand | null, e: LdErgebnisBauteil): AkteZeile["zustand"] {
+  if (!z) return null;
+  if (e.baujahr === null || e.ersatzjahr === null) return { text: ZUSTAND_TEXT[z], wirkung: null };
+  if (z === "kritisch") return { text: ZUSTAND_TEXT[z], wirkung: "sofort ersetzen" };
+  const abzug = e.baujahr + e.lebensdauer - e.ersatzjahr;
+  return { text: ZUSTAND_TEXT[z], wirkung: abzug > 0 ? `${jahre(abzug)} früher` : null };
+}
+
 export interface AkteZeile { id: string; ort: string; menge: string; ampel: Ampel; ersatzjahr: string; restjahre: string; kosten: string;
-  baujahr: { wert: string; quelle: string }; lebensdauer: { wert: string; quelle: string }; preis: { wert: string; quelle: string; fehlt: boolean } }
+  baujahr: { wert: string; quelle: string }; lebensdauer: { wert: string; quelle: string }; preis: { wert: string; quelle: string; fehlt: boolean };
+  /** Zustand mit seiner Wirkung auf das Ersatzjahr, abgeleitet aus Baujahr + Lebensdauer − Ersatzjahr; null = unbekannt. */
+  zustand: { text: string; wirkung: string | null } | null }
 export function akteZeilen(stand: LdStand, bauteilIds: string[]): AkteZeile[] {
   const erg = new Map(stand.ergebnis.bauteile.map((b) => [b.id, b]));
   return bauteilIds.flatMap((id) => {
@@ -41,6 +63,7 @@ export function akteZeilen(stand: LdStand, bauteilIds: string[]): AkteZeile[] {
       ersatzjahr: e.ersatzjahr === null ? "–" : String(e.ersatzjahr),
       restjahre: e.restjahre === null ? "–" : e.restjahre === 0 ? "fällig" : jahre(e.restjahre),
       kosten: e.kosten === null ? "–" : chf(e.kosten),
+      zustand: zustandZeile(b.akte?.zustand ?? null, e),
       baujahr: { wert: e.baujahr === null ? "–" : String(e.baujahr), quelle: e.quellen.baujahr ? Q_BAUJAHR[e.quellen.baujahr] : "fehlt" },
       lebensdauer: { wert: jahre(e.lebensdauer), quelle: Q_LD[e.quellen.lebensdauer] },
       preis: { wert: e.stueckpreis === null ? "–" : chf(e.stueckpreis), quelle: preisQuelle(e), fehlt: e.stueckpreis === null } }];

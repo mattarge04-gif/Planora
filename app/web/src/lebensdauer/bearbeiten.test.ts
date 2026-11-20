@@ -8,11 +8,15 @@ const stand = { gebaeudeId: "g", stand: 4, heizungBaujahr: 2008, typen: [], erge
 
 describe("Bearbeiten", () => {
   it("Formular aus Stand", () => {
-    expect(formularAus(stand, "a")).toEqual({ baujahr: "", zustand: "mittel", lebensdauer: "", preis: "2500", notiz: "" });
+    expect(formularAus(stand, "a")).toEqual({ baujahr: "", zustand: "mittel", lebensdauer: "", preis: "2'500", notiz: "" });
   });
   it("nur Geaendertes in den Body, leer = null", () => {
     const r = koerperAus(stand, "a", { baujahr: "2012", zustand: "mittel", lebensdauer: "", preis: "", notiz: "" });
     expect(r).toEqual({ body: { stand: 4, bauteile: [{ id: "a", baujahr: 2012, stueckpreis: null }] } });
+  });
+  it("Preis mit Tausendertrenner gilt als unveraendert", () => {
+    expect(koerperAus(stand, "a", { baujahr: "", zustand: "mittel", lebensdauer: "", preis: "2500", notiz: "" })).toEqual({ body: { stand: 4, bauteile: [{ id: "a" }] } });
+    expect(koerperAus(stand, "a", { baujahr: "", zustand: "mittel", lebensdauer: "", preis: "3'000", notiz: "" })).toEqual({ body: { stand: 4, bauteile: [{ id: "a", stueckpreis: 3000 }] } });
   });
   it("Fehler je Feld", () => {
     expect(koerperAus(stand, "a", { baujahr: "1700", zustand: "", lebensdauer: "0", preis: "x", notiz: "" }))

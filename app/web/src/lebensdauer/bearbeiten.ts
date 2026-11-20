@@ -1,4 +1,4 @@
-import { eingabeZahl } from "./ansicht";
+import { eingabeZahl, preisText } from "./ansicht";
 import type { LdStand, Zustand } from "./typen";
 
 export interface Formular { baujahr: string; zustand: "" | Zustand; lebensdauer: string; preis: string; notiz: string }
@@ -6,7 +6,7 @@ const text = (n: number | null | undefined) => (n == null ? "" : String(n));
 
 export function formularAus(s: LdStand, id: string): Formular {
   const b = s.bauteile.find((x) => x.id === id)!;
-  return { baujahr: text(b.baujahr), zustand: b.akte?.zustand ?? "", lebensdauer: text(b.akte?.lebensdauerJahre), preis: text(b.akte?.stueckpreis), notiz: b.akte?.notiz ?? "" };
+  return { baujahr: text(b.baujahr), zustand: b.akte?.zustand ?? "", lebensdauer: text(b.akte?.lebensdauerJahre), preis: preisText(b.akte?.stueckpreis), notiz: b.akte?.notiz ?? "" };
 }
 
 export type Koerper = { body: { stand: number; bauteile: [Record<string, unknown>] } } | { fehler: Partial<Record<keyof Formular, string>> };
@@ -23,7 +23,8 @@ export function koerperAus(s: LdStand, id: string, f: Formular): Koerper {
   if (f.baujahr !== alt.baujahr) b.baujahr = baujahr;
   if (f.zustand !== alt.zustand) b.zustand = f.zustand || null;
   if (f.lebensdauer !== alt.lebensdauer) b.lebensdauerJahre = lebensdauer;
-  if (f.preis !== alt.preis) b.stueckpreis = preis;
+  // Preis numerisch vergleichen: "35000" und "35'000" sind derselbe Wert
+  if (preis !== (s.bauteile.find((x) => x.id === id)?.akte?.stueckpreis ?? null)) b.stueckpreis = preis;
   if (f.notiz !== alt.notiz) b.notiz = f.notiz.trim() || null;
   return { body: { stand: s.stand, bauteile: [b] as [Record<string, unknown>] } };
 }

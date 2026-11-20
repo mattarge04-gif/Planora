@@ -3,7 +3,7 @@ import { ArrowLeft, Download, TriangleAlert, X } from "lucide-react";
 import { ApiFehler, ersetzeJson, holeJson } from "../api";
 import { TOKENS } from "../design/tokens";
 import { anzeigeName } from "../dashboard";
-import { AMPEL_FARBE, AMPEL_TEXT, balken, chf, jahre, planZeilen } from "../lebensdauer/ansicht";
+import { AMPEL_FARBE, AMPEL_TEXT, balken, chf, jahre, planZeilen, preisEingabe, preisText } from "../lebensdauer/ansicht";
 import { baujahrKoerper, typKoerper, type TypAenderungen } from "../lebensdauer/typwerte";
 import type { Ampel, LdStand } from "../lebensdauer/typen";
 import type { Katalog } from "../typen";
@@ -45,7 +45,7 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
 
   const uebernehme = useCallback((s: LdStand) => {
     setStand(s); setBaujahr(s.heizungBaujahr === null ? "" : String(s.heizungBaujahr));
-    setTypFeld(Object.fromEntries(s.typen.map((t) => [t.katalogId, { lMittel: t.lMittel === null ? "" : String(t.lMittel), preis: t.stueckpreis === null ? "" : String(t.stueckpreis) }])));
+    setTypFeld(Object.fromEntries(s.typen.map((t) => [t.katalogId, { lMittel: t.lMittel === null ? "" : String(t.lMittel), preis: preisText(t.stueckpreis) }])));
     setTypFehler({}); setBaujahrFehler(null);
   }, []);
 
@@ -181,11 +181,11 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
           <div className="ep-karte-kopf">
             <h2 id="ep-liste-titel">Bauteile <span className="ep-anzahl">{zeilen.length}</span></h2>
             {filter !== null && <button type="button" className="ep-filter" onClick={() => setFilter(null)} aria-label={`Filter ${filter} aufheben`}>
-              Fällig {filter}{gefiltert && gefiltert.betrag > 0 ? `, ${gefiltert.text}` : ""}<X size={14} strokeWidth={2} aria-hidden="true" /></button>}
+              Fällig {filter}{gefiltert && gefiltert.betrag > 0 ? `, ${gefiltert.text}` : ""}{gefiltert && gefiltert.ohnePreis > 0 ? `, ${bauteile(gefiltert.ohnePreis)} ohne Preis` : ""}<X size={14} strokeWidth={2} aria-hidden="true" /></button>}
           </div>
           {zeilen.length === 0 ? <p className="ep-leer">{filter !== null ? `Im Jahr ${filter} ist kein Bauteil fällig.` : "Keine Heizungsbauteile in diesem Gebäude."}</p> :
             <div className="ep-tabelle-rahmen"><table className="ep-tabelle">
-              <thead><tr><th>Ampel</th><th>Bauteil</th><th>Ort</th><th className="ep-zahl">Menge</th><th className="ep-zahl">Baujahr</th><th className="ep-zahl">Lebensdauer</th><th className="ep-zahl">Ersatzjahr</th><th className="ep-zahl">Kosten</th></tr></thead>
+              <thead><tr><th>Ampel</th><th>Bauteil</th><th>Ort</th><th className="ep-zahl">Menge</th><th className="ep-zahl">Baujahr</th><th className="ep-zahl">Lebensdauer</th><th>Zustand</th><th className="ep-zahl">Ersatzjahr</th><th className="ep-zahl">Kosten</th></tr></thead>
               <tbody>{zeilen.map((z) => (
                 <tr key={z.id}>
                   <td><span className="ep-ampel"><AmpelZeichen ampel={z.ampel} />{AMPEL_TEXT[z.ampel]}</span></td>
@@ -193,6 +193,7 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
                   <td className="ep-zahl">{z.menge}</td>
                   <td className="ep-zahl">{z.baujahr.wert}{z.baujahr.quelle === "Eigene Angabe" && <small className="ep-marke" title="Eigene Angabe">eigen</small>}</td>
                   <td className="ep-zahl">{z.lebensdauer.wert}</td>
+                  <td className="ep-zustand">{z.zustand ? <>{z.zustand.text}{z.zustand.wirkung && <small>{z.zustand.wirkung}</small>}</> : <span className="ep-ort">unbekannt</span>}</td>
                   <td className="ep-zahl ep-betont">{z.ersatzjahr}</td>
                   <td className="ep-zahl">{z.preis.fehlt ? <span className="ep-preis-fehlt">Preis fehlt</span> : z.kosten}</td>
                 </tr>))}</tbody>
@@ -214,7 +215,7 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
                   {darf ? <>
                     <span role="cell"><input id={fid + "-l"} inputMode="numeric" value={f.lMittel} onChange={(e) => set({ lMittel: e.target.value })}
                       placeholder={String(t.standard)} aria-label={`Lebensdauer ${tname} in Jahren`} aria-invalid={fe ? true : undefined} aria-describedby={fe ? fid + "-f" : undefined} /></span>
-                    <span role="cell"><input inputMode="decimal" value={f.preis} onChange={(e) => set({ preis: e.target.value })}
+                    <span role="cell"><input inputMode="decimal" value={f.preis} onChange={(e) => set({ preis: e.target.value })} onBlur={(e) => set({ preis: preisEingabe(e.target.value) })}
                       placeholder="kein Preis" aria-label={`Stückpreis ${tname} in CHF`} aria-invalid={fe ? true : undefined} aria-describedby={fe ? fid + "-f" : undefined} /></span>
                   </> : <>
                     <span role="cell" className="ep-wert-klein">{t.lMittel === null ? `${t.standard} (Richtwert)` : t.lMittel}</span>

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactElement } from "react";
 import { ApiFehler, ersetzeJson, holeJson } from "../api";
-import { AMPEL_RANG, AMPEL_TEXT, ZUSTAND_TEXT, akteZeilen, type AkteZeile } from "../lebensdauer/ansicht";
+import { AMPEL_RANG, AMPEL_TEXT, ZUSTAND_TEXT, akteZeilen, preisEingabe, preisText, type AkteZeile } from "../lebensdauer/ansicht";
 import { formularAus, koerperAus, type Formular } from "../lebensdauer/bearbeiten";
 import type { LdStand, Zustand } from "../lebensdauer/typen";
 import { AmpelZeichen } from "../ui/Ampel";
@@ -71,6 +71,7 @@ function ZeileAnsicht({ z, mehrere }: { z: AkteZeile; mehrere: boolean }) {
       <dl className="tw-ld-quellen">
         <dt>Baujahr</dt><dd>{z.baujahr.wert}<span className="tw-ld-quelle">{z.baujahr.quelle}</span></dd>
         <dt>Lebensdauer</dt><dd>{z.lebensdauer.wert}<span className="tw-ld-quelle">{z.lebensdauer.quelle}</span></dd>
+        {z.zustand && <><dt>Zustand</dt><dd>{z.zustand.text}{z.zustand.wirkung && <span className="tw-ld-quelle">{z.zustand.wirkung}</span>}</dd></>}
         <dt>Stückpreis</dt><dd>{z.preis.fehlt ? "–" : z.preis.wert}<span className={`tw-ld-quelle${z.preis.fehlt ? " tw-ld-fehlt" : ""}`}>{z.preis.quelle}</span></dd>
       </dl>
     </>
@@ -131,7 +132,7 @@ function FormularBlock({ stand, id, start, onZu, onGespeichert }: { stand: LdSta
       {feld("lebensdauer", "Lebensdauer", (p) =>
         <input {...p} inputMode="numeric" placeholder={bz ? `Richtwert ${bz.lMittel ?? bz.standard} J.` : undefined} aria-label="Lebensdauer in Jahren" value={f.lebensdauer} onChange={(e) => setze("lebensdauer", e.target.value)} />)}
       {feld("preis", "Stückpreis (CHF)", (p) =>
-        <input {...p} inputMode="decimal" placeholder={bz?.stueckpreis != null ? `Typwert ${bz.stueckpreis}` : "z. B. 1200"} value={f.preis} onChange={(e) => setze("preis", e.target.value)} />)}
+        <input {...p} inputMode="decimal" placeholder={bz?.stueckpreis != null ? `Typwert ${preisText(bz.stueckpreis)}` : "z. B. 1'200"} value={f.preis} onChange={(e) => setze("preis", e.target.value)} onBlur={(e) => setze("preis", preisEingabe(e.target.value))} />)}
       {feld("notiz", "Notiz", (p) =>
         <textarea {...p} rows={2} value={f.notiz} onChange={(e) => setze("notiz", e.target.value)} />, true)}
       <p className="tw-ld-hinweis">Leer lassen übernimmt Gebäudestandard und Typwerte.</p>

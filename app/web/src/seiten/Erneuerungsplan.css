@@ -94,7 +94,7 @@
 /* Jahresbalken */
 .ep-balken { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
 .ep-balken-spalte {
-  display: grid; grid-template-rows: 172px auto 18px; gap: 4px; justify-items: center; min-width: 0;
+  display: grid; grid-template-rows: 148px auto 18px; gap: 4px; justify-items: center; min-width: 0;
   font: inherit; color: inherit; background: none; border: 0; border-radius: var(--ep-radius-kachel); padding: 6px 4px 4px; cursor: pointer;
   transition: background-color var(--ep-hover-ms) var(--ep-kurve);
 }
@@ -136,6 +136,7 @@
 .ep-name { font-weight: 500; }
 .ep-ort { color: var(--ep-sekundaer); }
 .ep-betont { font-weight: 600; }
+.ep-zustand small { margin-left: 6px; font-size: 12px; color: var(--ep-sekundaer); }
 .ep-marke { vertical-align: 1px; margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 16px; color: var(--ep-sekundaer-eis); background: var(--ep-eis); display: inline-block; }
 .ep-preis-fehlt { color: var(--ep-warnung-text); font-weight: 500; }
 .ep-leer { color: var(--ep-sekundaer); padding: 12px 0 4px; }

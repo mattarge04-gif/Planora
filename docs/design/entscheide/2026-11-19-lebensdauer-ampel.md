@@ -32,6 +32,12 @@
 - **Erneuerungsplan:** Kopf wie Twin (Marke, zentrierter Titel, CSV als Hauptknopf), Überblick (5-Jahres-Summe gross, Unvollständig-Hinweis, Ampelband und Zähler), Baujahr, Balken mit Betrag direkt über dem Balken und gestrichelter Kappe für Jahre mit fehlenden Preisen, Tabelle mit Ampelzeichen und Marke "eigen", Typwerte als Raster.
 - **Bedienbarkeit:** Fokus nach Esc/Abbrechen/Speichern zurück auf "Bearbeiten"; Fokus auf erstes fehlerhaftes Feld (Karte, Baujahr, Typwerte); ohne Schreibrecht Text statt `disabled`-Felder; `aria-describedby` für Fehler im Plan; 409-Banner verschwindet nach erfolgreichem Speichern; "1 Jahr" Singular.
 
+## 4. Runde 2 (2D, nach Kritik r1)
+
+- **Ansicht und Erneuerung** (`app/web/src/seiten/ansichtModus.ts`, getestet): Erneuerung ist eine Ebene der Technikansicht. Einschalten aus der Übersicht wechselt in Technik, Ausschalten kehrt dorthin zurück; jeder Weg in die Übersicht (Pill, Esc, Pos1) beendet die Erneuerung mit sichtbarer Meldung. Pill und Taste E nutzen dieselbe Aktion; der Canvas behält nach E den Fokus.
+- **Anlagenkarte passt ins Fenster:** Geschosse-Panel wird bei offener Karte zu einer Zeile (Geschoss-Chips), Kartenkopf fest, Inhalt scrollt, Speichern/Abbrechen kleben unten.
+- **Datenklarheit:** Anlagentabelle zeigt im Modus E die Ampel statt Erfassungsstatus; Filterchip nennt Bauteile ohne Preis; Plan und Karte zeigen den Zustand mit seiner Wirkung ("Schlecht, 5 Jahre früher", aus Baujahr + Lebensdauer − Ersatzjahr abgeleitet); Preisfelder mit Tausendertrenner.
+
 ## Offen
 
 - [?] PO-Sichtung; visual-critic nach der 3D-Runde.

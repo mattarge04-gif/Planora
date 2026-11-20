@@ -18,6 +18,9 @@ describe("Typwerte", () => {
   it("Unveraendert ergibt leere Liste", () => {
     expect(typKoerper(stand, { "heizung.verteiler": { lMittel: "", preis: "2500" } })).toEqual({ body: { stand: 2, typen: [] } });
   });
+  it("Preis mit Tausendertrenner unveraendert", () => {
+    expect(typKoerper(stand, { "heizung.verteiler": { lMittel: "", preis: "2'500" } })).toEqual({ body: { stand: 2, typen: [] } });
+  });
   it("Baujahr-Standard", () => {
     expect(baujahrKoerper(stand, "2008")).toEqual({ body: { stand: 2, heizungBaujahr: 2008 } });
     expect(baujahrKoerper(stand, "")).toEqual({ body: { stand: 2, heizungBaujahr: null } });

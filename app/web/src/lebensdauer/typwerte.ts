@@ -16,7 +16,7 @@ export function typKoerper(s: LdStand, aenderungen: TypAenderungen):
     if (p === "ungueltig") { fehler[katalogId] = "Preis in CHF mit Dezimalpunkt, z. B. 1200 oder 1'200.50"; continue; }
     const z: Record<string, unknown> = { katalogId };
     if (f.lMittel !== t(alt?.lMittel ?? null)) z.lMittel = l;
-    if (f.preis !== t(alt?.stueckpreis ?? null)) z.stueckpreis = p;
+    if (p !== (alt?.stueckpreis ?? null)) z.stueckpreis = p; // numerisch: Tausendertrenner egal
     if (Object.keys(z).length > 1) typen.push(z);
   }
   return Object.keys(fehler).length ? { fehler } : { body: { stand: s.stand, typen } };

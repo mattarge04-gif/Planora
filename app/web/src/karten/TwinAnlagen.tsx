@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { AnlagenZeile } from "../dashboard";
+import { AMPEL_TEXT } from "../lebensdauer/ansicht";
+import type { Ampel } from "../lebensdauer/typen";
+import { AmpelZeichen } from "../ui/Ampel";
 
 interface Props {
   anlagen: AnlagenZeile[]; auswahl: string | null; fokusId: string | null;
   onWahl: (a: AnlagenZeile) => void;
+  /** Modus Erneuerung: Ampel je Anlage (dringendstes Bauteil) statt Erfassungsstatus. */
+  ampel?: ReadonlyMap<string, Ampel>;
 }
 
 const STATUS = { bestaetigt: "Bestätigt", vorgeschlagen: "Vorgeschlagen" } as const;
 
 /** Anlagen-Tabelle mit Tabellenweg als ein Tab-Stopp (Grid): Pfeile, Pos1, Ende bewegen; Enter/Leertaste oder Klick wählt. */
-export function TwinAnlagen({ anlagen, auswahl, fokusId, onWahl }: Props) {
+export function TwinAnlagen({ anlagen, auswahl, fokusId, onWahl, ampel }: Props) {
   const rolle = useRef<HTMLDivElement>(null);
   const [rand, setRand] = useState({ oben: false, unten: false });
 
@@ -59,17 +64,19 @@ export function TwinAnlagen({ anlagen, auswahl, fokusId, onWahl }: Props) {
       <header className="ui-karte-kopf">
         <h2 id="karte-anlagen">Anlagen<span className="ui-anzahl">{anlagen.length}</span>
           {(rand.unten || rand.oben) && <span className="tw-scrollhinweis">Liste scrollbar</span>}</h2>
-        <p className="tw-legende" aria-label="Legende">
-          <span className="tw-strich" aria-hidden="true" />Heizung
-          <span className="tw-punkt" aria-hidden="true" />Leitungen: schematischer Verlauf
-        </p>
+        {ampel
+          ? <p className="tw-legende" aria-label="Legende">Erneuerung: je Anlage das dringendste Bauteil</p>
+          : <p className="tw-legende" aria-label="Legende">
+            <span className="tw-strich" aria-hidden="true" />Heizung
+            <span className="tw-punkt" aria-hidden="true" />Leitungen: schematischer Verlauf
+          </p>}
       </header>
       {anlagen.length === 0 ? <p className="tw-leer">Noch keine Anlagen erfasst.</p> :
         <div ref={rolle} onScroll={pruefen} role="region" aria-label="Anlagenliste"
           className={`tw-tabelle${rand.oben ? " tw-mehr-oben" : ""}${rand.unten ? " tw-mehr-unten" : ""}${fokusId ? " tw-gefiltert" : ""}`}>
           <table role="grid" aria-label="Anlagen" aria-readonly="true">
             <thead><tr><th scope="col">Typ</th><th scope="col">Hersteller / Typ</th><th scope="col">Standort</th>
-              <th scope="col" className="tw-zahl">Menge</th><th scope="col">Status</th></tr></thead>
+              <th scope="col" className="tw-zahl">Menge</th><th scope="col">{ampel ? "Erneuerung" : "Status"}</th></tr></thead>
             <tbody>
               {anlagen.map((a) => (
                 <tr key={a.schluessel} data-schluessel={a.schluessel} tabIndex={a.schluessel === stopp ? 0 : -1}
@@ -80,7 +87,11 @@ export function TwinAnlagen({ anlagen, auswahl, fokusId, onWahl }: Props) {
                   <td>{a.herstellerTyp ?? <span className="tw-fehlt" title="Nicht erfasst" aria-label="Nicht erfasst">–</span>}</td>
                   <td>{a.standort}</td>
                   <td className="tw-zahl">{a.menge}</td>
-                  <td><span className={`tw-status tw-status-${a.status}`}>{STATUS[a.status]}</span></td>
+                  <td>{ampel
+                    ? (() => { const st = ampel.get(a.schluessel); return st
+                      ? <span className="tw-status tw-status-ampel"><AmpelZeichen ampel={st} groesse={13} />{AMPEL_TEXT[st]}</span>
+                      : <span className="tw-fehlt">keine Angabe</span>; })()
+                    : <span className={`tw-status tw-status-${a.status}`}>{STATUS[a.status]}</span>}</td>
                 </tr>
               ))}
             </tbody>
