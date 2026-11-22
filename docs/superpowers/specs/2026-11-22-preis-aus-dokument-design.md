@@ -14,7 +14,7 @@ Nicht im Schnitt: eingebetteter Viewer mit Markierung (ADR 0022), Virenscan/Quar
 
 [F] Preise laut Skill-Preisliste (Stand 03.11.2026), USD je 1 Mio. Tokens Eingabe/Ausgabe: Opus 5.5 4/20, Sonnet 5.5 2/10, Haiku 5.5 0.10/0.50, Fable 5.2 8/40.
 [A] ~10 Seiten ≈ 30k Eingabe + 4k Ausgabe -> Opus ~$0.20, Sonnet ~$0.10 je Dokument.
-Start mit `claude-opus-5-5` (effort `medium`, adaptives Denken, Fallback `"default"`). Modell ist Konfiguration (`PLANORA_KI_MODELL_PREIS`). Nach dem Messlauf (Abschnitt 8) entscheidet der PO; Empfehlung Sonnet 5.5, wenn Trefferquote mindestens gleich.
+PO 22.11. ("welches die beste api ist für ihren preis"): bestes Preis/Leistung [A] **Sonnet 5.5**. Start mit `claude-sonnet-5-5` (effort `medium`, adaptives Denken, Fallback `"default"`). Modell ist Konfiguration (`PLANORA_KI_MODELL_PREIS`). Der Messlauf (Abschnitt 8) prueft, ob Opus 5.5 spuerbar besser liest; nur dann Wechsel (PO entscheidet).
 
 ## 3. Daten (Migration 017)
 
