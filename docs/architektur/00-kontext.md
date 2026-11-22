@@ -2,6 +2,13 @@
 
 Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
 
+## E44 – Preis aus Dokument (PO, 2026-11-22, Brainstorming, Entwurf Abschnitt 1–4 bestaetigt)
+
+Rohantworten (AskUserQuestion): Auslesen "Claude API (Recommended)"; Ablauf "Ablage je Gebäude (Recommended)"; Fundstelle "Zitat + PDF auf Seite (Recommended)"; Preisart "Netto inkl. Montage (Recommended)"; Preisebene "Je Bauteil, Typ als Option (Recommended)"; Technik "a" (Hintergrund im Server, Status in DB); Abschnitte 1–4 je "passt". PO-Frage "welches API-Modell ist Preis/Leistung das beste": Empfehlung Opus 5.5 als Start, Messlauf gegen Sonnet 5.5, PO entscheidet danach.
+
+- Spec `docs/superpowers/specs/2026-11-22-preis-aus-dokument-design.md`. Aufwand [A] 5–6 PT.
+- Demo nur mit eigenen fiktiven Testdokumenten; Siemens-Freigabe des Inhaltsabflusses (ADR 0030) und Virenscan (ADR 0016) bleiben offen.
+
 ## E43 – Demo-Schnitt Lebensdauer/Ampel (PO, 2026-11-17, Brainstorming, Teil 1+2 des Entwurfs bestaetigt)
 
 Rohantworten (AskUserQuestion): Umfang "Akte light + Ampel (Empfohlen)"; Kosten "Einfache Kosten (Empfohlen)"; Zustand "Einfache Zustandsstufe (Empfohlen)"; Feinheit "Je Datensatz (Empfohlen)"; Baujahr "Standard + Abweichungen (Empfohlen)"; Ansicht "Twin-Modus + Erneuerungsplan (Empfohlen)"; Technik "a" (Backend-Modul `lebensdauer`); Entwurf Teil 1 Daten/Rechnung "passt", Teil 2 Ansichten "passt".
