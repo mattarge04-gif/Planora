@@ -43,6 +43,10 @@ export interface Szene3Props {
   ampel?: ReadonlyMap<string, string>;
   /** Klick aufs Pegelband (Modus Erneuerung): Geschossfokus. */
   onGeschoss?: (geschossId: string) => void;
+  /** Hervorgehobenes Geschoss von aussen (z. B. Hover auf der Geschoss-Karte): Pegelband + hoverPx. */
+  geschossHover?: string | null;
+  /** Hover aufs Pegelband: Geschoss bzw. null (gegenseitige Hervorhebung mit der Geschoss-Karte). */
+  onGeschossHover?: (geschossId: string | null) => void;
 }
 const KEINE_GESCHOSSE: string[] = [];
 
@@ -57,7 +61,7 @@ export function Szene3(props: Szene3Props) {
 }
 
 function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblendet = KEINE_GESCHOSSE, separiert = false,
-  auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt, onLeitungsBefunde, ampel, onGeschoss }: Szene3Props) {
+  auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt, onLeitungsBefunde, ampel, onGeschoss, geschossHover = null, onGeschossHover }: Szene3Props) {
   const h = useMemo(() => huelle(welt), [welt]);
   /** Darstellungslage der Anlagen (Verteiler mit Gruppen, Teile in der Leitung) für Kamera und Auswahlpunkt. */
   const anzeige = useMemo(() => anzeigeWelt(welt, katalog), [welt, katalog]);
@@ -161,7 +165,8 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       <Technik3 welt={welt} katalog={katalog} fokusId={fokusId} schatten={!reduziert} onModelle={modelleGeladen}
         darstellung={darstellung} interaktion={interaktion} separiert={separiert} onBefunde={onLeitungsBefunde} ampel={ampel} />
       {ampel && <Pegelband3 welt={welt} h={h} symbole={anzeige.symbole} ampel={ampel} fokusId={fokusId}
-        kameraRichtung={kameraRichtung} darstellung={darstellung} effekte={!reduziert} basisZoom={basisZoom} weniger={weniger} onGeschoss={onGeschoss} />}
+        kameraRichtung={kameraRichtung} darstellung={darstellung} effekte={!reduziert} basisZoom={basisZoom} weniger={weniger} onGeschoss={onGeschoss}
+        geschossHover={geschossHover} onGeschossHover={onGeschossHover} />}
       {!auswahl && ziel && <Ortsmarke welt={welt} ziel={ziel} darstellung={darstellung} />}
       </FreiraumSchnitt>
       <NahKulisse basisZoom={basisZoom}><FreiraumSchnitt freiraum={freiraum}><Kulisse3 bereich={h.bereich} schatten={!reduziert} /></FreiraumSchnitt></NahKulisse>

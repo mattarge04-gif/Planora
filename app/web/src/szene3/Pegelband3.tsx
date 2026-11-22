@@ -1,5 +1,5 @@
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
 import { AMPEL_FARBE } from "../lebensdauer/ansicht";
@@ -10,11 +10,13 @@ import type { Welt } from "../typen";
 import { ampelMaterialFarbe, ampelVonFarbe } from "./ampelSockel";
 import { AMPEL_NAH, EINPASS_ZOOM, blende } from "./ampelZustand";
 import { GeschossGruppe, type Darstellung } from "./Bewegung";
-import { bandLaenge, pegelHoehe, pegelQuader, pegelSegmente, pegelStirn, pegelZaehler, segmentStuecke, PLATTE_DICKE } from "./pegelband";
+import { bandLaenge, pegelHoehe, pegelJeGeschoss, pegelQuader, pegelSegmente, pegelStirn, segmentStuecke, trefferHoehe, PLATTE_DICKE, type Zaehler } from "./pegelband";
 
 const P = TOKENS.erneuerung.pegel;
 const BOX = new THREE.BoxGeometry(1, 1, 1);
 const TRAEGER = new THREE.Color(TOKENS.farbe.flaecheSekundaer);
+/** Klickfläche: nicht gezeichnet, aber per Strahl getroffen. */
+const UNSICHTBAR = new THREE.MeshBasicMaterial({ visible: false });
 const auslaufen = (t: number) => 1 - Math.pow(1 - t, 3);
 
 /**
@@ -22,15 +24,23 @@ const auslaufen = (t: number) => 1 - Math.pow(1 - t, 3);
  * Ansatz C Stufe 2). Setzt zudem den geteilten Bildzustand (ampelZustand): Blende Übersicht <-> nah, Einpasszoom.
  * Klick aufs Band = Geschossfokus.
  */
-export function Pegelband3({ welt, h, symbole, ampel, fokusId, kameraRichtung, darstellung, effekte, basisZoom, weniger, onGeschoss }: {
+export function Pegelband3({ welt, h, symbole, ampel, fokusId, kameraRichtung, darstellung, effekte, basisZoom, weniger, onGeschoss,
+  geschossHover = null, onGeschossHover }: {
   welt: Welt; h: Huelle; symbole: Welt["symbole"]; ampel: ReadonlyMap<string, string>;
   fokusId: string | null; kameraRichtung: V3; darstellung: Darstellung; effekte: boolean; basisZoom: number; weniger: boolean;
   onGeschoss?: (geschossId: string) => void;
+  /** Von aussen hervorgehobenes Geschoss (z. B. Zeile der Geschoss-Karte): Band + hoverPx. */
+  geschossHover?: string | null;
+  onGeschossHover?: (geschossId: string | null) => void;
 }) {
-  const stufe = useMemo(() => symbole.filter((s) => ampel.has(s.schluessel)).map((s) => ({
-    s, ampel: ampelVonFarbe(ampel.get(s.schluessel)!), geschossId: geschossBeiY(welt, s.position.y),
-  })), [symbole, ampel, welt]);
-  const zaehler = useMemo(() => pegelZaehler(stufe), [stufe]);
+  const pegel = useMemo(() => pegelJeGeschoss(welt, symbole,
+    new Map([...ampel].map(([k, f]) => [k, ampelVonFarbe(f)]))), [welt, symbole, ampel]);
+  const [eigenerHover, setEigenerHover] = useState<string | null>(null);
+  const schweben = (id: string | null) => {
+    setEigenerHover(id); onGeschossHover?.(id);
+    document.body.style.cursor = id && onGeschoss ? "pointer" : "";
+  };
+  useEffect(() => () => { document.body.style.cursor = ""; }, []);
   const stirn = useMemo(() => pegelStirn(h.grundriss, kameraRichtung), [h.grundriss, kameraRichtung]);
   const farben = useMemo(() => Object.fromEntries((["rot", "gelb", "gruen", "grau"] as Ampel[])
     .map((a) => [a, new THREE.Color().setRGB(...ampelMaterialFarbe(AMPEL_FARBE[a], effekte))])) as Record<Ampel, THREE.Color>, [effekte]);
@@ -50,39 +60,45 @@ export function Pegelband3({ welt, h, symbole, ampel, fokusId, kameraRichtung, d
   if (!stirn) return null;
   return <group name="ampel-pegel">
     {darstellung.sichtbar.map((id) => {
-      const g = welt.geschosse.find((x) => x.id === id), z = zaehler.get(id);
+      const g = welt.geschosse.find((x) => x.id === id), z = pegel.get(id)?.zaehler;
       if (!g || !z) return null;
       return <GeschossGruppe key={id} id={id} darstellung={darstellung}>
         <Band geschossId={id} yMitte={g.yUnten - PLATTE_DICKE / 2} stirn={stirn} zaehler={z} farben={farben} material={material}
-          start={start} weniger={weniger} onGeschoss={onGeschoss} />
+          start={start} weniger={weniger} onGeschoss={onGeschoss} hervor={id === (eigenerHover ?? geschossHover)} onSchweben={schweben} />
       </GeschossGruppe>;
     })}
   </group>;
 }
 
-function Band({ geschossId, yMitte, stirn, zaehler, farben, material, start, weniger, onGeschoss }: {
-  geschossId: string; yMitte: number; stirn: NonNullable<ReturnType<typeof pegelStirn>>; zaehler: ReturnType<typeof pegelZaehler> extends Map<string, infer Z> ? Z : never;
+function Band({ geschossId, yMitte, stirn, zaehler, farben, material, start, weniger, onGeschoss, hervor, onSchweben }: {
+  geschossId: string; yMitte: number; stirn: NonNullable<ReturnType<typeof pegelStirn>>; zaehler: Zaehler;
   farben: Record<Ampel, THREE.Color>; material: THREE.Material; start: { current: number | null }; weniger: boolean;
-  onGeschoss?: (geschossId: string) => void;
+  onGeschoss?: (geschossId: string) => void; hervor: boolean; onSchweben: (geschossId: string | null) => void;
 }) {
   const laenge = bandLaenge(stirn);
   const ref = useRef<THREE.InstancedMesh>(null);
+  const treffer = useRef<THREE.Mesh>(null);
   const zustand = useRef({ hoehe: -1, fuellung: -1 });
   // Stücke für die grösste Bandhöhe einmal bestimmen (Strichteilung grau), Länge folgt der Füllung.
   const stuecke = useMemo(() => pegelSegmente(zaehler, P.minAnteil, laenge > 0 ? P.lueckeM / laenge : 0)
-    .flatMap((seg) => segmentStuecke(seg, laenge, P.hoeheM).map(([von, bis]) => ({ ampel: seg.ampel, von, bis }))), [zaehler, laenge]);
-  useEffect(() => { zustand.current = { hoehe: -1, fuellung: -1 }; }, [stuecke, stirn, farben]);
+    .flatMap((seg) => segmentStuecke(seg, laenge, P.maxM).map(([von, bis]) => ({ ampel: seg.ampel, von, bis }))), [zaehler, laenge]);
+  useEffect(() => { zustand.current = { hoehe: -1, fuellung: -1 }; }, [stuecke, stirn, farben, hervor]);
   useFrame(({ camera, clock }) => {
     const m = ref.current;
     if (!m) return;
-    const hoehe = pegelHoehe((camera as THREE.OrthographicCamera).zoom);
+    const zoom = (camera as THREE.OrthographicCamera).zoom, hoehe = pegelHoehe(zoom, hervor);
+    // Unsichtbare Klickfläche über die ganze Bandlänge, mindestens trefferPx hoch.
+    if (treffer.current) {
+      const t = pegelQuader(stirn, 0, 1, yMitte, trefferHoehe(zoom, hoehe), -P.tiefeM);
+      treffer.current.position.set(...t.mitte); treffer.current.scale.set(...t.groesse);
+    }
     const t = weniger || start.current === null ? 1 : Math.min(1, (clock.getElapsedTime() * 1000 - start.current) / P.fuellenMs);
     const fuellung = auslaufen(t);
     if (hoehe === zustand.current.hoehe && fuellung === zustand.current.fuellung) return;
     zustand.current = { hoehe, fuellung };
     const mat = new THREE.Matrix4(), q = new THREE.Quaternion(), aus = new THREE.Vector3(1e-6, 1e-6, 1e-6);
     // Instanz 0: heller Träger über die ganze Länge (Plattenstirn-Ton), damit auch Grau auf der beschatteten Stirn liest.
-    const traeger = pegelQuader(stirn, 0, fuellung, yMitte, hoehe * P.traegerFaktor, -P.tiefeM);
+    const traeger = pegelQuader(stirn, 0, fuellung, yMitte, Math.min(P.traegerMaxM, hoehe * P.traegerFaktor), -P.tiefeM);
     m.setMatrixAt(0, mat.compose(new THREE.Vector3(...traeger.mitte), q, new THREE.Vector3(...traeger.groesse)));
     m.setColorAt(0, TRAEGER);
     stuecke.forEach((s, i) => {
@@ -96,12 +112,15 @@ function Band({ geschossId, yMitte, stirn, zaehler, farben, material, start, wen
     m.computeBoundingSphere();
   });
   if (!stuecke.length) return null;
-  const klick = onGeschoss ? {
-    onClick: (e: ThreeEvent<MouseEvent>) => { if (e.delta <= 4) { e.stopPropagation(); onGeschoss(geschossId); } },
-    onPointerOver: (e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); document.body.style.cursor = "pointer"; },
-    onPointerOut: () => { document.body.style.cursor = ""; },
-  } : {};
-  return <instancedMesh key={stuecke.length} ref={ref} args={[BOX, material, stuecke.length + 1]} dispose={null} name="pegelband"
-    userData={{ pegelband: geschossId }} {...klick} />;
+  const ereignisse = {
+    onClick: (e: ThreeEvent<MouseEvent>) => { if (onGeschoss && e.delta <= 4) { e.stopPropagation(); onGeschoss(geschossId); } },
+    onPointerOver: (e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); onSchweben(geschossId); },
+    onPointerOut: () => onSchweben(null),
+  };
+  return <>
+    <instancedMesh key={stuecke.length} ref={ref} args={[BOX, material, stuecke.length + 1]} dispose={null} name="pegelband"
+      userData={{ pegelband: geschossId }} raycast={() => {}} />
+    <mesh ref={treffer} geometry={BOX} material={UNSICHTBAR} name="pegelband-treffer" userData={{ pegelband: geschossId }} {...ereignisse} />
+  </>;
 }
 

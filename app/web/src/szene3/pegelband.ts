@@ -1,7 +1,8 @@
 import { TOKENS } from "../design/tokens";
 import type { Ampel } from "../lebensdauer/typen";
 import type { V3 } from "../szene2/huelle";
-import type { Rechteck } from "../typen";
+import type { Rechteck, Welt, WeltSymbol } from "../typen";
+import { geschossBeiY } from "../szene2/leitungen";
 
 /**
  * Pegelband (Entscheid 22.11.2026, Ansatz C Stufe 2): Die Stirn der Bodenplatte jedes Geschosses trägt ein Band, segmentiert
@@ -30,6 +31,17 @@ export function pegelZaehler(eintraege: { geschossId: string | null | undefined;
 }
 
 export interface Segment { ampel: Ampel; von: number; bis: number }
+
+/**
+ * Pegel je Geschoss (Zähler und Segmente ohne Fugen), gemeinsame Quelle für das Band im 3D und einen Mini-Pegel in der
+ * Geschoss-Karte. `ampel`: Schlüssel -> Ampelstufe (z. B. lebensdauer/ansicht.ampelJeSymbol); Geschoss aus der Symbolhöhe.
+ */
+export function pegelJeGeschoss(welt: Pick<Welt, "geschosse">, symbole: Pick<WeltSymbol, "schluessel" | "position">[],
+  ampel: ReadonlyMap<string, Ampel>, minAnteil: number = P.minAnteil): Map<string, { zaehler: Zaehler; segmente: Segment[] }> {
+  const z = pegelZaehler(symbole.filter((s) => ampel.has(s.schluessel))
+    .map((s) => ({ geschossId: geschossBeiY(welt as Welt, s.position.y), ampel: ampel.get(s.schluessel)! })));
+  return new Map([...z].map(([id, zaehler]) => [id, { zaehler, segmente: pegelSegmente(zaehler, minAnteil) }]));
+}
 
 /**
  * Segmente als Anteile [von, bis] der Bandlänge 0..1, Reihenfolge PEGEL_FOLGE. Jede vorhandene Stufe erhält mindestens
@@ -90,10 +102,16 @@ export function pegelStirn(grundriss: Rechteck[], kamera: V3, ueberstand = PLATT
   return { normale: k.normale, seite: k.seite, ebene: k.ebene, start: k.start, ende: k.ende };
 }
 
-/** Bandhöhe aus dem Zoom (px pro Meter): nah hoeheM, aus der Distanz minPx, höchstens maxM. */
-export function pegelHoehe(zoom: number): number {
+/** Bandhöhe aus dem Zoom (px pro Meter): nah hoeheM, aus der Distanz minPx, höchstens maxM; hervorgehoben + hoverPx. */
+export function pegelHoehe(zoom: number, hervor = false): number {
   const px = zoom > 0 ? P.minPx / zoom : P.maxM;
-  return Math.round(Math.min(P.maxM, Math.max(P.hoeheM, px)) * 1000) / 1000;
+  const h = Math.min(P.maxM, Math.max(P.hoeheM, px)) + (hervor && zoom > 0 ? P.hoverPx / zoom : 0);
+  return Math.round(h * 1000) / 1000;
+}
+
+/** Höhe der unsichtbaren Klickfläche: mindestens trefferPx am Bildschirm, nie kleiner als das Band. */
+export function trefferHoehe(zoom: number, band: number): number {
+  return Math.max(band, zoom > 0 ? P.trefferPx / zoom : band);
 }
 
 /**
@@ -112,10 +130,13 @@ export function pegelQuader(stirn: Stirn, von: number, bis: number, yMitte: numb
 /** Bandlänge zwischen den Rändern. */
 export const bandLaenge = (stirn: Stirn) => Math.max(0, Math.abs(stirn.ende - stirn.start) - 2 * P.randM);
 
-/** Stücke eines Segments: Grau gestrichelt (Strich max(strichM, 2 × Bandhöhe), Anteil 0.5), sonst eines; Anteile der Bandlänge. */
+/**
+ * Stücke eines Segments: Grau gestrichelt (Strich max(strichM, strichHoehen × Bandhöhe), Anteil strichAnteil), sonst eines;
+ * Anteile der Bandlänge. `hoehe`: grösste vorkommende Bandhöhe.
+ */
 export function segmentStuecke(seg: Segment, laenge: number, hoehe: number): [number, number][] {
   if (seg.ampel !== "grau" || laenge <= 0) return [[seg.von, seg.bis]];
-  const strich = Math.max(P.strichM, 2 * hoehe) / laenge, schritt = 2 * strich, stuecke: [number, number][] = [];
+  const strich = Math.max(P.strichM, P.strichHoehen * hoehe) / laenge, schritt = strich / P.strichAnteil, stuecke: [number, number][] = [];
   for (let x = seg.von; x < seg.bis - 1e-9; x += schritt) stuecke.push([x, Math.min(seg.bis, x + strich)]);
   return stuecke;
 }

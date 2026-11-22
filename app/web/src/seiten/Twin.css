@@ -82,6 +82,22 @@
 }
 .ui-karte .tw-auge:hover { color: var(--tw-text); background: rgb(31 38 48 / 0.05); }
 .tw-weg .tw-code, .tw-weg .tw-einheiten { color: var(--tw-sekundaer); }
+/* Mini-Pegel im Modus Erneuerung (Kritik r3 Top 1): gleiche Segmente wie das Pegelband, Zeile <-> Band gekoppelt. */
+.tw-mit-pegel .tw-code { min-width: 34px; }
+.ui-karte .tw-mit-pegel .tw-geschoss { justify-content: flex-start; }
+.tw-mit-pegel .tw-einheiten { margin-left: auto; }
+.tw-minipegel {
+  position: relative; flex: none; align-self: center; width: 48px; height: 4px; border-radius: 2px; overflow: hidden;
+  background: var(--tw-grau-1);
+}
+.tw-minipegel-seg { position: absolute; top: 0; bottom: 0; }
+.tw-minipegel-grau {
+  background: repeating-linear-gradient(90deg, var(--tw-grau-3) 0 5px, transparent 5px 7px);
+}
+.tw-geschossliste li.tw-gekoppelt, .tw-geschossliste li.tw-gekoppelt:hover { background: var(--tw-eis); }
+.tw-geschossliste li.tw-gekoppelt .tw-einheiten { color: var(--tw-sekundaer-eis); }
+.ui-karte .tw-geschoss-chip.tw-gekoppelt { background: var(--tw-eis); color: var(--tw-text); }
+.tw-weg .tw-minipegel { opacity: 0.45; }
 .tw-weg .tw-code { text-decoration: line-through; text-decoration-color: var(--tw-grau-2); }
 .ui-karte .tw-separieren {
   width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;

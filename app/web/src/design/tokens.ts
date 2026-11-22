@@ -131,18 +131,23 @@ export const TOKENS = {
      */
     pegel: {
       hoeheM: 0.06, // Bandhöhe nah
-      minPx: 4, // aus der Distanz mindestens so viele px hoch …
-      maxM: 0.2, // … höchstens so hoch (Platte 0.25)
+      minPx: 7, // aus der Distanz mindestens so viele px hoch (Kritik r3: 4 -> 7) …
+      maxM: 0.26, // … höchstens so hoch (Platte 0.25)
       tiefeM: 0.004,
-      traegerFaktor: 1.8, // heller Träger (flaecheSekundaer) hinter den Segmenten, × Bandhöhe
+      traegerFaktor: 1.8, // heller Träger (flaecheSekundaer) hinter den Segmenten, × Bandhöhe …
+      traegerMaxM: 0.25, // … höchstens Plattendicke
       abstandM: 0.001, // vor der Stirn (kein Z-Fighting)
       randM: 0.12, // Abstand Bandende -> Plattenecke
       lueckeM: 0.03, // Fuge zwischen Segmenten
       minAnteil: 0.12, // Mindestlänge eines Segments (Anteil der Bandlänge) [A]
-      strichM: 0.5, // Grau gestrichelt: Strich mindestens so lang (aus der Distanz lesbar), sonst 2 × Bandhöhe; Lücke gleich lang
+      strichM: 0.5, // Grau gestrichelt: Strich mindestens so lang …
+      strichHoehen: 4, // … und mindestens so viele (grösste) Bandhöhen (Kritik r3)
+      strichAnteil: 0.7, // Strich / (Strich + Lücke): liest nicht als Fassadenschlitz (Kritik r3)
       fuellenMs: 280, // Einschalten E: Band füllt sich von links
       blendeMs: 160, // Übersicht <-> Fokus/nah: Manschetten ein
       nahEinpassung: 1.8, // ab diesem Vielfachen des Einpasszooms gilt «nah» (Manschetten ein) [A]
+      trefferPx: 16, // unsichtbare Klickfläche je Band mindestens so hoch
+      hoverPx: 2, // Hover/hervorgehobenes Geschoss: Band so viel höher
     },
   },
   bewegung: {

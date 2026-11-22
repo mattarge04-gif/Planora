@@ -23,6 +23,8 @@ import { speicher } from "../ui/speicher";
 import type { BildschirmPunkt } from "../szene3/Interaktion";
 import { anlagenZeilen, anzeigeName, symbolName, geschossListe, hinweisListe, kennzahlen, objektKarte, zentraleGeschoss, type AnlagenZeile, type Zielort } from "../dashboard";
 import { leitungsHinweise } from "../szene3/router/hinweise";
+import { pegelJeGeschoss } from "../szene3/pegelband";
+import { anzeigeWelt } from "../szene3/gruppenNetz";
 import "./Twin.css";
 
 function webglVorhanden(): boolean {
@@ -212,6 +214,13 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
     [erneuerung, lebensdauer, welt]);
   const ampelStufe = useMemo(() => erneuerung && lebensdauer && welt ? ampelJeSymbol(lebensdauer, welt.symbole) : undefined,
     [erneuerung, lebensdauer, welt]);
+  // Mini-Pegel der Geschoss-Karte: gleiche Quelle wie das Pegelband im 3D (Kritik r3 Top 1).
+  // Symbole wie in der Szene (anzeigeWelt: Inline-Bauteile auf der Leitung), damit Zähler und Band übereinstimmen.
+  const pegel = useMemo(() => ampelStufe && welt && katalog
+    ? pegelJeGeschoss(welt, anzeigeWelt(welt, katalog.eintraege).symbole, ampelStufe) : undefined, [ampelStufe, welt, katalog]);
+  // Gegenseitiges Hervorheben Geschosszeile <-> Band, nur im Modus Erneuerung.
+  const [geschossHover, setGeschossHover] = useState<string | null>(null);
+  useEffect(() => { if (!erneuerung) setGeschossHover(null); }, [erneuerung]);
   const gruppe = useMemo(() => welt && katalog && auswahl && !karte
     ? gruppenKarte(welt, katalog.eintraege, auswahl, straenge) : null, [welt, katalog, auswahl, karte, straenge]);
   const hoverName = useMemo(() => {
@@ -311,14 +320,16 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
           {bereit && <Szene3 welt={welt!} katalog={katalog!.eintraege} fokusId={fokusId} reduziert={reduziert} freiraum={freiraum}
             ausgeblendet={ausgeblendet} separiert={separiert} auswahl={auswahl}
             onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} tastatur onLeitungsBefunde={befundeMelden} ampel={ampel}
-            onGeschoss={(id) => { setOrtZiel(null); setFokusId(id); }} />}
+            onGeschoss={(id) => { setOrtZiel(null); setFokusId(id); }}
+            geschossHover={erneuerung ? geschossHover : null} onGeschossHover={erneuerung ? setGeschossHover : undefined} />}
           {bereit && <TwinSzenenTasten name={name} geschosse={daten.geschosse} fokusId={fokusId}
             onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
             onTechnik={technikTaste} meldung={tastenMeldung} separiert={separiert} onSeparieren={setSepariert}
             erneuerung={erneuerung} onErneuerung={lebensdauer ? umErneuerung : undefined} />}
           <aside className="tw-rechts" ref={rechts} aria-label="Geschosse und Anlage">
             <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
-              ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} kompakt={!!(karte || gruppe)} />
+              ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} kompakt={!!(karte || gruppe)}
+              pegel={pegel} hoverId={geschossHover} onHover={setGeschossHover} />
             {karte
               ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={schliesseKarte}
                 lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} />

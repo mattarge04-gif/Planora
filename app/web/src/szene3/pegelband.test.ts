@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TOKENS } from "../design/tokens";
-import { bandLaenge, leer, pegelHoehe, pegelQuader, pegelSegmente, pegelStirn, pegelZaehler, segmentStuecke, PLATTE_UEBERSTAND } from "./pegelband";
+import { bandLaenge, leer, pegelHoehe, pegelJeGeschoss, trefferHoehe, pegelQuader, pegelSegmente, pegelStirn, pegelZaehler, segmentStuecke, PLATTE_UEBERSTAND } from "./pegelband";
 
 const P = TOKENS.erneuerung.pegel;
 
@@ -69,12 +69,29 @@ describe("Band", () => {
     expect(q.groesse[0]).toBeCloseTo(bandLaenge(s));
     expect(q.groesse[1]).toBe(0.06);
   });
-  it("Grau gestrichelt: Strich max(strichM, 2 x Bandhoehe), Anteil 0.5", () => {
+  it("Grau gestrichelt: Strich max(strichM, strichHoehen x Bandhoehe), Anteil strichAnteil", () => {
     const st = segmentStuecke({ ampel: "grau", von: 0, bis: 0.5 }, 10, 0.1);
-    expect(st[0][1]).toBeCloseTo(Math.max(P.strichM, 0.2) / 10);
-    expect(st[1][0]).toBeCloseTo(2 * st[0][1]);
-    expect(segmentStuecke({ ampel: "grau", von: 0, bis: 1 }, 10, 0.5)[0][1]).toBeCloseTo(0.1);
+    const strich = Math.max(P.strichM, P.strichHoehen * 0.1) / 10;
+    expect(st[0][1]).toBeCloseTo(strich);
+    expect(st[1][0]).toBeCloseTo(strich / P.strichAnteil);
+    expect(segmentStuecke({ ampel: "grau", von: 0, bis: 1 }, 10, 0.25)[0][1]).toBeCloseTo(P.strichHoehen * 0.25 / 10);
     expect(segmentStuecke({ ampel: "rot", von: 0.1, bis: 0.3 }, 10, 0.1)).toEqual([[0.1, 0.3]]);
+  });
+  it("Hover: Band + hoverPx; Klickflaeche mindestens trefferPx", () => {
+    expect(pegelHoehe(20, true) - pegelHoehe(20)).toBeCloseTo(P.hoverPx / 20, 3);
+    expect(trefferHoehe(20, 0.1)).toBeCloseTo(P.trefferPx / 20);
+    expect(trefferHoehe(1000, 0.1)).toBe(0.1);
+  });
+});
+
+describe("pegelJeGeschoss", () => {
+  it("Zaehler und Segmente je Geschoss aus Symbolhoehe und Ampelstufe (Quelle fuer den Mini-Pegel der Karte)", () => {
+    const welt = { geschosse: [{ id: "ug", yUnten: -3 }, { id: "eg", yUnten: 0 }] } as any;
+    const s = (k: string, y: number) => ({ schluessel: k, position: { x: 0, y, z: 0 } });
+    const p = pegelJeGeschoss(welt, [s("a", -3), s("b", -3), s("c", 0), s("d", 0)], new Map([["a", "rot"], ["b", "gruen"], ["c", "grau"]] as const));
+    expect(p.get("ug")!.zaehler).toEqual({ ...leer(), rot: 1, gruen: 1 });
+    expect(p.get("ug")!.segmente.map((x) => x.ampel)).toEqual(["rot", "gruen"]);
+    expect(p.get("eg")!.segmente).toEqual([{ ampel: "grau", von: 0, bis: 1 }]);
   });
 });
 
