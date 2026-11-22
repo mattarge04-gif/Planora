@@ -149,6 +149,19 @@ export const TOKENS = {
       trefferPx: 16, // unsichtbare Klickfläche je Band mindestens so hoch
       hoverPx: 2, // Hover/hervorgehobenes Geschoss: Band so viel höher
     },
+    /**
+     * Legende als Filter (Entscheid 22.11.2026, Ansatz C Stufe 3): Treffer voll mit Auswahlumriss, Rest tritt zurück
+     * (kein Abdunkeln der Szene); neutraler Anhänger (grau3, hohl) für «ohne Preis» / «Baujahr fehlt».
+     */
+    filter: {
+      deckkraft: 0.25, // Nicht-Treffer: Anlagen durchscheinend, Leitungen/Manschetten/Band zu grund gemischt
+      anhaengerM: 0.12, // Kantenlänge des Anhängers nah …
+      anhaengerPx: 14, // … aus der Distanz mindestens so viele px …
+      anhaengerMaxM: 0.35, // … höchstens so gross
+      anhaengerRand: 0.24, // Rahmenbreite (Anteil der Kantenlänge): hohl
+      anhaengerTiefe: 0.08, // Dicke (Anteil der Kantenlänge)
+      anhaengerAbstandM: 0.03, // seitlich neben dem Rohr (Teile in der Leitung)
+    },
   },
   bewegung: {
     hoverMs: 160,

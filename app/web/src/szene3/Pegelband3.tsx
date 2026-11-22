@@ -10,11 +10,14 @@ import type { Welt } from "../typen";
 import { ampelMaterialFarbe, ampelVonFarbe } from "./ampelSockel";
 import { AMPEL_NAH, EINPASS_ZOOM, blende } from "./ampelZustand";
 import { GeschossGruppe, type Darstellung } from "./Bewegung";
+import { segmentVoll, type AmpelFilter } from "./ampelFilter";
 import { bandLaenge, pegelHoehe, pegelJeGeschoss, pegelQuader, pegelSegmente, pegelStirn, segmentStuecke, trefferHoehe, PLATTE_DICKE, type Zaehler } from "./pegelband";
 
 const P = TOKENS.erneuerung.pegel;
 const BOX = new THREE.BoxGeometry(1, 1, 1);
 const TRAEGER = new THREE.Color(TOKENS.farbe.flaecheSekundaer);
+/** Legende als Filter: Segmentfarbe zum Träger hin zurückgenommen. */
+const zurueckFarbe = (c: THREE.Color) => c.clone().lerp(TRAEGER, 1 - TOKENS.erneuerung.filter.deckkraft);
 /** Klickfläche: nicht gezeichnet, aber per Strahl getroffen. */
 const UNSICHTBAR = new THREE.MeshBasicMaterial({ visible: false });
 const auslaufen = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -25,13 +28,15 @@ const auslaufen = (t: number) => 1 - Math.pow(1 - t, 3);
  * Klick aufs Band = Geschossfokus.
  */
 export function Pegelband3({ welt, h, symbole, ampel, fokusId, kameraRichtung, darstellung, effekte, basisZoom, weniger, onGeschoss,
-  geschossHover = null, onGeschossHover }: {
+  geschossHover = null, onGeschossHover, filter = null }: {
   welt: Welt; h: Huelle; symbole: Welt["symbole"]; ampel: ReadonlyMap<string, string>;
   fokusId: string | null; kameraRichtung: V3; darstellung: Darstellung; effekte: boolean; basisZoom: number; weniger: boolean;
   onGeschoss?: (geschossId: string) => void;
   /** Von aussen hervorgehobenes Geschoss (z. B. Zeile der Geschoss-Karte): Band + hoverPx. */
   geschossHover?: string | null;
   onGeschossHover?: (geschossId: string | null) => void;
+  /** Legende als Filter: nur Segmente der gewählten Stufen voll, übrige zu grund zurückgenommen. */
+  filter?: AmpelFilter | null;
 }) {
   const pegel = useMemo(() => pegelJeGeschoss(welt, symbole,
     new Map([...ampel].map(([k, f]) => [k, ampelVonFarbe(f)]))), [welt, symbole, ampel]);
@@ -64,17 +69,18 @@ export function Pegelband3({ welt, h, symbole, ampel, fokusId, kameraRichtung, d
       if (!g || !z) return null;
       return <GeschossGruppe key={id} id={id} darstellung={darstellung}>
         <Band geschossId={id} yMitte={g.yUnten - PLATTE_DICKE / 2} stirn={stirn} zaehler={z} farben={farben} material={material}
-          start={start} weniger={weniger} onGeschoss={onGeschoss} hervor={id === (eigenerHover ?? geschossHover)} onSchweben={schweben} />
+          start={start} weniger={weniger} onGeschoss={onGeschoss} filter={filter} hervor={id === (eigenerHover ?? geschossHover)} onSchweben={schweben} />
       </GeschossGruppe>;
     })}
   </group>;
 }
 
-function Band({ geschossId, yMitte, stirn, zaehler, farben, material, start, weniger, onGeschoss, hervor, onSchweben }: {
+function Band({ geschossId, yMitte, stirn, zaehler, farben, material, start, weniger, onGeschoss, filter, hervor, onSchweben }: {
   geschossId: string; yMitte: number; stirn: NonNullable<ReturnType<typeof pegelStirn>>; zaehler: Zaehler;
   farben: Record<Ampel, THREE.Color>; material: THREE.Material; start: { current: number | null }; weniger: boolean;
-  onGeschoss?: (geschossId: string) => void; hervor: boolean; onSchweben: (geschossId: string | null) => void;
+  onGeschoss?: (geschossId: string) => void; filter: AmpelFilter | null; hervor: boolean; onSchweben: (geschossId: string | null) => void;
 }) {
+  const stufenKey = filter ? [...filter.stufen].sort().join("|") : "";
   const laenge = bandLaenge(stirn);
   const ref = useRef<THREE.InstancedMesh>(null);
   const treffer = useRef<THREE.Mesh>(null);
@@ -82,7 +88,7 @@ function Band({ geschossId, yMitte, stirn, zaehler, farben, material, start, wen
   // Stücke für die grösste Bandhöhe einmal bestimmen (Strichteilung grau), Länge folgt der Füllung.
   const stuecke = useMemo(() => pegelSegmente(zaehler, P.minAnteil, laenge > 0 ? P.lueckeM / laenge : 0)
     .flatMap((seg) => segmentStuecke(seg, laenge, P.maxM).map(([von, bis]) => ({ ampel: seg.ampel, von, bis }))), [zaehler, laenge]);
-  useEffect(() => { zustand.current = { hoehe: -1, fuellung: -1 }; }, [stuecke, stirn, farben, hervor]);
+  useEffect(() => { zustand.current = { hoehe: -1, fuellung: -1 }; }, [stuecke, stirn, farben, hervor, stufenKey]);
   useFrame(({ camera, clock }) => {
     const m = ref.current;
     if (!m) return;
@@ -106,7 +112,7 @@ function Band({ geschossId, yMitte, stirn, zaehler, farben, material, start, wen
       if (bis <= s.von) { m.setMatrixAt(k, mat.compose(new THREE.Vector3(), q, aus)); return; }
       const b = pegelQuader(stirn, s.von, bis, yMitte, hoehe);
       m.setMatrixAt(k, mat.compose(new THREE.Vector3(...b.mitte), q, new THREE.Vector3(...b.groesse)));
-      m.setColorAt(k, farben[s.ampel]);
+      m.setColorAt(k, segmentVoll(filter, s.ampel) ? farben[s.ampel] : zurueckFarbe(farben[s.ampel]));
     });
     m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true;
     m.computeBoundingSphere();

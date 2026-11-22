@@ -7,7 +7,8 @@ import type { V3 } from "../szene2/huelle";
 import type { KatalogEintrag, WeltSymbol } from "../typen";
 import { anlagenDaten, inlineMatrix, modellVon, type AnzeigeSymbol } from "./technik";
 import type { Interaktion } from "./Interaktion";
-import { Manschetten3 } from "./Manschetten3";
+import { Anhaenger3, Manschetten3 } from "./Manschetten3";
+import { istZurueck, type AmpelFilter } from "./ampelFilter";
 
 /** Modus Erneuerung: KOO-Akzent der Modelle neutral, damit Rot nur «Ersetzen» bedeutet (Entscheid 19.11.2026). */
 const KOO_NEUTRAL = TOKENS.farbe.grau2;
@@ -18,6 +19,8 @@ interface Props {
   interaktion?: Interaktion;
   /** Modus Erneuerung: Schluessel -> Ampelfarbe (Hex); gesetzt = KOO neutral, Prüfmanschette je Bauteil mit Eintrag. */
   ampel?: ReadonlyMap<string, string>;
+  /** Legende als Filter: Treffer voll mit Auswahlumriss, übrige Anlagen durchscheinend (deckkraft), Anhänger. */
+  filter?: AmpelFilter | null;
 }
 
 /** Eine dargestellte Instanz: Teile in der Leitung (Gruppenstock, «vor Bauteil») erscheinen je Stück einmal. */
@@ -46,7 +49,7 @@ class ModellGrenze extends Component<{ children: ReactNode; ersatz: ReactNode },
   render() { return this.state.fehler ? this.props.ersatz : this.props.children; }
 }
 
-export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, ampel }: Props) {
+export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, ampel, filter = null }: Props) {
   const gruppen = useMemo(() => {
     const g = new Map<string, Instanz[]>();
     for (const i of instanzen(symbole, katalog)) {
@@ -59,14 +62,24 @@ export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, am
     for (const [pfad] of gruppen) if (pfad.startsWith("/modelle/")) useGLTF.preload(pfad, false, false);
   }, [gruppen]);
   const alle = useMemo(() => gruppen.flatMap(([, g]) => g), [gruppen]);
-  return <group name="anlagen">{ampel && <Manschetten3 instanzen={alle} ampel={ampel} effekte={schatten} interaktion={interaktion} />}
-  {gruppen.map(([pfad, gruppe]) => {
-    const ersatz = <Ersatz instanzen={gruppe} schatten={schatten} interaktion={interaktion} />;
+  // Filter: Treffer erhalten den Auswahlumriss wie hervorgehobene Anlagen; übrige erscheinen durchscheinend.
+  const ia = useMemo(() => filter && interaktion ? { ...interaktion, betont: new Set([...(interaktion.betont ?? []), ...filter.treffer]) } : interaktion,
+    [filter, interaktion]);
+  const teile = useMemo(() => gruppen.flatMap(([pfad, gruppe]) => {
+    const zurueck = gruppe.filter((i) => istZurueck(filter, i.s.schluessel)), voll = gruppe.filter((i) => !istZurueck(filter, i.s.schluessel));
+    return [[pfad, voll, false], [pfad, zurueck, true]].filter(([, g]) => (g as Instanz[]).length) as [string, Instanz[], boolean][];
+  }), [gruppen, filter]);
+  return <group name="anlagen">{ampel && <Manschetten3 instanzen={alle} ampel={ampel} effekte={schatten} interaktion={interaktion} filter={filter} />}
+  {ampel && filter && filter.anhaenger.size > 0 && <Anhaenger3 instanzen={alle.filter((i) => filter.anhaenger.has(i.s.schluessel))}
+    effekte={schatten} interaktion={interaktion} />}
+  {teile.map(([pfad, gruppe, zurueck]) => {
+    const key = `${pfad}:${zurueck ? "z" : "v"}`;
+    const ersatz = <Ersatz instanzen={gruppe} schatten={schatten} interaktion={ia} zurueck={zurueck} />;
     return pfad.startsWith("/modelle/")
-      ? <ModellGrenze key={pfad} ersatz={ersatz}><Suspense fallback={ersatz}>
-        <Modell pfad={pfad} instanzen={gruppe} schatten={schatten} onModell={onModell} interaktion={interaktion} ampel={ampel} />
+      ? <ModellGrenze key={key} ersatz={ersatz}><Suspense fallback={ersatz}>
+        <Modell pfad={pfad} instanzen={gruppe} schatten={schatten && !zurueck} onModell={onModell} interaktion={ia} ampel={ampel} zurueck={zurueck} />
       </Suspense></ModellGrenze>
-      : <Ersatz key={pfad} instanzen={gruppe} schatten={schatten} interaktion={interaktion} />;
+      : <Ersatz key={key} instanzen={gruppe} schatten={schatten} interaktion={ia} zurueck={zurueck} />;
   })}</group>;
 }
 
@@ -78,10 +91,10 @@ function ereignisse(key: (e: ThreeEvent<PointerEvent | MouseEvent>) => string | 
     onClick: (e: ThreeEvent<MouseEvent>) => { const k = key(e); if (k && e.delta <= 4) { e.stopPropagation(); interaktion.waehlen(k); } },
   };
 }
-function Ersatz({ instanzen, schatten, interaktion }: { instanzen: Instanz[]; schatten: boolean; interaktion?: Interaktion }) {
-  return <>{instanzen.map((i, k) => <ErsatzAnlage key={`${i.s.schluessel}:${k}`} i={i} schatten={schatten} interaktion={interaktion} />)}</>;
+function Ersatz({ instanzen, schatten, interaktion, zurueck = false }: { instanzen: Instanz[]; schatten: boolean; interaktion?: Interaktion; zurueck?: boolean }) {
+  return <>{instanzen.map((i, k) => <ErsatzAnlage key={`${i.s.schluessel}:${k}`} i={i} schatten={schatten} interaktion={interaktion} zurueck={zurueck} />)}</>;
 }
-function ErsatzAnlage({ i, schatten, interaktion }: { i: Instanz; schatten: boolean; interaktion?: Interaktion }) {
+function ErsatzAnlage({ i, schatten, interaktion, zurueck }: { i: Instanz; schatten: boolean; interaktion?: Interaktion; zurueck: boolean }) {
     const { s } = i, masse = lageMasse(i), ref = useRef<THREE.Group>(null);
     const aktiv = hervorgehoben(s, interaktion);
     const unten = i.mitte[1] - masse[1] / 2;
@@ -91,7 +104,7 @@ function ErsatzAnlage({ i, schatten, interaktion }: { i: Instanz; schatten: bool
       position={[i.mitte[0], unten, i.mitte[2]]}>
       <RoundedBox args={masse} position={[0, masse[1] / 2, 0]} radius={radius} smoothness={3}
         userData={anlagenDaten(s)} castShadow={schatten} receiveShadow={schatten}>
-        <meshStandardMaterial color={TOKENS.farbe.grau1} {...TOKENS.material.geraet} />
+        <meshStandardMaterial color={TOKENS.farbe.grau1} {...TOKENS.material.geraet} transparent={zurueck} opacity={zurueck ? TOKENS.erneuerung.filter.deckkraft : 1} />
       </RoundedBox>
       {aktiv && <RoundedBox args={masse} position={[0, masse[1] / 2, 0]} scale={1.04} radius={radius} smoothness={3} raycast={() => {}}>
         <meshBasicMaterial color={TOKENS.farbe.eisAkzent} side={THREE.BackSide} />
@@ -99,9 +112,11 @@ function ErsatzAnlage({ i, schatten, interaktion }: { i: Instanz; schatten: bool
     </group>;
 }
 
-function Modell({ pfad, instanzen, schatten, onModell, interaktion, ampel }: {
+function Modell({ pfad, instanzen, schatten, onModell, interaktion, ampel, zurueck = false }: {
   pfad: string; instanzen: Instanz[]; schatten: boolean; onModell: Props["onModell"]; interaktion?: Interaktion;
   ampel?: ReadonlyMap<string, string>;
+  /** Legende als Filter: Nicht-Treffer durchscheinend (erneuerung.filter.deckkraft). */
+  zurueck?: boolean;
 }) {
   const { scene } = useGLTF(pfad, false, false);
   const neutral = ampel !== undefined;
@@ -110,10 +125,11 @@ function Modell({ pfad, instanzen, schatten, onModell, interaktion, ampel }: {
     const teile: { geometrie: THREE.BufferGeometry; material: THREE.Material | THREE.Material[]; matrix: THREE.Matrix4 }[] = [];
     const materialien = new Map<THREE.Material, THREE.Material>();
     const material = (m: THREE.Material) => {
-      if (m.name !== "koo") return m;
+      if (m.name !== "koo" && !zurueck) return m;
       if (!materialien.has(m)) {
         const kopie = m.clone() as THREE.MeshStandardMaterial;
-        kopie.color.set(neutral ? KOO_NEUTRAL : TOKENS.farbe.kooHeizung);
+        if (m.name === "koo") kopie.color.set(neutral ? KOO_NEUTRAL : TOKENS.farbe.kooHeizung);
+        if (zurueck) { kopie.transparent = true; kopie.opacity = TOKENS.erneuerung.filter.deckkraft; }
         materialien.set(m, kopie);
       }
       return materialien.get(m)!;
@@ -126,7 +142,7 @@ function Modell({ pfad, instanzen, schatten, onModell, interaktion, ampel }: {
     const anschluss = empty ? empty.getWorldPosition(new THREE.Vector3()).toArray() as V3
       : [0, instanzen[0].masse[1], 0] as V3;
     return { teile, anschluss, materialien };
-  }, [scene, pfad, neutral]);
+  }, [scene, pfad, neutral, zurueck]);
   useEffect(() => { onModell(pfad, modell.anschluss); }, [pfad, modell, onModell]);
   useEffect(() => () => modell.materialien.forEach((m) => m.dispose()), [modell]);
   return <group name={pfad}>{modell.teile.map((t, i) => <Modellinstanzen key={i} teil={t} instanzen={instanzen} schatten={schatten} interaktion={interaktion} />)}</group>;

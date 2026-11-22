@@ -28,7 +28,12 @@ export function ampelBereich(anlagen: AmpelAnlage[]): Bereich | null {
   const rang = (a: AmpelAnlage) => AMPEL_RANG[ampelVonFarbe(a.farbe)];
   const max = Math.max(...anlagen.map(rang));
   // Rot oder Gelb rahmen; nur Grün/Grau -> alle.
-  const auswahl = max >= AMPEL_RANG.gelb ? anlagen.filter((a) => rang(a) >= AMPEL_RANG.gelb) : anlagen;
+  return bereichWeiten(max >= AMPEL_RANG.gelb ? anlagen.filter((a) => rang(a) >= AMPEL_RANG.gelb) : anlagen);
+}
+
+/** Hüllbox der Anlagen, Grundriss auf mindestens `kameraMinM` je Achse erweitert; null ohne Anlage. */
+export function bereichWeiten(auswahl: Pick<AmpelAnlage, "mitte" | "masse">[]): Bereich | null {
+  if (!auswahl.length) return null;
   const b: Bereich = { xMin: Infinity, xMax: -Infinity, yMin: Infinity, yMax: -Infinity, zMin: Infinity, zMax: -Infinity };
   for (const a of auswahl) {
     b.xMin = Math.min(b.xMin, a.mitte[0] - a.masse[0] / 2); b.xMax = Math.max(b.xMax, a.mitte[0] + a.masse[0] / 2);

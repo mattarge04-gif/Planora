@@ -30,3 +30,22 @@ describe("plastische Hülle", () => {
     expect(innenwaende(welt, "unbekannt", 0, 1.1)).toEqual([]);
   });
 });
+
+describe("aussenWaende", () => {
+  it("L-Form: gemeinsame Kante entfaellt auf beiden Seiten, Rest der Aussenwand bleibt", async () => {
+    const { waendeVon } = await import("../szene2/huelle");
+    const { aussenWaende } = await import("./geometrie");
+    const L = [{ x: 0, z: 0, breite: 21, tiefe: 15 }, { x: 0, z: 15, breite: 15, tiefe: 6 }];
+    const w = aussenWaende(L.flatMap(waendeVon), L);
+    // Nordwand des ersten Rechtecks (z=15, Normale +z): nur x 15..21 bleibt.
+    const nord = w.filter((x) => x.normale[1] === 1 && x.von[1] === 15);
+    expect(nord).toHaveLength(1);
+    expect(Math.min(nord[0].von[0], nord[0].bis[0])).toBeCloseTo(15);
+    expect(nord[0].laenge).toBeCloseTo(6);
+    // Suedwand des zweiten Rechtecks (z=15, Normale -z) liegt ganz innen.
+    expect(w.some((x) => x.normale[1] === -1 && x.von[1] === 15)).toBe(false);
+    // Richtung bleibt (von -> bis wie das Original).
+    expect(nord[0].bis[0]).toBeLessThan(nord[0].von[0]);
+    expect(w.reduce((s, x) => s + x.laenge, 0)).toBeCloseTo(2 * (21 + 21));
+  });
+});

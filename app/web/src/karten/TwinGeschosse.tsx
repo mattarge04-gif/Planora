@@ -16,6 +16,8 @@ interface Props {
   /** Gegenseitiges Hervorheben Zeile <-> Band (nur mit `pegel`). */
   hoverId?: string | null;
   onHover?: (id: string | null) => void;
+  /** Legendenfilter aktiv: Anzahl Treffer (Anlagen) je Geschoss. */
+  treffer?: ReadonlyMap<string, number>;
 }
 
 /** Mini-Pegel 48 × 4 px; Grau gestrichelt wie im Band. */
@@ -32,7 +34,11 @@ function MiniPegel({ code, zaehler }: { code: string; zaehler: Zaehler | undefin
 
 /** Geschossliste von oben nach unten: Wahl öffnet den Schnitt, Auge blendet aus, «Separieren» zieht die Geschosse auseinander. */
 export function TwinGeschosse({ geschosse, fokusId, onFokus, ausgeblendet, onAusblenden, separiert, onSeparieren, kompakt = false,
-  pegel, hoverId = null, onHover }: Props) {
+  pegel, hoverId = null, onHover, treffer }: Props) {
+  const trefferZahl = (id: string) => {
+    const n = treffer?.get(id);
+    return n ? <span className="tw-geschoss-treffer" aria-label={n === 1 ? "1 Treffer" : `${n} Treffer`}>{n}</span> : null;
+  };
   // Hover und Tastaturfokus der Zeile heben das Band im 3D hervor (nur Modus Erneuerung).
   const koppeln = (id: string) => pegel && onHover ? {
     onMouseEnter: () => onHover(id), onMouseLeave: () => onHover(null),
@@ -46,7 +52,7 @@ export function TwinGeschosse({ geschosse, fokusId, onFokus, ausgeblendet, onAus
         {geschosse.map((g) => (
           <li key={g.id} {...koppeln(g.id)}>
             <button type="button" className={`tw-geschoss-chip${ausgeblendet.includes(g.id) ? " tw-weg" : ""}${gekoppelt(g.id)}`} aria-pressed={g.id === fokusId}
-              aria-label={`${g.code}, ${g.einheiten === 1 ? "1 Einheit" : `${g.einheiten} Einheiten`}`} onClick={() => onFokus(g.id === fokusId ? null : g.id)}>{g.code}</button>
+              aria-label={`${g.code}, ${g.einheiten === 1 ? "1 Einheit" : `${g.einheiten} Einheiten`}`} onClick={() => onFokus(g.id === fokusId ? null : g.id)}>{g.code}{trefferZahl(g.id)}</button>
           </li>
         ))}
       </ul>
@@ -63,6 +69,7 @@ export function TwinGeschosse({ geschosse, fokusId, onFokus, ausgeblendet, onAus
               <button type="button" className="tw-geschoss" aria-pressed={g.id === fokusId} onClick={() => onFokus(g.id === fokusId ? null : g.id)}>
                 <span className="tw-code">{g.code}</span>
                 {pegel && <MiniPegel code={g.code} zaehler={pegel.get(g.id)?.zaehler} />}
+                {trefferZahl(g.id)}
                 <span className="tw-einheiten">{g.einheiten === 1 ? "1 Einheit" : `${g.einheiten} Einheiten`}</span>
               </button>
               <button type="button" className="tw-auge" aria-pressed={weg} onClick={() => onAusblenden(g.id)}

@@ -7,6 +7,7 @@ import { type V3 } from "../szene2/huelle";
 import { schlange, geschossBeiY } from "../szene2/leitungen";
 import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
 import { Anlagen3 } from "./Anlagen3";
+import type { AmpelFilter } from "./ampelFilter";
 import { durchgaenge, einheitVon, freieVerteilerAbgaenge, rohrnetzMitBefunden, type Huelse, type Rohrstueck } from "./netz";
 import type { Befund } from "./router/typen";
 import { geschossSchnitt } from "./schnitt";
@@ -23,13 +24,15 @@ import { achseY, mitRohrStaerke, ROHR_FAKTOR, rohrFaktor, rohrTreffer } from "./
 
 const FLAECHE = new Set(["heizung.fbh_kreis", "heizung.tabs_feld"]);
 
-export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstellung, interaktion, separiert = false, onBefunde, ampel }: {
+export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstellung, interaktion, separiert = false, onBefunde, ampel, filter = null }: {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; schatten: boolean; onModelle: () => void;
   darstellung?: Darstellung; interaktion?: Interaktion; separiert?: boolean;
   /** Befunde der gezeichneten Leitungsführung (eine Berechnung für Bild und Hinweis). */
   onBefunde?: (befunde: Befund[], weltHash: string) => void;
   /** Erneuerungsansicht: Schluessel -> Ampelfarbe, nur gesetzt im Modus E. */
   ampel?: ReadonlyMap<string, string>;
+  /** Legende als Filter (Modus E): Treffer voll, übrige Anlagen und alle Leitungen zurück. */
+  filter?: AmpelFilter | null;
 }) {
   const [anschluesse, setAnschluesse] = useState<Record<string, V3>>({});
   const onModell = useCallback((pfad: string, anschluss: V3) => {
@@ -100,11 +103,11 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
     : geschossBeiY(welt, h.position[1]);
   return <group name="technik">
     {sichtbar.map((id) => <GeschossGruppe key={id} id={id} darstellung={darstellung}>
-      <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} ampel={ampel} />
+      <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} ampel={ampel} filter={filter} />
       {kappen.filter((k) => geschossBeiY(welt, k.symbol.position.y) === id).map((k, i) =>
         <VerteilerKappe key={`kappe-${i}`} {...k} interaktion={interaktion} schatten={schatten} />)}
-      {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} interaktion={interaktion} neutral={erneuerung} />)}
-      {formen.get(id) && <Formstuecke3 f={formen.get(id)!} schatten={schatten} gruppe={interaktion?.gruppe ?? null} geraet={interaktion?.geraet ?? null} farben={erneuerung ? FORM_FARBEN_NEUTRAL : FORM_FARBEN} />}
+      {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} interaktion={interaktion} neutral={erneuerung} zurueck={!!filter} />)}
+      {formen.get(id) && <Formstuecke3 f={formen.get(id)!} schatten={schatten} gruppe={interaktion?.gruppe ?? null} geraet={interaktion?.geraet ?? null} farben={filter ? FORM_FARBEN_FILTER : erneuerung ? FORM_FARBEN_NEUTRAL : FORM_FARBEN} />}
       {netz.huelsen.filter((h) => huelsenGeschoss(h) === id).map((h, i) => <Durchgang key={i} huelse={h} schatten={schatten} />)}
       {flaechen.filter((f) => f.geschossId === id).map((f) => <Flaechenband key={f.daten.einheitId} {...f} neutral={erneuerung} />)}
       {schatten && !darstellung?.bewegung && schnitt.fokus?.id === id && <Technikkontakte key={`${id}:${Object.keys(anschluesse).join(":")}`}
@@ -132,16 +135,20 @@ const FORM_FARBEN = { normal: TOKENS.farbe.kooHeizung, gedimmt: ROHR_GEDIMMT };
 /** Modus Erneuerung: KOO-Rot fast ganz zu grau2 gemischt (TOKENS.erneuerung.leitungMischung). */
 const ROHR_NEUTRAL = new THREE.Color(TOKENS.farbe.kooHeizung).lerp(new THREE.Color(TOKENS.farbe.grau2), TOKENS.erneuerung.leitungMischung).getStyle();
 const FORM_FARBEN_NEUTRAL = { normal: ROHR_NEUTRAL, gedimmt: ROHR_NEUTRAL };
+/** Legende als Filter: Leitungen auf erneuerung.filter.deckkraft zurück (zu grund gemischt, keine Abdunkelung). */
+const ROHR_FILTER = new THREE.Color(ROHR_NEUTRAL).lerp(new THREE.Color(TOKENS.farbe.grund), 1 - TOKENS.erneuerung.filter.deckkraft).getStyle();
+const FORM_FARBEN_FILTER = { normal: ROHR_FILTER, gedimmt: ROHR_FILTER };
 /** Geteilte Leitungsmaterialien mit Bildschirm-Mindeststärke (rohrStaerke.ts). */
 const MATERIAL = {
   rohr: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: TOKENS.farbe.kooHeizung, ...TOKENS.material.leitung })),
   gedimmt: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: ROHR_GEDIMMT, ...TOKENS.material.leitung })),
   neutral: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: ROHR_NEUTRAL, ...TOKENS.material.leitung })),
+  filter: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: ROHR_FILTER, ...TOKENS.material.leitung })),
   metall: mitRohrStaerke(new THREE.MeshStandardMaterial({ color: TOKENS.farbe.grau2, ...TOKENS.material.metall })),
   umriss: mitRohrStaerke(new THREE.MeshBasicMaterial({ color: TOKENS.farbe.eisAkzent, side: THREE.BackSide })),
 };
 
-function Rohr({ stueck, schatten, anfangFrei = false, interaktion, neutral = false }: { stueck: Rohrstueck; schatten: boolean; anfangFrei?: boolean; interaktion?: Interaktion; neutral?: boolean }) {
+function Rohr({ stueck, schatten, anfangFrei = false, interaktion, neutral = false, zurueck = false }: { stueck: Rohrstueck; schatten: boolean; anfangFrei?: boolean; interaktion?: Interaktion; neutral?: boolean; zurueck?: boolean }) {
   const geometrie = useMemo(() => rohrGeometrie(stueck), [stueck]);
   // Klickfläche wie sichtbar: Achse mit Radius × Verdickungsfaktor (rohrStaerke.rohrTreffer).
   const treffer = useMemo(() => rohrTreffer(stueck.punkte, stueck.radius), [stueck]);
@@ -163,7 +170,7 @@ function Rohr({ stueck, schatten, anfangFrei = false, interaktion, neutral = fal
     onClick: (e: ThreeEvent<MouseEvent>) => { if (e.delta <= 4) { e.stopPropagation(); interaktion.waehlen(gruppeId); } },
   } : {};
   return <group userData={stueck.daten}>
-    <mesh geometry={geometrie} material={neutral ? MATERIAL.neutral : gedimmt ? MATERIAL.gedimmt : MATERIAL.rohr} userData={stueck.daten} raycast={treffer}
+    <mesh geometry={geometrie} material={zurueck ? MATERIAL.filter : neutral ? MATERIAL.neutral : gedimmt ? MATERIAL.gedimmt : MATERIAL.rohr} userData={stueck.daten} raycast={treffer}
       castShadow={schatten} receiveShadow={schatten} {...ereignisse} />
     {umriss && <mesh geometry={umriss} material={MATERIAL.umriss} raycast={() => {}} userData={{ umriss: gruppeId }} />}
     {ende.map((a, i) => <mesh key={i} position={a.position} geometry={kappe} material={MATERIAL.metall} userData={{ ...stueck.daten, abschluss: true }}

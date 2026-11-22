@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
 import { type Huelle, type Quader, type V3 } from "../szene2/huelle";
 import type { Welt } from "../typen";
-import { fensterAnWand, innenwaende, wandteile } from "./geometrie";
+import { aussenWaende, fensterAnWand, innenwaende, wandteile } from "./geometrie";
 import { Glasinstanzen, Quaderinstanzen } from "./Instanzen";
 import { rahmenFuer } from "./rahmen";
 import { geschossSchnitt, wandBleibt } from "./schnitt";
@@ -32,9 +32,11 @@ export function Gebaeude3({ welt, h, fokusId, kameraRichtung, schatten, darstell
   const m = useMemo(materialien, []);
   useEffect(() => () => Object.values(m).forEach((x) => x.dispose()), [m]);
   const schnitt = useMemo(() => geschossSchnitt(welt, fokusId), [welt, fokusId]);
+  // Innere Stücke doppelter Kanten (L-/T-Grundriss) entfallen: sie standen im offenen Geschoss vor den Anlagen.
+  const aussen = useMemo(() => aussenWaende(h.waende, h.grundriss), [h.waende, h.grundriss]);
   const geschosse = useMemo(() => schnitt.geschosse.map((g) => {
     const huelle = h.geschosse.find((x) => x.geschossId === g.id)!;
-    const waende = h.waende.filter((w) => wandBleibt(w.normale, g.offen, kameraRichtung));
+    const waende = aussen.filter((w) => wandBleibt(w.normale, g.offen, kameraRichtung));
     const fenster = huelle.fenster.filter((f) => waende.some((w) => fensterAnWand(f, w)));
     const rahmen = fenster.flatMap((f) => rahmenFuer(f));
     // Vorstehende Fensterbänke erzeugen kleine, glaubwürdige Laibungsschatten.
@@ -46,7 +48,7 @@ export function Gebaeude3({ welt, h, fokusId, kameraRichtung, schatten, darstell
       waende: waende.flatMap((w) => wandteile(w, g.yUnten, g.hoehe - PLATTE, huelle.fenster)),
       innen: g.offen ? innenwaende(welt, g.id, g.yUnten + 0.02, Math.min(1.15, g.hoehe - PLATTE)) : [],
     };
-  }), [schnitt, h, welt, kameraRichtung]);
+  }), [schnitt, h, welt, kameraRichtung, aussen]);
   const gitter = useMemo(() => {
     if (!h.aufbau) return [];
     const a = h.aufbau;

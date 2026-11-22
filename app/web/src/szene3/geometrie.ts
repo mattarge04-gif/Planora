@@ -1,4 +1,4 @@
-import type { Welt } from "../typen";
+import type { Rechteck, Welt } from "../typen";
 import { MASSE, type Fenster, type Quader, type Wand } from "../szene2/huelle";
 
 export function fensterAnWand(f: Fenster, w: Wand): boolean {
@@ -64,4 +64,30 @@ export function innenwaende(welt: Welt, geschossId: string, y: number, hoehe: nu
     }
   }
   return [...teile.values()];
+}
+
+/**
+ * Aussenwände ohne die Stücke, die an ein anderes Grundrissrechteck grenzen (L-/T-Formen: `waendeVon` erzeugt die
+ * gemeinsame Kante doppelt). Solche inneren Wandstücke standen im offenen Geschoss zwischen Kamera und Anlage
+ * (Filter-Kamerafahrt, Kritik r2 «hinter Wand»). Richtung und Normale bleiben, Fenster folgen über fensterAnWand.
+ */
+export function aussenWaende(waende: Wand[], grundriss: Rechteck[], eps = 0.01): Wand[] {
+  return waende.flatMap((w) => {
+    const entlangX = w.normale[0] === 0, a = entlangX ? w.von[0] : w.von[1], b = entlangX ? w.bis[0] : w.bis[1];
+    const lo = Math.min(a, b), hi = Math.max(a, b);
+    const ausserhalb = entlangX ? w.von[1] + w.normale[1] * eps : w.von[0] + w.normale[0] * eps;
+    // Bereiche entlang der Wand, deren Aussenseite in einem anderen Rechteck liegt.
+    const belegt = grundriss.filter((r) => entlangX ? ausserhalb > r.z && ausserhalb < r.z + r.tiefe : ausserhalb > r.x && ausserhalb < r.x + r.breite)
+      .map((r) => entlangX ? [r.x, r.x + r.breite] : [r.z, r.z + r.tiefe]).sort((p, q) => p[0] - q[0]);
+    let frei: [number, number][] = [[lo, hi]];
+    for (const [s0, s1] of belegt) frei = frei.flatMap(([f0, f1]): [number, number][] =>
+      s1 <= f0 || s0 >= f1 ? [[f0, f1]] : [...(s0 > f0 ? [[f0, s0]] as [number, number][] : []), ...(s1 < f1 ? [[s1, f1]] as [number, number][] : [])]);
+    frei = frei.filter(([f0, f1]) => f1 - f0 > 1e-6);
+    if (frei.length === 1 && frei[0][0] === lo && frei[0][1] === hi) return [w];
+    return frei.map(([f0, f1]): Wand => {
+      const [p, q] = a <= b ? [f0, f1] : [f1, f0];
+      const von: [number, number] = entlangX ? [p, w.von[1]] : [w.von[0], p], bis: [number, number] = entlangX ? [q, w.von[1]] : [w.von[0], q];
+      return { von, bis, normale: w.normale, laenge: f1 - f0 };
+    });
+  });
 }

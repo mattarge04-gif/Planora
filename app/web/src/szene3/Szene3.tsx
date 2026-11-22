@@ -29,6 +29,7 @@ import { anzeigeWelt, gruppenVerbindungen } from "./gruppenNetz";
 import { instanzen, lageMasse } from "./Anlagen3";
 import { ampelBereich } from "./ampelSockel";
 import { Pegelband3 } from "./Pegelband3";
+import { trefferBereich, type AmpelFilter } from "./ampelFilter";
 
 export interface Szene3Props {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; freiraum: Freiraum; reduziert: boolean;
@@ -47,6 +48,12 @@ export interface Szene3Props {
   geschossHover?: string | null;
   /** Hover aufs Pegelband: Geschoss bzw. null (gegenseitige Hervorhebung mit der Geschoss-Karte). */
   onGeschossHover?: (geschossId: string | null) => void;
+  /**
+   * Legende als Filter (Modus Erneuerung, Stufe 3): Treffer voll mit Auswahlumriss, übrige Anlagen, Leitungen und
+   * Manschetten zurück; Anhänger an `anhaenger`; Pegelband nur `stufen` voll. Liegen Treffer im fokussierten Geschoss,
+   * rahmt die Kamera sie. Ohne Prop bzw. null unverändert.
+   */
+  filter?: AmpelFilter | null;
 }
 const KEINE_GESCHOSSE: string[] = [];
 
@@ -61,7 +68,7 @@ export function Szene3(props: Szene3Props) {
 }
 
 function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblendet = KEINE_GESCHOSSE, separiert = false,
-  auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt, onLeitungsBefunde, ampel, onGeschoss, geschossHover = null, onGeschossHover }: Szene3Props) {
+  auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt, onLeitungsBefunde, ampel, onGeschoss, geschossHover = null, onGeschossHover, filter = null }: Szene3Props) {
   const h = useMemo(() => huelle(welt), [welt]);
   /** Darstellungslage der Anlagen (Verteiler mit Gruppen, Teile in der Leitung) für Kamera und Auswahlpunkt. */
   const anzeige = useMemo(() => anzeigeWelt(welt, katalog), [welt, katalog]);
@@ -108,15 +115,19 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
         || s.verbraucher.includes(auswahl) || s.zubehoer.includes(auswahl)).map((s) => s.gruppeId)) } : null };
   }, [auswahl, hover, onAuswahl, onHover, waehlen, schweben, straenge]);
   // Modus Erneuerung: Kamera rahmt beim Einschalten die dringendsten Anlagen der sichtbaren Geschosse.
+  // Filter: liegen Treffer im fokussierten Geschoss, rahmt die Kamera genau diese (offenes Geschoss, nicht hinter Platte/Wand).
+  const trefferKey = filter ? [...filter.treffer].sort().join("|") : "";
   const erneuerungBereich = useMemo(() => {
     if (!ampel) return null;
-    const b = ampelBereich(instanzen(anzeige.symbole.filter((s) => ampel.has(s.schluessel)
+    const anlagen = instanzen(anzeige.symbole.filter((s) => ampel.has(s.schluessel)
       && sichtbarIds.includes(geschossBeiY(welt, s.position.y) ?? "")), katalog).map((i) => {
-      const off = offsets[geschossBeiY(welt, i.s.position.y) ?? ""] ?? 0;
-      return { schluessel: i.s.schluessel, mitte: [i.mitte[0], i.mitte[1] + off, i.mitte[2]] as V3, masse: lageMasse(i), inline: i.inline, farbe: ampel.get(i.s.schluessel)! };
-    }));
-    return b;
-  }, [ampel, anzeige, katalog, welt, sichtbarIds, offsets]);
+      const id = geschossBeiY(welt, i.s.position.y) ?? "", off = offsets[id] ?? 0;
+      return { schluessel: i.s.schluessel, geschossId: id, mitte: [i.mitte[0], i.mitte[1] + off, i.mitte[2]] as V3, masse: lageMasse(i),
+        inline: i.inline, farbe: ampel.get(i.s.schluessel)! };
+    });
+    const treffer = filter && fokusId ? trefferBereich(anlagen.filter((a) => a.geschossId === fokusId), filter.treffer) : null;
+    return treffer ?? ampelBereich(anlagen);
+  }, [ampel, anzeige, katalog, welt, sichtbarIds, offsets, fokusId, trefferKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const gl = useThree((s) => s.gl);
   const size = useThree((s) => s.size);
   const basisZoom = useMemo(() => einpassen(sichtbar, size.width, size.height, freiraum, FIT_ANTEIL, fokusId ? [1, 1.45, 1] : [1, 1, 1]).zoom,
@@ -163,8 +174,8 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       <FreiraumSchnitt freiraum={freiraum} nurUnten>
       <Gebaeude3 welt={welt} h={h} fokusId={fokusId} kameraRichtung={kameraRichtung} schatten={!reduziert} darstellung={darstellung} />
       <Technik3 welt={welt} katalog={katalog} fokusId={fokusId} schatten={!reduziert} onModelle={modelleGeladen}
-        darstellung={darstellung} interaktion={interaktion} separiert={separiert} onBefunde={onLeitungsBefunde} ampel={ampel} />
-      {ampel && <Pegelband3 welt={welt} h={h} symbole={anzeige.symbole} ampel={ampel} fokusId={fokusId}
+        darstellung={darstellung} interaktion={interaktion} separiert={separiert} onBefunde={onLeitungsBefunde} ampel={ampel} filter={ampel ? filter : null} />
+      {ampel && <Pegelband3 welt={welt} h={h} symbole={anzeige.symbole} ampel={ampel} fokusId={fokusId} filter={filter}
         kameraRichtung={kameraRichtung} darstellung={darstellung} effekte={!reduziert} basisZoom={basisZoom} weniger={weniger} onGeschoss={onGeschoss}
         geschossHover={geschossHover} onGeschossHover={onGeschossHover} />}
       {!auswahl && ziel && <Ortsmarke welt={welt} ziel={ziel} darstellung={darstellung} />}

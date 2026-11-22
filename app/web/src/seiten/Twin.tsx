@@ -24,6 +24,8 @@ import type { BildschirmPunkt } from "../szene3/Interaktion";
 import { anlagenZeilen, anzeigeName, symbolName, geschossListe, hinweisListe, kennzahlen, objektKarte, zentraleGeschoss, type AnlagenZeile, type Zielort } from "../dashboard";
 import { leitungsHinweise } from "../szene3/router/hinweise";
 import { pegelJeGeschoss } from "../szene3/pegelband";
+import type { FilterStufe } from "../szene3/ampelFilter";
+import { erneuerungFilter, POSTEN_TEXT, umschalten } from "../karten/erneuerungFilter";
 import { anzeigeWelt } from "../szene3/gruppenNetz";
 import "./Twin.css";
 
@@ -113,6 +115,10 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
   const hinweisKarte = useRef<HTMLElement>(null);
   const auswahlRef = useRef(auswahl);
   auswahlRef.current = auswahl;
+  // Legende als Filter (Stufe 3): gewählte Posten, ODER-verknüpft; leer = kein Filter.
+  const [posten, setPosten] = useState<ReadonlySet<FilterStufe>>(() => new Set());
+  const postenRef = useRef(posten);
+  postenRef.current = posten;
 
   useEffect(() => {
     let aktiv = true;
@@ -154,7 +160,10 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
     const taste = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setOrtZiel(null);
-      if (auswahlRef.current) setAuswahl(null); else setFokusId(null);
+      // Reihenfolge: Anlagenkarte, dann Filter, dann Geschossschnitt.
+      if (auswahlRef.current) setAuswahl(null);
+      else if (postenRef.current.size) setPosten(new Set());
+      else setFokusId(null);
     };
     window.addEventListener("keydown", taste);
     return () => window.removeEventListener("keydown", taste);
@@ -220,7 +229,19 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
     ? pegelJeGeschoss(welt, anzeigeWelt(welt, katalog.eintraege).symbole, ampelStufe) : undefined, [ampelStufe, welt, katalog]);
   // Gegenseitiges Hervorheben Geschosszeile <-> Band, nur im Modus Erneuerung.
   const [geschossHover, setGeschossHover] = useState<string | null>(null);
-  useEffect(() => { if (!erneuerung) setGeschossHover(null); }, [erneuerung]);
+  useEffect(() => { if (!erneuerung) { setGeschossHover(null); setPosten(new Set()); } }, [erneuerung]);
+  const filterErgebnis = useMemo(() => erneuerung && lebensdauer && daten
+    ? erneuerungFilter(lebensdauer.ergebnis, daten.anlagen, posten) : null, [erneuerung, lebensdauer, daten, posten]);
+  /** Posten umschalten; bei Treffern das Geschoss mit den meisten öffnen (Szene fährt auf die Treffer). */
+  const umPosten = (p: FilterStufe) => {
+    const neu = umschalten(posten, p);
+    setPosten(neu);
+    setOrtZiel(null); setAuswahl(null);
+    const e = lebensdauer && daten ? erneuerungFilter(lebensdauer.ergebnis, daten.anlagen, neu) : null;
+    if (e?.bestes) { setAusgeblendet((a) => a.filter((x) => x !== e.bestes)); setFokusId(e.bestes); }
+    if (e) sage(`Filter ${[...neu].map((x) => POSTEN_TEXT[x]).join(" oder ")}: ${e.treffer.length === 1 ? "1 Anlage" : `${e.treffer.length} Anlagen`}`);
+    else sage("Filter aufgehoben");
+  };
   const gruppe = useMemo(() => welt && katalog && auswahl && !karte
     ? gruppenKarte(welt, katalog.eintraege, auswahl, straenge) : null, [welt, katalog, auswahl, karte, straenge]);
   const hoverName = useMemo(() => {
@@ -313,7 +334,10 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
           <aside className="tw-links" ref={links} aria-label="Gebäude und Hinweise">
             <TwinGebaeude name={name} liegenschaft={liegenschaft} welt={welt} zahlen={daten.zahlen} />
             {/* Legende links: rechts bleibt der Platz für Geschosse und Anlagenkarte */}
-            {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} onPlan={onPlan} />}
+            {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} onPlan={onPlan} filter={{
+              posten, onPosten: umPosten, onAufheben: () => { setPosten(new Set()); sage("Filter aufgehoben"); },
+              treffer: filterErgebnis?.treffer ?? [], geschossCode, auswahl, onTreffer: waehleZeile,
+            }} />}
             <TwinHinweise ref={hinweisKarte} hinweise={daten.hinweise} geschossCode={geschossCode} onZiel={zumOrt} />
           </aside>
           {/* Szene im DOM zwischen linken und rechten Karten: ein Tab-Stopp (Canvas) an der richtigen Stelle. */}
@@ -321,7 +345,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
             ausgeblendet={ausgeblendet} separiert={separiert} auswahl={auswahl}
             onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} tastatur onLeitungsBefunde={befundeMelden} ampel={ampel}
             onGeschoss={(id) => { setOrtZiel(null); setFokusId(id); }}
-            geschossHover={erneuerung ? geschossHover : null} onGeschossHover={erneuerung ? setGeschossHover : undefined} />}
+            geschossHover={erneuerung ? geschossHover : null} onGeschossHover={erneuerung ? setGeschossHover : undefined}
+            filter={filterErgebnis?.filter ?? null} />}
           {bereit && <TwinSzenenTasten name={name} geschosse={daten.geschosse} fokusId={fokusId}
             onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
             onTechnik={technikTaste} meldung={tastenMeldung} separiert={separiert} onSeparieren={setSepariert}
@@ -329,7 +354,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
           <aside className="tw-rechts" ref={rechts} aria-label="Geschosse und Anlage">
             <TwinGeschosse geschosse={daten.geschosse} fokusId={fokusId} onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
               ausgeblendet={ausgeblendet} onAusblenden={ausblenden} separiert={separiert} onSeparieren={setSepariert} kompakt={!!(karte || gruppe)}
-              pegel={pegel} hoverId={geschossHover} onHover={setGeschossHover} />
+              pegel={pegel} hoverId={geschossHover} onHover={setGeschossHover} treffer={filterErgebnis?.jeGeschoss} />
             {karte
               ? <TwinObjekt key={karte.id} karte={karte} kartenRef={objektRef} onSchliessen={schliesseKarte}
                 lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} />

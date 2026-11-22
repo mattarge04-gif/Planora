@@ -1,0 +1,57 @@
+import { TOKENS } from "../design/tokens";
+import type { Ampel } from "../lebensdauer/typen";
+import type { Bereich, V3 } from "../szene2/huelle";
+import { bereichWeiten, type AmpelAnlage } from "./ampelSockel";
+
+/**
+ * Legende als Filter im 3D (Entscheid 22.11.2026, Ansatz C Stufe 3; PO: mehrere Filter kombinierbar, ODER). Twin bildet
+ * aus den gewählten Legendenposten die Trefferschlüssel; die Szene hebt hervor, dimmt den Rest und rahmt die Treffer.
+ * Reine, deterministische Ableitungen.
+ */
+const F = TOKENS.erneuerung.filter;
+
+export type FilterStufe = Ampel | "ohnePreis";
+export interface AmpelFilter {
+  /** Symbol-Schlüssel der Treffer (wie in `ampel`): voll, mit Auswahlumriss; alle übrigen treten zurück. */
+  treffer: ReadonlySet<string>;
+  /** Symbol-Schlüssel mit neutralem Anhänger («ohne Preis», «Baujahr fehlt»). */
+  anhaenger: ReadonlySet<string>;
+  /** Gewählte Stufen: Pegelband-Segmente dieser Stufen voll, übrige zurück. «ohnePreis» hat kein Segment. */
+  stufen: ReadonlySet<FilterStufe>;
+}
+
+/** Hex-Farbe auf `deckkraft` zurückgenommen: zu `grund` gemischt (keine Abdunkelung, Regel 7). */
+export function zurueck(hex: string, deckkraft: number = F.deckkraft, grund: string = TOKENS.farbe.grund): string {
+  const a = parseInt(hex.slice(1), 16), b = parseInt(grund.slice(1), 16);
+  const k = (x: number, y: number) => Math.round(x * deckkraft + y * (1 - deckkraft));
+  const r = k(a >> 16, b >> 16), g = k((a >> 8) & 255, (b >> 8) & 255), bl = k(a & 255, b & 255);
+  return `#${((r << 16) | (g << 8) | bl).toString(16).padStart(6, "0")}`;
+}
+
+/** Ist ein Schlüssel im Filter zurückgenommen? Ohne Filter nie. */
+export const istZurueck = (filter: AmpelFilter | null | undefined, schluessel: string) => !!filter && !filter.treffer.has(schluessel);
+
+/** Pegelband: Segment voll? Ohne Filter immer. */
+export const segmentVoll = (filter: AmpelFilter | null | undefined, ampel: Ampel) => !filter || filter.stufen.has(ampel);
+
+/** Kamerabereich der Treffer (Grundriss auf kameraMinM erweitert); null ohne Treffer. */
+export function trefferBereich(anlagen: AmpelAnlage[], treffer: ReadonlySet<string>): Bereich | null {
+  return bereichWeiten(anlagen.filter((a) => treffer.has(a.schluessel)));
+}
+
+/** Kantenlänge des Anhängers aus dem Zoom (px pro Meter): nah anhaengerM, aus der Distanz anhaengerPx, gedeckelt. */
+export function anhaengerGroesse(zoom: number): number {
+  const px = zoom > 0 ? F.anhaengerPx / zoom : F.anhaengerMaxM;
+  return Math.round(Math.min(F.anhaengerMaxM, Math.max(F.anhaengerM, px)) * 1000) / 1000;
+}
+
+/**
+ * Ankerpunkt des Anhängers: steht auf der Oberkante der Anlage (Mitte); Teile in der Leitung erhalten ihn auf
+ * Oberkante des Teils seitlich neben dem Rohr – `seitlich` ist die Bildschirm-rechts-Richtung (xz, Länge 1).
+ */
+export function anhaengerOrt(mitte: V3, masse: V3, inline: boolean, groesse: number, seitlich: [number, number] = [1, 0]): V3 {
+  const oben = mitte[1] + masse[1] / 2;
+  if (!inline) return [mitte[0], oben, mitte[2]];
+  const d = Math.max(masse[0], masse[2]) / 2 + F.anhaengerAbstandM + groesse / 2;
+  return [mitte[0] + seitlich[0] * d, oben - groesse, mitte[2] + seitlich[1] * d];
+}
