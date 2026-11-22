@@ -14,7 +14,7 @@ export type FilterStufe = Ampel | "ohnePreis";
 export interface AmpelFilter {
   /** Symbol-Schlüssel der Treffer (wie in `ampel`): voll, mit Auswahlumriss; alle übrigen treten zurück. */
   treffer: ReadonlySet<string>;
-  /** Symbol-Schlüssel mit neutralem Anhänger («ohne Preis», «Baujahr fehlt»). */
+  /** Symbol-Schlüssel mit grauer Banderole an der Manschette («ohne Preis», «Baujahr fehlt»; Kritik r6 statt Anhänger). */
   anhaenger: ReadonlySet<string>;
   /** Gewählte Stufen: Pegelband-Segmente dieser Stufen voll, übrige zurück. «ohnePreis» hat kein Segment. */
   stufen: ReadonlySet<FilterStufe>;
@@ -38,8 +38,8 @@ export const segmentVoll = (filter: AmpelFilter | null | undefined, ampel: Ampel
  * Kamerabereich der Treffer: Hüllbox, Grundriss nur auf filter.kameraMinM erweitert, damit die Treffer das Bild füllen
  * (Kritik r5: >= 55 % der freien Breite statt Raumdistanz); null ohne Treffer.
  */
-export function trefferBereich(anlagen: AmpelAnlage[], treffer: ReadonlySet<string>): Bereich | null {
-  return bereichWeiten(anlagen.filter((a) => treffer.has(a.schluessel)), F.kameraMinM);
+export function trefferBereich(anlagen: AmpelAnlage[], treffer: ReadonlySet<string>, minM: number = F.kameraMinM): Bereich | null {
+  return bereichWeiten(anlagen.filter((a) => treffer.has(a.schluessel)), minM);
 }
 
 /**
@@ -49,21 +49,4 @@ export function trefferBereich(anlagen: AmpelAnlage[], treffer: ReadonlySet<stri
 export function umrissSkala(masse: V3, zoom: number, px: number): number {
   const gross = Math.max(...masse, 1e-3);
   return zoom > 0 ? Math.max(1.01, 1 + (2 * px) / (zoom * gross)) : 1.04;
-}
-
-/** Kantenlänge des Anhängers aus dem Zoom (px pro Meter): nah anhaengerM, aus der Distanz anhaengerPx, gedeckelt. */
-export function anhaengerGroesse(zoom: number): number {
-  const px = zoom > 0 ? F.anhaengerPx / zoom : F.anhaengerMaxM;
-  return Math.round(Math.min(F.anhaengerMaxM, Math.max(F.anhaengerM, px)) * 1000) / 1000;
-}
-
-/**
- * Ankerpunkt des Anhängers: steht auf der Oberkante der Anlage (Mitte); Teile in der Leitung erhalten ihn auf
- * Oberkante des Teils seitlich neben dem Rohr – `seitlich` ist die Bildschirm-rechts-Richtung (xz, Länge 1).
- */
-export function anhaengerOrt(mitte: V3, masse: V3, inline: boolean, groesse: number, seitlich: [number, number] = [1, 0]): V3 {
-  const oben = mitte[1] + masse[1] / 2;
-  if (!inline) return [mitte[0], oben, mitte[2]];
-  const d = Math.max(masse[0], masse[2]) / 2 + F.anhaengerAbstandM + groesse / 2;
-  return [mitte[0] + seitlich[0] * d, oben - groesse, mitte[2] + seitlich[1] * d];
 }

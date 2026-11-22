@@ -140,3 +140,23 @@ describe("Deckel und Striche (Kritik r2)", () => {
     expect(strich).toBeGreaterThanOrEqual(2 * 0.05 - 1e-9);
   });
 });
+
+describe("Banderole (Kritik r6: haftet buendig an der Manschette)", () => {
+  it("liegt ohne Abstand am Ende, das vom eigenen Teil wegzeigt; bei Baendern an der Unterkante", async () => {
+    const { banderole, banderolenGeometrie } = await import("./manschette");
+    const k = TOKENS.erneuerung.filter.banderoleHoeheM;
+    const [oben] = manschetten([ventil(1, { ampel: "gelb" })]);
+    const H = gesamtHoehe("gelb", "rohr");
+    expect(banderole(oben)).toEqual({ y0: H, y1: H + k });
+    expect(banderole({ ...oben, richtung: -1 })).toEqual({ y0: -H - k, y1: -H });
+    const [band] = manschetten([teil({ ampel: "rot" })]);
+    expect(banderole(band).y1).toBeCloseTo(-gesamtHoehe("rot", "gehaeuse") / 2);
+    // Geometrie: genau zwischen y0 und y1, durchgehend, dicker als die Manschette, Achse fuer Rohrringe
+    const g = banderolenGeometrie(oben), p = g.getAttribute("position");
+    let yMin = Infinity, yMax = -Infinity, rMax = 0;
+    for (let i = 0; i < p.count; i++) { yMin = Math.min(yMin, p.getY(i)); yMax = Math.max(yMax, p.getY(i)); rMax = Math.max(rMax, Math.hypot(p.getX(i), p.getZ(i))); }
+    expect(yMin).toBeCloseTo(H); expect(yMax).toBeCloseTo(H + k);
+    expect(rMax).toBeCloseTo(0.02 * M.rohrAussenFaktor, 3);
+    expect(g.getAttribute(ACHSE)).toBeDefined();
+  });
+});

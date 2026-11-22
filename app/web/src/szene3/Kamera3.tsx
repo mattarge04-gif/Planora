@@ -11,11 +11,13 @@ import { anlageEinpassen, einpassen, FIT_ANTEIL, gruppenBereich, ortBereich, typ
 import { fahrtSchritt, kameraEingaben, rueckkehrAnsicht, type Kamerafahrt } from "./kameraFahrt";
 import { modellVon } from "./technik";
 
-export function Kamera3({ welt, fokusId, bereich, freiraum, repKey, auswahl, ziel, darstellung, weniger, erneuerung }: {
+export function Kamera3({ welt, fokusId, bereich, freiraum, repKey, auswahl, ziel, darstellung, weniger, erneuerung, fahrtMs = TOKENS.bewegung.kameraMs }: {
   welt: Welt; fokusId: string | null; bereich: Bereich; freiraum: Freiraum; repKey: string; auswahl: string | null;
   ziel?: SzenenZiel | null; darstellung: Darstellung; weniger: boolean;
   /** Modus Erneuerung: Bereich der dringendsten Anlagen; ohne Auswahl/Ziel rahmt die Kamera diesen Bereich. */
   erneuerung?: Bereich | null;
+  /** Dauer der Kamerafahrt (Fokusfahrt im Filter kürzer). */
+  fahrtMs?: number;
 }) {
   const camera = useThree((s) => s.camera) as THREE.OrthographicCamera;
   const size = useThree((s) => s.size);
@@ -78,7 +80,7 @@ export function Kamera3({ welt, fokusId, bereich, freiraum, repKey, auswahl, zie
   }, [controls, camera, welt, fokusId, bereich, format, repKey, navigation, weniger, anwenden, snapshot, darstellung.offsets, darstellung.sichtbar]);
   useFrame((_, dt) => {
     if (!fahrt.current) return;
-    const schritt = fahrtSchritt(fahrt.current, dt * 1000, TOKENS.bewegung.kameraMs, weniger);
+    const schritt = fahrtSchritt(fahrt.current, dt * 1000, fahrtMs, weniger);
     fahrt.current = schritt.rest; anwenden(schritt.ansicht);
   });
   return null;

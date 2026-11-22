@@ -158,7 +158,25 @@ export function umfang(p: [number, number][]): number {
  * übrige Flächen kanteHelligkeit). `rand` vergrössert den Körper allseitig (Hover-Rand). Ringe am Rohr erhalten die
  * Achse für die Bildschirm-Mindeststärke.
  */
-export function manschettenGeometrie(m: Manschette, rand = 0): THREE.BufferGeometry {
+/**
+ * Graue Banderole («ohne Preis» / «Baujahr fehlt», Kritik r6): ein durchgehender Ring bündig am Ende der Manschette, das
+ * vom eigenen Teil wegzeigt (richtung ±1), bei Bändern an der Unterkante; etwas dicker als die Manschette. Höhe relativ
+ * zur Manschettenmitte wie `ringe`.
+ */
+export function banderole(m: Pick<Manschette, "ampel" | "art" | "richtung">): Ring {
+  const H = gesamtHoehe(m.ampel, m.art), k = TOKENS.erneuerung.filter.banderoleHoeheM;
+  if (m.richtung < 0) return { y0: -H - k, y1: -H };
+  if (m.richtung > 0) return { y0: H, y1: H + k };
+  // Band: an der Unterseite bzw. am rohrseitigen Ende (Pumpe), damit es die Ampelringe davor nicht verdeckt.
+  return { y0: -H / 2 - k, y1: -H / 2 };
+}
+
+/** Geometrie der Banderole (durchgehend; am Gehäuse/Motor dicker als Rand hinter der Ampelfarbe, am Rohr gleich dick). */
+export function banderolenGeometrie(m: Manschette): THREE.BufferGeometry {
+  return manschettenGeometrie({ ...m, ampel: "gelb", dicke: m.dicke * (m.art === "gehaeuse" ? TOKENS.erneuerung.filter.banderoleDicke : 1), richtung: 0 }, 0, [banderole(m)]);
+}
+
+export function manschettenGeometrie(m: Manschette, rand = 0, eigeneRinge?: Ring[]): THREE.BufferGeometry {
   const innen = kontur(m.breite - 2 * rand, m.tiefe - 2 * rand, m.eckRadius - rand);
   const aussen = kontur(m.breite + 2 * (m.dicke + rand), m.tiefe + 2 * (m.dicke + rand), m.eckRadius + m.dicke + rand);
   const n = innen.length;
@@ -183,8 +201,8 @@ export function manschettenGeometrie(m: Manschette, rand = 0): THREE.BufferGeome
     for (const p of folge) pos.push(...p);
     for (let i = 0; i < 6; i++) hell.push(h, h, h);
   };
-  const H = gesamtHoehe(m.ampel, m.art), schub = m.richtung * H / 2;
-  for (const ring of ringe(m.ampel, m.art)) {
+  const H = gesamtHoehe(m.ampel, m.art), schub = eigeneRinge ? 0 : m.richtung * H / 2;
+  for (const ring of eigeneRinge ?? ringe(m.ampel, m.art)) {
     const y0 = ring.y0 + schub - rand, y1 = ring.y1 + schub + rand;
     for (const [von, bis] of stuecke) {
       const zu = bis - von >= 1;

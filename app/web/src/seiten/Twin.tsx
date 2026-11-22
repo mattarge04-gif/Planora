@@ -234,6 +234,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
     ? erneuerungFilter(lebensdauer.ergebnis, daten.anlagen, posten) : null, [erneuerung, lebensdauer, daten, posten]);
   // Ein Treffer hervorgehoben (Liste: Hover/Fokus/Pfeiltasten; sonst 3D-Hover auf einen Treffer), Kritik r5 Top 2.
   const [trefferFokus, setTrefferFokus] = useState<string | null>(null);
+  const [trefferFahrt, setTrefferFahrt] = useState(false);
+  const fokussiereTreffer = (k: string | null, fahrt = false) => { setTrefferFokus(k); setTrefferFahrt(fahrt && k !== null); };
   const hoverTreffer = hover && filterErgebnis?.filter.treffer.has(hover) ? hover : null;
   const filterAn = !!filterErgebnis;
   useEffect(() => {
@@ -348,7 +350,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
             {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} onPlan={onPlan} filter={{
               posten, onPosten: umPosten, onAufheben: () => { setPosten(new Set()); sage("Filter aufgehoben"); },
               treffer: filterErgebnis?.treffer ?? [], geschossCode, auswahl, onTreffer: waehleZeile,
-              bezug, fokus: trefferFokus, onFokus: setTrefferFokus, hover3d: hoverTreffer,
+              bezug, fokus: trefferFokus, onFokus: fokussiereTreffer, hover3d: hoverTreffer,
             }} />}
             <TwinHinweise ref={hinweisKarte} hinweise={daten.hinweise} geschossCode={geschossCode} onZiel={zumOrt} />
           </aside>
@@ -358,7 +360,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
             onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} tastatur onLeitungsBefunde={befundeMelden} ampel={ampel}
             onGeschoss={(id) => { setOrtZiel(null); setFokusId(id); }}
             geschossHover={erneuerung ? geschossHover : null} onGeschossHover={erneuerung ? setGeschossHover : undefined}
-            filter={filterErgebnis?.filter ?? null} filterFokus={filterErgebnis ? trefferFokus ?? hoverTreffer : null} />}
+            filter={filterErgebnis?.filter ?? null} filterFokus={filterErgebnis ? trefferFokus ?? hoverTreffer : null}
+            filterFokusFahrt={!!filterErgebnis && trefferFokus !== null && trefferFahrt} />}
           {bereit && <TwinSzenenTasten name={name} geschosse={daten.geschosse} fokusId={fokusId}
             onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
             onTechnik={technikTaste} meldung={tastenMeldung} separiert={separiert} onSeparieren={setSepariert}

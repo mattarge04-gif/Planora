@@ -7,7 +7,7 @@ import type { V3 } from "../szene2/huelle";
 import type { KatalogEintrag, WeltSymbol } from "../typen";
 import { anlagenDaten, inlineMatrix, modellVon, type AnzeigeSymbol } from "./technik";
 import type { Interaktion } from "./Interaktion";
-import { Anhaenger3, Manschetten3 } from "./Manschetten3";
+import { Manschetten3 } from "./Manschetten3";
 import { istZurueck, umrissSkala, type AmpelFilter } from "./ampelFilter";
 
 /** Umriss im Filter: fokussierter Treffer (Symbol-Schlüssel) breiter und mit Fläche. */
@@ -22,7 +22,7 @@ interface Props {
   interaktion?: Interaktion;
   /** Modus Erneuerung: Schluessel -> Ampelfarbe (Hex); gesetzt = KOO neutral, Prüfmanschette je Bauteil mit Eintrag. */
   ampel?: ReadonlyMap<string, string>;
-  /** Legende als Filter: Treffer voll mit Auswahlumriss, übrige Anlagen durchscheinend (deckkraft), Anhänger. */
+  /** Legende als Filter: Treffer voll mit Auswahlumriss, übrige Anlagen durchscheinend (deckkraft). */
   filter?: AmpelFilter | null;
   /** Fokussierter Treffer (Liste, Pfeiltasten): Umriss fokusUmrissPx und Fläche eisAkzent; übrige Treffer umrissPx. */
   filterFokus?: string | null;
@@ -75,8 +75,6 @@ export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, am
     return [[pfad, voll, false], [pfad, zurueck, true]].filter(([, g]) => (g as Instanz[]).length) as [string, Instanz[], boolean][];
   }), [gruppen, filter]);
   return <group name="anlagen">{ampel && <Manschetten3 instanzen={alle} ampel={ampel} effekte={schatten} interaktion={interaktion} filter={filter} />}
-  {ampel && filter && filter.anhaenger.size > 0 && <Anhaenger3 instanzen={alle.filter((i) => filter.anhaenger.has(i.s.schluessel))}
-    effekte={schatten} interaktion={interaktion} />}
   {teile.map(([pfad, gruppe, zurueck]) => {
     const key = `${pfad}:${zurueck ? "z" : "v"}`;
     const ersatz = <Ersatz instanzen={gruppe} schatten={schatten} interaktion={ia} zurueck={zurueck} />;

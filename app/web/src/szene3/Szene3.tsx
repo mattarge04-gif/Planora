@@ -50,7 +50,7 @@ export interface Szene3Props {
   onGeschossHover?: (geschossId: string | null) => void;
   /**
    * Legende als Filter (Modus Erneuerung, Stufe 3): Treffer voll mit Auswahlumriss, übrige Anlagen, Leitungen und
-   * Manschetten zurück; Anhänger an `anhaenger`; Pegelband nur `stufen` voll. Liegen Treffer im fokussierten Geschoss,
+   * Manschetten zurück; graue Banderole an der Manschette für `anhaenger`; Pegelband nur `stufen` voll. Liegen Treffer im fokussierten Geschoss,
    * rahmt die Kamera sie. Ohne Prop bzw. null unverändert.
    */
   filter?: AmpelFilter | null;
@@ -59,6 +59,8 @@ export interface Szene3Props {
    * fokusUmrissPx und Fläche eisAkzent; übrige Treffer umrissPx. 3D-Hover meldet den Schlüssel weiter über `onHover`.
    */
   filterFokus?: string | null;
+  /** Fokusfahrt: true = Kamera fährt auf `filterFokus` (Tastatur/Klick in der Liste, nicht bei Maus-Hover). */
+  filterFokusFahrt?: boolean;
 }
 const KEINE_GESCHOSSE: string[] = [];
 
@@ -73,7 +75,7 @@ export function Szene3(props: Szene3Props) {
 }
 
 function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblendet = KEINE_GESCHOSSE, separiert = false,
-  auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt, onLeitungsBefunde, ampel, onGeschoss, geschossHover = null, onGeschossHover, filter = null, filterFokus = null }: Szene3Props) {
+  auswahl = null, ziel, tastatur = false, onAuswahl, onHover, onAuswahlPunkt, onLeitungsBefunde, ampel, onGeschoss, geschossHover = null, onGeschossHover, filter = null, filterFokus = null, filterFokusFahrt = false }: Szene3Props) {
   const h = useMemo(() => huelle(welt), [welt]);
   /** Darstellungslage der Anlagen (Verteiler mit Gruppen, Teile in der Leitung) für Kamera und Auswahlpunkt. */
   const anzeige = useMemo(() => anzeigeWelt(welt, katalog), [welt, katalog]);
@@ -130,9 +132,12 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       return { schluessel: i.s.schluessel, geschossId: id, mitte: [i.mitte[0], i.mitte[1] + off, i.mitte[2]] as V3, masse: lageMasse(i),
         inline: i.inline, farbe: ampel.get(i.s.schluessel)! };
     });
+    // Fokusfahrt auf einen einzelnen Treffer (Liste per Tastatur/Klick), sonst alle Treffer des Geschosses.
+    const einzeln = filter && filterFokusFahrt && filterFokus && filter.treffer.has(filterFokus)
+      ? trefferBereich(anlagen, new Set([filterFokus]), TOKENS.erneuerung.filter.fokusMinM) : null;
     const treffer = filter && fokusId ? trefferBereich(anlagen.filter((a) => a.geschossId === fokusId), filter.treffer) : null;
-    return treffer ?? ampelBereich(anlagen);
-  }, [ampel, anzeige, katalog, welt, sichtbarIds, offsets, fokusId, trefferKey]); // eslint-disable-line react-hooks/exhaustive-deps
+    return einzeln ?? treffer ?? ampelBereich(anlagen);
+  }, [ampel, anzeige, katalog, welt, sichtbarIds, offsets, fokusId, trefferKey, filterFokusFahrt ? filterFokus : null]); // eslint-disable-line react-hooks/exhaustive-deps
   const gl = useThree((s) => s.gl);
   const size = useThree((s) => s.size);
   const basisZoom = useMemo(() => einpassen(sichtbar, size.width, size.height, freiraum, FIT_ANTEIL, fokusId ? [1, 1.45, 1] : [1, 1, 1]).zoom,
@@ -170,7 +175,8 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.PAN }}
       touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }} />
     <Kamera3 welt={anzeige} fokusId={fokusId} bereich={sichtbar} freiraum={freiraum} repKey={repKey}
-      auswahl={auswahl} ziel={ziel} darstellung={darstellung} weniger={weniger} erneuerung={erneuerungBereich} />
+      auswahl={auswahl} ziel={ziel} darstellung={darstellung} weniger={weniger} erneuerung={erneuerungBereich}
+      fahrtMs={filterFokusFahrt && filterFokus ? TOKENS.erneuerung.filter.fokusFahrtMs : undefined} />
     <TastaturKamera aktiv={tastatur} freiraum={freiraum} auswahlBereich={auswahlBereich} />
     <InteraktionsBewegung welt={anzeige} interaktion={interaktion} darstellung={darstellung} weniger={weniger} onAuswahlPunkt={onAuswahlPunkt} />
     <Licht bereich={sichtbar} reduziert={reduziert} />

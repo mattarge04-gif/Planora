@@ -22,7 +22,8 @@ export interface LegendenFilter<A extends FilterAnlage & { name: string }> {
   bezug: (a: A) => string | null;
   /** Ein Treffer hervorgehoben (Liste: Hover/Fokus/Pfeiltasten) und Rückweg aus dem 3D-Hover. */
   fokus: string | null;
-  onFokus: (schluessel: string | null) => void;
+  /** `fahrt`: Kamera faehrt auf den Treffer (Tastatur/Klick), nicht bei Maus-Hover. */
+  onFokus: (schluessel: string | null, fahrt?: boolean) => void;
   hover3d: string | null;
 }
 
@@ -126,7 +127,7 @@ function Trefferliste<A extends FilterAnlage & { name: string }>({ filter }: { f
                 className={`tw-treffer-zeile${k === markiert ? " tw-treffer-markiert" : ""}`}
                 aria-current={filter.auswahl === k || undefined}
                 aria-label={`${t.anlage.name}, ${code}, ${t.gruende.map((g) => POSTEN_TEXT[g]).join(", ")}${detail ? `, ${detail}` : ""}${mehr}`}
-                onMouseEnter={() => filter.onFokus(k)} onFocus={() => filter.onFokus(k)} onBlur={() => filter.onFokus(null)}
+                onMouseEnter={() => filter.onFokus(k)} onFocus={() => filter.onFokus(k, true)} onBlur={() => filter.onFokus(null)}
                 onKeyDown={(e) => taste(e, i)} onClick={() => filter.onTreffer(t.anlage)}>
                 {ampel ? <AmpelZeichen ampel={ampel} /> : <Tag size={14} strokeWidth={2.1} aria-hidden="true" className="tw-ohne-preis" />}
                 <span className="tw-treffer-name">{t.anlage.name}

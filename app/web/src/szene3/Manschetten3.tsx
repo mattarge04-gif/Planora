@@ -7,9 +7,9 @@ import type { Ampel } from "../lebensdauer/typen";
 import { ampelMaterialFarbe, ampelVonFarbe } from "./ampelSockel";
 import { lageMasse, type Instanz } from "./Anlagen3";
 import type { Interaktion } from "./Interaktion";
-import { manschetten, manschettenFaktor, manschettenGeometrie, type ManschettenTeil } from "./manschette";
+import { banderolenGeometrie, manschetten, manschettenFaktor, manschettenGeometrie, type ManschettenTeil } from "./manschette";
 import { mitRohrStaerke } from "./rohrStaerke";
-import { anhaengerGroesse, anhaengerOrt, istZurueck, type AmpelFilter } from "./ampelFilter";
+import { istZurueck, type AmpelFilter } from "./ampelFilter";
 import { ROHR } from "./technik";
 import { AMPEL_NAH, EINPASS_ZOOM } from "./ampelZustand";
 
@@ -48,6 +48,11 @@ export function Manschetten3({ instanzen, ampel, effekte, interaktion, filter = 
   }))), [instanzen, ampel]);
   const geometrien = useMemo(() => liste.map((m) => manschettenGeometrie(m)), [liste]);
   useEffect(() => () => geometrien.forEach((g) => g.dispose()), [geometrien]);
+  // Graue Banderole bündig an der Manschette («ohne Preis» / «Baujahr fehlt»): haftet am Bauteil, nichts schwebt (Kritik r6).
+  const banderoleKey = filter ? [...filter.anhaenger].sort().join("|") : "";
+  const banderolen = useMemo(() => new Map(liste.map((m, k) => [k, m] as const).filter(([, m]) => !!filter?.anhaenger.has(m.schluessel))
+    .map(([k, m]) => [k, banderolenGeometrie(m)])), [liste, banderoleKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => banderolen.forEach((g) => g.dispose()), [banderolen]);
   const aktiv = new Set([interaktion?.auswahl, interaktion?.hover, ...(interaktion?.betont ?? [])].filter((k): k is string => !!k));
   const raender = useMemo(() => new Map(liste.map((m, k) => [k, m] as const).filter(([, m]) => aktiv.has(m.schluessel))
     .map(([k, m]) => [k, manschettenGeometrie(m, MS.hoverRandM)])), [liste, [...aktiv].join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -63,10 +68,11 @@ export function Manschetten3({ instanzen, ampel, effekte, interaktion, filter = 
       festZurueck: Object.fromEntries(STUFEN.map((a) => [a, basis(a, true)])) as Record<Ampel, THREE.MeshBasicMaterial>,
       dickZurueck: Object.fromEntries(STUFEN.map((a) => [a, mitRohrStaerke(basis(a, true))])) as Record<Ampel, THREE.MeshBasicMaterial>,
       rand: rand(), randDick: mitRohrStaerke(rand()),
+      banderole: basis("grau"), banderoleDick: mitRohrStaerke(basis("grau")),
     };
   }, [effekte]);
   useEffect(() => () => [...Object.values(materialien.fest), ...Object.values(materialien.dick), ...Object.values(materialien.festZurueck),
-    ...Object.values(materialien.dickZurueck), materialien.rand, materialien.randDick]
+    ...Object.values(materialien.dickZurueck), materialien.rand, materialien.randDick, materialien.banderole, materialien.banderoleDick]
     .forEach((m) => m.dispose()), [materialien]);
 
   const lagen = useRef<(THREE.Group | null)[]>([]), hoehen = useRef<(THREE.Group | null)[]>([]);
@@ -92,55 +98,11 @@ export function Manschetten3({ instanzen, ampel, effekte, interaktion, filter = 
       <group ref={(g) => { hoehen.current[k] = g; }} scale={[1, sofort ? 1 : 1e-3, 1]} userData={{ ampelManschette: m.schluessel, ampel: m.ampel }}>
         <mesh geometry={geometrien[k]} raycast={() => {}} renderOrder={1} material={(istZurueck(filter, m.schluessel)
           ? m.verdicken ? materialien.dickZurueck : materialien.festZurueck : m.verdicken ? materialien.dick : materialien.fest)[m.ampel]} />
+        {banderolen.get(k) && <mesh geometry={banderolen.get(k)} material={m.verdicken ? materialien.banderoleDick : materialien.banderole}
+          raycast={() => {}} renderOrder={1} userData={{ banderole: m.schluessel }} />}
         {raender.get(k) && <mesh geometry={raender.get(k)} material={m.verdicken ? materialien.randDick : materialien.rand} raycast={() => {}} />}
       </group>
     </group>)}
   </group>;
 }
 
-const FA = TOKENS.erneuerung.filter;
-/** Anhänger-Einheitsform (Kante 1, Unterkante im Ursprung): hohles, abgerundetes Schild, Dicke entlang z. */
-function anhaengerForm(): THREE.BufferGeometry {
-  const r = 0.16, aussen = new THREE.Shape(), loch = new THREE.Path(), i = FA.anhaengerRand;
-  const rechteck = (p: THREE.Path | THREE.Shape, x0: number, y0: number, x1: number, y1: number, k: number) => {
-    p.moveTo(x0 + k, y0); p.lineTo(x1 - k, y0); p.quadraticCurveTo(x1, y0, x1, y0 + k); p.lineTo(x1, y1 - k);
-    p.quadraticCurveTo(x1, y1, x1 - k, y1); p.lineTo(x0 + k, y1); p.quadraticCurveTo(x0, y1, x0, y1 - k); p.lineTo(x0, y0 + k);
-    p.quadraticCurveTo(x0, y0, x0 + k, y0);
-  };
-  rechteck(aussen, -0.5, 0, 0.5, 1, r);
-  rechteck(loch, -0.5 + i, i, 0.5 - i, 1 - i, Math.max(0.02, r - i / 2));
-  aussen.holes.push(loch);
-  const g = new THREE.ExtrudeGeometry(aussen, { depth: FA.anhaengerTiefe, bevelEnabled: false, curveSegments: 6 });
-  g.translate(0, 0, -FA.anhaengerTiefe / 2);
-  return g;
-}
-const ANHAENGER = anhaengerForm();
-
-/**
- * Neutraler Anhänger (grau3, hohl) für «ohne Preis» / «Baujahr fehlt» (Entscheid 22.11.2026, Filter): steht auf der
- * Oberkante der Anlage bzw. neben dem Rohr eines Teils in der Leitung, dreht sich um die Senkrechte zur Kamera; keine
- * Statusfarbe (Regel 10). Grösse mit Bildschirm-Mindestmass, folgt dem Anheben der Anlage.
- */
-export function Anhaenger3({ instanzen, effekte, interaktion }: { instanzen: Instanz[]; effekte: boolean; interaktion?: Interaktion }) {
-  const material = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false,
-    color: new THREE.Color().setRGB(...ampelMaterialFarbe(TOKENS.farbe.grau3, effekte)) }), [effekte]);
-  useEffect(() => () => material.dispose(), [material]);
-  const refs = useRef<(THREE.Mesh | null)[]>([]);
-  const rechts = useMemo(() => new THREE.Vector3(), []);
-  useFrame(({ camera }) => {
-    const groesse = anhaengerGroesse((camera as THREE.OrthographicCamera).zoom);
-    rechts.setFromMatrixColumn(camera.matrixWorld, 0).setY(0);
-    if (rechts.lengthSq() < 1e-9) rechts.set(1, 0, 0);
-    rechts.normalize();
-    const drehung = Math.atan2(rechts.x, rechts.z) - Math.PI / 2;
-    instanzen.forEach((i, k) => {
-      const m = refs.current[k];
-      if (!m) return;
-      const p = anhaengerOrt(i.mitte, lageMasse(i), i.inline, groesse, [rechts.x, rechts.z]);
-      const lift = i.inline ? 0 : interaktion?.lift.current?.[i.s.schluessel] ?? 0;
-      m.position.set(p[0], p[1] + lift, p[2]); m.rotation.set(0, drehung, 0); m.scale.setScalar(groesse);
-    });
-  }, -1);
-  return <group name="ampel-anhaenger">{instanzen.map((i, k) => <mesh key={`${i.s.schluessel}:${i.mitte.join(":")}`}
-    ref={(m) => { refs.current[k] = m; }} geometry={ANHAENGER} material={material} raycast={() => {}} userData={{ anhaenger: i.s.schluessel }} />)}</group>;
-}

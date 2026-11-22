@@ -151,20 +151,18 @@ export const TOKENS = {
     },
     /**
      * Legende als Filter (Entscheid 22.11.2026, Ansatz C Stufe 3): Treffer voll mit Auswahlumriss, Rest tritt zurück
-     * (kein Abdunkeln der Szene); neutraler Anhänger (grau3, hohl) für «ohne Preis» / «Baujahr fehlt».
+     * (kein Abdunkeln der Szene); graue Banderole an der Manschette für «ohne Preis» / «Baujahr fehlt» (Kritik r6).
      */
     filter: {
       deckkraft: 0.25, // Nicht-Treffer: Anlagen durchscheinend, Leitungen/Manschetten/Band zu grund gemischt
-      anhaengerM: 0.16, // Kantenlänge des Anhängers nah …
-      anhaengerPx: 20, // … aus der Distanz mindestens so viele px (sichtbar >= 12 px nach Neigung, Kritik r5) …
-      anhaengerMaxM: 0.35, // … höchstens so gross
-      anhaengerRand: 0.24, // Rahmenbreite (Anteil der Kantenlänge): hohl
-      anhaengerTiefe: 0.08, // Dicke (Anteil der Kantenlänge)
-      anhaengerAbstandM: 0.03, // seitlich neben dem Rohr (Teile in der Leitung)
+      banderoleHoeheM: 0.018, // graue Banderole («ohne Preis» / «Baujahr fehlt») bündig an der Manschette …
+      banderoleDicke: 1.4, // … am Gehäuse/Motor dicker: grauer Rand hinter der Ampelfarbe (am Rohr gleich dick, sonst verdeckt er den Ring)
       kameraMinM: 1.2, // Filterkamera: Hüllbox der Treffer nur so weit erweitert (Treffer >= 55 % der freien Breite, Kritik r5)
       umrissPx: 1, // Umriss der Treffer am Bildschirm …
       fokusUmrissPx: 2, // … des fokussierten Treffers (Liste/Pfeiltasten) …
       fokusFlaeche: 0.35, // … plus Fläche eisAkzent mit dieser Deckkraft
+      fokusMinM: 0.8, // Fokusfahrt auf einen Treffer: Hüllbox mindestens so gross (Bauteil >= 60 px)
+      fokusFahrtMs: 600, // Dauer der Fokusfahrt (reduzierte Bewegung: sofort)
     },
   },
   bewegung: {
