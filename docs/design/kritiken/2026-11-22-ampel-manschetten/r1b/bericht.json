@@ -1,0 +1,68 @@
+{
+  "szenario": "C:/Users/matta/AppData/Local/Temp/claude/bcf0c113125feb8e/b5bd847d-bbb0-4a5a-b6e8-5ed41e3ae655/scratchpad/kritik2.json",
+  "zeit": "2026-11-22T16:48:03.253Z",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002207) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "ansichten": [
+    {
+      "fenster": "1440x900",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\i-verteiler-nah-auswahl-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\j-verteiler-nah-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\k-verteiler-sehr-nah-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\l-verteiler-gedreht-1440x900.png"
+      ],
+      "fps": [
+        60
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.WebGLProgram: Program Info Log: (817,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value\n(85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value",
+        "warning: THREE.WebGLProgram: Program Info Log: (958,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (821,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (815,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)"
+      ]
+    },
+    {
+      "fenster": "1920x1080",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\i-verteiler-nah-auswahl-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\j-verteiler-nah-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\k-verteiler-sehr-nah-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\l-verteiler-gedreht-1920x1080.png"
+      ],
+      "fps": [
+        60
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+      ]
+    },
+    {
+      "fenster": "1280x720",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\i-verteiler-nah-auswahl-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\j-verteiler-nah-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\k-verteiler-sehr-nah-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r1b\\l-verteiler-gedreht-1280x720.png"
+      ],
+      "fps": [
+        57
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+      ]
+    }
+  ]
+}

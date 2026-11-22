@@ -1,5 +1,5 @@
 {
-  "beschreibung": "Lebensdauer/Ampel (19.11.2026): Twin normal, Modus Erneuerung (Technik und Geschossfokus EG), Anlagenkarte offen und im Bearbeiten, Erneuerungsplan ohne und mit Jahresfilter, Typwerte. Vorher Instanz mit --muster starten und Testdaten setzen: node werkzeug/design/lebensdauer-daten.mjs (Muster 6: alle vier Ampelfarben, 8 Bauteile ohne Preis). Runde 2: Taste E an/aus mit Canvasfokus, Übersicht beendet E mit Meldung.",
+  "beschreibung": "Lebensdauer/Ampel (19.11.2026): Twin normal, Modus Erneuerung (Technik und Geschossfokus EG), Anlagenkarte offen und im Bearbeiten, Erneuerungsplan ohne und mit Jahresfilter, Typwerte. Vorher Instanz mit --muster starten und Testdaten setzen: node werkzeug/design/lebensdauer-daten.mjs (Muster 6: alle vier Ampelfarben, 8 Bauteile ohne Preis). Runde 2: Taste E an/aus mit Canvasfokus, Übersicht beendet E mit Meldung. Stufe 1 Prüfmanschetten (22.11.2026): Technik fern, Zentrale nah mit und ohne Auswahl (Umwälzpumpe), fps.",
   "fenster": [
     [
       1440,
@@ -74,6 +74,172 @@
     },
     {
       "bild": "modus-e-technik"
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        400
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        400
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        400
+      ]
+    },
+    {
+      "warte": 1500
+    },
+    {
+      "bild": "modus-e-fern"
+    },
+    {
+      "selektor": ".tw-anlagen tbody tr:nth-child(4)"
+    },
+    {
+      "warte": 3000
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "warte": 1500
+    },
+    {
+      "bild": "e-zentrale-nah-auswahl"
+    },
+    {
+      "taste": "Escape"
+    },
+    {
+      "warte": 800
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "rad": [
+        0.5,
+        0.45,
+        -300
+      ]
+    },
+    {
+      "warte": 1500
+    },
+    {
+      "bild": "e-zentrale-nah"
+    },
+    {
+      "fps": 3000
     },
     {
       "klick": "EG",

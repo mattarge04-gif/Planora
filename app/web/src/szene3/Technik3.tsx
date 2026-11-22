@@ -6,10 +6,7 @@ import { TOKENS } from "../design/tokens";
 import { type V3 } from "../szene2/huelle";
 import { schlange, geschossBeiY } from "../szene2/leitungen";
 import type { KatalogEintrag, Welt, WeltSymbol } from "../typen";
-import { Anlagen3, instanzen, lageMasse } from "./Anlagen3";
-import { AmpelMarker3 } from "./AmpelMarker3";
-import { ampelMarker } from "./ampelSockel";
-import type { Freiraum } from "./kamera";
+import { Anlagen3 } from "./Anlagen3";
 import { durchgaenge, einheitVon, freieVerteilerAbgaenge, rohrnetzMitBefunden, type Huelse, type Rohrstueck } from "./netz";
 import type { Befund } from "./router/typen";
 import { geschossSchnitt } from "./schnitt";
@@ -26,15 +23,13 @@ import { achseY, mitRohrStaerke, ROHR_FAKTOR, rohrFaktor, rohrTreffer } from "./
 
 const FLAECHE = new Set(["heizung.fbh_kreis", "heizung.tabs_feld"]);
 
-export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstellung, interaktion, separiert = false, onBefunde, ampel, freiraum }: {
+export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstellung, interaktion, separiert = false, onBefunde, ampel }: {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; schatten: boolean; onModelle: () => void;
   darstellung?: Darstellung; interaktion?: Interaktion; separiert?: boolean;
   /** Befunde der gezeichneten Leitungsführung (eine Berechnung für Bild und Hinweis). */
   onBefunde?: (befunde: Befund[], weltHash: string) => void;
   /** Erneuerungsansicht: Schluessel -> Ampelfarbe, nur gesetzt im Modus E. */
   ampel?: ReadonlyMap<string, string>;
-  /** Freie Szenenfläche: Ampelmarker (Overlay) werden darauf zugeschnitten. */
-  freiraum?: Freiraum;
 }) {
   const [anschluesse, setAnschluesse] = useState<Record<string, V3>>({});
   const onModell = useCallback((pfad: string, anschluss: V3) => {
@@ -100,19 +95,12 @@ export function Technik3({ welt, katalog, fokusId, schatten, onModelle, darstell
   const formen = useMemo(() => new Map(sichtbar.map((id) => [id, formstuecke(rohre.filter((r) => r.geschossId === id).map((r) => r.stueck))])), [rohre, sichtbar]);
   // Modus Erneuerung: Leitungen treten neutral zurück, damit Rot nur die Ampel «Ersetzen» trägt.
   const erneuerung = ampel !== undefined;
-  const bodenVon = (id: string) => welt.geschosse.find((g) => g.id === id)?.yUnten;
-  // Ampelmarker aller sichtbaren Geschosse in einem Overlay (eine Hud-Szene, nicht je Geschoss).
-  const marker = useMemo(() => !ampel ? [] : ampelMarker(sichtbar.flatMap((id) =>
-    instanzen(symbole.filter((s) => ampel.has(s.schluessel) && geschossBeiY(welt, s.position.y) === id), katalog).map((i) => ({
-      schluessel: i.s.schluessel, mitte: i.mitte, masse: lageMasse(i), inline: i.inline, farbe: ampel.get(i.s.schluessel)!, geschossId: id,
-    }))), fokusId), [ampel, sichtbar, symbole, katalog, welt, fokusId]);
   const huelsenGeschoss = (h: Huelse) => h.art === "decke"
     ? [...welt.geschosse].sort((a, b) => Math.abs(a.yUnten - h.position[1]) - Math.abs(b.yUnten - h.position[1]))[0]?.id
     : geschossBeiY(welt, h.position[1]);
   return <group name="technik">
-    {marker.length > 0 && <AmpelMarker3 marker={marker} darstellung={darstellung} interaktion={interaktion} nachEffekten={schatten} freiraum={freiraum} />}
     {sichtbar.map((id) => <GeschossGruppe key={id} id={id} darstellung={darstellung}>
-      <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} ampel={ampel} bodenY={bodenVon(id)} />
+      <Anlagen3 symbole={symbole.filter((s) => geschossBeiY(welt, s.position.y) === id)} schatten={schatten} katalog={katalog} onModell={onModell} interaktion={interaktion} ampel={ampel} />
       {kappen.filter((k) => geschossBeiY(welt, k.symbol.position.y) === id).map((k, i) =>
         <VerteilerKappe key={`kappe-${i}`} {...k} interaktion={interaktion} schatten={schatten} />)}
       {rohre.filter((r) => r.geschossId === id).map((r, i) => <Rohr key={i} stueck={r.stueck} schatten={schatten} anfangFrei={r.anfangFrei} interaktion={interaktion} neutral={erneuerung} />)}

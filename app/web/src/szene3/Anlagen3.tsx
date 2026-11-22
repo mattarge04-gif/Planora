@@ -1,13 +1,13 @@
 import { RoundedBox, useGLTF } from "@react-three/drei";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
-import { Component, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
 import type { V3 } from "../szene2/huelle";
 import type { KatalogEintrag, WeltSymbol } from "../typen";
 import { anlagenDaten, inlineMatrix, modellVon, type AnzeigeSymbol } from "./technik";
 import type { Interaktion } from "./Interaktion";
-import { ampelRinge, ringBreite, vorNeutralToneMapping } from "./ampelSockel";
+import { Manschetten3 } from "./Manschetten3";
 
 /** Modus Erneuerung: KOO-Akzent der Modelle neutral, damit Rot nur «Ersetzen» bedeutet (Entscheid 19.11.2026). */
 const KOO_NEUTRAL = TOKENS.farbe.grau2;
@@ -16,10 +16,8 @@ interface Props {
   symbole: WeltSymbol[]; schatten: boolean; katalog?: KatalogEintrag[];
   onModell: (pfad: string, anschluss: V3) => void;
   interaktion?: Interaktion;
-  /** Modus Erneuerung: Schluessel -> Ampelfarbe (Hex); gesetzt = KOO neutral, Bodenring je Anlage mit Eintrag. */
+  /** Modus Erneuerung: Schluessel -> Ampelfarbe (Hex); gesetzt = KOO neutral, Prüfmanschette je Bauteil mit Eintrag. */
   ampel?: ReadonlyMap<string, string>;
-  /** Geschossboden (y) für die Ampel-Bodenringe im Modus Erneuerung. */
-  bodenY?: number;
 }
 
 /** Eine dargestellte Instanz: Teile in der Leitung (Gruppenstock, «vor Bauteil») erscheinen je Stück einmal. */
@@ -48,7 +46,7 @@ class ModellGrenze extends Component<{ children: ReactNode; ersatz: ReactNode },
   render() { return this.state.fehler ? this.props.ersatz : this.props.children; }
 }
 
-export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, ampel, bodenY }: Props) {
+export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, ampel }: Props) {
   const gruppen = useMemo(() => {
     const g = new Map<string, Instanz[]>();
     for (const i of instanzen(symbole, katalog)) {
@@ -61,7 +59,7 @@ export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, am
     for (const [pfad] of gruppen) if (pfad.startsWith("/modelle/")) useGLTF.preload(pfad, false, false);
   }, [gruppen]);
   const alle = useMemo(() => gruppen.flatMap(([, g]) => g), [gruppen]);
-  return <group name="anlagen">{ampel && bodenY !== undefined && <AmpelRinge instanzen={alle} ampel={ampel} bodenY={bodenY} effekte={schatten} />}
+  return <group name="anlagen">{ampel && <Manschetten3 instanzen={alle} ampel={ampel} effekte={schatten} interaktion={interaktion} />}
   {gruppen.map(([pfad, gruppe]) => {
     const ersatz = <Ersatz instanzen={gruppe} schatten={schatten} interaktion={interaktion} />;
     return pfad.startsWith("/modelle/")
@@ -70,42 +68,6 @@ export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, am
       </Suspense></ModellGrenze>
       : <Ersatz key={pfad} instanzen={gruppe} schatten={schatten} interaktion={interaktion} />;
   })}</group>;
-}
-
-/**
- * Bodenring je Anlage im Modus Erneuerung: konstante Breite (nah in Metern, fern Mindest-px), ungetönt und mit
- * Abstand zum Grundriss, damit Umgebungsverdeckung die Farbe nicht verfälscht. Der Marker liegt in Technik3 (Overlay).
- */
-function AmpelRinge({ instanzen, ampel, bodenY, effekte }: { instanzen: Instanz[]; ampel: ReadonlyMap<string, string>; bodenY: number;
-  /** Effektdurchlauf aktiv (nicht reduziert): dessen Tone Mapping wirkt auf alle Pixel, Farbe vorab umkehren. */
-  effekte: boolean }) {
-  const [breite, setBreite] = useState(() => ringBreite(0));
-  useFrame(({ camera }) => {
-    const b = ringBreite((camera as THREE.OrthographicCamera).zoom);
-    if (b !== breite) setBreite(b);
-  });
-  const striche = useMemo(() => ampelRinge(instanzen.filter((i) => ampel.has(i.s.schluessel)).map((i) => ({
-    schluessel: i.s.schluessel, mitte: i.mitte, masse: lageMasse(i), inline: i.inline, farbe: ampel.get(i.s.schluessel)!,
-  })), bodenY, breite), [instanzen, ampel, bodenY, breite]);
-  const ref = useRef<THREE.InstancedMesh>(null);
-  const geo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
-  const material = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), []);
-  useEffect(() => () => { geo.dispose(); material.dispose(); }, [geo, material]);
-  useLayoutEffect(() => {
-    const m = ref.current;
-    if (!m) return;
-    const mat = new THREE.Matrix4(), c = new THREE.Color(), h = TOKENS.erneuerung.ringHoeheM;
-    striche.forEach((s, k) => {
-      m.setMatrixAt(k, mat.compose(new THREE.Vector3(...s.position), new THREE.Quaternion(),
-        s.achse === "x" ? new THREE.Vector3(s.laenge, h, breite) : new THREE.Vector3(breite, h, s.laenge)));
-      c.set(s.farbe);
-      if (effekte) c.setRGB(...vorNeutralToneMapping([c.r, c.g, c.b]));
-      m.setColorAt(k, c);
-    });
-    m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; m.computeBoundingSphere();
-  }, [striche, breite, effekte]);
-  if (!striche.length) return null;
-  return <instancedMesh key={striche.length} ref={ref} args={[geo, material, striche.length]} dispose={null} raycast={() => {}} name="ampel-ringe" />;
 }
 
 function ereignisse(key: (e: ThreeEvent<PointerEvent | MouseEvent>) => string | undefined, interaktion?: Interaktion) {

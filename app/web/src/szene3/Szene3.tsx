@@ -156,7 +156,7 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       <FreiraumSchnitt freiraum={freiraum} nurUnten>
       <Gebaeude3 welt={welt} h={h} fokusId={fokusId} kameraRichtung={kameraRichtung} schatten={!reduziert} darstellung={darstellung} />
       <Technik3 welt={welt} katalog={katalog} fokusId={fokusId} schatten={!reduziert} onModelle={modelleGeladen}
-        darstellung={darstellung} interaktion={interaktion} separiert={separiert} onBefunde={onLeitungsBefunde} ampel={ampel} freiraum={freiraum} />
+        darstellung={darstellung} interaktion={interaktion} separiert={separiert} onBefunde={onLeitungsBefunde} ampel={ampel} />
       {!auswahl && ziel && <Ortsmarke welt={welt} ziel={ziel} darstellung={darstellung} />}
       </FreiraumSchnitt>
       <NahKulisse basisZoom={basisZoom}><FreiraumSchnitt freiraum={freiraum}><Kulisse3 bereich={h.bereich} schatten={!reduziert} /></FreiraumSchnitt></NahKulisse>

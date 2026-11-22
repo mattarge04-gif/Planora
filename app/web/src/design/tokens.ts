@@ -95,6 +95,34 @@ export const TOKENS = {
     kameraMinM: 4.5, // Einpassung beim Einschalten: Bereich der dringenden Anlagen mindestens so gross (Kontext bleibt)
     leitungMischung: 1, // KOO-Rot -> grau2 (1 = rein grau2): Leitungen neutral, Rohrverdickung bleibt
     flaechenMischung: 0.55, // Flächenband (FBH) flaecheSekundaer -> grau2
+    /**
+     * Prüfmanschette (Entscheid 22.11.2026, Ansatz C Stufe 1): Ring am Rohr bzw. Band am Gehäuse in Ampelfarbe.
+     * Form zusätzlich zur Farbe: Rot zwei Ringe, Gelb breit, Grün schmal, Grau gestrichelt. Arbeitswerte [A].
+     */
+    manschette: {
+      hoeheRohrM: { rot: 0.022, gelb: 0.048, gruen: 0.016, grau: 0.036 }, // Ring am Rohr (Rot: je Ring)
+      hoeheGehaeuseM: { rot: 0.042, gelb: 0.064, gruen: 0.014, grau: 0.05 }, // Band am Gehäuse (Rot: je Band)
+      rotLueckeRohrM: 0.028, // Lücke zwischen den zwei roten Ringen
+      rotLueckeGehaeuseM: 0.03,
+      rohrInnenFaktor: 1.08, // × Rohrradius: liegt am Rohr an
+      rohrAussenFaktor: 2.4, // × Rohrradius: steht deutlich über die (verdickte) Rohrsilhouette
+      rohrAbstandM: 0.003, // Lücke eigenes Teil -> Ring
+      fremdAbstandM: 0.025, // Mindestlücke Ring -> fremdes Teil (Zuordnung eindeutig), sonst Band ums Teil
+      gehaeuseAbstandM: 0.006, // Lücke Gehäuse -> Band
+      gehaeuseDickeM: 0.018,
+      gehaeuseDickeRotM: 0.024, // Rot am Gehäuse kräftiger (Rot-Fläche je Bauteil >= Grün-Fläche je Bauteil, Kritik r1)
+      gehaeuseDickeGruenM: 0.008, // Grün am Gehäuse schmal: Fläche nach Dringlichkeit, nicht nach Gerätegrösse
+      kragenDickeM: 0.016, // Kragen am Verteilerbalken
+      strichRohr: 6, // gestrichelter Ring «Baujahr fehlt»: Striche je Umfang
+      strichAnteil: 0.6, // Strich / (Strich + Lücke)
+      zielPx: 9, // aus der Distanz: Gesamthöhe der Manschette je Stufe mindestens so viele px …
+      zielPxGruen: 5, // … Grün weniger
+      maxFaktor: 5, // … höchstens so viel gestreckt (und nie bis ans fremde Teil)
+      kanteHelligkeit: 0.82, // Ober-/Unterseite und Innenwand etwas dunkler: Ringkanten lesbar, Aussenwand bleibt tokengenau
+      aoAusgleich: 1.08, // linearer Ausgleich der Umgebungsverdeckung (F9 Rest), nur mit Effekten
+      hoverRandM: 0.006, // Hover/Auswahl: Manschette mit eisAkzent-Rand
+      aufziehenMs: 280, // Einschalten E: Manschetten ziehen von Höhe 0 auf
+    },
   },
   bewegung: {
     hoverMs: 160,
