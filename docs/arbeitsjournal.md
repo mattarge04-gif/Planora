@@ -12,7 +12,7 @@ Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 - [F] Gestaltung planora-design mittel: 3 Runden, visual-critic r3 "bereit"; Entscheid `docs/design/entscheide/2026-11-19-lebensdauer-ampel.md`, Fehler F9 (Tone Mapping).
 - [F] Browser-Abnahme `docs/abnahme/2026-11-20-lebensdauer/README.md`: Zahlen Karte/Twin/Plan/CSV identisch, 8 Klicks + 3 Eingaben fuer Baujahr + 2 Preise. Gesamtreview "bereit mit kleinen Fixes" -> Fixwelle `8e331a4` (Rappen, CSV-Texte mit Umlauten, Preisquelle "dokument" bleibt, Plan-Eingaben). Pruefstand Backend 616/616, Web 503/503, Typen und Build gruen.
 
-### 2. Entscheide des Controllers (Rulings, vom PO zu pruefen)
+### 2. Entscheide des Controllers (Rulings; PO-bestaetigt 22.11.: "passt")
 
 1. `FachFehler.status` um 400/404 erweitert (Spec verlangt 400 fuer fremde Bauteil-ID).
 2. Plan-Testfehler korrigiert (Akte mit Preis braucht Quelle).
