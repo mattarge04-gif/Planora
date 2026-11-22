@@ -34,9 +34,21 @@ export const istZurueck = (filter: AmpelFilter | null | undefined, schluessel: s
 /** Pegelband: Segment voll? Ohne Filter immer. */
 export const segmentVoll = (filter: AmpelFilter | null | undefined, ampel: Ampel) => !filter || filter.stufen.has(ampel);
 
-/** Kamerabereich der Treffer (Grundriss auf kameraMinM erweitert); null ohne Treffer. */
+/**
+ * Kamerabereich der Treffer: Hüllbox, Grundriss nur auf filter.kameraMinM erweitert, damit die Treffer das Bild füllen
+ * (Kritik r5: >= 55 % der freien Breite statt Raumdistanz); null ohne Treffer.
+ */
 export function trefferBereich(anlagen: AmpelAnlage[], treffer: ReadonlySet<string>): Bereich | null {
-  return bereichWeiten(anlagen.filter((a) => treffer.has(a.schluessel)));
+  return bereichWeiten(anlagen.filter((a) => treffer.has(a.schluessel)), F.kameraMinM);
+}
+
+/**
+ * Skalierung eines Umrisses (BackSide-Hülle um die Bauteilmitte), damit er etwa `px` Bildschirmpixel breit erscheint;
+ * Bezug ist die grösste Achse (Mindestzuschlag 1 %).
+ */
+export function umrissSkala(masse: V3, zoom: number, px: number): number {
+  const gross = Math.max(...masse, 1e-3);
+  return zoom > 0 ? Math.max(1.01, 1 + (2 * px) / (zoom * gross)) : 1.04;
 }
 
 /** Kantenlänge des Anhängers aus dem Zoom (px pro Meter): nah anhaengerM, aus der Distanz anhaengerPx, gedeckelt. */

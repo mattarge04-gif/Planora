@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { erneuerungFilter, ohnePreis, umschalten } from "./erneuerungFilter";
+import { erneuerungFilter, ohnePreis, trefferDetail, umschalten } from "./erneuerungFilter";
 import type { LdErgebnisBauteil } from "../lebensdauer/typen";
 import type { FilterStufe } from "../szene3/ampelFilter";
 
@@ -59,5 +59,13 @@ describe("Legende als Filter", () => {
   it("umschalten", () => {
     expect([...umschalten(s("rot"), "gelb")]).toEqual(["rot", "gelb"]);
     expect([...umschalten(s("rot"), "rot")]).toEqual([]);
+  });
+  it("Ersatzjahr (frühestes passendes) und zweite Zeile", () => {
+    const f = erneuerungFilter(ergebnis, anlagen, s("ohnePreis", "rot", "grau"))!;
+    const p1 = f.treffer.find((t) => t.anlage.schluessel === "P1")!, hk = f.treffer.find((t) => t.anlage.schluessel === "HK")!;
+    expect(p1.ersatzjahr).toBe(2020);
+    expect(hk.ersatzjahr).toBeNull();
+    expect(trefferDetail(p1, "Gruppe Büro A")).toBe("Ersatz 2020 · Preis fehlt · Gruppe Büro A");
+    expect(trefferDetail(hk, null)).toBe("Baujahr fehlt");
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TOKENS } from "../design/tokens";
 import { AMPEL_FARBE } from "../lebensdauer/ansicht";
-import { anhaengerGroesse, anhaengerOrt, istZurueck, segmentVoll, trefferBereich, zurueck, type AmpelFilter } from "./ampelFilter";
+import { anhaengerGroesse, anhaengerOrt, istZurueck, segmentVoll, trefferBereich, umrissSkala, zurueck, type AmpelFilter } from "./ampelFilter";
 
 const F = TOKENS.erneuerung.filter;
 const filter = (o: Partial<AmpelFilter> = {}): AmpelFilter => ({ treffer: new Set(["a"]), anhaenger: new Set(), stufen: new Set(["rot"]), ...o });
@@ -25,9 +25,10 @@ describe("Filter", () => {
     expect(segmentVoll(filter(), "rot")).toBe(true);
     expect(segmentVoll(filter({ stufen: new Set(["ohnePreis"]) }), "rot")).toBe(false);
   });
-  it("Kamerabereich nur ueber die Treffer, mindestens kameraMinM", () => {
+  it("Kamerabereich nur ueber die Treffer, eng (filter.kameraMinM statt Raumkontext)", () => {
     const b = trefferBereich([anlage("a", 0), anlage("b", 30)], new Set(["a"]))!;
-    expect(b.xMax - b.xMin).toBeCloseTo(TOKENS.erneuerung.kameraMinM);
+    expect(b.xMax - b.xMin).toBeCloseTo(Math.max(1, F.kameraMinM));
+    expect(F.kameraMinM).toBeLessThan(TOKENS.erneuerung.kameraMinM);
     expect((b.xMin + b.xMax) / 2).toBeCloseTo(0);
     const zwei = trefferBereich([anlage("a", 0), anlage("b", 30)], new Set(["a", "b"]))!;
     expect(zwei.xMax - zwei.xMin).toBeCloseTo(31);
@@ -47,5 +48,16 @@ describe("Anhaenger", () => {
     expect(p[0]).toBeCloseTo(0);
     expect(p[2]).toBeCloseTo(0.075 + F.anhaengerAbstandM + 0.06);
     expect(p[1] + 0.12).toBeCloseTo(1.125); // Oberkante des Schilds = Oberkante des Teils
+  });
+});
+
+describe("umrissSkala", () => {
+  it("Umriss in Bildschirmpixeln: fokussiert breiter, Mindestzuschlag, ohne Zoom wie bisher", () => {
+    const m: [number, number, number] = [0.35, 0.45, 0.3], z = 150;
+    const px = (s: number) => (s - 1) * 0.45 / 2 * z;
+    expect(px(umrissSkala(m, z, 2))).toBeCloseTo(2);
+    expect(umrissSkala(m, z, 2)).toBeGreaterThan(umrissSkala(m, z, 1));
+    expect(umrissSkala([5, 5, 5], 1000, 1)).toBe(1.01);
+    expect(umrissSkala(m, 0, 1)).toBe(1.04);
   });
 });

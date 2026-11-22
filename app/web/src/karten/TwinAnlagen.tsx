@@ -3,18 +3,22 @@ import type { AnlagenZeile } from "../dashboard";
 import { AMPEL_TEXT } from "../lebensdauer/ansicht";
 import type { Ampel } from "../lebensdauer/typen";
 import { AmpelZeichen } from "../ui/Ampel";
+import { X } from "lucide-react";
 
 interface Props {
   anlagen: AnlagenZeile[]; auswahl: string | null; fokusId: string | null;
   onWahl: (a: AnlagenZeile) => void;
   /** Modus Erneuerung: Ampel je Anlage (dringendstes Bauteil) statt Erfassungsstatus. */
   ampel?: ReadonlyMap<string, Ampel>;
+  /** Legendenfilter aktiv (PO 22.11.): nur Treffer zeigen, mit Hinweis und Weg zum Aufheben. */
+  filter?: { treffer: ReadonlySet<string>; onAufheben: () => void } | null;
 }
 
 const STATUS = { bestaetigt: "Bestätigt", vorgeschlagen: "Vorgeschlagen" } as const;
 
 /** Anlagen-Tabelle mit Tabellenweg als ein Tab-Stopp (Grid): Pfeile, Pos1, Ende bewegen; Enter/Leertaste oder Klick wählt. */
-export function TwinAnlagen({ anlagen, auswahl, fokusId, onWahl, ampel }: Props) {
+export function TwinAnlagen({ anlagen: alle, auswahl, fokusId, onWahl, ampel, filter = null }: Props) {
+  const anlagen = filter ? alle.filter((a) => filter.treffer.has(a.schluessel)) : alle;
   const rolle = useRef<HTMLDivElement>(null);
   const [rand, setRand] = useState({ oben: false, unten: false });
 
@@ -64,14 +68,18 @@ export function TwinAnlagen({ anlagen, auswahl, fokusId, onWahl, ampel }: Props)
       <header className="ui-karte-kopf">
         <h2 id="karte-anlagen">Anlagen<span className="ui-anzahl">{anlagen.length}</span>
           {(rand.unten || rand.oben) && <span className="tw-scrollhinweis">Liste scrollbar</span>}</h2>
-        {ampel
+        {filter
+          ? <p className="tw-legende tw-tabelle-filter">Gefiltert, {anlagen.length} von {alle.length}
+            <button type="button" className="tw-treffer-aufheben" onClick={filter.onAufheben}>
+              <X size={13} strokeWidth={2} aria-hidden="true" />Filter aufheben</button></p>
+          : ampel
           ? <p className="tw-legende" aria-label="Legende">Erneuerung: je Anlage das dringendste Bauteil</p>
           : <p className="tw-legende" aria-label="Legende">
             <span className="tw-strich" aria-hidden="true" />Heizung
             <span className="tw-punkt" aria-hidden="true" />Leitungen: schematischer Verlauf
           </p>}
       </header>
-      {anlagen.length === 0 ? <p className="tw-leer">Noch keine Anlagen erfasst.</p> :
+      {anlagen.length === 0 ? <p className="tw-leer">{filter ? "Keine Treffer." : "Noch keine Anlagen erfasst."}</p> :
         <div ref={rolle} onScroll={pruefen} role="region" aria-label="Anlagenliste"
           className={`tw-tabelle${rand.oben ? " tw-mehr-oben" : ""}${rand.unten ? " tw-mehr-unten" : ""}${fokusId ? " tw-gefiltert" : ""}`}>
           <table role="grid" aria-label="Anlagen" aria-readonly="true">

@@ -20,10 +20,12 @@ export function kurzId(ids: string[]): string {
   return ids.length > 1 ? `${erste} +${ids.length - 1}` : erste;
 }
 
-interface Props { karte: ObjektKarte; onSchliessen: () => void; lebensdauer?: LdStand | null; darfAendern?: boolean; onLebensdauer?: (s: LdStand) => void }
+interface Props { karte: ObjektKarte; onSchliessen: () => void; lebensdauer?: LdStand | null; darfAendern?: boolean; onLebensdauer?: (s: LdStand) => void;
+  /** Gruppe des Zubehörs (Pumpe, Ventil), unterscheidet gleichnamige Anlagen wie in der Trefferliste (Kritik r5). */
+  bezug?: string | null }
 
 /** Anlagenkarte rechts, Inhalt aus objektKarte(). Dokumente sind noch nicht angebunden. */
-export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAendern, onLebensdauer }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
+export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAendern, onLebensdauer, bezug = null }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
   const Icon = ANLAGEN_ICON[karte.icon];
   return (
     <section ref={kartenRef} className="ui-glas ui-karte tw-objekt" aria-labelledby="karte-objekt">
@@ -41,6 +43,7 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAe
       <dl className="tw-zeilen tw-objekt-daten">
         <div><dt>Hersteller / Typ</dt><dd>{karte.herstellerTyp ?? <span className="tw-fehlt" title="Nicht erfasst" aria-label="Nicht erfasst">–</span>}</dd></div>
         <div><dt>Standort</dt><dd>{karte.standort}</dd></div>
+        {bezug && <div><dt>Gruppe</dt><dd>{bezug}</dd></div>}
         <div><dt>Menge</dt><dd>{karte.menge}</dd></div>
         <div><dt>{karte.bauteilIds.length > 1 ? "Bauteil-IDs" : "Bauteil-ID"}</dt><dd className="tw-id" title={karte.bauteilIds.join(", ")}>{kurzId(karte.bauteilIds)}</dd></div>
       </dl>

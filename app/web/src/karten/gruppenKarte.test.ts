@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { KatalogEintrag, Welt } from "../typen";
-import { gruppenKarte, gruppenVon } from "./gruppenKarte";
+import { anlagenBezug, gruppenKarte, gruppenVon } from "./gruppenKarte";
 
 const dateien = import.meta.glob<Welt>("../fixtures/muster-*.json", { eager: true, import: "default" });
 const muster = (name: string): Welt => structuredClone(dateien[Object.keys(dateien).find((p) => p.includes(`muster-${name}`))!]);
@@ -42,5 +42,13 @@ describe("gruppenKarte", () => {
   });
   it("unbekannte ID ergibt keine Karte", () => {
     expect(gruppenKarte(muster("m2"), katalog, "gibt-es-nicht")).toBeNull();
+  });
+  it("Bezug einer Anlage: Zubehör nennt die Gruppe, sonst der Ort ohne Geschoss", () => {
+    const w = muster("m3");
+    const [, fbh] = gruppenVon(w, katalog);
+    expect(anlagenBezug(fbh.zubehoer[0], "UG1 · Technik", [fbh])).toBe("FBH");
+    expect(anlagenBezug("x", "OG1 · Buero C", [fbh])).toBe("Buero C");
+    expect(anlagenBezug("x", "OG1", [])).toBeNull();
+    expect(anlagenBezug("x", null, [{ zubehoer: ["x"], ersatz: false, bezeichnung: " ", nummer: 3 }])).toBe("Gruppe 3");
   });
 });

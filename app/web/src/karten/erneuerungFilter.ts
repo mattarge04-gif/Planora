@@ -37,6 +37,8 @@ export interface Treffer<A extends FilterAnlage = FilterAnlage> {
   gruende: FilterStufe[];
   /** Anzahl passender Bauteile der Anlage. */
   bauteile: number;
+  /** Frühestes Ersatzjahr der passenden Bauteile (null: keines bekannt). */
+  ersatzjahr: number | null;
 }
 
 export interface FilterErgebnis<A extends FilterAnlage = FilterAnlage> {
@@ -54,16 +56,21 @@ export function erneuerungFilter<A extends FilterAnlage>(ergebnis: Pick<LdErgebn
   posten: ReadonlySet<FilterStufe>): FilterErgebnis<A> | null {
   if (!posten.size) return null;
   const je = new Map(ergebnis.bauteile.map((b) => [b.id, postenVon(b, ergebnis.stichtag)]));
+  const jahr = new Map(ergebnis.bauteile.map((b) => [b.id, b.ersatzjahr]));
   const treffer: (Treffer<A> & { index: number })[] = [];
   anlagen.forEach((anlage, index) => {
     const gruende = new Set<FilterStufe>();
-    let bauteile = 0;
+    let bauteile = 0, ersatzjahr: number | null = null;
     for (const id of anlage.bauteilIds) {
       const passend = (je.get(id) ?? []).filter((p) => posten.has(p));
-      if (passend.length) bauteile++;
+      if (passend.length) {
+        bauteile++;
+        const j = jahr.get(id) ?? null;
+        if (j !== null && (ersatzjahr === null || j < ersatzjahr)) ersatzjahr = j;
+      }
       passend.forEach((p) => gruende.add(p));
     }
-    if (gruende.size) treffer.push({ anlage, gruende: POSTEN_FOLGE.filter((p) => gruende.has(p)), bauteile, index });
+    if (gruende.size) treffer.push({ anlage, gruende: POSTEN_FOLGE.filter((p) => gruende.has(p)), bauteile, ersatzjahr, index });
   });
   const rang = (t: Treffer<A>) => POSTEN_FOLGE.indexOf(t.gruende[0]);
   treffer.sort((a, b) => rang(a) - rang(b) || a.index - b.index);
@@ -92,4 +99,17 @@ export function umschalten(posten: ReadonlySet<FilterStufe>, p: FilterStufe): Se
   const neu = new Set(posten);
   if (neu.has(p)) neu.delete(p); else neu.add(p);
   return neu;
+}
+
+/**
+ * Zweite Zeile eines Treffers (Kritik r5 Top 1): Ersatzjahr bzw. «Baujahr fehlt», dazu «Preis fehlt», dann der Bezug
+ * (Gruppe oder Ort), z. B. «Ersatz 2020 · Preis fehlt · Gruppe Büro A».
+ */
+export function trefferDetail(t: Pick<Treffer, "gruende" | "ersatzjahr">, bezug: string | null): string {
+  const teile: string[] = [];
+  if (t.ersatzjahr !== null) teile.push(`Ersatz ${t.ersatzjahr}`);
+  else if (t.gruende.includes("grau")) teile.push("Baujahr fehlt");
+  if (t.gruende.includes("ohnePreis")) teile.push("Preis fehlt");
+  if (bezug) teile.push(bezug);
+  return teile.join(" · ");
 }

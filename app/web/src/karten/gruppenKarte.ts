@@ -23,6 +23,21 @@ export interface GruppenKarte {
   betont: string[];
 }
 
+/** Anzeigename einer Gruppe (wie Titel der Gruppenkarte). */
+export const gruppenTitel = (st: Pick<GruppenStrang, "ersatz" | "bezeichnung" | "nummer">) =>
+  st.ersatz ? "Ungeregelte Leitung" : st.bezeichnung.trim() || `Gruppe ${st.nummer}`;
+
+/**
+ * Bezug einer Anlage zur Unterscheidung gleichnamiger Anlagen (Kritik r5 Top 1): Zubehör (Pumpe, Ventil) nennt seine
+ * Gruppe, sonst der Ort im Geschoss (Einheit/Raum aus dem Standort «UG1 · Technikzentrale»); null, wenn nichts bekannt ist.
+ */
+export function anlagenBezug(schluessel: string, standort: string | null, straenge: Pick<GruppenStrang, "zubehoer" | "ersatz" | "bezeichnung" | "nummer">[]): string | null {
+  const st = straenge.find((s) => s.zubehoer.includes(schluessel));
+  if (st) return gruppenTitel(st);
+  const teile = (standort ?? "").split(" · ");
+  return teile.length > 1 ? teile.slice(1).join(" · ") : null;
+}
+
 /** Gruppen der Welt (v2: aus `welt.gruppen`, v1: Ersatzgruppen je bisheriger Verteilerverbindung). */
 export const gruppenVon = (welt: Welt, katalog: KatalogEintrag[]): GruppenStrang[] => gruppenVerbindungen(welt, katalog);
 
@@ -49,7 +64,7 @@ export function gruppenKarte(welt: Welt, katalog: KatalogEintrag[], gruppeId: st
   });
   return {
     id: st.gruppeId,
-    titel: st.ersatz ? "Ungeregelte Leitung" : st.bezeichnung.trim() || `Gruppe ${st.nummer}`,
+    titel: gruppenTitel(st),
     art: GRUPPEN_ART[st.art],
     verteiler: `${v ? teilName(v.katalogId, katalog) : "Verteiler"}, Abgang ${st.abgangIndex + 1}`,
     bestueckung: [...bestueckung].map(([id, menge]) => ({ name: teilName(id, katalog), menge }))

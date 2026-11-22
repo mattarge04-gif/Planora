@@ -32,7 +32,7 @@ export function ampelBereich(anlagen: AmpelAnlage[]): Bereich | null {
 }
 
 /** Hüllbox der Anlagen, Grundriss auf mindestens `kameraMinM` je Achse erweitert; null ohne Anlage. */
-export function bereichWeiten(auswahl: Pick<AmpelAnlage, "mitte" | "masse">[]): Bereich | null {
+export function bereichWeiten(auswahl: Pick<AmpelAnlage, "mitte" | "masse">[], minM: number = E.kameraMinM): Bereich | null {
   if (!auswahl.length) return null;
   const b: Bereich = { xMin: Infinity, xMax: -Infinity, yMin: Infinity, yMax: -Infinity, zMin: Infinity, zMax: -Infinity };
   for (const a of auswahl) {
@@ -41,7 +41,7 @@ export function bereichWeiten(auswahl: Pick<AmpelAnlage, "mitte" | "masse">[]): 
     b.zMin = Math.min(b.zMin, a.mitte[2] - a.masse[2] / 2); b.zMax = Math.max(b.zMax, a.mitte[2] + a.masse[2] / 2);
   }
   const weiten = (min: number, max: number): [number, number] => {
-    const fehlt = E.kameraMinM - (max - min);
+    const fehlt = minM - (max - min);
     return fehlt > 0 ? [min - fehlt / 2, max + fehlt / 2] : [min, max];
   };
   [b.xMin, b.xMax] = weiten(b.xMin, b.xMax);

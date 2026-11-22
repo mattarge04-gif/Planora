@@ -1,15 +1,14 @@
 {
-  "szenario": "C:/Users/matta/AppData/Local/Temp/claude/bcf0c113125feb8e/b5bd847d-bbb0-4a5a-b6e8-5ed41e3ae655/scratchpad/filter.json",
-  "zeit": "2026-11-22T20:43:21.229Z",
+  "szenario": "C:/Users/matta/AppData/Local/Temp/claude/bcf0c113125feb8e/b5bd847d-bbb0-4a5a-b6e8-5ed41e3ae655/scratchpad/filter2.json",
+  "zeit": "2026-11-22T20:57:05.434Z",
   "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002207) Direct3D11 vs_5_0 ps_5_0, D3D11)",
   "ansichten": [
     {
       "fenster": "1440x900",
       "bilder": [
-        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\filter-ersetzen-1440x900.png",
-        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\filter-ersetzen-ohne-preis-1440x900.png",
-        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\filter-baujahr-fehlt-1440x900.png",
-        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\filter-treffer-gewaehlt-1440x900.png"
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\r5-fokus-liste-tabelle-gefiltert-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\r5-treffer-karte-gruppe-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\r5-nach-esc-esc-1440x900.png"
       ],
       "fps": [],
       "meldungen": [
@@ -35,10 +34,9 @@
     {
       "fenster": "1280x720",
       "bilder": [
-        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\filter-ersetzen-1280x720.png",
-        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\filter-ersetzen-ohne-preis-1280x720.png",
-        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\filter-baujahr-fehlt-1280x720.png",
-        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\filter-treffer-gewaehlt-1280x720.png"
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\r5-fokus-liste-tabelle-gefiltert-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\r5-treffer-karte-gruppe-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\abnahme\\2026-11-22-ampel-filter\\r5-nach-esc-esc-1280x720.png"
       ],
       "fps": [],
       "meldungen": [

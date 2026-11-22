@@ -4,7 +4,8 @@ import { AmpelZeichen } from "../ui/Ampel";
 import { AMPEL_FARBE, AMPEL_TEXT, legende } from "../lebensdauer/ansicht";
 import type { Ampel, LdStand } from "../lebensdauer/typen";
 import type { FilterStufe } from "../szene3/ampelFilter";
-import { POSTEN_TEXT, type FilterAnlage, type Treffer } from "./erneuerungFilter";
+import { POSTEN_TEXT, trefferDetail, type FilterAnlage, type Treffer } from "./erneuerungFilter";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 
 const REIHENFOLGE: Ampel[] = ["rot", "gelb", "gruen", "grau"];
 
@@ -17,6 +18,12 @@ export interface LegendenFilter<A extends FilterAnlage & { name: string }> {
   geschossCode: (id: string) => string;
   auswahl: string | null;
   onTreffer: (a: A) => void;
+  /** Gruppe oder Ort zur Unterscheidung gleichnamiger Anlagen. */
+  bezug: (a: A) => string | null;
+  /** Ein Treffer hervorgehoben (Liste: Hover/Fokus/Pfeiltasten) und Rückweg aus dem 3D-Hover. */
+  fokus: string | null;
+  onFokus: (schluessel: string | null) => void;
+  hover3d: string | null;
 }
 
 interface Props<A extends FilterAnlage & { name: string }> {
@@ -74,32 +81,59 @@ export function TwinErneuerung<A extends FilterAnlage & { name: string }>({ stan
   );
 }
 
-/** Treffer des Filters je Anlage: Grund (Form + Farbe), Name, Geschoss. Klick wählt die Anlage wie in der Tabelle. */
+/**
+ * Treffer des Filters je Anlage: Grund (Form + Farbe), Name, Geschoss, zweite Zeile mit Ersatzjahr und Bezug. Hover,
+ * Fokus und Pfeiltasten heben genau einen Treffer im Modell hervor («2 von 5»); 3D-Hover markiert die Zeile (Rückweg).
+ * Klick wählt die Anlage wie in der Tabelle.
+ */
 function Trefferliste<A extends FilterAnlage & { name: string }>({ filter }: { filter: LegendenFilter<A> }) {
   const n = filter.treffer.length;
+  const liste = useRef<HTMLUListElement>(null);
+  const markiert = filter.fokus ?? filter.hover3d;
+  const stelle = markiert ? filter.treffer.findIndex((t) => t.anlage.schluessel === markiert) : -1;
+  // 3D-Hover: Zeile innerhalb der Liste in Sicht bringen (nur die Liste scrollt, nicht die Spalte).
+  useEffect(() => {
+    const el = liste.current, z = filter.hover3d ? el?.querySelector<HTMLElement>(`[data-schluessel="${CSS.escape(filter.hover3d)}"]`) : null;
+    if (!el || !z) return;
+    if (z.offsetTop < el.scrollTop) el.scrollTop = z.offsetTop;
+    else if (z.offsetTop + z.offsetHeight > el.scrollTop + el.clientHeight) el.scrollTop = z.offsetTop + z.offsetHeight - el.clientHeight;
+  }, [filter.hover3d]);
+  const taste = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
+    const knoepfe = [...(liste.current?.querySelectorAll<HTMLButtonElement>(".tw-treffer-zeile") ?? [])];
+    const ziel = e.key === "ArrowDown" ? knoepfe[i + 1] : e.key === "ArrowUp" ? knoepfe[i - 1]
+      : e.key === "Home" ? knoepfe[0] : e.key === "End" ? knoepfe[knoepfe.length - 1] : undefined;
+    if (ziel) { e.preventDefault(); ziel.focus(); ziel.scrollIntoView({ block: "nearest" }); }
+  };
   return (
     <div className="tw-treffer">
       <div className="tw-treffer-kopf">
-        <span role="status" aria-live="polite">{n === 0 ? "Keine Treffer" : n === 1 ? "1 Anlage" : `${n} Anlagen`}</span>
+        <span role="status" aria-live="polite">{n === 0 ? "Keine Treffer"
+          : stelle >= 0 ? `${stelle + 1} von ${n}` : n === 1 ? "1 Anlage" : `${n} Anlagen`}</span>
         <button type="button" className="tw-treffer-aufheben" onClick={filter.onAufheben}>
           <X size={13} strokeWidth={2} aria-hidden="true" />Filter aufheben
         </button>
       </div>
-      {n > 0 && <ul className="tw-treffer-liste" aria-label="Treffer">
-        {filter.treffer.map((t) => {
+      {n > 0 && <ul ref={liste} className="tw-treffer-liste" aria-label="Treffer, Pfeiltasten wechseln" onMouseLeave={() => filter.onFokus(null)}>
+        {filter.treffer.map((t, i) => {
           const ampel = t.gruende.find((g): g is Ampel => g !== "ohnePreis");
           const code = t.anlage.geschossId ? filter.geschossCode(t.anlage.geschossId) : "–";
-          const grund = t.gruende.map((g) => POSTEN_TEXT[g]).join(", ");
+          const detail = trefferDetail(t, filter.bezug(t.anlage));
           const mehr = t.anlage.bauteilIds.length > 1 ? `, ${t.bauteile} von ${t.anlage.bauteilIds.length} Bauteilen` : "";
+          const k = t.anlage.schluessel;
           return (
-            <li key={t.anlage.schluessel}>
-              <button type="button" className="tw-treffer-zeile" aria-current={filter.auswahl === t.anlage.schluessel || undefined}
-                aria-label={`${t.anlage.name}, ${code}, ${grund}${mehr}`} title={`${grund}${mehr}`} onClick={() => filter.onTreffer(t.anlage)}>
+            <li key={k}>
+              <button type="button" data-schluessel={k}
+                className={`tw-treffer-zeile${k === markiert ? " tw-treffer-markiert" : ""}`}
+                aria-current={filter.auswahl === k || undefined}
+                aria-label={`${t.anlage.name}, ${code}, ${t.gruende.map((g) => POSTEN_TEXT[g]).join(", ")}${detail ? `, ${detail}` : ""}${mehr}`}
+                onMouseEnter={() => filter.onFokus(k)} onFocus={() => filter.onFokus(k)} onBlur={() => filter.onFokus(null)}
+                onKeyDown={(e) => taste(e, i)} onClick={() => filter.onTreffer(t.anlage)}>
                 {ampel ? <AmpelZeichen ampel={ampel} /> : <Tag size={14} strokeWidth={2.1} aria-hidden="true" className="tw-ohne-preis" />}
                 <span className="tw-treffer-name">{t.anlage.name}
                   {ampel && t.gruende.includes("ohnePreis") && <Tag size={12} strokeWidth={2.1} aria-hidden="true" className="tw-ohne-preis" />}
                 </span>
                 <span className="tw-treffer-ort">{code}</span>
+                {detail && <span className="tw-treffer-detail">{detail}</span>}
               </button>
             </li>
           );

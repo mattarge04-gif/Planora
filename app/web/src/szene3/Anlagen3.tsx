@@ -1,5 +1,5 @@
 import { RoundedBox, useGLTF } from "@react-three/drei";
-import { useFrame, type ThreeEvent } from "@react-three/fiber";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Component, Suspense, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
@@ -8,7 +8,10 @@ import type { KatalogEintrag, WeltSymbol } from "../typen";
 import { anlagenDaten, inlineMatrix, modellVon, type AnzeigeSymbol } from "./technik";
 import type { Interaktion } from "./Interaktion";
 import { Anhaenger3, Manschetten3 } from "./Manschetten3";
-import { istZurueck, type AmpelFilter } from "./ampelFilter";
+import { istZurueck, umrissSkala, type AmpelFilter } from "./ampelFilter";
+
+/** Umriss im Filter: fokussierter Treffer (Symbol-Schlüssel) breiter und mit Fläche. */
+interface Umriss { fokus: string | null }
 
 /** Modus Erneuerung: KOO-Akzent der Modelle neutral, damit Rot nur «Ersetzen» bedeutet (Entscheid 19.11.2026). */
 const KOO_NEUTRAL = TOKENS.farbe.grau2;
@@ -21,6 +24,8 @@ interface Props {
   ampel?: ReadonlyMap<string, string>;
   /** Legende als Filter: Treffer voll mit Auswahlumriss, übrige Anlagen durchscheinend (deckkraft), Anhänger. */
   filter?: AmpelFilter | null;
+  /** Fokussierter Treffer (Liste, Pfeiltasten): Umriss fokusUmrissPx und Fläche eisAkzent; übrige Treffer umrissPx. */
+  filterFokus?: string | null;
 }
 
 /** Eine dargestellte Instanz: Teile in der Leitung (Gruppenstock, «vor Bauteil») erscheinen je Stück einmal. */
@@ -49,7 +54,7 @@ class ModellGrenze extends Component<{ children: ReactNode; ersatz: ReactNode },
   render() { return this.state.fehler ? this.props.ersatz : this.props.children; }
 }
 
-export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, ampel, filter = null }: Props) {
+export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, ampel, filter = null, filterFokus = null }: Props) {
   const gruppen = useMemo(() => {
     const g = new Map<string, Instanz[]>();
     for (const i of instanzen(symbole, katalog)) {
@@ -77,7 +82,8 @@ export function Anlagen3({ symbole, schatten, katalog, onModell, interaktion, am
     const ersatz = <Ersatz instanzen={gruppe} schatten={schatten} interaktion={ia} zurueck={zurueck} />;
     return pfad.startsWith("/modelle/")
       ? <ModellGrenze key={key} ersatz={ersatz}><Suspense fallback={ersatz}>
-        <Modell pfad={pfad} instanzen={gruppe} schatten={schatten && !zurueck} onModell={onModell} interaktion={ia} ampel={ampel} zurueck={zurueck} />
+        <Modell pfad={pfad} instanzen={gruppe} schatten={schatten && !zurueck} onModell={onModell} interaktion={ia} ampel={ampel} zurueck={zurueck}
+          umriss={filter ? { fokus: filterFokus } : null} />
       </Suspense></ModellGrenze>
       : <Ersatz key={key} instanzen={gruppe} schatten={schatten} interaktion={ia} zurueck={zurueck} />;
   })}</group>;
@@ -112,11 +118,13 @@ function ErsatzAnlage({ i, schatten, interaktion, zurueck }: { i: Instanz; schat
     </group>;
 }
 
-function Modell({ pfad, instanzen, schatten, onModell, interaktion, ampel, zurueck = false }: {
+function Modell({ pfad, instanzen, schatten, onModell, interaktion, ampel, zurueck = false, umriss = null }: {
   pfad: string; instanzen: Instanz[]; schatten: boolean; onModell: Props["onModell"]; interaktion?: Interaktion;
   ampel?: ReadonlyMap<string, string>;
   /** Legende als Filter: Nicht-Treffer durchscheinend (erneuerung.filter.deckkraft). */
   zurueck?: boolean;
+  /** Filter aktiv: Umriss in Bildschirmpixeln, fokussierter Treffer breiter und mit Fläche. */
+  umriss?: Umriss | null;
 }) {
   const { scene } = useGLTF(pfad, false, false);
   const neutral = ampel !== undefined;
@@ -145,18 +153,24 @@ function Modell({ pfad, instanzen, schatten, onModell, interaktion, ampel, zurue
   }, [scene, pfad, neutral, zurueck]);
   useEffect(() => { onModell(pfad, modell.anschluss); }, [pfad, modell, onModell]);
   useEffect(() => () => modell.materialien.forEach((m) => m.dispose()), [modell]);
-  return <group name={pfad}>{modell.teile.map((t, i) => <Modellinstanzen key={i} teil={t} instanzen={instanzen} schatten={schatten} interaktion={interaktion} />)}</group>;
+  return <group name={pfad}>{modell.teile.map((t, i) => <Modellinstanzen key={i} teil={t} instanzen={instanzen} schatten={schatten} interaktion={interaktion} umriss={umriss} />)}</group>;
 }
 
-function Modellinstanzen({ teil, instanzen, schatten, interaktion }: {
+function Modellinstanzen({ teil, instanzen, schatten, interaktion, umriss = null }: {
   teil: { geometrie: THREE.BufferGeometry; material: THREE.Material | THREE.Material[]; matrix: THREE.Matrix4 };
-  instanzen: Instanz[]; schatten: boolean; interaktion?: Interaktion;
+  instanzen: Instanz[]; schatten: boolean; interaktion?: Interaktion; umriss?: Umriss | null;
 }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const rand = useRef<THREE.InstancedMesh>(null);
+  const flaeche = useRef<THREE.InstancedMesh>(null);
+  const camera = useThree((s) => s.camera) as THREE.OrthographicCamera;
   const aktiv = instanzen.filter((i) => hervorgehoben(i.s, interaktion));
+  const fokus = umriss?.fokus ? instanzen.filter((i) => i.s.schluessel === umriss.fokus) : [];
   const material = useMemo(() => new THREE.MeshBasicMaterial({ color: TOKENS.farbe.eisAkzent, side: THREE.BackSide }), []);
-  useEffect(() => () => material.dispose(), [material]);
+  // Fläche des fokussierten Treffers: eisAkzent halbdeckend über dem Bauteil (nur Filter, Kritik r5).
+  const flaechenMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: TOKENS.farbe.eisAkzent, transparent: true,
+    opacity: TOKENS.erneuerung.filter.fokusFlaeche, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4 }), []);
+  useEffect(() => () => { material.dispose(); flaechenMaterial.dispose(); }, [material, flaechenMaterial]);
   const setzen = () => {
     const mesh = ref.current;
     if (!mesh) return;
@@ -173,11 +187,18 @@ function Modellinstanzen({ teil, instanzen, schatten, interaktion }: {
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
     if (rand.current) {
-      aktiv.forEach((i, k) => rand.current!.setMatrixAt(k, matrix(i, 1.04)));
+      // Ohne Filter wie bisher 4 %; im Filter in Bildschirmpixeln, der fokussierte Treffer breiter.
+      const skala = (i: Instanz) => !umriss ? 1.04 : umrissSkala(lageMasse(i), camera.zoom,
+        i.s.schluessel === umriss.fokus ? TOKENS.erneuerung.filter.fokusUmrissPx : TOKENS.erneuerung.filter.umrissPx);
+      aktiv.forEach((i, k) => rand.current!.setMatrixAt(k, matrix(i, skala(i))));
       rand.current.instanceMatrix.needsUpdate = true; rand.current.computeBoundingSphere();
     }
+    if (flaeche.current) {
+      fokus.forEach((i, k) => flaeche.current!.setMatrixAt(k, matrix(i, 1.002)));
+      flaeche.current.instanceMatrix.needsUpdate = true; flaeche.current.computeBoundingSphere();
+    }
   };
-  useLayoutEffect(setzen, [instanzen, teil, interaktion]);
+  useLayoutEffect(setzen, [instanzen, teil, interaktion, umriss]);
   useFrame(setzen, -1);
   useEffect(() => {
     const mesh = ref.current;
@@ -189,5 +210,7 @@ function Modellinstanzen({ teil, instanzen, schatten, interaktion }: {
     {...ereignisse((e) => e.instanceId === undefined ? undefined : instanzen[e.instanceId]?.s.schluessel, interaktion)}
     userData={{ instanzen: instanzen.map((i) => anlagenDaten(i.s)) }} />
     {aktiv.length > 0 && <instancedMesh key={`rand-${aktiv.length}`} ref={rand} args={[teil.geometrie, material, aktiv.length]} dispose={null} raycast={() => {}} />}
+    {fokus.length > 0 && <instancedMesh key={`flaeche-${fokus.length}`} ref={flaeche} args={[teil.geometrie, flaechenMaterial, fokus.length]} dispose={null}
+      raycast={() => {}} renderOrder={2} />}
   </>;
 }
