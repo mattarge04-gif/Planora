@@ -16,7 +16,7 @@ import { gruppenKarte, gruppenVon } from "../karten/gruppenKarte";
 import { TwinTooltip } from "../karten/TwinTooltip";
 import { TwinSzenenTasten } from "../karten/TwinSzenenTasten";
 import { TwinErneuerung } from "../karten/TwinErneuerung";
-import { naechsteAnsicht, type Ansicht, type AnsichtAktion } from "./ansichtModus";
+import { naechsteAnsicht, type AnsichtAktion } from "./ansichtModus";
 import { ampelFarben } from "../szene3/ampelFaerbung";
 import { ampelJeSymbol } from "../lebensdauer/ansicht";
 import { speicher } from "../ui/speicher";
@@ -265,22 +265,14 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
     const t = window.setTimeout(() => setTastenMeldung(null), 2400);
     return () => window.clearTimeout(t);
   }, [tastenMeldung]);
-  // Ansicht und Erneuerung nach einer Regel (ansichtModus.ts): Pill, Taste E und Übersicht verhalten sich gleich.
-  const [erneuerungVorher, setErneuerungVorher] = useState<Ansicht | null>(null);
+  // Ansicht und Erneuerung nach einer Regel (ansichtModus.ts): Erneuerung gilt in Übersicht und Technik.
   const ansichtAnwenden = (a: AnsichtAktion) => {
-    const r = naechsteAnsicht({ ansicht: modus, erneuerung, vorher: erneuerungVorher }, a);
-    setErneuerung(r.stand.erneuerung); setErneuerungVorher(r.stand.vorher);
+    const r = naechsteAnsicht({ ansicht: modus, erneuerung }, a);
+    setErneuerung(r.stand.erneuerung);
     if (r.stand.ansicht !== modus) waehleModus(r.stand.ansicht);
-    if (r.meldung) { sage(r.meldung); if (a.art === "ansicht") setTastenMeldung(r.meldung); }
+    if (r.meldung) sage(r.meldung);
   };
   const umErneuerung = (an: boolean) => ansichtAnwenden({ art: "erneuerung", an });
-  // Übersicht über andere Wege (Esc, Pos1, Geschoss abwählen) beendet die Erneuerung ebenso sichtbar.
-  useEffect(() => {
-    if (fokusId !== null || !erneuerung) return;
-    const r = naechsteAnsicht({ ansicht: "technik", erneuerung, vorher: erneuerungVorher }, { art: "ansicht", ansicht: "uebersicht" });
-    setErneuerung(r.stand.erneuerung); setErneuerungVorher(r.stand.vorher);
-    if (r.meldung) { sage(r.meldung); setTastenMeldung(r.meldung); }
-  }, [fokusId]); // eslint-disable-line react-hooks/exhaustive-deps
   const technikTaste = () => {
     if (fokusId) {
       const text = `Bereits im Technikmodus, ${geschossCode(fokusId)}`;
@@ -318,7 +310,8 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
           {/* Szene im DOM zwischen linken und rechten Karten: ein Tab-Stopp (Canvas) an der richtigen Stelle. */}
           {bereit && <Szene3 welt={welt!} katalog={katalog!.eintraege} fokusId={fokusId} reduziert={reduziert} freiraum={freiraum}
             ausgeblendet={ausgeblendet} separiert={separiert} auswahl={auswahl}
-            onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} tastatur onLeitungsBefunde={befundeMelden} ampel={ampel} />}
+            onAuswahl={waehle3d} onHover={setHover} onAuswahlPunkt={punktSetzen} ziel={ortZiel} tastatur onLeitungsBefunde={befundeMelden} ampel={ampel}
+            onGeschoss={(id) => { setOrtZiel(null); setFokusId(id); }} />}
           {bereit && <TwinSzenenTasten name={name} geschosse={daten.geschosse} fokusId={fokusId}
             onFokus={(id) => { setOrtZiel(null); setFokusId(id); }}
             onTechnik={technikTaste} meldung={tastenMeldung} separiert={separiert} onSeparieren={setSepariert}

@@ -125,3 +125,18 @@ describe("Geometrie", () => {
     expect(winkel.size).toBeLessThan(55);
   });
 });
+
+describe("Deckel und Striche (Kritik r2)", () => {
+  it("ab deckelEinpassung x Einpasszoom waechst die Bildschirmhoehe nicht weiter", () => {
+    const m = { ampel: "rot" as const, art: "gehaeuse" as const, maxHoehe: Infinity }, basis = 100, h = gesamtHoehe("rot", "gehaeuse");
+    const px = (z: number) => manschettenFaktor(m, z, basis) * h * z;
+    expect(px(basis * M.deckelEinpassung * 4)).toBeCloseTo(px(basis * M.deckelEinpassung), 0);
+    expect(manschettenFaktor(m, basis, basis)).toBe(manschettenFaktor(m, basis));
+  });
+  it("Grau: Strich mindestens zwei Bandhoehen, Anteil 0.5, mindestens strichMin", async () => {
+    const { strichAnzahl } = await import("./manschette");
+    expect(strichAnzahl(0.3, 0.036)).toBe(M.strichMin);
+    const n = strichAnzahl(4, 0.05), strich = 4 * M.strichAnteil / n;
+    expect(strich).toBeGreaterThanOrEqual(2 * 0.05 - 1e-9);
+  });
+});

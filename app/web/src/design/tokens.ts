@@ -113,8 +113,9 @@ export const TOKENS = {
       gehaeuseDickeRotM: 0.024, // Rot am Gehäuse kräftiger (Rot-Fläche je Bauteil >= Grün-Fläche je Bauteil, Kritik r1)
       gehaeuseDickeGruenM: 0.008, // Grün am Gehäuse schmal: Fläche nach Dringlichkeit, nicht nach Gerätegrösse
       kragenDickeM: 0.016, // Kragen am Verteilerbalken
-      strichRohr: 6, // gestrichelter Ring «Baujahr fehlt»: Striche je Umfang
-      strichAnteil: 0.6, // Strich / (Strich + Lücke)
+      strichAnteil: 0.5, // gestrichelt «Baujahr fehlt»: Strich / (Strich + Lücke) (Kritik r2: weniger, längere Striche)
+      strichMinHoehen: 2, // Strichlänge mindestens so viele Bandhöhen
+      strichMin: 3, // mindestens so viele Striche je Umfang
       zielPx: 9, // aus der Distanz: Gesamthöhe der Manschette je Stufe mindestens so viele px …
       zielPxGruen: 5, // … Grün weniger
       maxFaktor: 5, // … höchstens so viel gestreckt (und nie bis ans fremde Teil)
@@ -122,6 +123,26 @@ export const TOKENS = {
       aoAusgleich: 1.08, // linearer Ausgleich der Umgebungsverdeckung (F9 Rest), nur mit Effekten
       hoverRandM: 0.006, // Hover/Auswahl: Manschette mit eisAkzent-Rand
       aufziehenMs: 280, // Einschalten E: Manschetten ziehen von Höhe 0 auf
+      deckelEinpassung: 2.5, // ab diesem Vielfachen des Einpasszooms wächst die Manschette am Bildschirm nicht weiter (Kritik r2)
+    },
+    /**
+     * Pegelband an der Plattenstirn (Entscheid 22.11.2026, Ansatz C Stufe 2): je Geschoss ein Band an der kameraseitigen
+     * Stirn seiner Bodenplatte, segmentiert nach Anteilen der Ampelstufen (PO 22.11.: ohne Fussabdrücke).
+     */
+    pegel: {
+      hoeheM: 0.06, // Bandhöhe nah
+      minPx: 4, // aus der Distanz mindestens so viele px hoch …
+      maxM: 0.2, // … höchstens so hoch (Platte 0.25)
+      tiefeM: 0.004,
+      traegerFaktor: 1.8, // heller Träger (flaecheSekundaer) hinter den Segmenten, × Bandhöhe
+      abstandM: 0.001, // vor der Stirn (kein Z-Fighting)
+      randM: 0.12, // Abstand Bandende -> Plattenecke
+      lueckeM: 0.03, // Fuge zwischen Segmenten
+      minAnteil: 0.12, // Mindestlänge eines Segments (Anteil der Bandlänge) [A]
+      strichM: 0.5, // Grau gestrichelt: Strich mindestens so lang (aus der Distanz lesbar), sonst 2 × Bandhöhe; Lücke gleich lang
+      fuellenMs: 280, // Einschalten E: Band füllt sich von links
+      blendeMs: 160, // Übersicht <-> Fokus/nah: Manschetten ein
+      nahEinpassung: 1.8, // ab diesem Vielfachen des Einpasszooms gilt «nah» (Manschetten ein) [A]
     },
   },
   bewegung: {

@@ -108,13 +108,22 @@ export function manschetten(teile: ManschettenTeil[]): Manschette[] {
 
 /**
  * Höhenfaktor aus dem orthografischen Zoom (px pro Meter): nah 1; aus der Distanz erreicht die Gesamthöhe der Stufe
- * zielPx (Grün zielPxGruen), höchstens maxFaktor und nie über maxHoehe hinaus.
+ * zielPx (Grün zielPxGruen), höchstens maxFaktor und nie über maxHoehe hinaus; ganz nah gedeckelt (deckelEinpassung).
  */
-export function manschettenFaktor(m: Pick<Manschette, "ampel" | "art" | "maxHoehe">, zoom: number): number {
+export function manschettenFaktor(m: Pick<Manschette, "ampel" | "art" | "maxHoehe">, zoom: number, basisZoom = 0): number {
   if (!(zoom > 0)) return 1;
   const h = gesamtHoehe(m.ampel, m.art), ziel = m.ampel === "gruen" ? M.zielPxGruen : M.zielPx;
-  const k = Math.min(M.maxFaktor, Math.max(1, ziel / (h * zoom)), Math.max(1, m.maxHoehe / h));
+  let k = Math.min(M.maxFaktor, Math.max(1, ziel / (h * zoom)), Math.max(1, m.maxHoehe / h));
+  // Ab deckelEinpassung × Einpasszoom bleibt die Bildschirmhöhe stehen (Kritik r2: Bildfüllung ruhiger).
+  const deckel = basisZoom * M.deckelEinpassung;
+  if (basisZoom > 0 && zoom > deckel) k = Math.min(k, deckel / zoom);
   return Math.round(k * 20) / 20;
+}
+
+/** Anzahl Striche auf einem Umfang `L`: Strich mindestens strichMinHoehen × Bandhöhe (Kritik r2), mindestens strichMin. */
+export function strichAnzahl(L: number, hoehe: number): number {
+  const strich = Math.max(TOKENS.erneuerung.strichM, M.strichMinHoehen * hoehe);
+  return Math.max(M.strichMin, Math.floor(L * M.strichAnteil / strich));
 }
 
 /** Strichstücke eines gestrichelten Rings als Anteile des Umfangs [von, bis]; `n` Striche, beginnend bei 0. */
@@ -164,9 +173,7 @@ export function manschettenGeometrie(m: Manschette, rand = 0): THREE.BufferGeome
     const f = s[i + 1] > s[i] ? (ziel - s[i]) / (s[i + 1] - s[i]) : 0, a = pfad[i], b = pfad[(i + 1) % n];
     return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
   };
-  const stuecke: [number, number][] = m.ampel === "grau"
-    ? striche(m.art === "rohr" ? M.strichRohr : Math.max(6, Math.round(L / (TOKENS.erneuerung.strichM + TOKENS.erneuerung.lueckeM))))
-    : [[0, 1]];
+  const stuecke: [number, number][] = m.ampel === "grau" ? striche(strichAnzahl(L, gesamtHoehe("grau", m.art))) : [[0, 1]];
   const pos: number[] = [], hell: number[] = [];
   const v = new THREE.Vector3(), w = new THREE.Vector3();
   /** Viereck mit gewünschter Aussenrichtung `nach` (Wicklung danach ausgerichtet). */

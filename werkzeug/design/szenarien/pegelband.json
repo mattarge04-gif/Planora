@@ -1,0 +1,18 @@
+{
+  "beschreibung": "Pegelband Stufe 2 (22.11.2026): Modus E mit Pegelband an der kameraseitigen Plattenstirn je Geschoss (UG-Fokus beim Einschalten, EG, OG1), gedreht (andere Stirn), Zentrale nah (Manschetten, Deckel). Vorher Instanz mit --muster und node werkzeug/design/lebensdauer-daten.mjs.",
+  "fenster": [[1440, 900], [1920, 1080], [1280, 720]],
+  "schritte": [
+    { "klick": "Muster 6 L-Form viele Gruppen" }, { "warte": 7000 },
+    { "fokus": "canvas" }, { "taste": "e" }, { "warte": 3000 }, { "bild": "e-ug" },
+    { "klick": "EG", "exakt": true }, { "warte": 3000 }, { "bild": "e-eg" },
+    { "klick": "OG1", "exakt": true }, { "warte": 3000 }, { "bild": "e-og1" },
+    { "ziehen": [0.6, 0.45, 0.3, 0.45] }, { "warte": 2500 }, { "bild": "e-og1-gedreht" },
+    { "fps": 3000 },
+    { "klick": "UG1", "exakt": true }, { "warte": 3000 },
+    { "selektor": ".tw-anlagen tbody tr:nth-child(4)" }, { "warte": 3000 },
+    { "rad": [0.5, 0.45, -300] }, { "rad": [0.5, 0.45, -300] }, { "rad": [0.5, 0.45, -300] }, { "rad": [0.5, 0.45, -300] },
+    { "rad": [0.5, 0.45, -300] }, { "rad": [0.5, 0.45, -300] }, { "rad": [0.5, 0.45, -300] }, { "rad": [0.5, 0.45, -300] },
+    { "rad": [0.5, 0.45, -300] }, { "rad": [0.5, 0.45, -300] }, { "rad": [0.5, 0.45, -300] }, { "rad": [0.5, 0.45, -300] },
+    { "warte": 1500 }, { "bild": "e-zentrale-sehr-nah" }
+  ]
+}

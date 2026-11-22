@@ -1,3 +1,4 @@
+import { Color } from "three";
 import { TOKENS } from "../design/tokens";
 import { AMPEL_FARBE, AMPEL_RANG } from "../lebensdauer/ansicht";
 import type { Ampel } from "../lebensdauer/typen";
@@ -63,4 +64,14 @@ export function vorNeutralToneMapping([r, g, b]: [number, number, number]): [num
   const min = Math.min(r, g, b);
   const offset = min >= 0.04 ? 0.04 : (() => { const m = Math.sqrt(min / 6.25); return m - 6.25 * m * m; })();
   return [r + offset, g + offset, b + offset];
+}
+
+/**
+ * Lineare Materialfarbe einer Ampelstufe für ungetönte MeshBasic-Flächen: mit Effektdurchlauf um Neutral-Tone-Mapping und
+ * Umgebungsverdeckung vorab korrigiert (F9, aoAusgleich), sonst die Tokenfarbe.
+ */
+export function ampelMaterialFarbe(farbe: string, effekte: boolean): [number, number, number] {
+  const c = new Color(farbe);
+  if (!effekte) return [c.r, c.g, c.b];
+  return vorNeutralToneMapping([c.r, c.g, c.b]).map((x) => x * TOKENS.erneuerung.manschette.aoAusgleich) as [number, number, number];
 }

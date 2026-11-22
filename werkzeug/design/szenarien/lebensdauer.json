@@ -60,13 +60,13 @@
       "warte": 700
     },
     {
-      "bild": "e-uebersicht-meldung"
+      "bild": "e-uebersicht-pegelband"
     },
     {
       "warte": 2500
     },
     {
-      "knopf": "Erneuerung",
+      "knopf": "Technik",
       "exakt": true
     },
     {

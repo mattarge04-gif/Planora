@@ -4,12 +4,13 @@ import * as THREE from "three";
 import { TOKENS } from "../design/tokens";
 import { AMPEL_FARBE } from "../lebensdauer/ansicht";
 import type { Ampel } from "../lebensdauer/typen";
-import { ampelVonFarbe, vorNeutralToneMapping } from "./ampelSockel";
+import { ampelMaterialFarbe, ampelVonFarbe } from "./ampelSockel";
 import { lageMasse, type Instanz } from "./Anlagen3";
 import type { Interaktion } from "./Interaktion";
 import { manschetten, manschettenFaktor, manschettenGeometrie, type ManschettenTeil } from "./manschette";
 import { mitRohrStaerke } from "./rohrStaerke";
 import { ROHR } from "./technik";
+import { AMPEL_NAH, EINPASS_ZOOM } from "./ampelZustand";
 
 const MS = TOKENS.erneuerung.manschette;
 const STUFEN: Ampel[] = ["rot", "gelb", "gruen", "grau"];
@@ -49,11 +50,7 @@ export function Manschetten3({ instanzen, ampel, effekte, interaktion }: {
     .map(([k, m]) => [k, manschettenGeometrie(m, MS.hoverRandM)])), [liste, [...aktiv].join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => raender.forEach((g) => g.dispose()), [raender]);
   const materialien = useMemo(() => {
-    const farbe = (a: Ampel) => {
-      const c = new THREE.Color(AMPEL_FARBE[a]);
-      if (effekte) c.setRGB(...vorNeutralToneMapping([c.r, c.g, c.b]).map((x) => x * MS.aoAusgleich) as [number, number, number]);
-      return c;
-    };
+    const farbe = (a: Ampel) => new THREE.Color().setRGB(...ampelMaterialFarbe(AMPEL_FARBE[a], effekte));
     const basis = (a: Ampel) => new THREE.MeshBasicMaterial({ color: farbe(a), toneMapped: false, side: THREE.DoubleSide, vertexColors: true });
     const rand = () => new THREE.MeshBasicMaterial({ color: TOKENS.farbe.eisAkzent, side: THREE.BackSide });
     return {
@@ -78,7 +75,7 @@ export function Manschetten3({ instanzen, ampel, effekte, interaktion }: {
       if (!l || !h) return;
       const lift = m.hebt ? interaktion?.lift.current?.[m.schluessel] ?? 0 : 0;
       l.position.set(m.mitte[0], m.mitte[1] + lift, m.mitte[2]);
-      h.scale.set(1, manschettenFaktor(m, zoom) * auf, 1);
+      h.scale.set(1, Math.max(1e-3, manschettenFaktor(m, zoom, EINPASS_ZOOM.value) * auf * AMPEL_NAH.value), 1);
     });
   }, -1);
   if (!liste.length) return null;
