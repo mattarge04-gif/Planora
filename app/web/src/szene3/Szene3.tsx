@@ -29,7 +29,7 @@ import { anzeigeWelt, gruppenVerbindungen } from "./gruppenNetz";
 import { instanzen, lageMasse } from "./Anlagen3";
 import { ampelBereich } from "./ampelSockel";
 import { Pegelband3 } from "./Pegelband3";
-import { trefferBereich, type AmpelFilter } from "./ampelFilter";
+import { fokusFahrtBereich, trefferBereich, type AmpelFilter, type FokusMerker } from "./ampelFilter";
 
 export interface Szene3Props {
   welt: Welt; katalog: KatalogEintrag[]; fokusId: string | null; freiraum: Freiraum; reduziert: boolean;
@@ -124,6 +124,7 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
   // Modus Erneuerung: Kamera rahmt beim Einschalten die dringendsten Anlagen der sichtbaren Geschosse.
   // Filter: liegen Treffer im fokussierten Geschoss, rahmt die Kamera genau diese (offenes Geschoss, nicht hinter Platte/Wand).
   const trefferKey = filter ? [...filter.treffer].sort().join("|") : "";
+  const fokusMerker = useRef<FokusMerker | null>(null);
   const erneuerungBereich = useMemo(() => {
     if (!ampel) return null;
     const anlagen = instanzen(anzeige.symbole.filter((s) => ampel.has(s.schluessel)
@@ -132,11 +133,13 @@ function SzenenInhalt({ welt, katalog, fokusId, freiraum, reduziert, ausgeblende
       return { schluessel: i.s.schluessel, geschossId: id, mitte: [i.mitte[0], i.mitte[1] + off, i.mitte[2]] as V3, masse: lageMasse(i),
         inline: i.inline, farbe: ampel.get(i.s.schluessel)! };
     });
-    // Fokusfahrt auf einen einzelnen Treffer (Liste per Tastatur/Klick), sonst alle Treffer des Geschosses.
-    const einzeln = filter && filterFokusFahrt && filterFokus && filter.treffer.has(filterFokus)
+    // Fokusfahrt auf einen einzelnen Treffer (Liste per Tastatur/Klick), sonst alle Treffer des Geschosses. Endet die Fahrt
+    // bei gleichem Filter (Maus-Hover), bleibt die Kamera beim letzten Treffer (fokusFahrtBereich, Kritik r7).
+    const neu = filter && filterFokusFahrt && filterFokus && filter.treffer.has(filterFokus)
       ? trefferBereich(anlagen, new Set([filterFokus]), TOKENS.erneuerung.filter.fokusMinM) : null;
+    fokusMerker.current = fokusFahrtBereich(fokusMerker.current, trefferKey, filterFokusFahrt, neu);
     const treffer = filter && fokusId ? trefferBereich(anlagen.filter((a) => a.geschossId === fokusId), filter.treffer) : null;
-    return einzeln ?? treffer ?? ampelBereich(anlagen);
+    return fokusMerker.current?.bereich ?? treffer ?? ampelBereich(anlagen);
   }, [ampel, anzeige, katalog, welt, sichtbarIds, offsets, fokusId, trefferKey, filterFokusFahrt ? filterFokus : null]); // eslint-disable-line react-hooks/exhaustive-deps
   const gl = useThree((s) => s.gl);
   const size = useThree((s) => s.size);

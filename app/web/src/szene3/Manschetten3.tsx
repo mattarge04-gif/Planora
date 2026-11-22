@@ -7,7 +7,7 @@ import type { Ampel } from "../lebensdauer/typen";
 import { ampelMaterialFarbe, ampelVonFarbe } from "./ampelSockel";
 import { lageMasse, type Instanz } from "./Anlagen3";
 import type { Interaktion } from "./Interaktion";
-import { banderolenGeometrie, manschetten, manschettenFaktor, manschettenGeometrie, type ManschettenTeil } from "./manschette";
+import { banderolenGeometrie, banderolenHoehen, banderolenKante, manschetten, manschettenFaktor, manschettenGeometrie, type ManschettenTeil } from "./manschette";
 import { mitRohrStaerke } from "./rohrStaerke";
 import { istZurueck, type AmpelFilter } from "./ampelFilter";
 import { ROHR } from "./technik";
@@ -69,13 +69,17 @@ export function Manschetten3({ instanzen, ampel, effekte, interaktion, filter = 
       dickZurueck: Object.fromEntries(STUFEN.map((a) => [a, mitRohrStaerke(basis(a, true))])) as Record<Ampel, THREE.MeshBasicMaterial>,
       rand: rand(), randDick: mitRohrStaerke(rand()),
       banderole: basis("grau"), banderoleDick: mitRohrStaerke(basis("grau")),
+      abstand: new THREE.MeshBasicMaterial({ color: TOKENS.farbe.flaeche, toneMapped: false, side: THREE.DoubleSide }),
+      abstandDick: mitRohrStaerke(new THREE.MeshBasicMaterial({ color: TOKENS.farbe.flaeche, toneMapped: false, side: THREE.DoubleSide })),
     };
   }, [effekte]);
   useEffect(() => () => [...Object.values(materialien.fest), ...Object.values(materialien.dick), ...Object.values(materialien.festZurueck),
-    ...Object.values(materialien.dickZurueck), materialien.rand, materialien.randDick, materialien.banderole, materialien.banderoleDick]
+    ...Object.values(materialien.dickZurueck), materialien.rand, materialien.randDick, materialien.banderole, materialien.banderoleDick,
+    materialien.abstand, materialien.abstandDick]
     .forEach((m) => m.dispose()), [materialien]);
 
   const lagen = useRef<(THREE.Group | null)[]>([]), hoehen = useRef<(THREE.Group | null)[]>([]);
+  const banderolenTeile = useRef<({ abstand: THREE.Mesh | null; band: THREE.Mesh | null })[]>([]);
   const start = useRef<number | null>(null);
   const sofort = useMemo(() => typeof window === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   useFrame(({ camera, clock }) => {
@@ -89,6 +93,13 @@ export function Manschetten3({ instanzen, ampel, effekte, interaktion, filter = 
       const lift = m.hebt ? interaktion?.lift.current?.[m.schluessel] ?? 0 : 0;
       l.position.set(m.mitte[0], m.mitte[1] + lift, m.mitte[2]);
       h.scale.set(1, Math.max(1e-3, manschettenFaktor(m, zoom, EINPASS_ZOOM.value) * auf * AMPEL_NAH.value), 1);
+      // Banderole: Bildschirm-Mindestbreite und weisser Abstand unabhängig von der Streckung der Manschette.
+      const b = banderolenTeile.current[k];
+      if (b?.abstand && b.band) {
+        const kante = banderolenKante(m), hb = banderolenHoehen(zoom, h.scale.y);
+        b.abstand.position.y = kante.y; b.abstand.scale.y = kante.richtung * hb.abstand;
+        b.band.position.y = kante.y + kante.richtung * hb.abstand; b.band.scale.y = kante.richtung * hb.hoehe;
+      }
     });
   }, -1);
   if (!liste.length) return null;
@@ -98,8 +109,13 @@ export function Manschetten3({ instanzen, ampel, effekte, interaktion, filter = 
       <group ref={(g) => { hoehen.current[k] = g; }} scale={[1, sofort ? 1 : 1e-3, 1]} userData={{ ampelManschette: m.schluessel, ampel: m.ampel }}>
         <mesh geometry={geometrien[k]} raycast={() => {}} renderOrder={1} material={(istZurueck(filter, m.schluessel)
           ? m.verdicken ? materialien.dickZurueck : materialien.festZurueck : m.verdicken ? materialien.dick : materialien.fest)[m.ampel]} />
-        {banderolen.get(k) && <mesh geometry={banderolen.get(k)} material={m.verdicken ? materialien.banderoleDick : materialien.banderole}
-          raycast={() => {}} renderOrder={1} userData={{ banderole: m.schluessel }} />}
+        {banderolen.get(k) && <>
+          <mesh ref={(x) => { banderolenTeile.current[k] = { ...banderolenTeile.current[k], abstand: x }; }} geometry={banderolen.get(k)}
+            material={m.verdicken ? materialien.abstandDick : materialien.abstand} raycast={() => {}} renderOrder={1} scale={[1, 1e-3, 1]} />
+          <mesh ref={(x) => { banderolenTeile.current[k] = { ...banderolenTeile.current[k], band: x }; }} geometry={banderolen.get(k)}
+            material={m.verdicken ? materialien.banderoleDick : materialien.banderole} raycast={() => {}} renderOrder={1} scale={[1, 1e-3, 1]}
+            userData={{ banderole: m.schluessel }} />
+        </>}
         {raender.get(k) && <mesh geometry={raender.get(k)} material={m.verdicken ? materialien.randDick : materialien.rand} raycast={() => {}} />}
       </group>
     </group>)}

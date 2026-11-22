@@ -171,9 +171,25 @@ export function banderole(m: Pick<Manschette, "ampel" | "art" | "richtung">): Ri
   return { y0: -H / 2 - k, y1: -H / 2 };
 }
 
-/** Geometrie der Banderole (durchgehend; am Gehäuse/Motor dicker als Rand hinter der Ampelfarbe, am Rohr gleich dick). */
+/** Ansatzkante der Banderole (lokales y am Manschettenende) und Richtung, in die sie wächst. */
+export function banderolenKante(m: Pick<Manschette, "ampel" | "art" | "richtung">): { y: number; richtung: 1 | -1 } {
+  const b = banderole(m);
+  return m.richtung > 0 ? { y: b.y0, richtung: 1 } : { y: b.y1, richtung: -1 };
+}
+
+/**
+ * Bildschirmhöhen der Banderole in lokalen Einheiten der (gestreckten) Manschette: weisser Abstand banderoleAbstandPx und
+ * graue Banderole mindestens banderoleMinPx (nah banderoleHoeheM). `streckung`: aktuelle Höhenskalierung der Manschette.
+ */
+export function banderolenHoehen(zoom: number, streckung: number): { abstand: number; hoehe: number } {
+  const F = TOKENS.erneuerung.filter, s = Math.max(1e-3, streckung), px = zoom > 0 ? 1 / zoom : 0;
+  return { abstand: (F.banderoleAbstandPx * px) / s, hoehe: Math.max(F.banderoleHoeheM, F.banderoleMinPx * px) / s };
+}
+
+/** Einheitsring der Banderole (Höhe 1 ab y = 0; am Gehäuse/Motor dicker als Rand hinter der Ampelfarbe, am Rohr gleich dick). */
 export function banderolenGeometrie(m: Manschette): THREE.BufferGeometry {
-  return manschettenGeometrie({ ...m, ampel: "gelb", dicke: m.dicke * (m.art === "gehaeuse" ? TOKENS.erneuerung.filter.banderoleDicke : 1), richtung: 0 }, 0, [banderole(m)]);
+  return manschettenGeometrie({ ...m, ampel: "gelb", dicke: m.dicke * (m.art === "gehaeuse" ? TOKENS.erneuerung.filter.banderoleDicke : 1), richtung: 0 }, 0,
+    [{ y0: 0, y1: 1 }]);
 }
 
 export function manschettenGeometrie(m: Manschette, rand = 0, eigeneRinge?: Ring[]): THREE.BufferGeometry {

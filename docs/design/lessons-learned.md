@@ -12,6 +12,8 @@ Format: `Datum – Erkenntnis – Beleg – Anwendung`.
 - 12.11.2026 – Headless-Chromium mit `--use-angle=d3d11 --ignore-gpu-blocklist` nutzt die echte GPU (RTX 3070 Ti) – Renderer-Kennung "ANGLE (NVIDIA ... D3D11)" – Standard im Werkzeug `werkzeug/design/`.
 - 15.11.2026 – Leitungen als Pressfittings (Bogen mit Muffen und metallgrauem Pressring, T-Stueck mit drei Muffen, auch an Strangecken) lesen als echte Installation – PO-Sichtung "passt", Kritik r2 – Formstuecke immer aus den fertigen Rohrstuecken ableiten, Abzweige an Ecken als T, nie Bogen plus herausstehendes Rohr.
 - 15.11.2026 – Rohre aus Distanz per Shader auf ca. 4 px verdicken, nah massstaeblich lassen – Kritik r1 B1 und Lesson 12.11. (zweimal belegt), PO "passt" – Bildschirm-Mindeststaerke statt groesserer Geometrie.
+- 22.11.2026 – Zustand (Ampel) haftet an der Geometrie: Manschette/Band am Bauteil fuer "welches", Pegelband an der Geschoss-Plattenstirn + Mini-Pegel in der Geschoss-Karte fuer "wo"; schwebende Hud-Punkte und freie Anhaenger lesen als losgeloest – PO-Befund "spacken rum" (Hud-Punkte), Kritik r6 (Anhaenger schweben), PO-Sichtung "passt" – Statusmarken nie vom Objekt wegschieben; Zusatzinfo als Banderole an der eigenen Marke.
+- 22.11.2026 – Dringendes muss die groesste Flaeche haben: Gruen schmal, Rot doppelt und kraeftig; Pruefmass Rot-px je rotem Bauteil >= Gruen-px je gruenem – Kritik r1 (Gruen 5–8x Rot) und r2 (2.9:1 bereit), PO "passt" – Bei Statusfarben Pixelanteil im GPU-Bild messen.
 
 ## Wiederkehrende Fehler
 
@@ -21,4 +23,4 @@ Format: `Datum – Erkenntnis – Beleg – Anwendung`.
 
 Vorschlaege aus Kritiken und Entscheiden, die der Hauptagent dem PO gebuendelt vorlegt.
 
-- (leer)
+- Regelvorschlag fuer `prinzipien.md`: "Zustandsanzeigen haften an der Geometrie; schwebende Bildschirm-Overlays nur fuer Text (Karten, Tooltips)" – Entscheid 2026-11-22-ampel-marker – PO-Bestaetigung als Regel ausstehend.

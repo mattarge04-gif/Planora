@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TOKENS } from "../design/tokens";
 import { AMPEL_FARBE } from "../lebensdauer/ansicht";
-import { istZurueck, segmentVoll, trefferBereich, umrissSkala, zurueck, type AmpelFilter } from "./ampelFilter";
+import { fokusFahrtBereich, istZurueck, segmentVoll, trefferBereich, umrissSkala, zurueck, type AmpelFilter } from "./ampelFilter";
 
 const F = TOKENS.erneuerung.filter;
 const filter = (o: Partial<AmpelFilter> = {}): AmpelFilter => ({ treffer: new Set(["a"]), anhaenger: new Set(), stufen: new Set(["rot"]), ...o });
@@ -44,5 +44,18 @@ describe("umrissSkala", () => {
     expect(umrissSkala(m, z, 2)).toBeGreaterThan(umrissSkala(m, z, 1));
     expect(umrissSkala([5, 5, 5], 1000, 1)).toBe(1.01);
     expect(umrissSkala(m, 0, 1)).toBe(1.04);
+  });
+});
+
+describe("fokusFahrtBereich (Kritik r7)", () => {
+  const b1 = { xMin: 0, xMax: 1, yMin: 0, yMax: 1, zMin: 0, zMax: 1 }, b2 = { ...b1, xMax: 2 };
+  it("Fahrt merkt den Bereich; Fahrt aus bei gleichem Filter: bleibt; Filter neu oder aus: verworfen", () => {
+    const m = fokusFahrtBereich(null, "a|b", true, b1)!;
+    expect(m.bereich).toBe(b1);
+    expect(fokusFahrtBereich(m, "a|b", false, null)).toBe(m);
+    expect(fokusFahrtBereich(m, "a|b", true, b2)!.bereich).toBe(b2);
+    expect(fokusFahrtBereich(m, "a", false, null)).toBeNull();
+    expect(fokusFahrtBereich(m, "", true, b1)).toBeNull();
+    expect(fokusFahrtBereich(null, "a|b", false, null)).toBeNull();
   });
 });

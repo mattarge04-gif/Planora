@@ -23,7 +23,9 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 - PO-Befund "ampeln spacken rum" -> Richtungswechsel, Entscheid `docs/design/entscheide/2026-11-22-ampel-marker.md`: Ansatz C (Pruefmanschetten am Bauteil + Pegelband je Geschoss + Mini-Pegel in Geschoss-Karte) und Legende als kombinierbarer Filter (Trefferliste, Tabelle filtert mit, Kamerafahrt). PO-Entscheide: Erneuerung bleibt auch in Uebersicht an (ersetzt Ruling 5), keine Bodenflecken, Gruen markiert, Band zeigt Anteile. Rulings 1–8 vom 20.11. PO-bestaetigt.
 - Commits `b9bfc95`..`7cbc2d0` auf `m2c-interview`, nicht gepusht. Web 534/534, tsc/Build gruen. Kritiken r1–r7 in `docs/design/kritiken/2026-11-22-ampel-manschetten/`, r7 "bereit".
-- Offen: PO-Sichtung im Browser; Restpunkte r7: Banderole "ohne Preis" breiter (>= 5 px + 1 px weiss), Maus-Hover nach Tastaturfahrt setzt Kamera zurueck und markiert doppelt, [?] Esc zweistufig; Annahme UI: linke Spalte im Filter nur Erneuerungskarte [A]; Mengenband-Segmente nicht klickbar; Gelb am UG-Band −8..−11 (AO). Danach Teilprojekt "Preis aus Dokument" (E43).
+- PO-Sichtung 22.11.: "passt" (inkl. linke Spalte im Filter nur Erneuerungskarte, Esc einstufig). Restpunkte r7 behoben (Banderole >= 5 px + 1 px weiss, kein Kamera-Ruecksprung/Doppelmarkierung nach Tastaturfahrt). Lessons ergaenzt; [?] Regelvorschlag "Zustandsanzeigen haften an der Geometrie" fuer prinzipien.md wartet auf PO.
+- Offen (Kann): Mengenband-Segmente nicht klickbar; Gelb am UG-Band −8..−11 (AO); alte Tokens `marker*`/`ring*` ungenutzt.
+- Naechstes: Teilprojekt "Preis aus Dokument" (E43 Teil 2, Brainstorming).
 
 ### Lebensdauer/Ampel umgesetzt (20.11.2026) [F]
 

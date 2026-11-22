@@ -127,7 +127,12 @@ function Trefferliste<A extends FilterAnlage & { name: string }>({ filter }: { f
                 className={`tw-treffer-zeile${k === markiert ? " tw-treffer-markiert" : ""}`}
                 aria-current={filter.auswahl === k || undefined}
                 aria-label={`${t.anlage.name}, ${code}, ${t.gruende.map((g) => POSTEN_TEXT[g]).join(", ")}${detail ? `, ${detail}` : ""}${mehr}`}
-                onMouseEnter={() => filter.onFokus(k)} onFocus={() => filter.onFokus(k, true)} onBlur={() => filter.onFokus(null)}
+                onMouseEnter={(e) => {
+                  // Maus übernimmt: Tastaturfokus auf anderer Zeile lösen, sonst sind zwei Zeilen markiert (Kritik r7).
+                  const aktiv = document.activeElement;
+                  if (aktiv instanceof HTMLElement && aktiv !== e.currentTarget && liste.current?.contains(aktiv)) aktiv.blur();
+                  filter.onFokus(k);
+                }} onFocus={() => filter.onFokus(k, true)} onBlur={() => filter.onFokus(null)}
                 onKeyDown={(e) => taste(e, i)} onClick={() => filter.onTreffer(t.anlage)}>
                 {ampel ? <AmpelZeichen ampel={ampel} /> : <Tag size={14} strokeWidth={2.1} aria-hidden="true" className="tw-ohne-preis" />}
                 <span className="tw-treffer-name">{t.anlage.name}

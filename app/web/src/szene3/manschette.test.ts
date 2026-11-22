@@ -155,8 +155,22 @@ describe("Banderole (Kritik r6: haftet buendig an der Manschette)", () => {
     const g = banderolenGeometrie(oben), p = g.getAttribute("position");
     let yMin = Infinity, yMax = -Infinity, rMax = 0;
     for (let i = 0; i < p.count; i++) { yMin = Math.min(yMin, p.getY(i)); yMax = Math.max(yMax, p.getY(i)); rMax = Math.max(rMax, Math.hypot(p.getX(i), p.getZ(i))); }
-    expect(yMin).toBeCloseTo(H); expect(yMax).toBeCloseTo(H + k);
+    expect(yMin).toBeCloseTo(0); expect(yMax).toBeCloseTo(1); // Einheitsring, Lage ueber banderolenKante
     expect(rMax).toBeCloseTo(0.02 * M.rohrAussenFaktor, 3);
     expect(g.getAttribute(ACHSE)).toBeDefined();
+  });
+});
+
+describe("Banderole am Bildschirm (Kritik r7)", () => {
+  it("Kante am Manschettenende, Breite >= banderoleMinPx, 1 px Abstand, unabhaengig von der Streckung", async () => {
+    const { banderolenHoehen, banderolenKante } = await import("./manschette");
+    const F = TOKENS.erneuerung.filter;
+    const [oben] = manschetten([ventil(1, { ampel: "gelb" })]);
+    expect(banderolenKante(oben)).toEqual({ y: gesamtHoehe("gelb", "rohr"), richtung: 1 });
+    expect(banderolenKante(manschetten([teil()])[0]).richtung).toBe(-1);
+    const z = 40, s = 2.5, h = banderolenHoehen(z, s);
+    expect(h.hoehe * s * z).toBeCloseTo(F.banderoleMinPx);
+    expect(h.abstand * s * z).toBeCloseTo(F.banderoleAbstandPx);
+    expect(banderolenHoehen(10000, 1).hoehe).toBeCloseTo(F.banderoleHoeheM);
   });
 });

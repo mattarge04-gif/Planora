@@ -42,6 +42,19 @@ export function trefferBereich(anlagen: AmpelAnlage[], treffer: ReadonlySet<stri
   return bereichWeiten(anlagen.filter((a) => treffer.has(a.schluessel)), minM);
 }
 
+/** Gemerkter Bereich einer Fokusfahrt: gilt, bis sich der Filter ändert oder aufgehoben wird. */
+export interface FokusMerker { filterKey: string; bereich: Bereich }
+
+/**
+ * Bereich der Fokusfahrt (Kritik r7): bei `fahrt` der neue Einzelbereich; endet die Fahrt (Maus-Hover nach Tastatur),
+ * bleibt der gemerkte Bereich, solange der Filter gleich ist – kein Rücksprung auf Geschossdistanz. Ohne Filter null.
+ */
+export function fokusFahrtBereich(gemerkt: FokusMerker | null, filterKey: string, fahrt: boolean, neu: Bereich | null): FokusMerker | null {
+  if (!filterKey) return null;
+  if (fahrt && neu) return { filterKey, bereich: neu };
+  return gemerkt && gemerkt.filterKey === filterKey ? gemerkt : null;
+}
+
 /**
  * Skalierung eines Umrisses (BackSide-Hülle um die Bauteilmitte), damit er etwa `px` Bildschirmpixel breit erscheint;
  * Bezug ist die grösste Achse (Mindestzuschlag 1 %).
