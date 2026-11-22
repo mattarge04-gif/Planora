@@ -30,6 +30,7 @@ Nur vom PO bestaetigte Regeln. Aenderungen nur nach ausdruecklicher PO-Bestaetig
 15. **Echte Umlaute (ä, ö, ü) in allen UI-Texten**, kein Eszett (de-CH). *(PO, 12.11.2026)*
 16. **Bewegung sanft, keine uebertriebenen Effekte;** Interaktion bleibt vollstaendig (Hover, Klick, Fokus, Separieren). Die 3D-Ansicht wird nie zur statischen Hintergrundgrafik. *(PO-Brief)*
 17. **Nur echte Daten zeigen** – keine erfundenen Kennzahlen oder Diagramme zur Dekoration. *(Projektregel, Spec Redesign)*
+20. **Zustandsanzeigen haften an der Geometrie:** Statusmarken sitzen am Objekt oder an Gebaeudekanten und werden nie vom Objekt weggeschoben; schwebende Bildschirm-Overlays nur fuer Text (Karten, Tooltips). *(PO, 22.11.2026, Entscheid 2026-11-22-ampel-marker)*
 
 ## Prozess
 

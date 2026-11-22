@@ -23,4 +23,4 @@ Format: `Datum – Erkenntnis – Beleg – Anwendung`.
 
 Vorschlaege aus Kritiken und Entscheiden, die der Hauptagent dem PO gebuendelt vorlegt.
 
-- Regelvorschlag fuer `prinzipien.md`: "Zustandsanzeigen haften an der Geometrie; schwebende Bildschirm-Overlays nur fuer Text (Karten, Tooltips)" – Entscheid 2026-11-22-ampel-marker – PO-Bestaetigung als Regel ausstehend.
+- (leer)
