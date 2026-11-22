@@ -2,6 +2,13 @@
 
 Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
 
+## E45 – Preis-Auslesen mit OpenAI gpt-6.2-sol (PO, 2026-11-22)
+
+Rohantworten: "sag mir zuerst welches die beste api ist für ihren preis", "und mit openai", nach Vergleichstabelle "nutze 6.2 sol von openai".
+
+- Preis-Auslesen (E44) ueber OpenAI `gpt-6.2-sol` statt Claude. Abweichung von E36/E37 (KI nur Claude), nur fuer diesen Zweck; ADR 0033. Spec entsprechend angepasst.
+- [?] Siemens-Zustimmung OpenAI, EU-Residenz-Zugang, PDF-Eingabe per Probeaufruf.
+
 ## E44 – Preis aus Dokument (PO, 2026-11-22, Brainstorming, Entwurf Abschnitt 1–4 bestaetigt)
 
 Rohantworten (AskUserQuestion): Auslesen "Claude API (Recommended)"; Ablauf "Ablage je Gebäude (Recommended)"; Fundstelle "Zitat + PDF auf Seite (Recommended)"; Preisart "Netto inkl. Montage (Recommended)"; Preisebene "Je Bauteil, Typ als Option (Recommended)"; Technik "a" (Hintergrund im Server, Status in DB); Abschnitte 1–4 je "passt". PO-Frage "welches API-Modell ist Preis/Leistung das beste": Empfehlung Opus 5.5 als Start, Messlauf gegen Sonnet 5.5, PO entscheidet danach.
