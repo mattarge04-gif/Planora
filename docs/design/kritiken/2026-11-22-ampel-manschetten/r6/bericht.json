@@ -1,0 +1,82 @@
+{
+  "szenario": "C:/Users/matta/AppData/Local/Temp/claude/bcf0c113125feb8e/b5bd847d-bbb0-4a5a-b6e8-5ed41e3ae655/scratchpad/kritik12.json",
+  "zeit": "2026-11-22T20:58:47.728Z",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002207) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "ansichten": [
+    {
+      "fenster": "1440x900",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\a-ersetzen-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\b-fokus-1-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\c-pfeil-2-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\d-pfeil-3-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\e-ohne-preis-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\f-baujahr-fehlt-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\g-baujahr-fokus-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\h-baujahr-pfeil-1440x900.png"
+      ],
+      "fps": [
+        60
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.WebGLProgram: Program Info Log: (817,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value\n(85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value",
+        "warning: THREE.WebGLProgram: Program Info Log: (958,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (821,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (815,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)"
+      ]
+    },
+    {
+      "fenster": "1920x1080",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\a-ersetzen-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\b-fokus-1-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\c-pfeil-2-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\d-pfeil-3-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\e-ohne-preis-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\f-baujahr-fehlt-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\g-baujahr-fokus-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\h-baujahr-pfeil-1920x1080.png"
+      ],
+      "fps": [
+        60
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+      ]
+    },
+    {
+      "fenster": "1280x720",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\a-ersetzen-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\b-fokus-1-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\c-pfeil-2-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\d-pfeil-3-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\e-ohne-preis-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\f-baujahr-fehlt-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\g-baujahr-fokus-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-22-ampel-manschetten\\r6\\h-baujahr-pfeil-1280x720.png"
+      ],
+      "fps": [
+        60
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+      ]
+    }
+  ]
+}

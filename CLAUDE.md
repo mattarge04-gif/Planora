@@ -17,7 +17,13 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 **Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
 
-## 0b. Stand – zuletzt aktualisiert 20.11.2026
+## 0b. Stand – zuletzt aktualisiert 22.11.2026
+
+### Ampel-Marker neu (22.11.2026) [F]
+
+- PO-Befund "ampeln spacken rum" -> Richtungswechsel, Entscheid `docs/design/entscheide/2026-11-22-ampel-marker.md`: Ansatz C (Pruefmanschetten am Bauteil + Pegelband je Geschoss + Mini-Pegel in Geschoss-Karte) und Legende als kombinierbarer Filter (Trefferliste, Tabelle filtert mit, Kamerafahrt). PO-Entscheide: Erneuerung bleibt auch in Uebersicht an (ersetzt Ruling 5), keine Bodenflecken, Gruen markiert, Band zeigt Anteile. Rulings 1–8 vom 20.11. PO-bestaetigt.
+- Commits `b9bfc95`..`7cbc2d0` auf `m2c-interview`, nicht gepusht. Web 534/534, tsc/Build gruen. Kritiken r1–r7 in `docs/design/kritiken/2026-11-22-ampel-manschetten/`, r7 "bereit".
+- Offen: PO-Sichtung im Browser; Restpunkte r7: Banderole "ohne Preis" breiter (>= 5 px + 1 px weiss), Maus-Hover nach Tastaturfahrt setzt Kamera zurueck und markiert doppelt, [?] Esc zweistufig; Annahme UI: linke Spalte im Filter nur Erneuerungskarte [A]; Mengenband-Segmente nicht klickbar; Gelb am UG-Band −8..−11 (AO). Danach Teilprojekt "Preis aus Dokument" (E43).
 
 ### Lebensdauer/Ampel umgesetzt (20.11.2026) [F]
 
