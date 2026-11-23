@@ -24,7 +24,9 @@ const ablage = mkdtempSync(join(tmpdir(), "planora-ablage-"));
 const STUFE = 4 as const;
 const pgPasswort = randomBytes(18).toString("hex");
 const instanz = new EmbeddedPostgres({ databaseDir: dbDir, user: "postgres", password: pgPasswort,
-  port: pgPort, persistent: false, onLog: () => {}, onError: console.error });
+  port: pgPort, persistent: false,
+  // Windows-Standard waere WIN1252; Produktion (Docker postgres) ist UTF8. KI-Texte enthalten Zeichen wie U+2212.
+  initdbFlags: ["--encoding=UTF8", "--locale=C"], onLog: () => {}, onError: console.error });
 const cfg = { host: "localhost", port: pgPort, user: "postgres", password: pgPasswort, database: "postgres" };
 const pool = new pg.Pool(cfg);
 let app: Awaited<ReturnType<typeof baueServer>> | undefined;

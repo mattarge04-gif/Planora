@@ -11,7 +11,9 @@ export async function setup(project: TestProject) {
   rmSync(dir, { recursive: true, force: true });
   const pw = randomBytes(18).toString("hex");
   const port = 54400;
-  inst = new EmbeddedPostgres({ databaseDir: dir, user: "postgres", password: pw, port, persistent: false, onLog: () => {}, onError: () => {} });
+  inst = new EmbeddedPostgres({ databaseDir: dir, user: "postgres", password: pw, port, persistent: false,
+    // Windows-Standard waere WIN1252; Produktion (Docker postgres) ist UTF8. KI-Texte enthalten Zeichen wie U+2212.
+    initdbFlags: ["--encoding=UTF8", "--locale=C"], onLog: () => {}, onError: () => {} });
   await inst.initialise(); await inst.start();
   project.provide("pg", { host: "localhost", port, user: "postgres", password: pw });
 }
