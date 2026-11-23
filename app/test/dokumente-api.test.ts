@@ -269,6 +269,7 @@ describe("Dokumente-API: Verknuepfen und Kategorie", () => {
     const p = await anfrage("PUT", `/api/dokumente/${r.json().id}/bauteile`, kBearb, { bauteilIds: [B1] });
     expect([p.statusCode, p.json().fehler[0].code]).toEqual([409, "nicht_sauber"]);
     expect((await ablegen(kBearb, pdf(1, "% fremd2"), "F.pdf", `?bauteile=${B_FREMD}`)).statusCode).toBe(400);
+    expect((await ablegen(kBearb, pdf(1, "% fremd3"), "F.pdf", `?bauteile=${"-".repeat(36)}`)).statusCode).toBe(400);
   });
   it("Duplikat mit ?bauteile ergaenzt Verknuepfungen (Vereinigung); Befund entfernt sie", async () => {
     const daten = pdf(1, "% dup");
