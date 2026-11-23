@@ -8,9 +8,11 @@ import { frischeDb } from "./hilfe.js";
 import { baueServer } from "../src/server.js";
 import { erzeugeSetupToken, loeseSetupTokenEin } from "../src/auth/setup.js";
 import { schalteAus, schalteEin } from "../src/module/schalter.js";
+import { fakeAdapter } from "../src/preisdokument/fake.js";
 
 const ORIGIN = "http://localhost:3994";
 const pw = randomBytes(12).toString("base64url");
+const SECRET = randomBytes(32).toString("hex");
 const HUELLE = { name: "Haus", grundform: "quader", breiteM: 30, tiefeM: 15, geschosse: [{ code: "EG" }, { code: "OG1" }] };
 let db: Awaited<ReturnType<typeof frischeDb>>; let app: FastifyInstance;
 let L1: string, L2: string, kBetr: string, kBearb: string, kLeser: string, kFremd: string;
@@ -35,7 +37,7 @@ async function konto(email: string, rolle: string, scopes: string[]) {
 beforeAll(async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
   db = await frischeDb();
-  app = await baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")) });
+  app = await baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")) });
   await schalteEin(db.pool, "lebensdauer", 4, randomUUID());
   await schalteEin(db.pool, "preisdokument", 4, randomUUID());
   L1 = (await db.pool.query("insert into liegenschaft(name) values ('L1') returning id")).rows[0].id;
@@ -103,5 +105,57 @@ describe("Preisdokument-API", () => {
     await schalteAus(db.pool, "preisdokument", randomUUID());
     expect((await anfrage("GET", liste(), kBearb)).statusCode).toBe(404);
     await schalteEin(db.pool, "preisdokument", 4, randomUUID());
+  });
+});
+
+describe("Preisdokument-API mit Leseadapter", () => {
+  let app2: FastifyInstance; let B: string;
+  const gueltig = () => ({ vorschlaege: [{ position: "Pumpe", seite: 1, zitat: "Pumpe 1240.00", materialNetto: 1116, rabattText: null, montageAnteil: 180,
+    ersatzpreis: 1296, rechenweg: "1240 + 180", katalogId: "heizung.heizkoerper", bauteilIds: [B], sicherheit: "hoch" }] });
+  const bauApp = (leseAdapter: any) => baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), leseAdapter });
+  const gib = (a: FastifyInstance, method: "GET" | "POST", url: string, cookie: string) => a.inject({ method, url, headers: { cookie, origin: ORIGIN, "x-planora-request": "1" } });
+  const warteStatus = async (id: string, status: string) => {
+    for (let i = 0; i < 40; i++) {
+      const d = (await gib(app2, "GET", liste(), kBearb)).json().dokumente.find((x: any) => x.id === id);
+      if (d?.status === status) return d;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    throw new Error("Status " + status + " nicht erreicht");
+  };
+  beforeAll(async () => {
+    const leer = (await anfrage("GET", `/api/struktur/gebaeude/${G}/beschreibung`, kBearb)).json();
+    const [eg] = leer.geschosse;
+    const put = await anfrage("PUT", `/api/struktur/gebaeude/${G}/beschreibung`, kBearb, { ...leer, heizungStandard: { hk: "ja", fbh: "nein", tabs: "nein" },
+      einheiten: [{ geschossId: eg.id, bezeichnung: "Buero A", art: "buero", flaecheM2: null }],
+      bauteile: [{ katalogId: "heizung.heizkoerper", standort: { einheitIndex: 0 }, menge: 4, status: "bestaetigt", versorgt: [] }] });
+    expect(put.statusCode).toBe(200);
+    B = (await db.pool.query("select id from bauteil where gebaeude_id=$1 and katalog_id='heizung.heizkoerper'", [G])).rows[0].id;
+    app2 = await bauApp(fakeAdapter(() => gueltig()));
+  });
+  afterAll(async () => { await app2.close(); });
+  it("Upload liest im Hintergrund, Vorschlag mit bauteilIds, Neu lesen", async () => {
+    const r = await app2.inject({ method: "POST", url: `/api/preisdokument/gebaeude/${G}/dokumente`,
+      headers: { cookie: kBearb, origin: ORIGIN, "x-planora-request": "1", "content-type": "application/pdf", "x-dateiname": "a.pdf" }, payload: pdf(1, "% lesen") });
+    expect(r.statusCode).toBe(201);
+    expect(r.json().status).toBe("neu");
+    const d = await warteStatus(r.json().id, "fertig");
+    expect(d.vorschlaege).toHaveLength(1);
+    expect(d.vorschlaege[0].bauteilIds).toEqual([B]);
+    expect((await gib(app2, "GET", liste(), kBearb)).json()).toMatchObject({ auslesen: "an", budget: { limitUsd: 20 } });
+    const n = await gib(app2, "POST", `/api/preisdokument/dokumente/${r.json().id}/neu-lesen`, kBearb);
+    expect(n.statusCode).toBe(202);
+    const d2 = await warteStatus(r.json().id, "fertig");
+    expect(d2.vorschlaege).toHaveLength(1);
+    expect((await gib(app2, "POST", `/api/preisdokument/dokumente/${r.json().id}/neu-lesen`, kLeser)).statusCode).toBe(403);
+    expect((await gib(app2, "POST", `/api/preisdokument/dokumente/${r.json().id}/neu-lesen`, kFremd)).statusCode).toBe(404);
+  });
+  it("ohne Adapter: neu-lesen -> 409", async () => {
+    const app3 = await bauApp(null);
+    try {
+      const id = (await hochladen(kBearb, G, pdf(1, "% ohne"))).json().id;
+      const r = await gib(app3, "POST", `/api/preisdokument/dokumente/${id}/neu-lesen`, kBearb);
+      expect(r.statusCode).toBe(409);
+      expect(r.json()).toEqual({ fehler: "auslesen_aus" });
+    } finally { await app3.close(); }
   });
 });

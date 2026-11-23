@@ -6,7 +6,7 @@ export interface VorschlagZeile { id: string; position: string; seite: number; z
   sicherheit: "hoch" | "mittel" | "tief"; status: "offen" | "uebernommen" | "verworfen"; alsTyppreis: boolean }
 const zahl = (v: string | null) => (v === null ? null : Number(v));
 
-export async function legeDokumentAn(c: pg.ClientBase, a: { gebaeudeId: string; liegenschaftId: string; dateiname: string; schluessel: string; sha256: string; groesse: number; seiten: number; von: string; status: Status }) {
+export async function legeDokumentAn(c: Pick<pg.ClientBase, "query">, a: { gebaeudeId: string; liegenschaftId: string; dateiname: string; schluessel: string; sha256: string; groesse: number; seiten: number; von: string; status: Status }) {
   const r = await c.query(
     `insert into dokument(gebaeude_id, liegenschaft_id, dateiname, schluessel, sha256, groesse, seiten, hochgeladen_von, auslesen_status)
      values ($1,$2,$3,$4,$5,$6,$7,$8,$9) on conflict (gebaeude_id, sha256) do nothing returning id`,

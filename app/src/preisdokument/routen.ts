@@ -9,8 +9,7 @@ import { ID_PARAMS } from "../welt/schema.js";
 import { auditEreignis } from "../audit/audit.js";
 import { pruefe } from "../rechte/rechte.js";
 
-/** Schnittstelle zum Hintergrundleser (ab Task 5); bis dahin undefined. */
-export interface Laeufer { starte(dokumentId: string): void; zustand(): { auslesen: "an" | "kein_schluessel"; verbrauchtUsd: () => Promise<number>; limitUsd: number } }
+import type { Laeufer } from "./laeufer.js";
 
 export function registrierePreisdokumentRouten(app: FastifyInstance, pool: pg.Pool, laeufer?: Laeufer) {
   const mitClient = async <T>(f: (c: pg.PoolClient) => Promise<T>) => { const c = await pool.connect(); try { return await f(c); } finally { c.release(); } };
@@ -93,6 +92,21 @@ export function registrierePreisdokumentRouten(app: FastifyInstance, pool: pg.Po
       return reply.type("application/pdf")
         .header("content-disposition", `inline; filename*=UTF-8''${encodeURIComponent(r.dateiname)}`)
         .send(app.ablage.lese(r.schluessel));
+    });
+
+    scope.post<{ Params: { id: string } }>("/api/preisdokument/dokumente/:id/neu-lesen", { schema: { params: ID_PARAMS } }, async (req, reply) => {
+      const k = req.kontext!;
+      const r = await mitClient((c) => zugriffDokument(c, k.benutzerId, req.params.id, true));
+      if (r.code !== 200) return verweigert(reply, r.code as 403 | 404);
+      if (laeufer?.zustand().auslesen !== "an") return reply.code(409).send({ fehler: "auslesen_aus" });
+      // Offene und verworfene Vorschlaege entfallen, uebernommene bleiben; laufende Lesevorgaenge bleiben unberuehrt.
+      await inTx("begin", async (c) => {
+        const l = await c.query("update dokument set auslesen_status='neu', auslesen_fehler=null where id=$1 and auslesen_status <> 'liest' returning id", [req.params.id]);
+        if (l.rowCount) await c.query("delete from preis_vorschlag where dokument_id=$1 and status <> 'uebernommen'", [req.params.id]);
+        await auditEreignis(c, k.auditId, "preisdokument.neu_lesen", { gebaeudeId: r.gebaeudeId, dokumentId: req.params.id });
+      });
+      laeufer.starte(req.params.id);
+      return reply.code(202).send((await mitClient((c) => ladeDokumente(c, r.gebaeudeId))).find((d) => d.id === req.params.id));
     });
 
     scope.delete<{ Params: { id: string } }>("/api/preisdokument/dokumente/:id", { schema: { params: ID_PARAMS } }, async (req, reply) => {

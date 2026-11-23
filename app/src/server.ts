@@ -12,12 +12,15 @@ import { bestaetigeRestoreKonto } from "./betrieb/freigabe.js";
 import { registriereWeltRouten } from "./welt/routen.js";
 import { registriereLebensdauerRouten } from "./lebensdauer/routen.js";
 import { registrierePreisdokumentRouten } from "./preisdokument/routen.js";
+import { erzeugeLaeufer, markiereAbgebrochen } from "./preisdokument/laeufer.js";
+import { openaiAdapter } from "./preisdokument/openai.js";
+import type { LeseAdapter } from "./preisdokument/adapter.js";
 import { registriereWeb } from "./web.js";
 
 declare module "fastify" { interface FastifyInstance { ablage: Ablage } }
 
 // vertrauteProxies: nur Adressen des eigenen Reverse Proxy (Caddy im Compose-Netz); leer = Client-IP nur aus dem Socket (PP7-5)
-export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; secret: string; ablageWurzel: string; vertrauteProxies?: string[]; release?: string; /** gebautes Frontend; fehlt das Verzeichnis, wird nichts ausgeliefert */ webWurzel?: string };
+export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; secret: string; ablageWurzel: string; vertrauteProxies?: string[]; release?: string; /** gebautes Frontend; fehlt das Verzeichnis, wird nichts ausgeliefert */ webWurzel?: string; /** Tests injizieren hier einen Fake; undefined = Adapter aus OPENAI_API_KEY, null = aus */ leseAdapter?: LeseAdapter | null };
 
 const MUTIEREND = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -94,7 +97,14 @@ export async function baueServer(o: ServerOptionen) {
 
   registriereWeltRouten(app, o.pool); // M2a: /api/struktur/… (Huelle, Beschreibung), /api/szene/…/welt
   registriereLebensdauerRouten(app, o.pool); // M7 Demo-Schnitt: /api/lebensdauer/… (Modul-Guard schaltet)
-  registrierePreisdokumentRouten(app, o.pool); // Preis aus Dokument: Laeufer folgt in Task 5
+  // Preis aus Dokument: Hintergrundleser; ohne Schluessel kein Adapter (Status "aus")
+  const schluessel = process.env.OPENAI_API_KEY?.trim();
+  const leseAdapter = o.leseAdapter !== undefined ? o.leseAdapter
+    : schluessel ? openaiAdapter({ apiKey: schluessel, modell: process.env.PLANORA_KI_MODELL_PREIS || "gpt-6.2-sol", basisUrl: process.env.PLANORA_KI_BASIS_URL || undefined }) : null;
+  // Nicht warten: bei nicht erreichbarer oder haengender DB darf der Serverstart (Wartungsmodus) nicht blockieren.
+  void markiereAbgebrochen(o.pool).catch(() => {});
+  const laeufer = erzeugeLaeufer(o.pool, app.ablage, leseAdapter, { limitUsd: Number(process.env.PLANORA_KI_BUDGET_USD_MONAT || 20) });
+  registrierePreisdokumentRouten(app, o.pool, laeufer);
   // Platzhalter fuer Fachmodule bis M2–M8: erreichbar nur, wenn Guard und Sitzung sie durchlassen
   for (const m of MANIFEST) for (const r of m.routen) {
     if (r.startsWith("/api/auth") || r.startsWith("/api/admin")) continue;
