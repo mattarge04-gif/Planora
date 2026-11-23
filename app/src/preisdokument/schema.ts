@@ -13,3 +13,9 @@ export const ANTWORT_SCHEMA = {
       sicherheit: { type: "string", enum: ["hoch", "mittel", "tief"] },
     } } } },
 } as const;
+
+const UUID_MUSTER = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
+export const UEBERNEHMEN_SCHEMA = { type: "object", additionalProperties: false, required: ["bauteilIds", "alsTyppreis", "stand"],
+  properties: { bauteilIds: { type: "array", maxItems: 500, items: { type: "string", pattern: UUID_MUSTER } }, alsTyppreis: { type: "boolean" },
+    stand: { type: "integer", minimum: 0 }, ueberschreibeHandeingabe: { type: "boolean" } } } as const;
+export const STAND_SCHEMA = { type: "object", additionalProperties: false, required: ["stand"], properties: { stand: { type: "integer", minimum: 0 } } } as const;

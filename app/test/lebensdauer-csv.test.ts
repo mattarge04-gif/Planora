@@ -13,7 +13,7 @@ describe("CSV", () => {
   });
   it("BOM, Kopfzeile, eine Zeile je Bauteil, Jahresblock", () => {
     const bauteile = [{ id: "a", katalogId: "heizung.verteiler", menge: 1, baujahr: null, hersteller: "=Hack", typ: null, ort: "EG · Technik",
-      akte: { zustand: "schlecht" as const, lebensdauerJahre: null, stueckpreis: 2500, quellePreis: "kunde" as const, notiz: null } }];
+      akte: { zustand: "schlecht" as const, lebensdauerJahre: null, stueckpreis: 2500, quellePreis: "kunde" as const, notiz: null, preisQuelle: null } }];
     const ergebnis = rechne({ stichtag: 2026, heizungBaujahr: 2008, typen: [], bauteile });
     const csv = erneuerungCsv({ gebaeudeId: "g", stand: 0, heizungBaujahr: 2008, typen: [], bauteile, ergebnis }, { "heizung.verteiler": "Heizungsverteiler" });
     const z = csv.split("\r\n");
@@ -25,7 +25,7 @@ describe("CSV", () => {
   });
   it("Umlaute-Namen und Textspalten fuer Ampel und Quelle", () => {
     const mk = (id: string, katalogId: string, baujahr: number | null, quellePreis: "kunde" | "dokument") => ({ id, katalogId, menge: 1, baujahr, hersteller: null, typ: null, ort: "EG",
-      akte: { zustand: "kritisch" as const, lebensdauerJahre: null, stueckpreis: 100, quellePreis, notiz: null } });
+      akte: { zustand: "kritisch" as const, lebensdauerJahre: null, stueckpreis: 100, quellePreis, notiz: null, preisQuelle: null } });
     const bauteile = [mk("a", "heizung.waermepumpe", 2000, "dokument"), mk("b", "heizung.oelkessel", null, "kunde"), mk("c", "heizung.fernwaerme_uebergabe", 2025, "kunde")];
     const ergebnis = rechne({ stichtag: 2026, heizungBaujahr: null, typen: [], bauteile });
     const csv = erneuerungCsv({ gebaeudeId: "g", stand: 0, heizungBaujahr: null, typen: [], bauteile, ergebnis }, { "heizung.waermepumpe": "Waermepumpe" });
@@ -36,5 +36,14 @@ describe("CSV", () => {
     expect(csv).toContain("Baujahr fehlt");
     expect(csv).toMatch(/(In Ordnung|Bald ersetzen|Ersetzen);100;100;Eigene Angabe/);
     expect(csv).toContain("Kritisch");
+  });
+  it("Fundstelle: Dateiname und Seite bzw. Dokument geloescht", () => {
+    const mk = (id: string, preisQuelle: { dokumentId: string | null; dateiname: string | null; seite: number | null }) => ({ id, katalogId: "heizung.waermepumpe", menge: 1, baujahr: 2000, hersteller: null, typ: null, ort: "EG",
+      akte: { zustand: null, lebensdauerJahre: null, stueckpreis: 100, quellePreis: "dokument" as const, notiz: null, preisQuelle } });
+    const bauteile = [mk("a", { dokumentId: "d", dateiname: "o1.pdf", seite: 3 }), mk("b", { dokumentId: null, dateiname: null, seite: null })];
+    const ergebnis = rechne({ stichtag: 2026, heizungBaujahr: null, typen: [], bauteile });
+    const csv = erneuerungCsv({ gebaeudeId: "g", stand: 0, heizungBaujahr: null, typen: [], bauteile, ergebnis }, {});
+    expect(csv).toContain(";Dokument: o1.pdf, S. 3");
+    expect(csv).toContain(";Dokument (gelöscht)");
   });
 });

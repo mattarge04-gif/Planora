@@ -17,6 +17,14 @@ export const ANZEIGENAMEN: Record<string, string> = {
 const AMPEL = { gruen: "In Ordnung", gelb: "Bald ersetzen", rot: "Ersetzen", grau: "Baujahr fehlt" } as const;
 const ZUSTAND = { gut: "Gut", mittel: "Mittel", schlecht: "Schlecht", kritisch: "Kritisch" } as const;
 const HERKUNFT = { kunde: "Eigene Angabe", dokument: "Aus Dokument" } as const;
+function preisQuelleText(b: LebensdauerStand["bauteile"][number], e: { quellen: { preis: "bauteil" | "typ" | null; preisHerkunft: "kunde" | "dokument" | null } }, typen: LebensdauerStand["typen"]): string | null {
+  const h = e.quellen.preisHerkunft;
+  if (!h) return null;
+  if (h !== "dokument") return HERKUNFT[h];
+  const q = e.quellen.preis === "typ" ? typen.find((t) => t.katalogId === b.katalogId)?.preisQuelle : b.akte?.preisQuelle;
+  if (!q) return HERKUNFT[h];
+  return q.dateiname === null ? "Dokument (gelöscht)" : `Dokument: ${q.dateiname}, S. ${q.seite ?? "?"}`;
+}
 const zeile = (werte: (string | number | null | undefined)[]) => werte.map(zelle).join(";");
 
 /** Semikolon, UTF-8 mit BOM (Excel de-CH oeffnet direkt). Zahlen mit Punkt. */
@@ -27,7 +35,7 @@ export function erneuerungCsv(s: LebensdauerStand, namen: Record<string, string>
   for (const b of sortiert) {
     const e = erg.get(b.id)!;
     z.push(zeile([b.ort, ANZEIGENAMEN[b.katalogId] ?? namen[b.katalogId] ?? b.katalogId, b.hersteller, b.typ, b.menge ?? "unbekannt", e.baujahr, b.akte?.zustand ? ZUSTAND[b.akte.zustand] : null,
-      e.lebensdauer, e.ersatzjahr, AMPEL[e.ampel], e.stueckpreis, e.kosten, e.quellen.preisHerkunft ? HERKUNFT[e.quellen.preisHerkunft] : null]));
+      e.lebensdauer, e.ersatzjahr, AMPEL[e.ampel], e.stueckpreis, e.kosten, preisQuelleText(b, e, s.typen)]));
   }
   z.push("", zeile(["Jahr", "Betrag", "ohne Preis"]));
   for (const j of s.ergebnis.jahre) z.push(zeile([j.jahr, j.betrag, j.ohnePreis]));
