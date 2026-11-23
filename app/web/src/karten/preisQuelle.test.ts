@@ -16,11 +16,11 @@ const stand = (preis: "bauteil" | "typ" | null, herkunft: "kunde" | "dokument" |
 describe("dokumentQuelle", () => {
   it("zeigt Datei und Seite mit Link auf die Fundstelle", () => {
     expect(dokumentQuelle(stand("bauteil", "dokument", quelle("d1")), "p1")).toEqual({
-      text: "aus o1-pumpen.pdf, S. 2", kurz: "o1-pumpen, S. 2", kurzName: "o1-pumpen", stelle: ", S. 2", href: "/api/preisdokument/dokumente/d1/datei#page=2", typpreis: false, dateiname: "o1-pumpen.pdf" });
+      text: "aus o1-pumpen.pdf, S. 2", kurz: "o1-pumpen, S. 2", kurzName: "o1-pumpen", stelle: ", S. 2", href: "/api/dokumente/d1/datei#page=2", typpreis: false, dateiname: "o1-pumpen.pdf" });
   });
   it("nimmt beim Typpreis die Quelle des Typs", () => {
     const q = dokumentQuelle(stand("typ", "dokument", null, quelle("d2", 3)), "p1");
-    expect(q).toMatchObject({ typpreis: true, text: "aus o1-pumpen.pdf, S. 3", href: "/api/preisdokument/dokumente/d2/datei#page=3" });
+    expect(q).toMatchObject({ typpreis: true, text: "aus o1-pumpen.pdf, S. 3", href: "/api/dokumente/d2/datei#page=3" });
   });
   it("meldet geloeschte Dokumente ohne Link", () => {
     expect(dokumentQuelle(stand("bauteil", "dokument", quelle(null)), "p1")).toMatchObject({ text: "aus Dokument (gelöscht)", href: null });

@@ -11,6 +11,7 @@ import { wartungAktiv, wartungsLage } from "./betrieb/wartung.js";
 import { bestaetigeRestoreKonto } from "./betrieb/freigabe.js";
 import { registriereWeltRouten } from "./welt/routen.js";
 import { registriereLebensdauerRouten } from "./lebensdauer/routen.js";
+import { registriereDokumentRouten } from "./dokumente/routen.js";
 import { registrierePreisdokumentRouten } from "./preisdokument/routen.js";
 import { erzeugeLaeufer, markiereAbgebrochen } from "./preisdokument/laeufer.js";
 import { openaiAdapter } from "./preisdokument/openai.js";
@@ -96,6 +97,7 @@ export async function baueServer(o: ServerOptionen) {
   });
 
   registriereWeltRouten(app, o.pool); // M2a: /api/struktur/… (Huelle, Beschreibung), /api/szene/…/welt
+  registriereDokumentRouten(app, o.pool); // Anlagenakte (E46): /api/dokumente/… (Kernmodul, immer aktiv)
   registriereLebensdauerRouten(app, o.pool); // M7 Demo-Schnitt: /api/lebensdauer/… (Modul-Guard schaltet)
   // Preis aus Dokument: Hintergrundleser; ohne Schluessel kein Adapter (Status "aus")
   const schluessel = process.env.OPENAI_API_KEY?.trim();
