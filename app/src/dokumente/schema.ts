@@ -1,7 +1,7 @@
 import { KATEGORIEN } from "./typ.js";
 import { UUID } from "../welt/schema.js";
 export const DATEI_QUERY = { type: "object", additionalProperties: false, properties: { download: { type: "string", enum: ["1"] } } } as const;
-const U = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"; // gleiches Muster wie UUID in welt/schema.ts
+const U = UUID.pattern.slice(1, -1); // gleiches Muster wie in welt/schema.ts
 export const ABLEGEN_QUERY = { type: "object", additionalProperties: false, properties: {
   kategorie: { type: "string", enum: [...KATEGORIEN] },
   bauteile: { type: "string", maxLength: 18_500, pattern: `^${U}(,${U})*$` },

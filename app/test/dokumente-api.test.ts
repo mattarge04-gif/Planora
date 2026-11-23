@@ -11,6 +11,7 @@ import { Readable } from "node:stream";
 import { dateiAblage } from "../src/ablage/ablage.js";
 import { baueServer } from "../src/server.js";
 import { EICAR, fakeScanner } from "../src/dokumente/scanner.js";
+import { ergaenzeVerknuepfungen } from "../src/dokumente/speicher.js";
 
 const ORIGIN = "http://localhost:3995";
 const pw = randomBytes(12).toString("base64url");
@@ -309,5 +310,26 @@ describe("Dokumente-API: Verknuepfen und Kategorie", () => {
     expect((await db.pool.query("select 1 from dokument_bauteil where dokument_id=$1", [id])).rowCount).toBe(0);
     expect((await db.pool.query("select stueckpreis, quelle_preis, preis_vorschlag_id from bauteil_akte where bauteil_id=$1", [B1])).rows[0])
       .toEqual({ stueckpreis: "250.00", quelle_preis: "dokument", preis_vorschlag_id: null });
+  });
+});
+
+describe("Dokumente-API: Duplikat-Verknuepfung Rennen und FK", () => {
+  it("abgelehntes Dokument bekommt keine Verknuepfung (ergaenzeVerknuepfungen und Duplikat-Upload)", async () => {
+    const daten = pdf(1, "% rennen");
+    const id = (await ablegen(kBearb, daten, "R.pdf")).json().id;
+    await warteScan(id);
+    await db.pool.query("update dokument set scan_status='abgelehnt' where id=$1", [id]);
+    const c = await db.pool.connect();
+    try { await ergaenzeVerknuepfungen(c, id, [B1]); } finally { c.release(); }
+    expect((await db.pool.query("select 1 from dokument_bauteil where dokument_id=$1", [id])).rowCount).toBe(0);
+    const d = await ablegen(kBearb, daten, "R.pdf", `?bauteile=${B1}`);
+    expect([d.statusCode, d.json().bauteilIds]).toEqual([200, []]);
+  });
+  it("FK-Verletzung bei geloeschtem Bauteil -> 400 bauteil_unbekannt", async () => {
+    const c = await db.pool.connect();
+    try {
+      const id = (await ablegen(kBearb, pdf(1, "% fk"), "FK.pdf")).json().id;
+      await expect(ergaenzeVerknuepfungen(c, id, ["00000000-0000-4000-8000-000000000000"])).rejects.toMatchObject({ status: 400 });
+    } finally { c.release(); }
   });
 });

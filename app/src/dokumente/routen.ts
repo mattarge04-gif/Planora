@@ -26,9 +26,9 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
   };
 
   // Duplikat: uebergebene Bauteile werden zusaetzlich verknuepft (Vereinigung), nie entfernt. Bei Befund/abgelehnt keine neue Verknuepfung.
-  const ergaenzeUndLade = async (gebaeudeId: string, z: { id: string; scanStatus: string }, ids: string[]) => {
-    if (!ids.length || z.scanStatus === "abgelehnt") return z;
-    await mitClient(pool, (c) => ergaenzeVerknuepfungen(c, z.id, ids));
+  const ergaenzeUndLade = async (gebaeudeId: string, z: { id: string }, ids: string[]) => {
+    if (!ids.length) return z;
+    await inTx(pool, "begin", (c) => ergaenzeVerknuepfungen(c, z.id, ids)); // sperrt die Zeile, prueft abgelehnt atomar
     return zeile(gebaeudeId, z.id);
   };
   const fachlich = async <T>(reply: FastifyReply, f: () => Promise<T>) => {
@@ -57,7 +57,7 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
       catch (e) { if (e instanceof FachFehler) return reply.code(e.status).send({ fehler: e.fehler }); throw e; }
       const sha = createHash("sha256").update(daten).digest("hex");
       const vorhanden = await bestehendes(req.params.id, sha);
-      if (vorhanden) return reply.code(200).send(await ergaenzeUndLade(req.params.id, vorhanden, verknuepfen));
+      if (vorhanden) return fachlich(reply, async () => reply.code(200).send(await ergaenzeUndLade(req.params.id, vorhanden, verknuepfen)));
       const id = randomUUID();
       const seiten = t.typ.art === "pdf" ? zaehleSeiten(daten) : null;
       const kategorie = req.query.kategorie ?? startKategorie(t.typ.art);
@@ -73,7 +73,7 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
         });
       } catch (e) {
         const dup = await bestehendes(req.params.id, sha);
-        if (dup) return reply.code(200).send(await ergaenzeUndLade(req.params.id, dup, verknuepfen)); // paralleler Upload gleichen Inhalts; die Kopie gehoert ihm
+        if (dup) return fachlich(reply, async () => reply.code(200).send(await ergaenzeUndLade(req.params.id, dup, verknuepfen))); // paralleler Upload gleichen Inhalts; die Kopie gehoert ihm
         await raeumeQuarantaeneKopie(pool, o.quarantaene, x.schluessel);
         throw e;
       }
