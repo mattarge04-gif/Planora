@@ -13,3 +13,10 @@ export class LeseFehler extends Error {
 export function kostenUsd(tokensEin: number, tokensAus: number, preisEin = 2.0, preisAus = 10.0): number {
   return Math.round(((tokensEin * preisEin + tokensAus * preisAus) / 1_000_000) * 10_000) / 10_000;
 }
+// Entfernt Schluessel (exakt und im sk-...-Muster) aus Fehlermeldungen; Laenge begrenzt.
+export function bereinigeFehler(meldung: string, apiKey: string, status?: number): string {
+  let m = meldung;
+  if (apiKey) m = m.split(apiKey).join("[key]");
+  m = m.replace(/sk-[A-Za-z0-9_*-]+/g, "[key]").slice(0, 300);
+  return status ? `API-Fehler (Status ${status}): ${m}` : m || "API-Fehler";
+}
