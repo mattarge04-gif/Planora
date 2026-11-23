@@ -154,3 +154,21 @@ describe("Dokumente-API: Typen", () => {
     expect((await ablegen(kBearb, pdf(1, "% x"), "o.pdf", "?kategorie=rechnung")).statusCode).toBe(400);
   });
 });
+
+describe("Dokumente-API: Loeschrennen", () => {
+  it("paralleles Loeschen war schneller -> 404 ohne Audit", async () => {
+    const id = (await ablegen(kBearb, pdf(1, "% rennen"), "Rennen.pdf")).json().id;
+    await warteScan(id);
+    // Trigger ueberspringt das Loeschen (Zeile "verschwindet" fuer diese Abfrage wie bei einem parallelen Delete).
+    await db.pool.query("create function t2_ueberspringe() returns trigger language plpgsql as 'begin return null; end'");
+    await db.pool.query(`create trigger t2_rennen before delete on dokument for each row when (old.id = '${id}') execute function t2_ueberspringe()`);
+    try {
+      const vorher = (await db.pool.query("select count(*)::int n from audit_eintrag where art='dokument.geloescht'")).rows[0].n;
+      expect((await anfrage("DELETE", `/api/dokumente/${id}`, kBearb)).statusCode).toBe(404);
+      expect((await db.pool.query("select count(*)::int n from audit_eintrag where art='dokument.geloescht'")).rows[0].n).toBe(vorher);
+    } finally {
+      await db.pool.query("drop trigger t2_rennen on dokument");
+      await db.pool.query("drop function t2_ueberspringe()");
+    }
+  });
+});
