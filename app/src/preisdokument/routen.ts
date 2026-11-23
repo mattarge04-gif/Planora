@@ -7,6 +7,7 @@ import { ID_PARAMS } from "../welt/schema.js";
 import { auditEreignis } from "../audit/audit.js";
 import { inTx as inTxPool, mitClient as mitClientPool, verweigert, zugriff, zugriffDokument } from "../rechte/zugriff.js";
 
+import { lesbar } from "./pdf.js";
 import type { Laeufer } from "./laeufer.js";
 
 export function registrierePreisdokumentRouten(app: FastifyInstance, pool: pg.Pool, laeufer?: Laeufer) {
@@ -84,6 +85,10 @@ export function registrierePreisdokumentRouten(app: FastifyInstance, pool: pg.Po
       const r = await mitClient((c) => zugriffDokument(c, k.benutzerId, req.params.id, true));
       if (r.code !== 200) return verweigert(reply, r.code as 403 | 404);
       if (laeufer?.zustand().auslesen !== "an") return reply.code(409).send({ fehler: "auslesen_aus" });
+      const dz = (await pool.query("select art, scan_status, seiten, groesse from dokument where id=$1", [req.params.id])).rows[0];
+      if (!dz) return verweigert(reply, 404);
+      const grund = lesbar({ art: dz.art, scanStatus: dz.scan_status, seiten: dz.seiten, groesse: Number(dz.groesse) });
+      if (grund) return reply.code(409).send({ fehler: grund });
       // Offene und verworfene Vorschlaege entfallen, uebernommene bleiben; ein laufender Lesevorgang wird nicht doppelt gestartet.
       const gestartet = await inTx("begin", async (c) => {
         const l = await c.query("update dokument set auslesen_status='neu', auslesen_fehler=null where id=$1 and auslesen_status <> 'liest' returning id", [req.params.id]);

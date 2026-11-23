@@ -48,7 +48,7 @@ const dok = {};
 for (const f of DATEIEN) {
   const p = join(hier, "pdf", f);
   if (!existsSync(p)) throw new Error(`${p} fehlt: zuerst node werkzeug/preisdokument/erzeuge.mjs`);
-  const d = await api("POST", `/api/preisdokument/gebaeude/${g.id}/dokumente`, new Uint8Array(readFileSync(p)), { "content-type": "application/pdf", "x-dateiname": encodeURIComponent(f) });
+  const d = await api("POST", `/api/dokumente/gebaeude/${g.id}`, new Uint8Array(readFileSync(p)), { "content-type": "application/octet-stream", "x-dateiname": encodeURIComponent(f) });
   dok[f] = d.id;
 }
 

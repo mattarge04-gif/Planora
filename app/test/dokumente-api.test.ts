@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { frischeDb } from "./hilfe.js";
 import { anfrageMit, legeKontoAn } from "./hilfe-api.js";
-import { pdf } from "./hilfe-dateien.js";
+import { pdf, xlsx, png, exe, docx } from "./hilfe-dateien.js";
 import { baueServer } from "../src/server.js";
 
 const ORIGIN = "http://localhost:3995";
@@ -125,5 +125,32 @@ describe("Dokumente-API: Oeffnen, Herunterladen, Loeschen", () => {
     expect((await db.pool.query("select 1 from datei_referenz where objekt=$1", [`dokument:${id}`])).rowCount).toBe(0);
     expect((await db.pool.query("select 1 from loesch_journal where art='datei.loeschen' and ziel=$1", [schluessel])).rowCount).toBeGreaterThan(0);
     expect((await anfrage("DELETE", `/api/dokumente/${id}`, kBearb)).statusCode).toBe(404);
+  });
+});
+
+describe("Dokumente-API: Typen", () => {
+  it("Excel -> office, attachment auch ohne download", async () => {
+    const r = await ablegen(kBearb, xlsx(), "Kosten.xlsx");
+    expect(r.statusCode).toBe(201);
+    expect(r.json()).toMatchObject({ art: "office", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", kategorie: "sonstiges", seiten: null });
+    await warteScan(r.json().id);
+    const f = await anfrage("GET", `/api/dokumente/${r.json().id}/datei`, kLeser);
+    expect(String(f.headers["content-disposition"])).toMatch(/^attachment/);
+    expect(f.headers["x-content-type-options"]).toBe("nosniff");
+  });
+  it("falsche Endung: PNG als .pdf -> bild/foto, inline image/png", async () => {
+    const r = await ablegen(kBearb, png("a"), "foto.pdf");
+    expect(r.json()).toMatchObject({ dateiname: "foto.pdf", art: "bild", mime: "image/png", kategorie: "foto" });
+    await warteScan(r.json().id);
+    const f = await anfrage("GET", `/api/dokumente/${r.json().id}/datei`, kLeser);
+    expect([f.headers["content-type"], String(f.headers["content-disposition"]).startsWith("inline")]).toEqual(["image/png", true]);
+  });
+  it("EXE als .pdf und Makro-Datei -> 400", async () => {
+    expect((await ablegen(kBearb, exe(), "rechnung.pdf")).json()).toEqual({ fehler: "typ_unbekannt" });
+    expect((await ablegen(kBearb, docx("word/vbaProject.bin"), "brief.docx")).json()).toEqual({ fehler: "makro" });
+  });
+  it("Kategorie beim Ablegen; ungueltige Kategorie 400", async () => {
+    expect((await ablegen(kBearb, pdf(1, "% offerte"), "o.pdf", "?kategorie=offerte")).json().kategorie).toBe("offerte");
+    expect((await ablegen(kBearb, pdf(1, "% x"), "o.pdf", "?kategorie=rechnung")).statusCode).toBe(400);
   });
 });

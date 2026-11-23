@@ -10,3 +10,11 @@ export function pruefePdf(daten: Buffer): { ok: true; seiten: number } | { ok: f
   if (seiten > MAX_SEITEN) return { ok: false, grund: "zu_viele_seiten" };
   return { ok: true, seiten };
 }
+/** Darf das Dokument an die Lese-API? Nur sauberes PDF innerhalb der Lesegrenzen (Ablage erlaubt auch Bilder/Office und bis 100 MB). */
+export function lesbar(d: { art: string; scanStatus: string; seiten: number | null; groesse: number }): "kein_pdf" | "nicht_sauber" | "zu_gross" | "zu_viele_seiten" | null {
+  if (d.art !== "pdf") return "kein_pdf";
+  if (d.scanStatus !== "sauber") return "nicht_sauber";
+  if (d.groesse > MAX_BYTES) return "zu_gross";
+  if (d.seiten !== null && d.seiten > MAX_SEITEN) return "zu_viele_seiten";
+  return null;
+}

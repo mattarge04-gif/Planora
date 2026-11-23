@@ -38,3 +38,15 @@ describe("pruefePdf", () => {
   });
   it("lehnt ueber 32 MB ab", () => expect(pruefePdf(Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(32 * 1024 * 1024)]))).toEqual({ ok: false, grund: "zu_gross" }));
 });
+
+import { lesbar } from "../src/preisdokument/pdf.js";
+describe("lesbar", () => {
+  const ok = { art: "pdf", scanStatus: "sauber", seiten: 3, groesse: 1000 };
+  it("nur sauberes PDF innerhalb der Lesegrenzen", () => {
+    expect(lesbar(ok)).toBeNull();
+    expect(lesbar({ ...ok, art: "office" })).toBe("kein_pdf");
+    expect(lesbar({ ...ok, scanStatus: "quarantaene" })).toBe("nicht_sauber");
+    expect(lesbar({ ...ok, groesse: 32 * 1024 * 1024 + 1 })).toBe("zu_gross");
+    expect(lesbar({ ...ok, seiten: 101 })).toBe("zu_viele_seiten");
+  });
+});

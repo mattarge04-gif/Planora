@@ -3,3 +3,28 @@ const NL = String.fromCharCode(10);
 export const pdf = (seiten = 1, zusatz = "") => Buffer.from(["%PDF-1.7",
   ...Array.from({ length: seiten }, (_, i) => `${i + 3} 0 obj << /Type /Page /Parent 2 0 R >> endobj`),
   `2 0 obj << /Type /Pages /Count ${seiten} >> endobj`, zusatz + "%%EOF"].join(NL));
+/** Minimales ZIP (nur gespeicherte Eintraege, CRC 0) mit den angegebenen Namen; reicht fuer die Typerkennung. */
+export function zip(namen: string[]): Buffer {
+  const lokal: Buffer[] = [], zentral: Buffer[] = [];
+  let offset = 0;
+  for (const n of namen) {
+    const name = Buffer.from(n, "utf8"), inhalt = Buffer.from("x");
+    const h = Buffer.alloc(30); h.writeUInt32LE(0x04034b50, 0); h.writeUInt16LE(20, 4); h.writeUInt32LE(inhalt.length, 18); h.writeUInt32LE(inhalt.length, 22); h.writeUInt16LE(name.length, 26);
+    const z = Buffer.alloc(46); z.writeUInt32LE(0x02014b50, 0); z.writeUInt16LE(20, 4); z.writeUInt16LE(20, 6); z.writeUInt32LE(inhalt.length, 20); z.writeUInt32LE(inhalt.length, 24); z.writeUInt16LE(name.length, 28); z.writeUInt32LE(offset, 42);
+    lokal.push(h, name, inhalt); zentral.push(z, name);
+    offset += 30 + name.length + inhalt.length;
+  }
+  const cd = Buffer.concat(zentral);
+  const e = Buffer.alloc(22); e.writeUInt32LE(0x06054b50, 0); e.writeUInt16LE(namen.length, 8); e.writeUInt16LE(namen.length, 10); e.writeUInt32LE(cd.length, 12); e.writeUInt32LE(offset, 16);
+  return Buffer.concat([...lokal, cd, e]);
+}
+export const docx = (zusatz = "") => zip(["[Content_Types].xml", "_rels/.rels", "word/document.xml", ...(zusatz ? [zusatz] : [])]);
+export const xlsx = (zusatz = "") => zip(["[Content_Types].xml", "_rels/.rels", "xl/workbook.xml", ...(zusatz ? [zusatz] : [])]);
+export const pptx = () => zip(["[Content_Types].xml", "ppt/presentation.xml"]);
+const OLE2 = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
+/** OLE2-Huelle mit Stream-Namen im Verzeichnis (UTF-16LE wie im echten Format). */
+export const ole = (...streams: string[]) => Buffer.concat([OLE2, Buffer.alloc(504), ...streams.map((s) => Buffer.from(s, "utf16le"))]);
+export const png = (zusatz = "") => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from("IHDR" + zusatz)]);
+export const jpg = () => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from("JFIF")]);
+export const heic = (marke = "heic") => Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from("ftyp" + marke + "0000mif1heic")]);
+export const exe = () => Buffer.concat([Buffer.from("MZ"), Buffer.alloc(64)]);

@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { frischeDb } from "./hilfe.js";
 import { baueServer } from "../src/server.js";
 import { anfrageMit, legeKontoAn } from "./hilfe-api.js";
-import { pdf } from "./hilfe-dateien.js";
+import { pdf, png } from "./hilfe-dateien.js";
 import { schalteAus, schalteEin } from "../src/module/schalter.js";
 import { fakeAdapter } from "../src/preisdokument/fake.js";
 
@@ -46,7 +46,7 @@ const hochladen = (cookie: string, gid: string, daten: Buffer, name = "Offerte P
 const liste = () => `/api/preisdokument/gebaeude/${G}`;
 
 describe("Preisdokument-API", () => {
-  it("Leser liest, darf nicht hochladen; Fremd 404", async () => {
+  it("Leser liest die Liste; Fremd 404", async () => {
     await hochladen(kBearb, G, pdf(1, "% basis"));
     const r = await anfrage("GET", liste(), kLeser);
     expect(r.statusCode).toBe(200);
@@ -110,6 +110,15 @@ describe("Preisdokument-API mit Leseadapter", () => {
     const r = await gib(app2, "POST", `/api/preisdokument/dokumente/${id}/neu-lesen`, kBearb);
     expect([r.statusCode, r.json()]).toEqual([409, { fehler: "liest_bereits" }]);
     expect((await db.pool.query("select count(*) n from audit_eintrag where art='preisdokument.neu_lesen'")).rows[0].n).toBe(vorher);
+  });
+  it("neu-lesen: Nicht-PDF -> 409 kein_pdf, Quarantaene -> 409 nicht_sauber", async () => {
+    const bild = (await hochladen(kBearb, G, png("lesen"), "Foto.png")).json().id;
+    const r = await gib(app2, "POST", `/api/preisdokument/dokumente/${bild}/neu-lesen`, kBearb);
+    expect([r.statusCode, r.json()]).toEqual([409, { fehler: "kein_pdf" }]);
+    const id = (await hochladen(kBearb, G, pdf(1, "% quarant"))).json().id;
+    await db.pool.query("update dokument set scan_status='quarantaene' where id=$1", [id]);
+    const q = await gib(app2, "POST", `/api/preisdokument/dokumente/${id}/neu-lesen`, kBearb);
+    expect([q.statusCode, q.json()]).toEqual([409, { fehler: "nicht_sauber" }]);
   });
   it("ohne Adapter: neu-lesen -> 409", async () => {
     const app3 = await bauApp(null);

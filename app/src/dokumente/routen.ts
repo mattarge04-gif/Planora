@@ -6,9 +6,9 @@ import { speichereUndReferenziere } from "../ablage/ablage.js";
 import { ID_PARAMS } from "../welt/schema.js";
 import { auditEreignis } from "../audit/audit.js";
 import { inTx, mitClient, verweigert, zugriff, zugriffDokument } from "../rechte/zugriff.js";
-import { MAX_BYTES, erkenneTyp, startKategorie } from "./typ.js";
+import { MAX_BYTES, erkenneTyp, startKategorie, type Kategorie } from "./typ.js";
 import { zaehleSeiten } from "./pdf.js";
-import { DATEI_QUERY } from "./schema.js";
+import { ABLEGEN_QUERY, DATEI_QUERY } from "./schema.js";
 import { gibReferenzFrei, ladeAblage, ladeAblageBauteile, loescheDokument } from "./speicher.js";
 
 /** Entfernt Steuer- und Bidi-Zeichen (Anzeige-Taeuschung, z. B. U+202E) und begrenzt auf 255 Zeichen. */
@@ -27,7 +27,7 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool) {
     // Rohe Bytes in einem Request (ADR 0016 Nachtrag, kein Multipart). Typ kommt aus den Magic Bytes, nie aus Content-Type oder Endung.
     scope.addContentTypeParser("application/octet-stream", { parseAs: "buffer", bodyLimit: MAX_BYTES + 1024 }, (_req, body, done) => done(null, body));
 
-    scope.post<{ Params: { id: string } }>("/api/dokumente/gebaeude/:id", { schema: { params: ID_PARAMS } }, async (req, reply) => {
+    scope.post<{ Params: { id: string }; Querystring: { kategorie?: Kategorie } }>("/api/dokumente/gebaeude/:id", { schema: { params: ID_PARAMS, querystring: ABLEGEN_QUERY } }, async (req, reply) => {
       const k = req.kontext!;
       const z = await mitClient(pool, (c) => zugriff(c, k.benutzerId, req.params.id, true));
       if (z !== 200) return verweigert(reply, z);
@@ -45,7 +45,7 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool) {
       const id = randomUUID();
       const objekt = `dokument:${id}`;
       const seiten = t.typ.art === "pdf" ? zaehleSeiten(daten) : null;
-      const kategorie = startKategorie(t.typ.art);
+      const kategorie = req.query.kategorie ?? startKategorie(t.typ.art);
       // Uebergang bis Task 3: direkt in die Ablage, scan_status 'sauber'. Task 3 ersetzt diesen Block durch die Quarantaene.
       // Datei und Referenz werden in eigener Transaktion committet, das Dokument danach; scheitert das Einfuegen
       // (z. B. paralleler Upload derselben Datei), wird die Referenz wieder freigegeben.
@@ -94,10 +94,12 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool) {
       const k = req.kontext!;
       const z = await mitClient(pool, (c) => zugriffDokument(c, k.benutzerId, req.params.id, true));
       if (z.code !== 200) return verweigert(reply, z.code as 403 | 404);
-      await inTx(pool, "begin", async (c) => {
-        await loescheDokument(c, req.params.id);
+      const geloescht = await inTx(pool, "begin", async (c) => {
+        if (!(await loescheDokument(c, req.params.id))) return false; // paralleles Loeschen war schneller
         await auditEreignis(c, k.auditId, "dokument.geloescht", { gebaeudeId: z.gebaeudeId, dokumentId: req.params.id });
+        return true;
       });
+      if (!geloescht) return verweigert(reply, 404);
       return reply.code(204).send();
     });
   });
