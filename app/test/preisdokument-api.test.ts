@@ -167,3 +167,80 @@ describe("Preisdokument-API mit Leseadapter", () => {
     } finally { await app3.close(); }
   });
 });
+
+describe("Preisdokument-API Entscheidungen", () => {
+  let B: string, V: string, DOK: string, L: string;
+  const post = (url: string, cookie: string, body?: unknown) => anfrage("POST", url, cookie, body ?? {});
+  const neuerVorschlag = async (sicherheit = "hoch") => {
+    const id = randomUUID();
+    await db.pool.query(`insert into preis_vorschlag(id, dokument_id, reihenfolge, position, seite, zitat, ersatzpreis, rechenweg, katalog_id, bauteil_ids, sicherheit)
+      values ($1,$2,0,'HK',2,'z',250,'r','heizung.heizkoerper',$3,$4)`, [id, DOK, [B], sicherheit]);
+    return id;
+  };
+  const standG = async () => (await db.pool.query("select stand from gebaeude where id=$1", [G])).rows[0].stand as number;
+  const zaehle = async (art: string) => Number((await db.pool.query("select count(*) n from audit_eintrag where art=$1", [art])).rows[0].n);
+  beforeAll(async () => {
+    B = (await db.pool.query("select id from bauteil where gebaeude_id=$1 and katalog_id='heizung.heizkoerper'", [G])).rows[0].id;
+    L = (await db.pool.query("select liegenschaft_id from gebaeude where id=$1", [G])).rows[0].liegenschaft_id;
+    DOK = randomUUID();
+    await db.pool.query(`insert into dokument(id, gebaeude_id, liegenschaft_id, dateiname, schluessel, sha256, groesse, seiten, hochgeladen_von, auslesen_status)
+      values ($1,$2,$3,'e.pdf','k',$4,10,3,$5,'fertig')`, [DOK, G, L, randomUUID(), randomUUID()]);
+    V = await neuerVorschlag();
+  });
+  it("Leser 403, Fremd 404, unbekannt 404", async () => {
+    const s = await standG();
+    const koerper = { bauteilIds: [B], alsTyppreis: false, stand: s };
+    for (const [url, body] of [[`/api/preisdokument/vorschlaege/${V}/uebernehmen`, koerper], [`/api/preisdokument/vorschlaege/${V}/verwerfen`, {}], [`/api/preisdokument/gebaeude/${G}/alle-sicheren`, { stand: s }]] as const) {
+      expect((await post(url, kLeser, body)).statusCode).toBe(403);
+      expect((await post(url, kFremd, body)).statusCode).toBe(404);
+    }
+    const unbekannt = randomUUID();
+    expect((await post(`/api/preisdokument/vorschlaege/${unbekannt}/uebernehmen`, kBearb, koerper)).statusCode).toBe(404);
+    expect((await post(`/api/preisdokument/vorschlaege/${unbekannt}/verwerfen`, kBearb)).statusCode).toBe(404);
+    expect((await post(`/api/preisdokument/gebaeude/${randomUUID()}/alle-sicheren`, kBearb, { stand: 0 })).statusCode).toBe(404);
+  });
+  it("ungueltiger Body -> 400", async () => {
+    const u = `/api/preisdokument/vorschlaege/${V}/uebernehmen`;
+    expect((await post(u, kBearb, { bauteilIds: ["x"], alsTyppreis: false, stand: 0 })).statusCode).toBe(400);
+    expect((await post(u, kBearb, { bauteilIds: [B], alsTyppreis: false, stand: 0, extra: 1 })).statusCode).toBe(400);
+    expect((await post(u, kBearb, { bauteilIds: [B], alsTyppreis: false })).statusCode).toBe(400);
+    expect((await post(`/api/preisdokument/gebaeude/${G}/alle-sicheren`, kBearb, {})).statusCode).toBe(400);
+  });
+  it("Uebersicht enthaelt stand", async () => {
+    expect((await anfrage("GET", liste(), kBearb)).json().stand).toBe(await standG());
+  });
+  it("Handeingabe -> 409 mit fehler-Liste; mit Bestaetigung Erfolg inkl. Audit und Antwortform", async () => {
+    await db.pool.query("insert into bauteil_akte(bauteil_id, liegenschaft_id, stueckpreis, quelle_preis) values ($1,$2,99,'kunde') on conflict (bauteil_id) do update set stueckpreis=99, quelle_preis='kunde', preis_vorschlag_id=null", [B, L]);
+    const s = await standG();
+    const u = `/api/preisdokument/vorschlaege/${V}/uebernehmen`;
+    const r = await post(u, kBearb, { bauteilIds: [B], alsTyppreis: false, stand: s });
+    expect(r.statusCode).toBe(409);
+    expect(r.json()).toMatchObject({ fehler: [{ code: "handeingabe" }] });
+    const vorher = await zaehle("preisdokument.uebernommen");
+    const ok = await post(u, kBearb, { bauteilIds: [B], alsTyppreis: false, stand: s, ueberschreibeHandeingabe: true });
+    expect(ok.statusCode).toBe(200);
+    const j = ok.json();
+    expect(j).toMatchObject({ stand: s, darfAendern: true, auslesen: expect.any(String), budget: expect.any(Object) });
+    expect(j.dokumente.find((d: any) => d.id === DOK).vorschlaege.find((v: any) => v.id === V)).toMatchObject({ status: "uebernommen", bauteilIds: [B] });
+    expect(await zaehle("preisdokument.uebernommen")).toBe(vorher + 1);
+    expect((await post(u, kBearb, { bauteilIds: [B], alsTyppreis: false, stand: s })).statusCode).toBe(409);
+  });
+  it("verwerfen und alle-sicheren: Antwort und Audit", async () => {
+    const v = await neuerVorschlag("mittel");
+    const vw = await zaehle("preisdokument.verworfen");
+    const r = await post(`/api/preisdokument/vorschlaege/${v}/verwerfen`, kBearb);
+    expect(r.statusCode).toBe(200);
+    expect(r.json().dokumente.find((d: any) => d.id === DOK).vorschlaege.find((x: any) => x.id === v).status).toBe("verworfen");
+    expect(await zaehle("preisdokument.verworfen")).toBe(vw + 1);
+    const h = await neuerVorschlag("hoch");
+    await db.pool.query("delete from bauteil_akte where bauteil_id=$1", [B]);
+    const al = await zaehle("preisdokument.alle_sicheren");
+    const a = await post(`/api/preisdokument/gebaeude/${G}/alle-sicheren`, kBearb, { stand: await standG() });
+    expect(a.statusCode).toBe(200);
+    expect(a.json().dokumente.find((d: any) => d.id === DOK).vorschlaege.find((x: any) => x.id === h).status).toBe("uebernommen");
+    expect(await zaehle("preisdokument.alle_sicheren")).toBe(al + 1);
+    const veraltet = await post(`/api/preisdokument/gebaeude/${G}/alle-sicheren`, kBearb, { stand: (await standG()) + 5 });
+    expect(veraltet.statusCode).toBe(409);
+    expect(veraltet.json()).toMatchObject({ fehler: [{ code: "stand_veraltet" }] });
+  });
+});

@@ -88,10 +88,10 @@ describe("Preis uebernehmen", () => {
   });
   it("verwerfen; danach uebernehmen -> 409 nicht_offen", async () => {
     const v = await vorschlag("heizung.umwaelzpumpe", [pumpen[0]]);
-    await mit((c) => verwirf(c, v, U));
+    await mit((c) => verwirf(c, v, G, U));
     expect(await status(v)).toBe("verworfen");
     await expect(mit(async (c) => uebernimm(c, await args(v, [pumpen[0]])()))).rejects.toMatchObject({ status: 409, fehler: [{ code: "nicht_offen" }] });
-    await expect(mit((c) => verwirf(c, v, U))).rejects.toMatchObject({ status: 409 });
+    await expect(mit((c) => verwirf(c, v, G, U))).rejects.toMatchObject({ status: 409 });
   });
   it("alle sicheren: Kollision mit Handeingabe wird uebersprungen, mittel bleibt offen", async () => {
     await db.pool.query("insert into bauteil_akte(bauteil_id, liegenschaft_id, stueckpreis, quelle_preis) values ($1,$2,500,'kunde')", [pumpen[1], L]);
@@ -100,6 +100,18 @@ describe("Preis uebernehmen", () => {
     const v3 = await vorschlag("heizung.umwaelzpumpe", [pumpen[0]], "mittel", 900, 2);
     expect(await mit(async (c) => { await c.query("begin"); const r = await uebernimmAlleSicheren(c, G, await stand(), U); await c.query("commit"); return r; })).toEqual({ uebernommen: 1, uebersprungen: 1 });
     expect([await status(v1), await status(v2), await status(v3)]).toEqual(["uebernommen", "offen", "offen"]);
+  });
+  it("Typpreis gegen Handeingabe am Typ -> 409 handeingabe", async () => {
+    await db.pool.query("insert into lebensdauer_typ(liegenschaft_id, katalog_id, stueckpreis, quelle_preis) values ($1,'heizung.umwaelzpumpe',700,'kunde')", [L]);
+    const v = await vorschlag("heizung.umwaelzpumpe", [pumpen[0]]);
+    await expect(mit(async (c) => uebernimm(c, await args(v, [pumpen[0]], { alsTyppreis: true })()))).rejects.toMatchObject({ status: 409, fehler: [{ code: "handeingabe" }] });
+  });
+  it("alle sicheren: veralteter Stand -> 409 auch ohne Kandidaten; verwerfen fremdes Gebaeude -> 409", async () => {
+    await expect(mit(async (c) => { await c.query("begin"); try { return await uebernimmAlleSicheren(c, G, (await stand()) + 1, U); } finally { await c.query("rollback"); } }))
+      .rejects.toMatchObject({ status: 409, fehler: [{ code: "stand_veraltet" }] });
+    const v = await vorschlag("heizung.umwaelzpumpe", [pumpen[0]]);
+    await expect(mit((c) => verwirf(c, v, randomUUID(), U))).rejects.toMatchObject({ status: 409 });
+    expect(await status(v)).toBe("offen");
   });
   it("Handeingabe nach Uebernahme -> Quelle kunde, Verweis weg", async () => {
     const v = await vorschlag("heizung.umwaelzpumpe", [pumpen[0]]);

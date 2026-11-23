@@ -34,8 +34,9 @@ export function registrierePreisdokumentRouten(app: FastifyInstance, pool: pg.Po
   async function uebersicht(c: pg.ClientBase, benutzerId: string, gebaeudeId: string) {
     const darfAendern = (await zugriff(c, benutzerId, gebaeudeId, true)) === 200;
     const zs = laeufer?.zustand();
+    const stand = (await c.query("select stand from gebaeude where id=$1", [gebaeudeId])).rows[0].stand as number;
     return {
-      dokumente: await ladeDokumente(c, gebaeudeId), darfAendern,
+      stand, dokumente: await ladeDokumente(c, gebaeudeId), darfAendern,
       auslesen: zs?.auslesen ?? "kein_schluessel",
       budget: { verbrauchtUsd: zs ? await zs.verbrauchtUsd() : 0, limitUsd: zs?.limitUsd ?? 0 },
     };
@@ -123,7 +124,7 @@ export function registrierePreisdokumentRouten(app: FastifyInstance, pool: pg.Po
       const z = gid ? await mitClient((c) => zugriff(c, k.benutzerId, gid, true)) : 404;
       if (z !== 200) return verweigert(reply, z);
       return entscheide(reply, gid, k.benutzerId, async (c) => {
-        await verwirf(c, req.params.id, k.benutzerId);
+        await verwirf(c, req.params.id, gid, k.benutzerId);
         await auditEreignis(c, k.auditId, "preisdokument.verworfen", { gebaeudeId: gid, vorschlagId: req.params.id });
       });
     });

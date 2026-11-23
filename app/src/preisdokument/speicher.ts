@@ -78,15 +78,20 @@ export async function uebernimm(c: pg.ClientBase, a: { vorschlagId: string; geba
   return { bauteile: ids.length, typ: a.alsTyppreis };
 }
 
-export async function verwirf(c: pg.ClientBase, vorschlagId: string, von: string) {
-  const r = await c.query("update preis_vorschlag set status='verworfen', entschieden_von=$2, entschieden_am=now() where id=$1 and status='offen'", [vorschlagId, von]);
+export async function verwirf(c: pg.ClientBase, vorschlagId: string, gebaeudeId: string, von: string) {
+  const r = await c.query(`update preis_vorschlag v set status='verworfen', entschieden_von=$3, entschieden_am=now()
+    from dokument d where d.id=v.dokument_id and d.gebaeude_id=$2 and v.id=$1 and v.status='offen'`, [vorschlagId, gebaeudeId, von]);
   if (!r.rowCount) throw f("nicht_offen", "Vorschlag ist bereits entschieden", 409);
 }
 
 export async function uebernimmAlleSicheren(c: pg.ClientBase, gebaeudeId: string, stand: number, von: string) {
+  const g = (await c.query("select stand from gebaeude where id=$1 for update", [gebaeudeId])).rows[0];
+  if (!g) throw f("nicht_gefunden", "Gebaeude nicht gefunden", 404);
+  if (g.stand !== stand) throw f("stand_veraltet", "Daten wurden inzwischen geaendert; bitte neu laden", 409);
   const v = (await c.query(`select v.id, v.bauteil_ids from preis_vorschlag v join dokument d on d.id=v.dokument_id
     where d.gebaeude_id=$1 and v.status='offen' and v.sicherheit='hoch' and v.katalog_id is not null and cardinality(v.bauteil_ids) > 0 order by d.hochgeladen_am, v.reihenfolge`, [gebaeudeId])).rows;
   let uebernommen = 0, uebersprungen = 0;
+  // Nur 400/409 (Einzelfall unpassend, Handeingabe, bereits entschieden) werden uebersprungen; 404 und Unerwartetes brechen ab und rollen alles zurueck.
   for (const x of v) {
     await c.query("savepoint sp");
     try { await uebernimm(c, { vorschlagId: x.id, gebaeudeId, bauteilIds: x.bauteil_ids, alsTyppreis: false, stand, ueberschreibeHandeingabe: false, von }); uebernommen++; await c.query("release savepoint sp"); }
