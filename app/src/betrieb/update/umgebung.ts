@@ -90,7 +90,7 @@ export function dockerBetriebsumgebung(docker: Ausfuehrer, instanz: string, alte
     },
     async laden(z) {
       releasePruefen(z);
-      await ladeUndPruefeImages(z.release, z.bundle, dockerInstallUmgebung(docker, pfade.var), z.release.images.filter((x) => x.dienst !== "clamav" || x.archiv).map((x) => x.dienst));
+      await ladeUndPruefeImages(z.release, z.bundle, dockerInstallUmgebung(docker, pfade.var), z.release.images.map((x) => x.dienst));
     },
     async migrieren(z) {
       releasePruefen(z); setzeImages(z);

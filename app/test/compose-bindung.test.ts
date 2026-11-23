@@ -8,9 +8,9 @@ import type { Release } from "../src/betrieb/release.js";
 
 it("prueft die effektiv gerenderten Dienst-Images gegen alle Manifest-Bindungen", async()=>{
   const dir=mkdtempSync(join(tmpdir(),"compose-bindung-")), envDatei=join(dir,"instanz.env");writeFileSync(envDatei,"PLANORA_RELEASE=test\n");
-  const images=["app","db","proxy","backup"].map((dienst)=>({dienst,referenz:`planora-${dienst}:test@sha256:${"a".repeat(64)}`}));
+  const images=["app","db","proxy","backup","clamav"].map((dienst)=>({dienst,referenz:`planora-${dienst}:test@sha256:${"a".repeat(64)}`}));
   const r={images} as Release;
-  const services=Object.fromEntries(Object.entries({api:"app",worker:"app",migrator:"app",proxy:"proxy",db:"db",backup:"backup",journal:"backup",restore:"backup"}).map(([s,d])=>[s,{image:images.find(i=>i.dienst===d)!.referenz}]));
+  const services=Object.fromEntries(Object.entries({api:"app",worker:"app",migrator:"app",proxy:"proxy",db:"db",backup:"backup",journal:"backup",restore:"backup",clamav:"clamav"}).map(([s,d])=>[s,{image:images.find(i=>i.dienst===d)!.referenz}]));
   const i={projekt:"planora-test",envDatei,composeDateien:["compose.yaml"]};
   try {
     const docker=async()=>({code:0,stdout:JSON.stringify({services}),stderr:""});

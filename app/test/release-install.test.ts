@@ -151,7 +151,7 @@ describe("Ablauf planora install (Fake-Umgebung)", () => {
     writeFileSync(join(bundle, "images", "app.tar"), "x");
     release = erzeugeRelease({
       version: "1.0.0", architektur: "amd64", migrationsVerzeichnis: MIGRATIONEN, modulmanifestVersion: "m1", vonVersionen: [], schemaVorher: [],
-      images: [{ dienst: "app", referenz: `planora-app:1.0.0@${ID("a")}`, digest: null, imageId: ID("a"), architektur: "amd64", archiv: "images/app.tar" }, ...(["db", "proxy", "backup"] as const).map((dienst) => ({ dienst, referenz: `planora-${dienst}:test@sha256:${"a".repeat(64)}`, digest: null, imageId: `sha256:${"a".repeat(64)}`, architektur: "amd64" }))],
+      images: [{ dienst: "app", referenz: `planora-app:1.0.0@${ID("a")}`, digest: null, imageId: ID("a"), architektur: "amd64", archiv: "images/app.tar" }, ...(["db", "proxy", "backup", "clamav"] as const).map((dienst) => ({ dienst, referenz: `planora-${dienst}:test@sha256:${"a".repeat(64)}`, digest: null, imageId: `sha256:${"a".repeat(64)}`, architektur: "amd64" }))],
     });
     writeFileSync(join(bundle, "release.json"), JSON.stringify(signiereRelease(release, paar.privateKey.export({ type: "pkcs8", format: "pem" }) as string)));
     pub = join(dir, "release.pub"); writeFileSync(pub, paar.publicKey.export({ type: "spki", format: "pem" }) as string);

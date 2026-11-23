@@ -112,6 +112,17 @@ Der Befehl prueft das neue Paar zuerst; ein ungueltiges Paar aendert nichts. Ein
 
 Nachweis: `app/test-docker/kundenzertifikat.test.ts` erzeugt zur Laufzeit eine Test-Kunden-CA und eine fremde CA (openssl). Ein Client, der nur der Test-CA vertraut, erreicht `/api/health` mit dem erwarteten Zertifikat. Mit fremder CA oder nur dem System-Truststore wird die Verbindung abgelehnt. Die Rotation wird ueber den echten Proxy-Neustart geprueft.
 
+## Virenprüfung (ClamAV)
+
+Jeder Datei-Upload der Anlagenakte (Spec Anlagenakte 2026-11-23) wird vor der Freigabe von clamd geprüft.
+
+- Dienst `clamav` ist immer aktiv (kein Profil), Image Pflichtbestandteil des Release-Manifests und des Bundles. clamd lauscht auf TCP 3310 nur im internen Netz, kein veröffentlichter Port.
+- Die api setzt `PLANORA_CLAMD_HOST=clamav` und `PLANORA_CLAMD_PORT=3310`; ohne Adresse startet sie nicht (Virenprüfung ist Pflicht). Die api startet erst, wenn clamav healthy ist (PING-Healthcheck, Start bis ca. 3 Minuten, Signaturen laden ~1 Minute).
+- clamd-Konfiguration als Compose-`configs`-Inhalt `clamd_conf`: `StreamMaxLength` und `MaxFileSize` 101 MB (Upload-Grenze 100 MB; clamd-Standard wäre 25 MB), `MaxScanSize` 400 MB. Eine Überschreitung meldet clamd als Fehler, die Datei erhält den Prüfstatus `scan_fehler`; Anwender sehen "Erneut prüfen".
+- Signaturen: freshclam im Container über das Netz `signaturen` (abschaltbar), einmal täglich [A]. Ohne Internet veralten die Signaturen. [?] Siemens-Fragebögen: Update-Takt und On-Premise-Versorgung der Signaturen.
+- RAM: bis 2 GB (`mem_limit`) [A].
+- Prüfung mit echtem clamd: `npm run test:docker` (`test-docker/scan.test.ts`: EICAR wird abgelehnt, sauberes PDF besteht; `paket.test.ts`: api erreicht clamd).
+
 ## Rueckweg und Freigabe
 
 Vor begonnener Update-Freigabe ist der Rueckweg laut signierter Matrix zulaessig. Bei inkompatiblem Schema:

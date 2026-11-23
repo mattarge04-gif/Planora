@@ -123,7 +123,7 @@ export function pruefeForm(r: unknown): asserts r is Release {
     if (i.archiv !== undefined && (!istText(i.archiv) || i.archiv.includes("..") || /^([/\\]|[A-Za-z]:)/.test(i.archiv))) f(`image ${i.dienst}: archiv muss relativ im Bundle liegen`);
     if (i.architektur !== x.architektur) f(`image ${i.dienst}: Architektur weicht ab`);
   }
-  for (const dienst of ["app", "db", "proxy", "backup"]) if (!dienste.has(dienst)) f(`${dienst}-Image fehlt`);
+  for (const dienst of ["app", "db", "proxy", "backup", "clamav"]) if (!dienste.has(dienst)) f(`${dienst}-Image fehlt`);
   if (!Array.isArray(x.migrationen) || !x.migrationen.length || !x.migrationen.every((m: any) => m && istText(m.name) && /^[0-9a-f]{64}$/.test(m.sha256))) f("migrationen");
   if (x.schemaVersion !== x.migrationen[x.migrationen.length - 1].name) f("schemaVersion passt nicht zur letzten Migration");
   if (!istText(x.modulmanifestVersion)) f("modulmanifestVersion");

@@ -95,8 +95,8 @@ export async function installiere(o: InstallOptionen, u: InstallUmgebung): Promi
   const kollision = pruefeKollision(plan, bestand);
   if (kollision.length) throw new Error(`Installation abgelehnt: ${kollision.join("; ")}`);
   const vorne = planeVorneNetz(bestand, o.vorneSubnetz);
-  // 4. Images offline laden und gegen das Manifest pruefen (clamav nur, wenn im Bundle: Profil scan ist in Stufe 1 aus)
-  await ladeUndPruefeImages(release, o.bundle, u, release.images.filter((i) => i.dienst !== "clamav" || i.archiv).map((i) => i.dienst));
+  // 4. Images offline laden und gegen das Manifest pruefen (alle Pflichtimages inkl. clamav)
+  await ladeUndPruefeImages(release, o.bundle, u, release.images.map((i) => i.dienst));
   // 5. Erst jetzt Dateien anlegen: Secrets (600), Vertrauensanker, instanz.env
   const pfade = instanzPfade(plan.instanz);
   mkdirSync(pfade.etc, { recursive: true, mode: 0o700 });

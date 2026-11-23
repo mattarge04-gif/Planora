@@ -83,9 +83,12 @@ services:
     <<: *app
     depends_on:
       migrator: { condition: service_completed_successfully }
+      clamav: { condition: service_healthy }
     environment:
       <<: *app-env
       PLANORA_DIENST: api
+      PLANORA_CLAMD_HOST: clamav
+      PLANORA_CLAMD_PORT: "3310"
       PLANORA_BASE_URL: ${PLANORA_BASE_URL:?PLANORA_BASE_URL fehlt (https://<domain>[:port])}
       # X-Forwarded-For gilt nur, wenn die Anfrage von genau der festen Adresse des eigenen Caddy im Netz vorne kommt
       # (PP9-4). Jeder andere Peer (worker, db, weitere Container) zaehlt mit seiner Socket-Adresse.
@@ -172,17 +175,47 @@ services:
       retries: 24
       start_period: 20s
 
-  # Vorbereitet, in Stufe 1 noch nicht genutzt [A]: startet nur mit `--profile scan`.
+  # Virenpruefung (Spec Anlagenakte 2026-11-23, E46): clamd per TCP 3310 nur im Netz intern, kein veroeffentlichter Port.
+  # Signaturen per freshclam ueber das Netz signaturen (abschaltbar, PO 6), einmal taeglich [A]. RAM 1-2 GB [A].
+  # Das Laden der Signaturen dauert ~1 min; api startet erst, wenn clamd auf PING antwortet (Healthcheck unten).
   clamav:
     image: ${PLANORA_IMAGE_CLAMAV:-clamav/clamav:1.5@sha256:45fe5149fbee5a46509c9848ef20d0c354b7b2323c9369f285939a37cf33422a}
-    profiles: [scan]
     restart: unless-stopped
+    environment:
+      FRESHCLAM_CHECKS: "1"
+    configs:
+      - source: clamd_conf
+        target: /etc/clamav/clamd.conf
     volumes:
       - clamav-signaturen:/var/lib/clamav
+    mem_limit: 2g
     security_opt: ["no-new-privileges:true"]
     networks: [intern, signaturen]
+    healthcheck:
+      # Eigener PING ueber TCP (unabhaengig vom Healthcheck des Images und von dessen Konfigurationssuche).
+      test: ["CMD-SHELL", "printf 'PING\n' | nc -w 2 127.0.0.1 3310 | grep -q PONG"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 180s
 
 configs:
+  # clamd wie Image-Standard, Grenzen fuer Dateien bis 100 MB (Spec Anlagenakte; MAX_BYTES = 100 MB). clamd-Standard fuer
+  # StreamMaxLength waere 25 MB. Grenzueberschreitung meldet clamd als Fehler -> scan_fehler.
+  clamd_conf:
+    content: |
+      DatabaseDirectory /var/lib/clamav
+      TemporaryDirectory /tmp
+      PidFile /tmp/clamd.pid
+      LocalSocket /tmp/clamd.sock
+      TCPSocket 3310
+      User clamav
+      Foreground yes
+      LogTime yes
+      StreamMaxLength 101M
+      MaxFileSize 101M
+      MaxScanSize 400M
+
   # Erstinitialisierung der DB (laeuft genau einmal bei leerem pgdata, als Superuser ueber den lokalen Socket).
   # Die Migrationen legen die Rollen NOLOGIN an, falls sie fehlen; hier entstehen sie vorher mit LOGIN und Passwort aus
   # den Secret-Dateien. Passwoerter werden per psql-Backtick gelesen: nie in Argumenten, Env oder Logs.
@@ -237,4 +270,4 @@ networks:
         - subnet: "${PLANORA_VORNE_SUBNETZ:?PLANORA_VORNE_SUBNETZ fehlt}"
   intern:              # api/worker/migrator <-> db; kein Weg nach aussen
     internal: true
-  signaturen:          # nur clamav (Profil scan): Signatur-Updates, abschaltbar (PO 6)
+  signaturen:          # nur clamav: Signatur-Updates, abschaltbar (PO 6)

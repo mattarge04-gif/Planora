@@ -1,7 +1,7 @@
 // Gemeinsame Hilfen der Docker-Integrationstests von Spur A (paket*, update*). Kein Test, nur Werkzeug.
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { request } from "node:https";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -49,6 +49,17 @@ export const TEST = (() => {
   return { projekt, httpsPort: zahl("PLANORA_TEST_HTTPS_PORT", 18443), httpPort: zahl("PLANORA_TEST_HTTP_PORT", 18080), tag: (n: number) => `planora-app:${projekt}-${n}` };
 })();
 
+/** clamav-Referenz aus dem Standardwert in compose.yaml (eine Quelle der Wahrheit). */
+export function clamavReferenz(): string {
+  const m = /PLANORA_IMAGE_CLAMAV:-([^}]+)\}/.exec(readFileSync(join(BETRIEB, "compose.yaml"), "utf8"));
+  if (!m) throw new Error("clamav-Image in compose.yaml nicht gefunden");
+  return m[1];
+}
+/** `--pull never` laedt nichts nach: fehlende Fremd-Images vorher holen. */
+export async function stelleImageBereit(referenz: string) {
+  if ((await docker(["image", "inspect", referenz], { erlaubeFehler: true })).code !== 0) await docker(["pull", referenz], { timeoutMs: 900_000 });
+}
+
 /** Baut das App-Image und liefert die unveraenderliche Referenz tag@sha256:<Image-ID> (PP9-6). */
 export async function baueImage(tag: string, release: string, kontext = APP, datei?: string): Promise<{ referenz: string; imageId: string }> {
   await docker(["build", "-q", "-t", tag, "--build-arg", `PLANORA_RELEASE=${release}`, ...(datei ? ["-f", datei] : []), kontext], { timeoutMs: 900_000 });
@@ -95,7 +106,9 @@ export function testInstanz(o: { image: string; zusatzDateien?: string[]; projek
       vorne = vorneAdressen(waehleVorneSubnetz(belegt));
       schreibeEnv(o.image);
       angelegt = true;
-      await compose(["up", "-d", "--pull", "never", "--wait", "--wait-timeout", "300"], { timeoutMs: 400_000 });
+      await stelleImageBereit(clamavReferenz());
+      // clamav wird erst nach dem Laden der Signaturen healthy (~1-3 min); api wartet darauf.
+      await compose(["up", "-d", "--pull", "never", "--wait", "--wait-timeout", "480"], { timeoutMs: 600_000 });
     },
     /** Als selbst angelegt markieren (Installation ueber das Werkzeug statt starte()). */
     markiereAngelegt() { angelegt = true; },

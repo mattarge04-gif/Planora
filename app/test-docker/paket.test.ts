@@ -258,4 +258,16 @@ describe.skipIf(!DOCKER_TESTS)("Compose-Paket (Docker)", () => {
     }
     expect((await https(inst.basis, "GET", "/api/health")).status).toBe(200);
   });
+
+  it("Virenpruefung: clamav laeuft im Paket ohne Port, api erreicht clamd (PING)", async () => {
+    const ps = (await inst.compose(["ps", "--format", "{{.Service}}|{{.Ports}}"])).stdout;
+    expect(ps).toMatch(/^clamav\|$/m);
+    const r = await inst.compose(["exec", "-T", "api", "node", "--input-type=module", "-e",
+      `import {connect} from 'node:net';
+       const ping=()=>new Promise((ok)=>{const s=connect(3310,'clamav');let t='';s.on('connect',()=>s.write('zPING\\0'));
+         s.on('data',(d)=>{t+=d;s.end();});s.on('close',()=>ok(t.replace(/\\0/g,'')));s.on('error',()=>ok(''));});
+       for(let i=0;i<300;i++){if(await ping()==='PONG'){console.log('PONG');process.exit(0);}await new Promise(r=>setTimeout(r,1000));}
+       process.exit(1);`], { timeoutMs: 400_000 });
+    expect(r.stdout.trim()).toBe("PONG");
+  });
 });

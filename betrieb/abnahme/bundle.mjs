@@ -17,7 +17,7 @@ finally { docker('rm', 'pb-bundle'); }
 writeFileSync(join(bundle, 'package.json'), '{"type":"module"}\n');
 const { erzeugeRelease, signiereRelease } = await import(pathToFileURL(join(bundle, 'werkzeug/betrieb/release.js')));
 const images = [];
-for (const [dienst, tag] of [['app','pb-app:abnahme'], ['backup','pb-backup:abnahme'], ['db','postgres:18.6-bookworm@sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5'], ['proxy','caddy:2.11.9-alpine@sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9']]) {
+for (const [dienst, tag] of [['app','pb-app:abnahme'], ['backup','pb-backup:abnahme'], ['db','postgres:18.6-bookworm@sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5'], ['proxy','caddy:2.11.9-alpine@sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9'], ['clamav','clamav/clamav:1.5@sha256:45fe5149fbee5a46509c9848ef20d0c354b7b2323c9369f285939a37cf33422a']]) {
   if (!tag.startsWith('pb-')) docker('pull', tag);
   const imageId = docker('image', 'inspect', tag, '--format', '{{.Id}}').trim();
   // Eigener Tag im Archiv erhaelt auch bei einem frischen Docker-Daemon die Referenz.

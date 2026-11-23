@@ -15,10 +15,9 @@ export async function pruefeComposeBindung(docker: Ausfuehrer, i: InstanzPfad, r
     const r = await mussGelingen(docker, [...composeArgs({ ...i, envDatei }), "--profile", "*", "config", "--format", "json"]);
     const services = JSON.parse(r.stdout).services as Record<string, { image: string }>;
     const zuordnung: Record<string, string> = { api: "app", worker: "app", migrator: "app", konsole: "app", proxy: "proxy", "proxy-init": "proxy", db: "db", backup: "backup", journal: "backup", restore: "backup", clamav: "clamav" };
-    for (const name of ["api", "worker", "migrator", "proxy", "db", "backup", "journal", "restore"]) if (!services[name]) throw new Error(`Compose-Pflichtdienst fehlt: ${name}`);
+    for (const name of ["api", "worker", "migrator", "proxy", "db", "backup", "journal", "restore", "clamav"]) if (!services[name]) throw new Error(`Compose-Pflichtdienst fehlt: ${name}`);
     for (const [name, service] of Object.entries(services)) {
       const image = release.images.find((img) => img.dienst === zuordnung[name]);
-      if (name === "clamav" && !image) continue; // Profil scan ist ohne geliefertes Image nicht aktiv.
       if (!image || service.image !== image.referenz) throw new Error(`Compose-Image von ${name} weicht vom signierten Manifest ab`);
     }
   } finally { rmSync(dir, { recursive: true, force: true }); }
