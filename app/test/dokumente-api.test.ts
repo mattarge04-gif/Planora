@@ -7,12 +7,18 @@ import { join } from "node:path";
 import { frischeDb } from "./hilfe.js";
 import { anfrageMit, legeKontoAn } from "./hilfe-api.js";
 import { pdf, xlsx, png, exe, docx } from "./hilfe-dateien.js";
+import { Readable } from "node:stream";
+import { dateiAblage } from "../src/ablage/ablage.js";
 import { baueServer } from "../src/server.js";
+import { EICAR, fakeScanner } from "../src/dokumente/scanner.js";
 
 const ORIGIN = "http://localhost:3995";
 const pw = randomBytes(12).toString("base64url");
 const SECRET = randomBytes(32).toString("hex");
 const HUELLE = { name: "Haus", grundform: "quader", breiteM: 30, tiefeM: 15, geschosse: [{ code: "EG" }, { code: "OG1" }] };
+let ausfall = false;
+const scanner = fakeScanner({ ausfall: () => ausfall });
+let WURZEL: string;
 let db: Awaited<ReturnType<typeof frischeDb>>; let app: FastifyInstance;
 let L1: string, L2: string, kBetr: string, kBearb: string, kLeser: string, kFremd: string;
 let G: string, B1: string, B2: string;
@@ -38,7 +44,7 @@ async function warteScan(id: string) {
 beforeAll(async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
   db = await frischeDb();
-  app = await baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")) });
+  app = await baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: (WURZEL = mkdtempSync(join(tmpdir(), "ablage-"))), virenScanner: scanner });
   L1 = (await db.pool.query("insert into liegenschaft(name) values ('L1') returning id")).rows[0].id;
   L2 = (await db.pool.query("insert into liegenschaft(name) values ('L2') returning id")).rows[0].id;
   kBetr = await konto("betrieb@planora.invalid", "betreiber", []);
@@ -62,6 +68,7 @@ describe("Dokumente-API: Ablegen", () => {
     const daten = pdf(2, "% a");
     const r = await ablegen(kBearb, daten);
     expect(r.statusCode).toBe(201);
+    expect(r.json().scanStatus).toBe("quarantaene");
     expect(r.json()).toMatchObject({ dateiname: "Datenblatt.pdf", art: "pdf", mime: "application/pdf", kategorie: "sonstiges", seiten: 2, groesse: daten.length, bauteilIds: [] });
     const r2 = await ablegen(kBearb, daten, "anders.pdf");
     expect([r2.statusCode, r2.json().id, r2.json().dateiname]).toEqual([200, r.json().id, "Datenblatt.pdf"]);
@@ -170,5 +177,47 @@ describe("Dokumente-API: Loeschrennen", () => {
       await db.pool.query("drop trigger t2_rennen on dokument");
       await db.pool.query("drop function t2_ueberspringe()");
     }
+  });
+});
+
+describe("Dokumente-API: Virenpruefung", () => {
+  const roh = async (status: string, grund: string | null = null, schluessel = "k") => (await db.pool.query(
+    `insert into dokument(gebaeude_id, liegenschaft_id, dateiname, schluessel, sha256, groesse, seiten, hochgeladen_von, scan_status, scan_grund)
+     values ($1,$2,'r.pdf',$3,$4,10,1,$5,$6,$7) returning id`, [G, L1, schluessel, String(Math.random()), L1, status, grund])).rows[0].id as string;
+  it("nicht sauber liefert nie Bytes, auch nicht an den Admin", async () => {
+    const kAdmin = await konto("admin@planora.invalid", "admin", [L1]);
+    for (const s of ["quarantaene", "abgelehnt", "scan_fehler"]) {
+      const id = await roh(s, s === "quarantaene" ? null : "X");
+      for (const k of [kBearb, kAdmin]) {
+        const r = await anfrage("GET", `/api/dokumente/${id}/datei`, k);
+        expect([r.statusCode, r.json()]).toEqual([409, { fehler: "nicht_sauber" }]);
+      }
+    }
+  });
+  it("EICAR in einer PDF-Huelle -> abgelehnt mit Signatur", async () => {
+    const r = await ablegen(kBearb, Buffer.concat([pdf(1, "% eicar"), Buffer.from(EICAR)]), "eicar.pdf");
+    expect(r.statusCode).toBe(201);
+    expect(await warteScan(r.json().id)).toMatchObject({ scanStatus: "abgelehnt", scanGrund: "Eicar-Test-Signature" });
+  });
+  it("Ausfall -> scan_fehler; erneut pruefen nur mit Schreibrecht; danach sauber", async () => {
+    ausfall = true;
+    const id = (await ablegen(kBearb, pdf(1, "% ausfall"))).json().id;
+    expect((await warteScan(id)).scanStatus).toBe("scan_fehler");
+    ausfall = false;
+    expect((await anfrage("POST", `/api/dokumente/${id}/erneut-pruefen`, kLeser, {})).statusCode).toBe(403);
+    const r = await anfrage("POST", `/api/dokumente/${id}/erneut-pruefen`, kBearb, {});
+    expect([r.statusCode, r.json().scanStatus]).toEqual([202, "quarantaene"]);
+    expect((await warteScan(id)).scanStatus).toBe("sauber");
+    expect((await anfrage("POST", `/api/dokumente/${id}/erneut-pruefen`, kBearb, {})).json()).toEqual({ fehler: "nicht_scan_fehler" });
+  });
+  it("Loeschen in Quarantaene: Zeile weg, Quarantaene-Kopie weg, Audit", async () => {
+    const x = await dateiAblage(join(WURZEL, "quarantaene")).schreibeNeu(Readable.from(pdf(1, "% quarantaenekopie")));
+    const id = await roh("scan_fehler", "X", x.schluessel);
+    const q = dateiAblage(join(WURZEL, "quarantaene"));
+    expect(await q.existiert(x.schluessel)).toBe(true);
+    expect((await anfrage("DELETE", `/api/dokumente/${id}`, kBearb)).statusCode).toBe(204);
+    expect((await db.pool.query("select 1 from dokument where id=$1", [id])).rowCount).toBe(0);
+    expect(await q.existiert(x.schluessel)).toBe(false);
+    expect((await db.pool.query("select 1 from audit_eintrag where art='dokument.geloescht' and daten->>'dokumentId'=$1", [id])).rowCount).toBe(1);
   });
 });

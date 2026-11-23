@@ -2,21 +2,22 @@ import type { FastifyInstance } from "fastify";
 import type pg from "pg";
 import { createHash, randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
-import { speichereUndReferenziere } from "../ablage/ablage.js";
+import type { Ablage } from "../ablage/ablage.js";
 import { ID_PARAMS } from "../welt/schema.js";
 import { auditEreignis } from "../audit/audit.js";
 import { inTx, mitClient, verweigert, zugriff, zugriffDokument } from "../rechte/zugriff.js";
 import { MAX_BYTES, erkenneTyp, startKategorie, type Kategorie } from "./typ.js";
 import { zaehleSeiten } from "./pdf.js";
 import { ABLEGEN_QUERY, DATEI_QUERY } from "./schema.js";
-import { gibReferenzFrei, ladeAblage, ladeAblageBauteile, loescheDokument } from "./speicher.js";
+import { ladeAblage, ladeAblageBauteile, loescheDokument } from "./speicher.js";
+import { raeumeQuarantaeneKopie, type Pruefer } from "./pruefer.js";
 
 /** Entfernt Steuer- und Bidi-Zeichen (Anzeige-Taeuschung, z. B. U+202E) und begrenzt auf 255 Zeichen. */
 export function bereinigeDateiname(name: string): string {
   return name.replace(/[\u0000-\u001F\u007F\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, "").trim().slice(0, 255);
 }
 
-export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool) {
+export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o: { pruefer: Pruefer; quarantaene: Ablage }) {
   const zeile = async (gebaeudeId: string, id: string) => (await mitClient(pool, (c) => ladeAblage(c, gebaeudeId, id)))[0];
   const bestehendes = async (gebaeudeId: string, sha: string) => {
     const r = (await pool.query("select id from dokument where gebaeude_id=$1 and sha256=$2", [gebaeudeId, sha])).rows[0];
@@ -43,27 +44,27 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool) {
       const vorhanden = await bestehendes(req.params.id, sha);
       if (vorhanden) return reply.code(200).send(vorhanden);
       const id = randomUUID();
-      const objekt = `dokument:${id}`;
       const seiten = t.typ.art === "pdf" ? zaehleSeiten(daten) : null;
       const kategorie = req.query.kategorie ?? startKategorie(t.typ.art);
-      // Uebergang bis Task 3: direkt in die Ablage, scan_status 'sauber'. Task 3 ersetzt diesen Block durch die Quarantaene.
-      // Datei und Referenz werden in eigener Transaktion committet, das Dokument danach; scheitert das Einfuegen
-      // (z. B. paralleler Upload derselben Datei), wird die Referenz wieder freigegeben.
-      const d = await speichereUndReferenziere(pool, app.ablage, Readable.from(daten), objekt);
+      // Spec 4.3: Bytes zuerst nur in die Quarantaene; Ablage und Datei-Referenz erst nach sauberem Scan (pruefer.ts).
+      const x = await o.quarantaene.schreibeNeu(Readable.from(daten));
       try {
         await inTx(pool, "begin", async (c) => {
-          await c.query(`insert into dokument(id, gebaeude_id, liegenschaft_id, dateiname, schluessel, sha256, groesse, seiten, hochgeladen_von, auslesen_status, art, mime, kategorie, scan_status, gescannt_am)
-            values ($1,$2,$3,$4,$5,$6,$7,$8,$9,'aus',$10,$11,$12,'sauber',now())`,
-            [id, req.params.id, g.liegenschaft_id, name, d.schluessel, d.sha256, d.groesse, seiten, k.benutzerId, t.typ.art, t.typ.mime, kategorie]);
-          await auditEreignis(c, k.auditId, "dokument.abgelegt", { gebaeudeId: req.params.id, dokumentId: id, groesse: d.groesse, art: t.typ.art });
+          await c.query(`insert into dokument(id, gebaeude_id, liegenschaft_id, dateiname, schluessel, sha256, groesse, seiten, hochgeladen_von, auslesen_status, art, mime, kategorie, scan_status)
+            values ($1,$2,$3,$4,$5,$6,$7,$8,$9,'aus',$10,$11,$12,'quarantaene')`,
+            [id, req.params.id, g.liegenschaft_id, name, x.schluessel, x.sha256, x.groesse, seiten, k.benutzerId, t.typ.art, t.typ.mime, kategorie]);
+          await auditEreignis(c, k.auditId, "dokument.abgelegt", { gebaeudeId: req.params.id, dokumentId: id, groesse: x.groesse, art: t.typ.art });
         });
       } catch (e) {
-        await mitClient(pool, (c) => gibReferenzFrei(c, d.schluessel, objekt)).catch(() => {});
         const dup = await bestehendes(req.params.id, sha);
-        if (dup) return reply.code(200).send(dup);
+        if (dup) return reply.code(200).send(dup); // paralleler Upload gleichen Inhalts; die Kopie gehoert ihm
+        await raeumeQuarantaeneKopie(pool, o.quarantaene, x.schluessel);
         throw e;
       }
-      return reply.code(201).send(await zeile(req.params.id, id));
+      // Antwortzeile vor dem Start laden: sonst hinge der gemeldete Status vom Timing der Pruefung ab.
+      const antwort = await zeile(req.params.id, id);
+      o.pruefer.starte(id);
+      return reply.code(201).send(antwort);
     });
 
     scope.get<{ Params: { id: string } }>("/api/dokumente/gebaeude/:id", { schema: { params: ID_PARAMS } }, async (req, reply) =>
@@ -94,13 +95,29 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool) {
       const k = req.kontext!;
       const z = await mitClient(pool, (c) => zugriffDokument(c, k.benutzerId, req.params.id, true));
       if (z.code !== 200) return verweigert(reply, z.code as 403 | 404);
-      const geloescht = await inTx(pool, "begin", async (c) => {
-        if (!(await loescheDokument(c, req.params.id))) return false; // paralleles Loeschen war schneller
-        await auditEreignis(c, k.auditId, "dokument.geloescht", { gebaeudeId: z.gebaeudeId, dokumentId: req.params.id });
-        return true;
+      const weg = await inTx(pool, "begin", async (c) => {
+        const r = await loescheDokument(c, req.params.id);
+        if (r) await auditEreignis(c, k.auditId, "dokument.geloescht", { gebaeudeId: z.gebaeudeId, dokumentId: req.params.id }); // paralleles Loeschen war schneller -> kein Audit
+        return r;
       });
-      if (!geloescht) return verweigert(reply, 404);
+      if (!weg) return verweigert(reply, 404);
+      if (weg.scanStatus !== "sauber") await raeumeQuarantaeneKopie(pool, o.quarantaene, weg.schluessel);
       return reply.code(204).send();
+    });
+
+    scope.post<{ Params: { id: string } }>("/api/dokumente/:id/erneut-pruefen", { schema: { params: ID_PARAMS } }, async (req, reply) => {
+      const k = req.kontext!;
+      const z = await mitClient(pool, (c) => zugriffDokument(c, k.benutzerId, req.params.id, true));
+      if (z.code !== 200) return verweigert(reply, z.code as 403 | 404);
+      const ok = await inTx(pool, "begin", async (c) => {
+        const r = await c.query("update dokument set scan_status='quarantaene', scan_grund=null where id=$1 and scan_status='scan_fehler' returning id", [req.params.id]);
+        if (r.rowCount) await auditEreignis(c, k.auditId, "dokument.erneut_pruefen", { gebaeudeId: z.gebaeudeId, dokumentId: req.params.id });
+        return !!r.rowCount;
+      });
+      if (!ok) return reply.code(409).send({ fehler: "nicht_scan_fehler" });
+      const antwort = await zeile(z.gebaeudeId, req.params.id);
+      o.pruefer.starte(req.params.id);
+      return reply.code(202).send(antwort);
     });
   });
 }

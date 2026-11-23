@@ -11,7 +11,11 @@ import { wartungAktiv, wartungsLage } from "./betrieb/wartung.js";
 import { bestaetigeRestoreKonto } from "./betrieb/freigabe.js";
 import { registriereWeltRouten } from "./welt/routen.js";
 import { registriereLebensdauerRouten } from "./lebensdauer/routen.js";
+import { join } from "node:path";
 import { registriereDokumentRouten } from "./dokumente/routen.js";
+import { erzeugePruefer, raeumeAbgelehnteAuf } from "./dokumente/pruefer.js";
+import { clamdScanner } from "./dokumente/clamd.js";
+import { fakeScanner, scannerKonfig, type VirenScanner } from "./dokumente/scanner.js";
 import { registrierePreisdokumentRouten } from "./preisdokument/routen.js";
 import { erzeugeLaeufer, markiereAbgebrochen } from "./preisdokument/laeufer.js";
 import { openaiAdapter } from "./preisdokument/openai.js";
@@ -21,7 +25,7 @@ import { registriereWeb } from "./web.js";
 declare module "fastify" { interface FastifyInstance { ablage: Ablage } }
 
 // vertrauteProxies: nur Adressen des eigenen Reverse Proxy (Caddy im Compose-Netz); leer = Client-IP nur aus dem Socket (PP7-5)
-export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; secret: string; ablageWurzel: string; vertrauteProxies?: string[]; release?: string; /** gebautes Frontend; fehlt das Verzeichnis, wird nichts ausgeliefert */ webWurzel?: string; /** Tests injizieren hier einen Fake; undefined = Adapter aus OPENAI_API_KEY, null = aus */ leseAdapter?: LeseAdapter | null };
+export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; secret: string; ablageWurzel: string; vertrauteProxies?: string[]; release?: string; /** gebautes Frontend; fehlt das Verzeichnis, wird nichts ausgeliefert */ webWurzel?: string; /** Tests injizieren hier einen Fake; undefined = Adapter aus OPENAI_API_KEY, null = aus */ leseAdapter?: LeseAdapter | null; /** Tests injizieren einen Fake; sonst clamd aus PLANORA_CLAMD_HOST, ohne Konfiguration Fake (Produktion erzwingt die Konfiguration in start/api.ts) */ virenScanner?: VirenScanner };
 
 const MUTIEREND = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -97,7 +101,21 @@ export async function baueServer(o: ServerOptionen) {
   });
 
   registriereWeltRouten(app, o.pool); // M2a: /api/struktur/… (Huelle, Beschreibung), /api/szene/…/welt
-  registriereDokumentRouten(app, o.pool); // Anlagenakte (E46): /api/dokumente/… (Kernmodul, immer aktiv)
+  // Anlagenakte (E46): Quarantaene + Virenpruefung im Hintergrund (max. 2), Neustart reiht offene Pruefungen neu ein.
+  const quarantaene = dateiAblage(join(o.ablageWurzel, "quarantaene"));
+  const clamd = scannerKonfig(process.env);
+  const scanner = o.virenScanner ?? (clamd ? clamdScanner(clamd) : fakeScanner());
+  const pruefer = erzeugePruefer(o.pool, app.ablage, quarantaene, scanner);
+  void pruefer.reiheNeuEin().catch(() => {}); // DB evtl. nicht erreichbar (Wartung): Start nicht blockieren
+  const bereinige = () => void raeumeAbgelehnteAuf(o.pool, quarantaene).catch(() => {});
+  bereinige();
+  const bereinigungsTakt = setInterval(bereinige, 24 * 60 * 60 * 1000);
+  bereinigungsTakt.unref();
+  app.addHook("onClose", async () => {
+    clearInterval(bereinigungsTakt);
+    await Promise.race([pruefer.warteLeer(), new Promise((r) => setTimeout(r, 5000).unref())]);
+  });
+  registriereDokumentRouten(app, o.pool, { pruefer, quarantaene }); // /api/dokumente/… (Kernmodul, immer aktiv)
   registriereLebensdauerRouten(app, o.pool); // M7 Demo-Schnitt: /api/lebensdauer/… (Modul-Guard schaltet)
   // Preis aus Dokument: Hintergrundleser; ohne Schluessel kein Adapter (Status "aus")
   const schluessel = process.env.OPENAI_API_KEY?.trim();

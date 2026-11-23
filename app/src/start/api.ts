@@ -1,5 +1,6 @@
 import pg from "pg";
 import { baueServer } from "../server.js";
+import { scannerKonfig } from "../dokumente/scanner.js";
 import type { Stufe } from "../module/manifest.js";
 import { beendeBegrenzt, dbKonfig, env, geheimnis, logge, release, starte } from "./konfig.js";
 
@@ -12,6 +13,8 @@ starte(async () => {
   // vertrauteProxies: nur Adressen, von denen der eigene Caddy kommt. api hat keinen veroeffentlichten Port, erreichbar
   // ist es nur aus den Compose-Netzen dieser Instanz (compose.yaml setzt deren private Bereiche).
   const vertrauteProxies = env("PLANORA_VERTRAUTE_PROXIES", "").split(",").map((s) => s.trim()).filter(Boolean);
+  // Spec Anlagenakte Abschnitt 3: in Produktion ist die Virenpruefung Pflicht; ohne clamd-Adresse kein Start [A].
+  if (!scannerKonfig(process.env)) throw new Error("PLANORA_CLAMD_HOST fehlt: Virenpruefung ist Pflicht");
   const app = await baueServer({
     pool, stufe: stufe as Stufe, baseURL: env("PLANORA_BASE_URL"), secret: geheimnis("auth_secret"),
     ablageWurzel: env("PLANORA_ABLAGE", "/daten/dokumente"), vertrauteProxies, release: release(), webWurzel: env("PLANORA_WEB_DIR", "/app/web"),

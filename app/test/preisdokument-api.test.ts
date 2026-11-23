@@ -14,6 +14,8 @@ import { fakeAdapter } from "../src/preisdokument/fake.js";
 const ORIGIN = "http://localhost:3994";
 const pw = randomBytes(12).toString("base64url");
 const SECRET = randomBytes(32).toString("hex");
+// Alle Server dieser Datei teilen die Ablage-Wurzel: ein Pruefer findet so die Quarantaene eines anderen.
+const WURZEL = mkdtempSync(join(tmpdir(), "ablage-"));
 const HUELLE = { name: "Haus", grundform: "quader", breiteM: 30, tiefeM: 15, geschosse: [{ code: "EG" }, { code: "OG1" }] };
 let db: Awaited<ReturnType<typeof frischeDb>>; let app: FastifyInstance;
 let L1: string, L2: string, kBetr: string, kBearb: string, kLeser: string, kFremd: string;
@@ -25,7 +27,7 @@ const konto = (email: string, rolle: string, scopes: string[]) => legeKontoAn(ap
 beforeAll(async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
   db = await frischeDb();
-  app = await baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")) });
+  app = await baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: WURZEL });
   await schalteEin(db.pool, "lebensdauer", 4, randomUUID());
   await schalteEin(db.pool, "preisdokument", 4, randomUUID());
   L1 = (await db.pool.query("insert into liegenschaft(name) values ('L1') returning id")).rows[0].id;
@@ -43,6 +45,14 @@ const hochladen = (cookie: string, gid: string, daten: Buffer, name = "Offerte P
   headers: { cookie, origin: ORIGIN, "x-planora-request": "1", "content-type": "application/octet-stream", "x-dateiname": encodeURIComponent(name) },
   payload: daten,
 });
+const warteSauber = async (a: FastifyInstance, id: string) => {
+  for (let i = 0; i < 600; i++) {
+    const d = (await a.inject({ method: "GET", url: `/api/dokumente/gebaeude/${G}`, headers: { cookie: kBearb } })).json().dokumente.find((x: any) => x.id === id);
+    if (d?.scanStatus === "sauber") return;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  throw new Error("nicht sauber: " + id);
+};
 const liste = () => `/api/preisdokument/gebaeude/${G}`;
 
 describe("Preisdokument-API", () => {
@@ -65,7 +75,7 @@ describe("Preisdokument-API mit Leseadapter", () => {
   let app2: FastifyInstance; let B: string;
   const gueltig = () => ({ vorschlaege: [{ position: "Pumpe", seite: 1, zitat: "Pumpe 1240.00", materialNetto: 1116, rabattText: null, montageAnteil: 180,
     ersatzpreis: 1296, rechenweg: "1240 + 180", katalogId: "heizung.heizkoerper", bauteilIds: [B], sicherheit: "hoch" }] });
-  const bauApp = (leseAdapter: any) => baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), leseAdapter });
+  const bauApp = (leseAdapter: any) => baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: WURZEL, leseAdapter });
   const gib = (a: FastifyInstance, method: "GET" | "POST", url: string, cookie: string) => a.inject({ method, url, headers: { cookie, origin: ORIGIN, "x-planora-request": "1" } });
   const warteStatus = async (id: string, status: string) => {
     // grosszuegige Grenze (30 s), damit Last auf Windows/eingebettetem PG nicht zu Fehlalarmen fuehrt
@@ -92,6 +102,7 @@ describe("Preisdokument-API mit Leseadapter", () => {
       headers: { cookie: kBearb, origin: ORIGIN, "x-planora-request": "1", "content-type": "application/octet-stream", "x-dateiname": "a.pdf" }, payload: pdf(1, "% lesen") });
     expect(r.statusCode).toBe(201);
     const id = r.json().id;
+    await warteSauber(app2, id);
     expect((await gib(app2, "GET", liste(), kBearb)).json().dokumente.find((x: any) => x.id === id).status).toBe("aus");
     expect((await gib(app2, "POST", `/api/preisdokument/dokumente/${id}/neu-lesen`, kBearb)).statusCode).toBe(202);
     const d = await warteStatus(id, "fertig");
@@ -105,6 +116,7 @@ describe("Preisdokument-API mit Leseadapter", () => {
   });
   it("neu-lesen waehrend 'liest' -> 409 ohne Audit", async () => {
     const id = (await hochladen(kBearb, G, pdf(1, "% liest"))).json().id;
+    await warteSauber(app, id);
     await db.pool.query("update dokument set auslesen_status='liest' where id=$1", [id]);
     const vorher = (await db.pool.query("select count(*) n from audit_eintrag where art='preisdokument.neu_lesen'")).rows[0].n;
     const r = await gib(app2, "POST", `/api/preisdokument/dokumente/${id}/neu-lesen`, kBearb);
@@ -113,9 +125,11 @@ describe("Preisdokument-API mit Leseadapter", () => {
   });
   it("neu-lesen: Nicht-PDF -> 409 kein_pdf, Quarantaene -> 409 nicht_sauber", async () => {
     const bild = (await hochladen(kBearb, G, png("lesen"), "Foto.png")).json().id;
+    await warteSauber(app, bild);
     const r = await gib(app2, "POST", `/api/preisdokument/dokumente/${bild}/neu-lesen`, kBearb);
     expect([r.statusCode, r.json()]).toEqual([409, { fehler: "kein_pdf" }]);
     const id = (await hochladen(kBearb, G, pdf(1, "% quarant"))).json().id;
+    await warteSauber(app, id);
     await db.pool.query("update dokument set scan_status='quarantaene' where id=$1", [id]);
     const q = await gib(app2, "POST", `/api/preisdokument/dokumente/${id}/neu-lesen`, kBearb);
     expect([q.statusCode, q.json()]).toEqual([409, { fehler: "nicht_sauber" }]);
@@ -124,6 +138,7 @@ describe("Preisdokument-API mit Leseadapter", () => {
     const app3 = await bauApp(null);
     try {
       const id = (await hochladen(kBearb, G, pdf(1, "% ohne"))).json().id;
+      await warteSauber(app, id);
       const r = await gib(app3, "POST", `/api/preisdokument/dokumente/${id}/neu-lesen`, kBearb);
       expect(r.statusCode).toBe(409);
       expect(r.json()).toEqual({ fehler: "auslesen_aus" });

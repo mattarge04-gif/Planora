@@ -88,6 +88,7 @@ try {
   }
   await app.listen({ host: "127.0.0.1", port });
   console.log(`Planora Entwicklung: ${baseURL}\nOhne Login: ${baseURL}/entwicklung/anmelden\nLogin: admin@planora.invalid / ${passwort}\nLogin Betreiber (neue Gebäude): betreiber@planora.invalid / ${betreiberPasswort}`);
+  console.log(process.env.PLANORA_CLAMD_HOST ? "Virenprüfung: clamd " + process.env.PLANORA_CLAMD_HOST : "Virenprüfung: Fake-Scanner (EICAR wird abgelehnt)");
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.on(signal, () => { void ende().catch((e) => { console.error(e); process.exitCode = 1; }); });
   }
