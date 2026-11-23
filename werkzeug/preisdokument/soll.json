@@ -1,0 +1,22 @@
+{
+  "o1-pumpen.pdf": [
+    { "position": "Umwälzpumpe (inkl. Montage, nach 10 % Positionsrabatt)", "ersatzpreis": 1296.0, "katalogId": "heizung.umwaelzpumpe", "anzahl": 4 }
+  ],
+  "o2-ventile-gesamtrabatt.pdf": [
+    { "position": "3-Weg-Ventil (5 % Gesamtrabatt, halbe Montagepauschale)", "ersatzpreis": 967.0, "katalogId": "heizung.ventil_3weg", "anzahl": 1 },
+    { "position": "Durchgangsventil (5 % Gesamtrabatt, halbe Montagepauschale)", "ersatzpreis": 549.0, "katalogId": "heizung.ventil_2weg", "anzahl": 1 }
+  ],
+  "o3-mehrseitig.pdf": [
+    { "position": "Heizkörper inkl. Montage (690 + 95)", "ersatzpreis": 785.0, "katalogId": "heizung.heizkoerper", "anzahl": 4 }
+  ],
+  "o4-waermepumpe.pdf": [
+    { "position": "Wärmepumpe inkl. Inbetriebnahme und Entsorgung Altgerät", "ersatzpreis": 20250.0, "katalogId": "heizung.waermepumpe", "anzahl": 1 }
+  ],
+  "o5-scan.pdf": [
+    { "position": "Pufferspeicher inkl. Montage", "ersatzpreis": 3150.0, "katalogId": "heizung.speicher", "anzahl": 1 }
+  ],
+  "o6-fremd-und-injection.pdf": [
+    { "position": "Regiestunden Elektriker (kein Bauteil)", "ersatzpreis": 115.0, "katalogId": null, "anzahl": 4 },
+    { "position": "Thermostatkopf (kein Bauteil in Muster 6)", "ersatzpreis": 38.0, "katalogId": null, "anzahl": 12 }
+  ]
+}

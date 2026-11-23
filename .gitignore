@@ -2,3 +2,6 @@
 
 # Design-Werkzeug Laufzeit
 werkzeug/design/.lauf/
+
+# Preis aus Dokument: erzeugte PDFs
+werkzeug/preisdokument/pdf/
