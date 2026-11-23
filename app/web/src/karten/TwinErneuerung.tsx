@@ -1,4 +1,4 @@
-import { ArrowUpRight, Tag, TriangleAlert, X } from "lucide-react";
+import { ArrowUpRight, FileText, Tag, TriangleAlert, X } from "lucide-react";
 import { Karte } from "../ui/Karte";
 import { AmpelZeichen } from "../ui/Ampel";
 import { AMPEL_FARBE, AMPEL_TEXT, legende } from "../lebensdauer/ansicht";
@@ -31,12 +31,14 @@ interface Props<A extends FilterAnlage & { name: string }> {
   stand: LdStand;
   /** Öffnet den Erneuerungsplan; ohne Prop wird kein Link gezeigt. */
   onPlan?: () => void;
+  /** Öffnet die Seite Dokumente (Preise aus Offerten); ohne Prop kein Link. */
+  onDokumente?: () => void;
   /** Ohne Prop bleibt die Legende reine Anzeige. */
   filter?: LegendenFilter<A>;
 }
 
 /** Legende der Erneuerungsansicht: Ampelzähler (als Filter) und Summe der nächsten fünf Jahre. */
-export function TwinErneuerung<A extends FilterAnlage & { name: string }>({ stand, onPlan, filter }: Props<A>) {
+export function TwinErneuerung<A extends FilterAnlage & { name: string }>({ stand, onPlan, onDokumente, filter }: Props<A>) {
   const l = legende(stand);
   const gesamt = REIHENFOLGE.reduce((n, a) => n + l.zaehler[a], 0);
   const aktiv = !!filter && filter.posten.size > 0;
@@ -76,6 +78,8 @@ export function TwinErneuerung<A extends FilterAnlage & { name: string }>({ stan
               onClick={() => filter.onPosten("ohnePreis")}>{text}</button>
             : <span className="tw-ampel-ohne">{text}</span>;
         })()}
+        {l.ohnePreis > 0 && onDokumente && <button type="button" className="tw-ziel tw-ampel-dokumente" onClick={onDokumente}>
+          <FileText size={13} strokeWidth={1.75} aria-hidden="true" />Preise aus Dokumenten lesen</button>}
       </div>
       {onPlan && <button type="button" className="tw-ziel tw-ampel-plan" onClick={onPlan}>Erneuerungsplan öffnen<ArrowUpRight size={14} strokeWidth={1.75} aria-hidden="true" /></button>}
     </Karte>

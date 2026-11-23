@@ -1,4 +1,4 @@
-import { Bell, Building2, Check, ChevronDown, LogOut, UserRound, LayoutList, PencilLine, CalendarClock } from "lucide-react";
+import { Bell, Building2, Check, ChevronDown, LogOut, UserRound, LayoutList, PencilLine, CalendarClock, FileText } from "lucide-react";
 import type { GebaeudeEintrag } from "../typen";
 import { Menue } from "./Menue";
 import "./ui.css";
@@ -22,6 +22,8 @@ interface Props {
   onBearbeiten?: () => void;
   /** Öffnet den Erneuerungsplan; nur gesetzt, wenn das Modul Daten liefert. */
   onPlan?: () => void;
+  /** Öffnet die Seite Dokumente; nur gesetzt, wenn das Modul Preis aus Dokument lesbar ist. */
+  onDokumente?: () => void;
   /** Pill «Erneuerung» (Lebensdauer-Ampel); nur wenn das Modul Daten liefert. */
   erneuerung?: { an: boolean; onUm: (an: boolean) => void };
   onAbmelden: () => void;
@@ -88,6 +90,9 @@ export function Kopfzeile(p: Props) {
             </button>}
             {p.onPlan && <button type="button" role="menuitem" className="ui-eintrag" onClick={() => { schliessen(); p.onPlan?.(); }}>
               <CalendarClock {...ICON} />Erneuerungsplan
+            </button>}
+            {p.onDokumente && <button type="button" role="menuitem" className="ui-eintrag" onClick={() => { schliessen(); p.onDokumente?.(); }}>
+              <FileText {...ICON} />Dokumente und Preise
             </button>}
           </>}
         </Menue>

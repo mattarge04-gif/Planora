@@ -27,6 +27,7 @@ import { pegelJeGeschoss } from "../szene3/pegelband";
 import type { FilterStufe } from "../szene3/ampelFilter";
 import { erneuerungFilter, POSTEN_TEXT, umschalten } from "../karten/erneuerungFilter";
 import { anzeigeWelt } from "../szene3/gruppenNetz";
+import { useDokumenteVerfuegbar } from "./dokumenteVerfuegbar";
 import "./Twin.css";
 
 function webglVorhanden(): boolean {
@@ -86,10 +87,14 @@ interface Props {
   onBearbeiten?: () => void;
   /** Öffnet die Seite Erneuerungsplan (nur sichtbar, wenn Lebensdauer geladen ist). */
   onPlan?: () => void;
+  /** Öffnet die Seite Dokumente (Preise aus Dokumenten), optional gefiltert auf ein Bauteil. */
+  onDokumente?: (bauteilId?: string) => void;
   onAbmelden: () => void; onAbgelaufen: () => void;
 }
 
-export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPlan, onAbmelden, onAbgelaufen }: Props) {
+export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPlan, onDokumente, onAbmelden, onAbgelaufen }: Props) {
+  const dokumenteAn = useDokumenteVerfuegbar(gebaeudeId);
+  const zuDokumenten = dokumenteAn ? onDokumente : undefined;
   const [welt, setWelt] = useState<Welt | null>(null);
   const [beschreibung, setBeschreibung] = useState<Beschreibung | null>(null);
   const [katalog, setKatalog] = useState<Katalog | null>(null);
@@ -335,7 +340,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
           hinweise={daten ? daten.hinweise.length : null} onHinweise={zeigeHinweise}
           reduziert={reduziert} onReduziert={setReduziert}
           erneuerung={lebensdauer ? { an: erneuerung, onUm: umErneuerung } : undefined}
-          onListe={onListe} onBearbeiten={onBearbeiten} onPlan={lebensdauer ? onPlan : undefined} onAbmelden={onAbmelden} />
+          onListe={onListe} onBearbeiten={onBearbeiten} onPlan={lebensdauer ? onPlan : undefined} onDokumente={zuDokumenten ? () => zuDokumenten() : undefined} onAbmelden={onAbmelden} />
 
         {(!webgl || fehler || !daten) && <div className="tw-meldung-platz">
           {!webgl && <p className="ui-glas tw-meldung" role="alert">3D-Darstellung nicht verfügbar. Dein Browser unterstützt WebGL 2 nicht.</p>}
@@ -347,7 +352,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
           <aside className="tw-links" ref={links} aria-label="Gebäude und Hinweise">
             <TwinGebaeude name={name} liegenschaft={liegenschaft} welt={welt} zahlen={daten.zahlen} />
             {/* Legende links: rechts bleibt der Platz für Geschosse und Anlagenkarte */}
-            {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} onPlan={onPlan} filter={{
+            {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} onPlan={onPlan} onDokumente={zuDokumenten ? () => zuDokumenten() : undefined} filter={{
               posten, onPosten: umPosten, onAufheben: () => { setPosten(new Set()); sage("Filter aufgehoben"); },
               treffer: filterErgebnis?.treffer ?? [], geschossCode, auswahl, onTreffer: waehleZeile,
               bezug, fokus: trefferFokus, onFokus: fokussiereTreffer, hover3d: hoverTreffer,
@@ -372,7 +377,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
               pegel={pegel} hoverId={geschossHover} onHover={setGeschossHover} treffer={filterErgebnis?.jeGeschoss} />
             {karte
               ? <TwinObjekt key={karte.id} karte={karte} bezug={straenge.find((st) => st.zubehoer.includes(karte.schluessel)) ? bezug(karte) : null} kartenRef={objektRef} onSchliessen={schliesseKarte}
-                lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} />
+                lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} onDokument={zuDokumenten} />
               : gruppe ? <TwinGruppe key={gruppe.id} karte={gruppe} kartenRef={objektRef} onSchliessen={schliesseKarte} />
               : <p className="tw-objekt-leer">Anlage oder Leitung im Modell wählen, um Details zu sehen.</p>}
           </aside>

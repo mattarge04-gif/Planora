@@ -1,0 +1,17 @@
+{
+  "beschreibung": "Preis aus Dokument (T8): Seite Dokumente ohne Dokumente (Muster 2, Auslesen aus) und Fokus auf «Datei wählen».",
+  "fenster": [[1440, 900], [1280, 720]],
+  "schritte": [
+    { "klick": "Muster 2 Beispiel" },
+    { "warte": 5000 },
+    { "knopf": "Gebäude wählen" },
+    { "warte": 300 },
+    { "klick": "Dokumente und Preise" },
+    { "warte": 1500 },
+    { "fokus": ".dk-ablage .ep-knopf" },
+    { "taste": "Shift+Tab" },
+    { "taste": "Tab" },
+    { "warte": 300 },
+    { "bild": "dokumente-leer" }
+  ]
+}

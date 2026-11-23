@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
-import { ArrowLeft, Download, TriangleAlert, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Download, FileText, TriangleAlert, X } from "lucide-react";
 import { ApiFehler, ersetzeJson, holeJson } from "../api";
 import { TOKENS } from "../design/tokens";
 import { anzeigeName } from "../dashboard";
@@ -9,6 +9,8 @@ import type { Ampel, LdStand } from "../lebensdauer/typen";
 import type { Katalog } from "../typen";
 import { AmpelZeichen } from "../ui/Ampel";
 import { Marke } from "../ui/Kopfzeile";
+import { dokumentQuelle } from "../karten/preisQuelle";
+import { useDokumenteVerfuegbar } from "./dokumenteVerfuegbar";
 import "./Erneuerungsplan.css";
 
 const F = TOKENS.farbe;
@@ -29,9 +31,13 @@ const MELDUNG_404 = "Lebensdauer ist für diese Instanz nicht eingeschaltet.";
 const bauteile = (n: number) => (n === 1 ? "1 Bauteil" : `${n} Bauteile`);
 const typFehlerId = (katalogId: string) => `ep-typ-${katalogId.replace(/[^a-z0-9]+/gi, "-")}`;
 
-interface Props { gebaeudeId: string; name: string; onTwin: () => void; onAbgelaufen: () => void }
+interface Props { gebaeudeId: string; name: string; onTwin: () => void; onAbgelaufen: () => void;
+  /** Seite Dokumente (Preise aus Offerten); Einstieg nur, wenn das Modul lesbar ist. */
+  onDokumente?: () => void }
 
-export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Props) {
+export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen, onDokumente }: Props) {
+  const dokumenteAn = useDokumenteVerfuegbar(gebaeudeId);
+  const zuDokumenten = dokumenteAn ? onDokumente : undefined;
   const [stand, setStand] = useState<LdStand | null>(null);
   const [katalog, setKatalog] = useState<Katalog | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -114,8 +120,9 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
           <Marke />
           <h1>Erneuerungsplan<span>{name}</span></h1>
         </div>
-        {stand ? <a className="ep-knopf ep-knopf-haupt" href={"/api/lebensdauer/gebaeude/" + gebaeudeId + "/export.csv"} download>
-          <Download size={15} strokeWidth={1.75} aria-hidden="true" />CSV exportieren</a> : <span />}
+        {stand ? <div className="ep-kopf-aktionen">{zuDokumenten && <button type="button" className="ep-knopf" onClick={zuDokumenten}>
+          <FileText size={15} strokeWidth={1.75} aria-hidden="true" />Dokumente</button>}<a className="ep-knopf ep-knopf-haupt" href={"/api/lebensdauer/gebaeude/" + gebaeudeId + "/export.csv"} download>
+          <Download size={15} strokeWidth={1.75} aria-hidden="true" />CSV exportieren</a></div> : <span />}
       </header>
 
       {fehler && <p className="ep-meldung" role="alert">{fehler}</p>}
@@ -129,7 +136,8 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
             <h2 id="ep-ueberblick-titel">Kosten nächste 5 Jahre</h2>
             <p className="ep-summe-zahl">{chf(l.summe5.betrag)}</p>
             {l.summe5.ohnePreis > 0
-              ? <p className="ep-warn"><TriangleAlert size={14} strokeWidth={2} aria-hidden="true" />Summe unvollständig, {bauteile(l.summe5.ohnePreis)} ohne Preis</p>
+              ? <><p className="ep-warn"><TriangleAlert size={14} strokeWidth={2} aria-hidden="true" />Summe unvollständig, {bauteile(l.summe5.ohnePreis)} ohne Preis</p>
+                {zuDokumenten && <button type="button" className="ep-textlink" onClick={zuDokumenten}>Preise aus Dokumenten lesen<ArrowUpRight size={13} strokeWidth={1.75} aria-hidden="true" /></button>}</>
               : <p className="ep-nebentext">Alle fälligen Bauteile haben einen Preis.</p>}
           </div>
           <div className="ep-ampel-block">
@@ -189,7 +197,7 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
           </div>
           {zeilen.length === 0 ? <p className="ep-leer">{filter !== null ? `Im Jahr ${filter} ist kein Bauteil fällig.` : "Keine Heizungsbauteile in diesem Gebäude."}</p> :
             <div className="ep-tabelle-rahmen"><table className="ep-tabelle">
-              <thead><tr><th>Ampel</th><th>Bauteil</th><th>Ort</th><th className="ep-zahl">Menge</th><th className="ep-zahl">Baujahr</th><th className="ep-zahl">Lebensdauer</th><th>Zustand</th><th className="ep-zahl">Ersatzjahr</th><th className="ep-zahl">Kosten</th></tr></thead>
+              <thead><tr><th>Ampel</th><th>Bauteil</th><th>Ort</th><th className="ep-zahl">Menge</th><th className="ep-zahl">Baujahr</th><th className="ep-zahl">Lebensdauer</th><th>Zustand</th><th className="ep-zahl">Ersatzjahr</th><th className="ep-zahl">Kosten</th><th>Preisquelle</th></tr></thead>
               <tbody>{zeilen.map((z) => (
                 <tr key={z.id}>
                   <td><span className="ep-ampel"><AmpelZeichen ampel={z.ampel} />{AMPEL_TEXT[z.ampel]}</span></td>
@@ -200,6 +208,7 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
                   <td className="ep-zustand">{z.zustand ? <>{z.zustand.text}{z.zustand.wirkung && <small>{z.zustand.wirkung}</small>}</> : <span className="ep-ort">unbekannt</span>}</td>
                   <td className="ep-zahl ep-betont">{z.ersatzjahr}</td>
                   <td className="ep-zahl">{z.preis.fehlt ? <span className="ep-preis-fehlt">Preis fehlt</span> : z.kosten}</td>
+                  <td className="ep-quelle"><Preisquelle stand={stand} id={z.id} quelle={z.preis.fehlt ? null : z.preis.quelle} /></td>
                 </tr>))}</tbody>
             </table></div>}
         </section>
@@ -237,4 +246,15 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen }: Prop
       </div>}
     </main>
   );
+}
+
+/** Herkunft des Stückpreises; Dokumentpreise mit Fundstelle (neuer Tab). */
+function Preisquelle({ stand, id, quelle }: { stand: LdStand; id: string; quelle: string | null }) {
+  const dok = dokumentQuelle(stand, id);
+  if (!dok) return <span className="ep-ort">{quelle ?? "–"}</span>;
+  const text = (dok.typpreis ? "Typwert " : "") + dok.text;
+  return dok.href
+    ? <a className="ep-quelle-link" href={dok.href} target="_blank" rel="noopener" title={dok.dateiname ?? undefined} aria-label={`${text} öffnen (neuer Tab)`}>
+      <span>{text}</span><ArrowUpRight size={12} strokeWidth={1.75} aria-hidden="true" /></a>
+    : <span className="ep-ort">{text}</span>;
 }

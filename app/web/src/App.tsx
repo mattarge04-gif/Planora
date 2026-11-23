@@ -7,12 +7,14 @@ import { pfadFuer, routeAusPfad, type AssistentRoute } from "./assistent/route";
 
 const Twin = lazy(() => import("./seiten/Twin").then((modul) => ({ default: modul.Twin })));
 const Erneuerungsplan = lazy(() => import("./seiten/Erneuerungsplan").then((modul) => ({ default: modul.Erneuerungsplan })));
+const Dokumente = lazy(() => import("./seiten/Dokumente").then((modul) => ({ default: modul.Dokumente })));
 const Assistent = lazy(() => import("./seiten/Assistent").then((modul) => ({ default: modul.Assistent })));
 
 type Zustand =
   | { art: "laden" } | { art: "login" } | { art: "liste" }
   | { art: "twin"; gebaeudeId: string; name: string }
   | { art: "plan"; gebaeudeId: string; name: string }
+  | { art: "dokumente"; gebaeudeId: string; name: string; bauteilId?: string; herkunft: "twin" | "plan" }
   | { art: "assistent"; route: AssistentRoute };
 
 /** Adresszeile nachführen (nur der Assistent hat eigene Pfade; übrige Ansichten bleiben auf "/"). */
@@ -52,10 +54,16 @@ export function App() {
     onListe={() => setZustand({ art: "liste" })}
     onBearbeiten={() => setZustand({ art: "assistent", route: { art: "bearbeiten", gebaeudeId: zustand.gebaeudeId } })}
     onPlan={() => setZustand({ art: "plan", gebaeudeId: zustand.gebaeudeId, name: zustand.name })}
+    onDokumente={(bauteilId) => setZustand({ art: "dokumente", gebaeudeId: zustand.gebaeudeId, name: zustand.name, herkunft: "twin", ...(bauteilId ? { bauteilId } : {}) })}
     onAbmelden={abmelden} onAbgelaufen={abgelaufen} /></Suspense>;
   if (zustand.art === "plan") return <Suspense fallback={<div role="status" style={ladeStil}>Erneuerungsplan wird geladen …</div>}>
     <Erneuerungsplan gebaeudeId={zustand.gebaeudeId} name={zustand.name}
-      onTwin={() => setZustand({ art: "twin", gebaeudeId: zustand.gebaeudeId, name: zustand.name })} onAbgelaufen={abgelaufen} /></Suspense>;
+      onTwin={() => setZustand({ art: "twin", gebaeudeId: zustand.gebaeudeId, name: zustand.name })}
+      onDokumente={() => setZustand({ art: "dokumente", gebaeudeId: zustand.gebaeudeId, name: zustand.name, herkunft: "plan" })} onAbgelaufen={abgelaufen} /></Suspense>;
+  if (zustand.art === "dokumente") return <Suspense fallback={<div role="status" style={ladeStil}>Dokumente werden geladen …</div>}>
+    <Dokumente key={zustand.gebaeudeId + (zustand.bauteilId ?? "")} gebaeudeId={zustand.gebaeudeId} name={zustand.name} bauteilId={zustand.bauteilId}
+      zurueckText={zustand.herkunft === "plan" ? "Erneuerungsplan" : "Digital Twin"}
+      onZurueck={() => setZustand({ art: zustand.herkunft, gebaeudeId: zustand.gebaeudeId, name: zustand.name })} onAbgelaufen={abgelaufen} /></Suspense>;
   if (zustand.art === "assistent") return <Suspense fallback={<div role="status" style={ladeStil}>Assistent wird geladen …</div>}>
     <Assistent key={zustand.route.art === "bearbeiten" ? zustand.route.gebaeudeId : "neu"} route={zustand.route}
       onAngelegt={(id) => adresse(pfadFuer({ art: "bearbeiten", gebaeudeId: id }), true)}

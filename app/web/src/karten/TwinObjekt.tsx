@@ -21,11 +21,13 @@ export function kurzId(ids: string[]): string {
 }
 
 interface Props { karte: ObjektKarte; onSchliessen: () => void; lebensdauer?: LdStand | null; darfAendern?: boolean; onLebensdauer?: (s: LdStand) => void;
+  /** Seite Dokumente, gefiltert auf ein Bauteil ("Preis fehlt" -> aus Dokument). */
+  onDokument?: (bauteilId: string) => void;
   /** Gruppe des Zubehörs (Pumpe, Ventil), unterscheidet gleichnamige Anlagen wie in der Trefferliste (Kritik r5). */
   bezug?: string | null }
 
 /** Anlagenkarte rechts, Inhalt aus objektKarte(). Dokumente sind noch nicht angebunden. */
-export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAendern, onLebensdauer, bezug = null }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
+export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAendern, onLebensdauer, onDokument, bezug = null }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
   const Icon = ANLAGEN_ICON[karte.icon];
   return (
     <section ref={kartenRef} className="ui-glas ui-karte tw-objekt" aria-labelledby="karte-objekt">
@@ -51,7 +53,7 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAe
         <h3>Versorgt</h3>
         <ul className="tw-versorgt">{karte.versorgt.map((v) => <li key={v}>{v}</li>)}</ul>
       </div>}
-      {lebensdauer && onLebensdauer && <TwinLebensdauer stand={lebensdauer} bauteilIds={karte.bauteilIds} darfAendern={darfAendern === true} onGespeichert={onLebensdauer} />}
+      {lebensdauer && onLebensdauer && <TwinLebensdauer stand={lebensdauer} bauteilIds={karte.bauteilIds} darfAendern={darfAendern === true} onGespeichert={onLebensdauer} onDokument={onDokument} />}
       <div className="tw-objekt-block tw-dokumente">
         <h3>Dokumente</h3>
         <button type="button" disabled aria-label="Hochladen, folgt"><Upload size={14} strokeWidth={1.75} aria-hidden="true" />Hochladen<span className="tw-folgt">folgt</span></button>

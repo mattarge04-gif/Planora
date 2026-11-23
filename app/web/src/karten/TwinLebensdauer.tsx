@@ -4,14 +4,18 @@ import { AMPEL_RANG, AMPEL_TEXT, ZUSTAND_TEXT, akteZeilen, preisEingabe, preisTe
 import { formularAus, koerperAus, type Formular } from "../lebensdauer/bearbeiten";
 import type { LdStand, Zustand } from "../lebensdauer/typen";
 import { AmpelZeichen } from "../ui/Ampel";
+import { ArrowUpRight, FileSearch } from "lucide-react";
+import { dokumentQuelle } from "./preisQuelle";
 
 const ZUSTAENDE = Object.keys(ZUSTAND_TEXT) as Zustand[];
 const FELDER: (keyof Formular)[] = ["baujahr", "zustand", "lebensdauer", "preis", "notiz"];
-interface Props { stand: LdStand; bauteilIds: string[]; darfAendern: boolean; onGespeichert: (s: LdStand) => void }
+interface Props { stand: LdStand; bauteilIds: string[]; darfAendern: boolean; onGespeichert: (s: LdStand) => void;
+  /** Öffnet die Seite Dokumente gefiltert auf das Bauteil (nur wenn das Modul lesbar ist). */
+  onDokument?: (bauteilId: string) => void }
 interface Offen { id: string; start: keyof Formular }
 
 /** Block "Lebensdauer" der Anlagenkarte: Ampel, Ersatzjahr, Kosten mit Quellen; Bearbeiten nur mit Recht. */
-export function TwinLebensdauer({ stand, bauteilIds, darfAendern, onGespeichert }: Props) {
+export function TwinLebensdauer({ stand, bauteilIds, darfAendern, onGespeichert, onDokument }: Props) {
   const zeilen = akteZeilen(stand, bauteilIds);
   const [offen, setOffen] = useState<Offen | null>(null);
   // Nach Schliessen des Formulars (Esc, Abbrechen, Speichern) zurück auf "Bearbeiten" derselben Zeile.
@@ -34,14 +38,16 @@ export function TwinLebensdauer({ stand, bauteilIds, darfAendern, onGespeichert 
       <ul className="tw-ld-liste">
         {zeilen.map((z) => (
           <li key={z.id} className="tw-ld-eintrag">
-            <ZeileAnsicht z={z} mehrere={zeilen.length > 1} />
+            <ZeileAnsicht z={z} mehrere={zeilen.length > 1} stand={stand} />
             {offen?.id === z.id
               ? <FormularBlock stand={stand} id={z.id} start={offen.start} onZu={() => schliessen(z.id)}
                   onGespeichert={(s) => { schliessen(z.id); onGespeichert(s); }} />
-              : darfAendern && <div className="tw-ld-aktionen">
-                  <button type="button" className="tw-ld-knopf" ref={(el) => { if (el) knoepfe.current.set(z.id, el); else knoepfe.current.delete(z.id); }}
-                    onClick={() => setOffen({ id: z.id, start: "baujahr" })}>Bearbeiten</button>
-                  {z.preis.fehlt && <button type="button" className="tw-ld-knopf tw-ld-knopf-leise" onClick={() => setOffen({ id: z.id, start: "preis" })}>Preis erfassen</button>}
+              : (darfAendern || (z.preis.fehlt && onDokument)) && <div className="tw-ld-aktionen">
+                  {darfAendern && <button type="button" className="tw-ld-knopf" ref={(el) => { if (el) knoepfe.current.set(z.id, el); else knoepfe.current.delete(z.id); }}
+                    onClick={() => setOffen({ id: z.id, start: "baujahr" })}>Bearbeiten</button>}
+                  {darfAendern && z.preis.fehlt && <button type="button" className="tw-ld-knopf tw-ld-knopf-leise" onClick={() => setOffen({ id: z.id, start: "preis" })}>Preis erfassen</button>}
+                  {z.preis.fehlt && onDokument && <button type="button" className="tw-ld-knopf tw-ld-knopf-leise tw-ld-dokument" onClick={() => onDokument(z.id)}>
+                    <FileSearch size={13} strokeWidth={1.75} aria-hidden="true" />Aus Dokument …</button>}
                 </div>}
           </li>
         ))}
@@ -50,7 +56,8 @@ export function TwinLebensdauer({ stand, bauteilIds, darfAendern, onGespeichert 
   );
 }
 
-function ZeileAnsicht({ z, mehrere }: { z: AkteZeile; mehrere: boolean }) {
+function ZeileAnsicht({ z, mehrere, stand }: { z: AkteZeile; mehrere: boolean; stand: LdStand }) {
+  const dok = dokumentQuelle(stand, z.id);
   const rest = z.restjahre === "–" ? null : z.restjahre === "fällig" ? "fällig" : `noch ${z.restjahre}`;
   return (
     <>
@@ -72,7 +79,11 @@ function ZeileAnsicht({ z, mehrere }: { z: AkteZeile; mehrere: boolean }) {
         <dt>Baujahr</dt><dd>{z.baujahr.wert}<span className="tw-ld-quelle">{z.baujahr.quelle}</span></dd>
         <dt>Lebensdauer</dt><dd>{z.lebensdauer.wert}<span className="tw-ld-quelle">{z.lebensdauer.quelle}</span></dd>
         {z.zustand && <><dt>Zustand</dt><dd>{z.zustand.text}{z.zustand.wirkung && <span className="tw-ld-quelle">{z.zustand.wirkung}</span>}</dd></>}
-        <dt>Stückpreis</dt><dd>{z.preis.fehlt ? "–" : z.preis.wert}<span className={`tw-ld-quelle${z.preis.fehlt ? " tw-ld-fehlt" : ""}`}>{z.preis.quelle}</span></dd>
+        <dt>Stückpreis</dt><dd>{z.preis.fehlt ? "–" : z.preis.wert}<span className={`tw-ld-quelle${z.preis.fehlt ? " tw-ld-fehlt" : ""}`}>{dok?.typpreis ? "Typwert" : z.preis.quelle}</span></dd>
+        {dok && <><dd className="tw-ld-fundstelle">{dok.href
+          ? <a href={dok.href} target="_blank" rel="noopener" title={dok.dateiname ?? undefined} aria-label={`${dok.text} öffnen (neuer Tab)`}>
+            <span>{dok.text}</span><ArrowUpRight size={12} strokeWidth={1.75} aria-hidden="true" /></a>
+          : <span className="tw-ld-quelle">{dok.text}</span>}</dd></>}
       </dl>
     </>
   );

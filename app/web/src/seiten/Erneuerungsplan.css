@@ -189,3 +189,13 @@
   .ep-zurueck:active, .ep-knopf:active, .ep-filter:active { transform: none; }
   .ep-typen summary::before { transition: none; }
 }
+
+/* Preis aus Dokument: Einstieg und Preisquelle */
+.ep-kopf-aktionen { display: flex; gap: 8px; justify-self: end; }
+.ep-textlink { justify-self: start; display: inline-flex; align-items: center; gap: 3px; margin-top: 2px; padding: 2px 0; font: inherit; font-size: 12px; font-weight: 500; color: var(--ep-link); background: none; border: 0; border-radius: 4px; cursor: pointer; }
+.ep-textlink:hover { color: var(--ep-link-hover); text-decoration: underline; text-underline-offset: 2px; }
+.ep-quelle { max-width: 220px; }
+.ep-quelle-link { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; color: var(--ep-link); font-weight: 500; text-decoration: none; border-radius: 4px; vertical-align: middle; }
+.ep-quelle-link > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ep-quelle-link svg { flex: none; }
+.ep-quelle-link:hover { color: var(--ep-link-hover); text-decoration: underline; text-underline-offset: 2px; }
