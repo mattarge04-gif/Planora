@@ -89,6 +89,13 @@ class PruefeDossier(unittest.TestCase):
         self.assertEqual(lauf(self.ziel, '--erzeugen').returncode, 0)
         self.assertEqual((self.ziel/'FREIGABE.md').read_bytes(), (QUELLE/'FREIGABE.md').read_bytes())
 
+    def test_freigabe_zeile_clamav_je_nach_lieferung(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('pruefe_dossier', SKRIPT)
+        m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+        self.assertIn('hier nicht geliefert', m.clamav_zeile({'app', 'db', 'proxy', 'backup'}))
+        self.assertIn('Pflicht-Image im Release', m.clamav_zeile({'app', 'db', 'proxy', 'backup', 'clamav'}))
+
 
 if __name__ == '__main__':
     unittest.main(argv=sys.argv[:1], verbosity=2)

@@ -27,6 +27,13 @@ def pruefe(bedingung, meldung):
         raise DossierFehler(meldung)
 
 
+def clamav_zeile(dienste):
+    """Checklistenzeile zu ClamAV: je nach Lieferung (clamav-Image im Nachweis) oder historisches Dossier ohne."""
+    if 'clamav' in dienste:
+        return 'ClamAV (GPLv2) ist als Pflicht-Image im Release enthalten; Lizenz noch nicht geprueft, eigenes Dossier noetig.'
+    return 'Optionales ClamAV bei spaeterer Lieferung separat bewerten; hier nicht geliefert.'
+
+
 def sha(daten):
     return hashlib.sha256(daten).hexdigest()
 
@@ -52,7 +59,8 @@ def ableiten(ziel):
     upstream = lies_json(ziel, 'upstream-nachweis.json')
     texte = {x['spdx']: x for x in upstream if 'spdx' in x and not x.get('offen')}
     quellen = {(x['typ'], x['name'], x['version']): x for x in upstream if 'typ' in x}
-    pruefe({i['dienst'] for i in nachweis['images']} == {'app', 'backup', 'db', 'proxy'}, 'Nicht genau die vier Pflichtimages')
+    dienste = {i['dienst'] for i in nachweis['images']}
+    pruefe(dienste in ({'app', 'backup', 'db', 'proxy'}, {'app', 'backup', 'db', 'proxy', 'clamav'}), 'Nicht genau die Pflichtimages (vier, mit ClamAV fuenf)')
     zuordnung = []
     for image in nachweis['images']:
         dienst = image['dienst']
@@ -71,9 +79,9 @@ def ableiten(ziel):
     inhalte = {
         'lizenz-zuordnung.json': json.dumps(zuordnung, indent=2),
         'OFFENE-TEXTE.md': f'# Offene Lizenz-/Liefertext-Zuordnungen\n\nNachtrag: {geschlossen} der urspruenglich 14 Zuordnungen technisch mit Quellen belegt, {len(offen)} offen. Separate LICENSE-Dateien sind nicht zwingend: README-Lizenzabschnitte, exakt gebundene Elternpakete und Debian-copyright-Dateien sind dokumentierte Belege. Keine juristische oder menschliche Lieferfreigabe. Die Deepmerge-Fixture ist per PO-Entscheid 2026-11-11 technisch geschlossen (beide permissiv, ISC- und MIT-Text beigelegt).\n\n' + '\n'.join(f'- `{x["name"]}@{x["version"]}` ({x["typ"]}): {x["offen"]}' for x in offen) + '\n\nSiehe zuordnungen-nachtrag.json fuer die einzelnen begruendeten Zuordnungen und upstream-nachweis.json fuer Quellen, Archivmitglieder und Pruefsummen.\n',
-        'FREIGABE.md': f'# Menschliche Lizenz-/Lieferfreigabe offen\n\nTechnischer Nachtrag: {geschlossen}/14 bisher offene Zuordnungen belegt; {len(offen)} verbleibend. Dies ist keine menschliche oder juristische Freigabe; die Checkliste bleibt per PO-Entscheid 2026-11-11 bewusst offen.\n\nPO-Entscheide 2026-11-11 (technisch dokumentiert in upstream-nachweis.json/zuordnungen-nachtrag.json): Deepmerge-Fixture mit ISC- und MIT-Text beigelegt und technisch geschlossen (beide permissiv). Planora proprietaer, alle Rechte beim Anbieter, nicht-exklusives, nicht uebertragbares Nutzungsrecht des Kunden fuer seine Instanz waehrend der Vertragsdauer, Lieferung/Betrieb als signierte Images ohne Quellcode, Drittkomponenten unter eigenen Lizenzen gemaess Dossier. Betrieb auf Server/Domain des Anbieters (CH-VM), Kunde ohne eigene IT.\n\n- [ ] Deepmerge-Fixture: beigelegte ISC- und MIT-Texte gemaess PO-Entscheid sichten.\n- [ ] [?] Planora: schriftliche Rechtekette Entwickler -> Firma und Vertragstext juristisch klaeren; Liefermodell siehe nachtrag/*/0-po-liefermodell.md.\n- [ ] Die begruendeten Zuordnungen samt Copyright/Notices in zuordnungen-nachtrag.json pruefen; @npmcli/agent enthaelt sowohl die Debian-Copyright-Angabe als auch die Autorenangabe des exakten npm-Pakets.\n- [ ] SPDX-/OS-/npm-/Go-Komponenten, Lizenzpflichten und gegebenenfalls Quellcodepflichten insgesamt pruefen; Scanner sind kein Vollstaendigkeitsbeweis.\n- [ ] Image-IDs, Archive und signiertes Release der konkreten Lieferung abgleichen.\n- [ ] Optionales ClamAV bei spaeterer Lieferung separat bewerten; hier nicht geliefert.\n- [ ] Verantwortliche Person, Entscheid, Datum und Lieferfassung dokumentieren.\n\n[A] Die technische Zuordnung ersetzt keine juristische Bewertung; Sigstore-Signaturen wurden beim Drizzle-Quellhinweis nicht verifiziert. Die echte VM-Abnahme auf der CH-VM des Anbieters bleibt separat offen.\n',
+        'FREIGABE.md': f'# Menschliche Lizenz-/Lieferfreigabe offen\n\nTechnischer Nachtrag: {geschlossen}/14 bisher offene Zuordnungen belegt; {len(offen)} verbleibend. Dies ist keine menschliche oder juristische Freigabe; die Checkliste bleibt per PO-Entscheid 2026-11-11 bewusst offen.\n\nPO-Entscheide 2026-11-11 (technisch dokumentiert in upstream-nachweis.json/zuordnungen-nachtrag.json): Deepmerge-Fixture mit ISC- und MIT-Text beigelegt und technisch geschlossen (beide permissiv). Planora proprietaer, alle Rechte beim Anbieter, nicht-exklusives, nicht uebertragbares Nutzungsrecht des Kunden fuer seine Instanz waehrend der Vertragsdauer, Lieferung/Betrieb als signierte Images ohne Quellcode, Drittkomponenten unter eigenen Lizenzen gemaess Dossier. Betrieb auf Server/Domain des Anbieters (CH-VM), Kunde ohne eigene IT.\n\n- [ ] Deepmerge-Fixture: beigelegte ISC- und MIT-Texte gemaess PO-Entscheid sichten.\n- [ ] [?] Planora: schriftliche Rechtekette Entwickler -> Firma und Vertragstext juristisch klaeren; Liefermodell siehe nachtrag/*/0-po-liefermodell.md.\n- [ ] Die begruendeten Zuordnungen samt Copyright/Notices in zuordnungen-nachtrag.json pruefen; @npmcli/agent enthaelt sowohl die Debian-Copyright-Angabe als auch die Autorenangabe des exakten npm-Pakets.\n- [ ] SPDX-/OS-/npm-/Go-Komponenten, Lizenzpflichten und gegebenenfalls Quellcodepflichten insgesamt pruefen; Scanner sind kein Vollstaendigkeitsbeweis.\n- [ ] Image-IDs, Archive und signiertes Release der konkreten Lieferung abgleichen.\n- [ ] {clamav_zeile(dienste)}\n- [ ] Verantwortliche Person, Entscheid, Datum und Lieferfassung dokumentieren.\n\n[A] Die technische Zuordnung ersetzt keine juristische Bewertung; Sigstore-Signaturen wurden beim Drizzle-Quellhinweis nicht verifiziert. Die echte VM-Abnahme auf der CH-VM des Anbieters bleibt separat offen.\n',
     }
-    kennzahlen = {'images': 4, 'sbomDateien': 12, 'paketVorkommen': len(zuordnung), 'spdxStandardtexte': len(texte), 'upstreamPakete': len(quellen), 'nachtragGeschlossen': geschlossen, 'upstreamOffen': len(offen)}
+    kennzahlen = {'images': len(dienste), 'sbomDateien': 3*len(dienste), 'paketVorkommen': len(zuordnung), 'spdxStandardtexte': len(texte), 'upstreamPakete': len(quellen), 'nachtragGeschlossen': geschlossen, 'upstreamOffen': len(offen)}
     return inhalte, kennzahlen
 
 
