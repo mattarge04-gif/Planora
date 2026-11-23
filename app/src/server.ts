@@ -11,6 +11,7 @@ import { wartungAktiv, wartungsLage } from "./betrieb/wartung.js";
 import { bestaetigeRestoreKonto } from "./betrieb/freigabe.js";
 import { registriereWeltRouten } from "./welt/routen.js";
 import { registriereLebensdauerRouten } from "./lebensdauer/routen.js";
+import { registrierePreisdokumentRouten } from "./preisdokument/routen.js";
 import { registriereWeb } from "./web.js";
 
 declare module "fastify" { interface FastifyInstance { ablage: Ablage } }
@@ -93,6 +94,7 @@ export async function baueServer(o: ServerOptionen) {
 
   registriereWeltRouten(app, o.pool); // M2a: /api/struktur/… (Huelle, Beschreibung), /api/szene/…/welt
   registriereLebensdauerRouten(app, o.pool); // M7 Demo-Schnitt: /api/lebensdauer/… (Modul-Guard schaltet)
+  registrierePreisdokumentRouten(app, o.pool); // Preis aus Dokument: Laeufer folgt in Task 5
   // Platzhalter fuer Fachmodule bis M2–M8: erreichbar nur, wenn Guard und Sitzung sie durchlassen
   for (const m of MANIFEST) for (const r of m.routen) {
     if (r.startsWith("/api/auth") || r.startsWith("/api/admin")) continue;
