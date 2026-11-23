@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const hier = dirname(fileURLToPath(import.meta.url));
 if (!process.env.OPENAI_API_KEY) {
@@ -11,7 +11,7 @@ if (!process.env.OPENAI_API_KEY) {
   process.exit(1);
 }
 const require = createRequire(join(hier, "..", "..", "app", "package.json"));
-const { default: OpenAI } = await import(require.resolve("openai"));
+const { default: OpenAI } = await import(pathToFileURL(require.resolve("openai")).href);
 const client = new OpenAI();
 
 const pdf = readFileSync(join(hier, "pdf", "o1-pumpen.pdf")).toString("base64");

@@ -29,3 +29,5 @@ Abweichungen / offen:
 - Die Modellseite nennt als Eingabe nur "text, image", PDF-Eingabe wird dort nicht ausdruecklich genannt. Die Datei-Guide-Seite sagt, PDF-Parsing mit Seitenbildern braucht ein bildfaehiges Modell. PDF-Eingabe mit `gpt-6.2-sol` ist damit bis zur Probe [A].
 - Strict Structured Outputs: `type: "integer"` ist in Doku-Beispielen belegt. `type: ["number","null"]`: Doku zeigt nur `["string","null"]` (Moderationsbeispiel); fuer `number` [A], Probe verwendet es (`preis`). Der Abschnitt "supported schemas" der Seite wurde nicht gelesen (Seite gekuerzt). Alle Felder muessen in `required` stehen, `additionalProperties: false`.
 - Task 4 uebernimmt die Feldnamen unveraendert; kein Nachzug noetig ausser dem Ergebnis der Probe.
+
+Hinweis zu `o6`: Die Werte in `soll.json` fuer `o6-fremd-und-injection.pdf` sind kein echter Sollwert, sondern nur der Injection-/Fremdposition-Test (erwartet: keine Zuordnung, kein Preis 1.00).
