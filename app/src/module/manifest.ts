@@ -1,4 +1,4 @@
-export type ModulId = "plattform"|"identitaet"|"instanz"|"katalog"|"struktur"|"dokumente"|"bestand"|"erfassung"|"szene"|"export"|"lebensdauer"|"zustand"|"hinweise"|"suche";
+export type ModulId = "plattform"|"identitaet"|"instanz"|"katalog"|"struktur"|"dokumente"|"bestand"|"erfassung"|"szene"|"export"|"lebensdauer"|"zustand"|"hinweise"|"suche"|"preisdokument";
 export type Stufe = 1|2|3|4;
 export type Modul = { id: ModulId; art: "kern"|"option"; lieferstufe: Stufe; braucht: ModulId[]; nutztWennAktiv: ModulId[]; routen: string[]; jobs: string[] };
 const k = (id: ModulId, lieferstufe: Stufe, routen: string[], braucht: ModulId[] = [], nutztWennAktiv: ModulId[] = [], jobs: string[] = []): Modul => ({ id, art: "kern", lieferstufe, braucht, nutztWennAktiv, routen, jobs });
@@ -13,6 +13,7 @@ export const MANIFEST: readonly Modul[] = [
   o("lebensdauer", 2, ["/api/lebensdauer/"], ["bestand", "katalog"], ["zustand"], ["lebensdauer.neuberechnen"]),
   o("zustand", 2, ["/api/zustand/"], ["bestand"]),
   o("hinweise", 2, ["/api/hinweise/"], ["lebensdauer"], [], ["hinweise.taeglich"]),
+  o("preisdokument", 4, ["/api/preisdokument/"], ["dokumente", "lebensdauer"]),
   o("suche", 3, ["/api/suche/"], ["dokumente"], [], ["suche.indexieren"]),
 ];
 const byId = new Map(MANIFEST.map((m) => [m.id, m]));

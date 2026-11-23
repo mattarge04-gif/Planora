@@ -21,6 +21,7 @@ for (const p of [port, pgPort]) {
 }
 const dbDir = join(mkdtempSync(join(tmpdir(), "planora-entwicklung-")), "db");
 const ablage = mkdtempSync(join(tmpdir(), "planora-ablage-"));
+const STUFE = 4 as const;
 const pgPasswort = randomBytes(18).toString("hex");
 const instanz = new EmbeddedPostgres({ databaseDir: dbDir, user: "postgres", password: pgPasswort,
   port: pgPort, persistent: false, onLog: () => {}, onError: console.error });
@@ -59,7 +60,9 @@ try {
   await pool.query("insert into konto_status(benutzer_id,status,audit_id) values($1,'aktiv',$2)", [betreiberId, randomUUID()]);
   await pool.query("insert into rolle_zuordnung(benutzer_id,rolle) values($1,'betreiber')", [betreiberId]);
   // Demo (E43): Lebensdauer/Ampel im Entwicklungsstart eingeschaltet.
-  await schalteEin(pool, "lebensdauer", 2, randomUUID());
+  await schalteEin(pool, "lebensdauer", STUFE, randomUUID());
+  // Demo E44/E45: Preis aus Dokument; liest nur mit OPENAI_API_KEY.
+  await schalteEin(pool, "preisdokument", STUFE, randomUUID());
   // PO 17.11.: standardmaessig nur ein leeres Testgebaeude; Beispiel und Muster (Design-Szenarien) mit PLANORA_MUSTER=1.
   if (process.env.PLANORA_MUSTER === "1") {
     await beispielAnlegen(pool);
@@ -68,7 +71,7 @@ try {
     await testgebaeudeAnlegen(pool);
   }
   const baseURL = `http://localhost:${port}`;
-  app = await baueServer({ pool, stufe: 2, baseURL, secret: randomBytes(32).toString("hex"), ablageWurzel: ablage,
+  app = await baueServer({ pool, stufe: STUFE, baseURL, secret: randomBytes(32).toString("hex"), ablageWurzel: ablage,
     webWurzel: fileURLToPath(new URL("../web/dist", import.meta.url)) });
   // Nur Entwicklung (PO 15.11.): /entwicklung/anmelden meldet ohne Formular als Admin an und leitet zur App weiter.
   // Abschalten mit PLANORA_OHNE_LOGIN=0. Nicht im Produkt: dieser Start ist in Produktion gesperrt und nicht im Docker-Image.
