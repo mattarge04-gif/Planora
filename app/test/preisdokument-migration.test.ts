@@ -4,8 +4,8 @@ let db: Awaited<ReturnType<typeof frischeDb>>;
 beforeAll(async () => { db = await frischeDb(); });
 describe("Migration 017", () => {
   it("legt dokument und preis_vorschlag an", async () => {
-    const t = (await db.pool.query("select table_name from information_schema.tables where table_name in ('dokument','preis_vorschlag') order by 1")).rows.map((r) => r.table_name);
-    expect(t).toEqual(["dokument", "preis_vorschlag"]);
+    const t = (await db.pool.query("select table_name from information_schema.tables where table_name in ('dokument','preis_vorschlag','preis_lesung') order by 1")).rows.map((r) => r.table_name);
+    expect(t).toEqual(["dokument", "preis_lesung", "preis_vorschlag"]);
   });
   it("Quelle dokument verlangt Verweis, kunde verbietet ihn", async () => {
     const c = (await db.pool.query("select conname from pg_constraint where conname in ('bauteil_akte_vorschlag_quelle','lebensdauer_typ_vorschlag_quelle')")).rows;

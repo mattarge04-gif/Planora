@@ -104,6 +104,8 @@ export async function baueServer(o: ServerOptionen) {
   // Nicht warten: bei nicht erreichbarer oder haengender DB darf der Serverstart (Wartungsmodus) nicht blockieren.
   void markiereAbgebrochen(o.pool).catch(() => {});
   const laeufer = erzeugeLaeufer(o.pool, app.ablage, leseAdapter, { limitUsd: Number(process.env.PLANORA_KI_BUDGET_USD_MONAT || 20) });
+  // Beim Schliessen laufende Lesungen abwarten (max. 5 s), damit sie nicht auf einen geschlossenen Pool treffen.
+  app.addHook("onClose", async () => { await Promise.race([laeufer.warteLeer(), new Promise((r) => setTimeout(r, 5000).unref())]); });
   registrierePreisdokumentRouten(app, o.pool, laeufer);
   // Platzhalter fuer Fachmodule bis M2–M8: erreichbar nur, wenn Guard und Sitzung sie durchlassen
   for (const m of MANIFEST) for (const r of m.routen) {

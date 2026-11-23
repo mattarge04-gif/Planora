@@ -99,12 +99,15 @@ export function registrierePreisdokumentRouten(app: FastifyInstance, pool: pg.Po
       const r = await mitClient((c) => zugriffDokument(c, k.benutzerId, req.params.id, true));
       if (r.code !== 200) return verweigert(reply, r.code as 403 | 404);
       if (laeufer?.zustand().auslesen !== "an") return reply.code(409).send({ fehler: "auslesen_aus" });
-      // Offene und verworfene Vorschlaege entfallen, uebernommene bleiben; laufende Lesevorgaenge bleiben unberuehrt.
-      await inTx("begin", async (c) => {
+      // Offene und verworfene Vorschlaege entfallen, uebernommene bleiben; ein laufender Lesevorgang wird nicht doppelt gestartet.
+      const gestartet = await inTx("begin", async (c) => {
         const l = await c.query("update dokument set auslesen_status='neu', auslesen_fehler=null where id=$1 and auslesen_status <> 'liest' returning id", [req.params.id]);
-        if (l.rowCount) await c.query("delete from preis_vorschlag where dokument_id=$1 and status <> 'uebernommen'", [req.params.id]);
+        if (!l.rowCount) return false;
+        await c.query("delete from preis_vorschlag where dokument_id=$1 and status <> 'uebernommen'", [req.params.id]);
         await auditEreignis(c, k.auditId, "preisdokument.neu_lesen", { gebaeudeId: r.gebaeudeId, dokumentId: req.params.id });
+        return true;
       });
+      if (!gestartet) return reply.code(409).send({ fehler: "liest_bereits" });
       laeufer.starte(req.params.id);
       return reply.code(202).send((await mitClient((c) => ladeDokumente(c, r.gebaeudeId))).find((d) => d.id === req.params.id));
     });

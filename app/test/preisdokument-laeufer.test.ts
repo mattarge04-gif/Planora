@@ -74,7 +74,7 @@ describe("Laeufer", () => {
     expect(await zeile(id)).toMatchObject({ auslesen_status: "fehler", auslesen_fehler: "Interner Fehler beim Lesen." });
   });
   it("Budget: zweites Dokument scheitert, Adapter nur einmal gerufen", async () => {
-    await db.pool.query("update dokument set gelesen_am = null"); // Monatsverbrauch der Vortests zuruecksetzen
+    await db.pool.query("delete from preis_lesung"); // Monatsverbrauch der Vortests zuruecksetzen (Test-Superuser)
     const a = ablage(), f = fakeAdapter(() => gueltig()), l = erzeugeLaeufer(db.pool, a, f, { limitUsd: 0.1 });
     const d1 = await neuesDokument(a); const d2 = await neuesDokument(a);
     l.starte(d1); await l.warteLeer(); l.starte(d2); await l.warteLeer();
@@ -117,5 +117,16 @@ describe("Laeufer", () => {
     const a = ablage(); const id = await neuesDokument(a, "liest");
     expect(await markiereAbgebrochen(db.pool)).toBe(1);
     expect((await zeile(id)).auslesen_status).toBe("abgebrochen");
+  });
+  it("Budget: Neu lesen und Loeschen entlasten das Monatsbudget nicht", async () => {
+    await db.pool.query("update dokument set gelesen_am = null"); await db.pool.query("delete from preis_lesung");
+    const a = ablage(), l = erzeugeLaeufer(db.pool, a, fakeAdapter(() => gueltig()));
+    const id = await neuesDokument(a);
+    l.starte(id); await l.warteLeer();
+    await db.pool.query("update dokument set auslesen_status='neu' where id=$1", [id]);
+    l.starte(id); await l.warteLeer();
+    expect(await l.zustand().verbrauchtUsd()).toBeCloseTo(0.2, 4);
+    await db.pool.query("delete from dokument where id=$1", [id]);
+    expect(await l.zustand().verbrauchtUsd()).toBeCloseTo(0.2, 4);
   });
 });

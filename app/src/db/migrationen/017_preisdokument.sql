@@ -54,3 +54,8 @@ end $$;
 create trigger preisdokument_restore_sperre after insert or update on instanz_einstellung
   for each row execute function preisdokument_restore_sperre();
 grant select, insert, update, delete on dokument, preis_vorschlag to planora_app;
+-- Kostenbuch: jede Lesung zaehlt zum Monatsbudget, auch nach Neu lesen oder Loeschen des Dokuments.
+create table preis_lesung(id uuid primary key default gen_random_uuid(), dokument_id uuid references dokument(id) on delete set null,
+  modell text, tokens_ein int not null, tokens_aus int not null, kosten_usd numeric(10,4) not null, am timestamptz not null default now());
+create index preis_lesung_am on preis_lesung(am);
+grant select, insert on preis_lesung to planora_app;

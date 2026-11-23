@@ -39,7 +39,7 @@ export function erzeugeLaeufer(pool: pg.Pool, ablage: Ablage, adapter: LeseAdapt
   const max = o.gleichzeitig ?? 2, limitUsd = o.limitUsd ?? 20, preise = o.preise ?? { ein: 2.0, aus: 10.0 };
   const warteschlange: string[] = []; let laufend = 0; let leer: (() => void)[] = [];
   const verbrauchtUsd = async () => Number((await pool.query(
-    "select coalesce(sum(kosten_usd),0) s from dokument where gelesen_am >= date_trunc('month', now())")).rows[0].s);
+    "select coalesce(sum(kosten_usd),0) s from preis_lesung where am >= date_trunc('month', now())")).rows[0].s);
   async function lies(id: string) {
     const d = (await pool.query("update dokument set auslesen_status='liest', auslesen_fehler=null where id=$1 and auslesen_status in ('neu','abgebrochen','fehler') returning gebaeude_id, schluessel, dateiname, seiten", [id])).rows[0];
     if (!d) return;
@@ -55,6 +55,7 @@ export function erzeugeLaeufer(pool: pg.Pool, ablage: Ablage, adapter: LeseAdapt
       catch {
         await pool.query("update dokument set auslesen_status='fehler', auslesen_fehler=$2, modell=$3, tokens_ein=$4, tokens_aus=$5, kosten_usd=$6, gelesen_am=now() where id=$1",
           [id, TEXT.schema, e.modell, e.tokensEin, e.tokensAus, kosten]);
+        await pool.query("insert into preis_lesung(dokument_id, modell, tokens_ein, tokens_aus, kosten_usd) values ($1,$2,$3,$4,$5)", [id, e.modell, e.tokensEin, e.tokensAus, kosten]);
         return;
       }
       const c = await pool.connect();
@@ -68,8 +69,13 @@ export function erzeugeLaeufer(pool: pg.Pool, ablage: Ablage, adapter: LeseAdapt
           [id, start + i, v.position, v.seite, v.zitat, v.materialNetto, v.rabattText, v.montageAnteil, v.ersatzpreis, v.rechenweg, v.katalogId, v.bauteilIds, v.sicherheit]);
         await c.query("update dokument set auslesen_status='fertig', modell=$2, tokens_ein=$3, tokens_aus=$4, kosten_usd=$5, gelesen_am=now() where id=$1",
           [id, e.modell, e.tokensEin, e.tokensAus, kosten]);
+        await c.query("insert into preis_lesung(dokument_id, modell, tokens_ein, tokens_aus, kosten_usd) values ($1,$2,$3,$4,$5)", [id, e.modell, e.tokensEin, e.tokensAus, kosten]);
         await c.query("commit");
-      } catch (x) { await c.query("rollback").catch(() => {}); throw x; } finally { c.release(); }
+        c.release();
+      } catch (x) {
+        const rb = await c.query("rollback").then(() => undefined, (err) => err as Error);
+        c.release(rb); throw x;
+      }
     } catch (x) {
       if (x instanceof LeseFehler) console.error(`preisdokument: Lesefehler (${x.grund}): ${x.message}`); // Meldung bereits bereinigt
       await fehler(x instanceof LeseFehler ? TEXT[x.grund] : TEXT.intern).catch(() => {});

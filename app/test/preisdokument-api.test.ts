@@ -149,6 +149,14 @@ describe("Preisdokument-API mit Leseadapter", () => {
     expect((await gib(app2, "POST", `/api/preisdokument/dokumente/${r.json().id}/neu-lesen`, kLeser)).statusCode).toBe(403);
     expect((await gib(app2, "POST", `/api/preisdokument/dokumente/${r.json().id}/neu-lesen`, kFremd)).statusCode).toBe(404);
   });
+  it("neu-lesen waehrend 'liest' -> 409 ohne Audit", async () => {
+    const id = (await hochladen(kBearb, G, pdf(1, "% liest"))).json().id;
+    await db.pool.query("update dokument set auslesen_status='liest' where id=$1", [id]);
+    const vorher = (await db.pool.query("select count(*) n from audit_eintrag where art='preisdokument.neu_lesen'")).rows[0].n;
+    const r = await gib(app2, "POST", `/api/preisdokument/dokumente/${id}/neu-lesen`, kBearb);
+    expect([r.statusCode, r.json()]).toEqual([409, { fehler: "liest_bereits" }]);
+    expect((await db.pool.query("select count(*) n from audit_eintrag where art='preisdokument.neu_lesen'")).rows[0].n).toBe(vorher);
+  });
   it("ohne Adapter: neu-lesen -> 409", async () => {
     const app3 = await bauApp(null);
     try {
