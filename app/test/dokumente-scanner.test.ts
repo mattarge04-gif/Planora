@@ -71,4 +71,14 @@ describe("clamd-Adapter", () => {
     await expect(s.pruefe(Buffer.from("x"))).rejects.toThrow();
     expect(await s.ping()).toBe(false);
   });
+  it("Verbindungsabbruch nach dem Senden wird nicht wiederholt", async () => {
+    let verbindungen = 0;
+    const server = createServer((s) => { verbindungen++; s.on("data", () => s.destroy()); });
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", () => r()));
+    try {
+      const s = clamdScanner({ host: "127.0.0.1", port: (server.address() as AddressInfo).port, versuche: 3, pauseMs: 10 });
+      await expect(s.pruefe(Buffer.from("x"))).rejects.toThrow();
+      expect(verbindungen).toBe(1);
+    } finally { await new Promise<void>((r) => server.close(() => r())); }
+  });
 });

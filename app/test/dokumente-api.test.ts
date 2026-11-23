@@ -221,3 +221,21 @@ describe("Dokumente-API: Virenpruefung", () => {
     expect((await db.pool.query("select 1 from audit_eintrag where art='dokument.geloescht' and daten->>'dokumentId'=$1", [id])).rowCount).toBe(1);
   });
 });
+
+describe("baueServer: Scanner und Hintergrund", () => {
+  const basis = () => ({ pool: db.pool, stufe: 2 as const, baseURL: ORIGIN, secret: SECRET, ablageWurzel: WURZEL });
+  it("ohne Scanner und ohne clamd-Konfiguration wirft baueServer (kein stiller Fake)", async () => {
+    vi.stubEnv("PLANORA_CLAMD_HOST", "");
+    await expect(baueServer(basis())).rejects.toThrow(/PLANORA_CLAMD_HOST/);
+  });
+  it("hintergrund:false (Smoke) baut ohne Scanner und reiht nichts ein", async () => {
+    vi.stubEnv("PLANORA_CLAMD_HOST", "");
+    const x = await dateiAblage(join(WURZEL, "quarantaene")).schreibeNeu(Readable.from(pdf(1, "% smoke")));
+    const id = (await db.pool.query(`insert into dokument(gebaeude_id, liegenschaft_id, dateiname, schluessel, sha256, groesse, seiten, hochgeladen_von, scan_status)
+      values ($1,$2,'s.pdf',$3,$4,10,1,$5,'quarantaene') returning id`, [G, L1, x.schluessel, x.sha256, L1])).rows[0].id;
+    const smoke = await baueServer({ ...basis(), hintergrund: false });
+    await new Promise((r) => setTimeout(r, 300));
+    await smoke.close();
+    expect((await db.pool.query("select scan_status from dokument where id=$1", [id])).rows[0].scan_status).toBe("quarantaene");
+  });
+});

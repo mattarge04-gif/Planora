@@ -55,6 +55,14 @@ describe("Laeufer", () => {
     expect(Number(z.kosten_usd)).toBeCloseTo(0.1, 4);
     expect(await anzahl(id)).toBe(1);
   });
+  it("nicht sauberes Dokument wird nie gelesen (Adapter nicht gerufen)", async () => {
+    let aufrufe = 0;
+    const a = ablage(), l = erzeugeLaeufer(db.pool, a, fakeAdapter(() => { aufrufe++; return gueltig(); }));
+    const id = await neuesDokument(a);
+    await db.pool.query("update dokument set scan_status='quarantaene' where id=$1", [id]);
+    l.starte(id); await l.warteLeer();
+    expect([aufrufe, (await zeile(id)).auslesen_status]).toEqual([0, "neu"]);
+  });
   it("Ablehnung -> fehler mit festem Text", async () => {
     const a = ablage(), l = erzeugeLaeufer(db.pool, a, fakeAdapter(() => new LeseFehler("ablehnung", "x")));
     const id = await neuesDokument(a);

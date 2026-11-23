@@ -6,6 +6,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { frischeDb } from "./hilfe.js";
+import { fakeScanner } from "../src/dokumente/scanner.js";
 import { baueServer } from "../src/server.js";
 import { neuerPool } from "../src/db/pool.js";
 import { wartungAktiv } from "../src/betrieb/wartung.js";
@@ -15,7 +16,7 @@ const ORIGIN = "http://localhost:3997";
 const VERBOTEN = /permission denied|keine Berechtigung/i;
 let db: Awaited<ReturnType<typeof frischeDb>>; let app: FastifyInstance; let cookie = "";
 const pw = randomBytes(12).toString("base64url");
-const optionen = (pool: pg.Pool) => ({ pool, stufe: 2 as const, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), release: "test-1" });
+const optionen = (pool: pg.Pool) => ({ pool, stufe: 2 as const, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), virenScanner: fakeScanner(), release: "test-1" });
 const post = (url: string, body: object, h: Record<string, string> = {}) => app.inject({ method: "POST", url, headers: { "content-type": "application/json", origin: ORIGIN, ...h }, payload: JSON.stringify(body) });
 const alsBetrieb = async (sql: string) => {
   const c = await db.pool.connect();

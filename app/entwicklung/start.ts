@@ -8,6 +8,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { migriere } from "../src/db/migrator.js";
 import { baueServer } from "../src/server.js";
+import { clamdScanner } from "../src/dokumente/clamd.js";
+import { fakeScanner, scannerKonfig } from "../src/dokumente/scanner.js";
 import { erzeugeSetupToken, loeseSetupTokenEin } from "../src/auth/setup.js";
 import { hashPasswort } from "../src/auth/auth.js";
 import { schalteEin } from "../src/module/schalter.js";
@@ -73,7 +75,9 @@ try {
     await testgebaeudeAnlegen(pool);
   }
   const baseURL = `http://localhost:${port}`;
-  app = await baueServer({ pool, stufe: STUFE, baseURL, secret: randomBytes(32).toString("hex"), ablageWurzel: ablage,
+  const clamd = scannerKonfig(process.env);
+  const virenScanner = clamd ? clamdScanner(clamd) : fakeScanner(); // Entwicklung: ohne clamd der Fake, ausdruecklich hier
+  app = await baueServer({ pool, stufe: STUFE, baseURL, secret: randomBytes(32).toString("hex"), ablageWurzel: ablage, virenScanner: virenScanner,
     webWurzel: fileURLToPath(new URL("../web/dist", import.meta.url)) });
   // Nur Entwicklung (PO 15.11.): /entwicklung/anmelden meldet ohne Formular als Admin an und leitet zur App weiter.
   // Abschalten mit PLANORA_OHNE_LOGIN=0. Nicht im Produkt: dieser Start ist in Produktion gesperrt und nicht im Docker-Image.

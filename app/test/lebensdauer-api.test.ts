@@ -5,6 +5,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { frischeDb } from "./hilfe.js";
+import { fakeScanner } from "../src/dokumente/scanner.js";
 import { baueServer } from "../src/server.js";
 import { erzeugeSetupToken, loeseSetupTokenEin } from "../src/auth/setup.js";
 import { schalteAus, schalteEin } from "../src/module/schalter.js";
@@ -50,7 +51,7 @@ function erstbefuellung(leer: any) {
 
 beforeAll(async () => {
   db = await frischeDb();
-  app = await baueServer({ pool: db.pool, stufe: 2, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")) });
+  app = await baueServer({ pool: db.pool, stufe: 2, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), virenScanner: fakeScanner() });
   await schalteEin(db.pool, "lebensdauer", 2, randomUUID());
   L1 = (await db.pool.query("insert into liegenschaft(name) values ('L1') returning id")).rows[0].id;
   L2 = (await db.pool.query("insert into liegenschaft(name) values ('L2') returning id")).rows[0].id;

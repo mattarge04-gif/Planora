@@ -5,6 +5,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { frischeDb } from "./hilfe.js";
+import { fakeScanner } from "../src/dokumente/scanner.js";
 import { baueServer } from "../src/server.js";
 import { anfrageMit, legeKontoAn } from "./hilfe-api.js";
 import { pdf, png } from "./hilfe-dateien.js";
@@ -27,7 +28,7 @@ const konto = (email: string, rolle: string, scopes: string[]) => legeKontoAn(ap
 beforeAll(async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
   db = await frischeDb();
-  app = await baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: WURZEL });
+  app = await baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: WURZEL, virenScanner: fakeScanner() });
   await schalteEin(db.pool, "lebensdauer", 4, randomUUID());
   await schalteEin(db.pool, "preisdokument", 4, randomUUID());
   L1 = (await db.pool.query("insert into liegenschaft(name) values ('L1') returning id")).rows[0].id;
@@ -75,7 +76,7 @@ describe("Preisdokument-API mit Leseadapter", () => {
   let app2: FastifyInstance; let B: string;
   const gueltig = () => ({ vorschlaege: [{ position: "Pumpe", seite: 1, zitat: "Pumpe 1240.00", materialNetto: 1116, rabattText: null, montageAnteil: 180,
     ersatzpreis: 1296, rechenweg: "1240 + 180", katalogId: "heizung.heizkoerper", bauteilIds: [B], sicherheit: "hoch" }] });
-  const bauApp = (leseAdapter: any) => baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: WURZEL, leseAdapter });
+  const bauApp = (leseAdapter: any) => baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: WURZEL, virenScanner: fakeScanner(), leseAdapter });
   const gib = (a: FastifyInstance, method: "GET" | "POST", url: string, cookie: string) => a.inject({ method, url, headers: { cookie, origin: ORIGIN, "x-planora-request": "1" } });
   const warteStatus = async (id: string, status: string) => {
     // grosszuegige Grenze (30 s), damit Last auf Windows/eingebettetem PG nicht zu Fehlalarmen fuehrt

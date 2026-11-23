@@ -7,6 +7,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { frischeDb } from "./hilfe.js";
+import { fakeScanner } from "../src/dokumente/scanner.js";
 import { baueServer } from "../src/server.js";
 import { konsoleErstadmin, konsoleSetupToken } from "../src/start/konsole.js";
 
@@ -19,7 +20,7 @@ beforeAll(async () => {
   db = await frischeDb();
   betrieb = new pg.Pool({ ...db.cfg, max: 2 });
   betrieb.on("connect", (c) => { c.query("set role planora_betrieb").catch(() => {}); });
-  app = await baueServer({ pool: db.pool, stufe: 1, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")) });
+  app = await baueServer({ pool: db.pool, stufe: 1, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), virenScanner: fakeScanner() });
 });
 afterAll(async () => { await app.close(); await betrieb.end(); await db.ende(); });
 

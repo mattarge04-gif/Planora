@@ -53,12 +53,12 @@ export async function gibReferenzFrei(c: Q, schluessel: string, objekt: string) 
 
 /**
  * Loescht das Dokument (Verknuepfungen und Vorschlaege per cascade; uebernommene Preise behalten Quelle "dokument"
- * mit preis_vorschlag_id null = "Dokument (gelöscht)"). Nur saubere Dokumente haben eine Ablage-Referenz.
+ * mit preis_vorschlag_id null = "Dokument (gelöscht)"). Nur saubere Dokumente haben regulaer eine Ablage-Referenz; die Freigabe laeuft immer.
  * Die Quarantaene-Kopie raeumt der Aufrufer (Task 3).
  */
 export async function loescheDokument(c: Q, dokumentId: string): Promise<{ schluessel: string; scanStatus: ScanStatus } | null> {
   const r = (await c.query("delete from dokument where id=$1 returning schluessel, scan_status", [dokumentId])).rows[0];
   if (!r) return null;
-  if (r.scan_status === "sauber") await gibReferenzFrei(c, r.schluessel, `dokument:${dokumentId}`);
+  await gibReferenzFrei(c, r.schluessel, `dokument:${dokumentId}`); // idempotent: raeumt auch Reste nach Absturz oder gescheiterter Uebernahme
   return { schluessel: r.schluessel, scanStatus: r.scan_status };
 }

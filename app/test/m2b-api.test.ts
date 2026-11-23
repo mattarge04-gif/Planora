@@ -5,6 +5,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { frischeDb } from "./hilfe.js";
+import { fakeScanner } from "../src/dokumente/scanner.js";
 import { baueServer } from "../src/server.js";
 import { erzeugeSetupToken, loeseSetupTokenEin } from "../src/auth/setup.js";
 
@@ -31,7 +32,7 @@ async function konto(email: string, rolle: string, scopes: string[]) {
 
 beforeAll(async () => {
   db = await frischeDb();
-  app = await baueServer({ pool: db.pool, stufe: 2, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")) });
+  app = await baueServer({ pool: db.pool, stufe: 2, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), virenScanner: fakeScanner() });
   L1 = (await db.pool.query("insert into liegenschaft(name) values ('B-Liegenschaft') returning id")).rows[0].id;
   L2 = (await db.pool.query("insert into liegenschaft(name) values ('A-Liegenschaft') returning id")).rows[0].id;
   kAdmin = await konto("admin@planora.invalid", "admin", []);

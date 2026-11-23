@@ -3,18 +3,20 @@ import type { ScanErgebnis, VirenScanner } from "./scanner.js";
 
 export interface ClamdOptionen { host: string; port: number; timeoutMs?: number; versuche?: number; pauseMs?: number }
 const BLOCK = 64 * 1024;
-const VERBINDUNG = new Set(["ECONNREFUSED", "ECONNRESET", "EHOSTUNREACH", "ENOTFOUND", "EAI_AGAIN"]);
+// Nur Fehler vor dem Verbindungsaufbau werden wiederholt; ECONNRESET/EPIPE nach dem Senden sind echte Fehler (-> scan_fehler).
+const VERBINDUNG = new Set(["ECONNREFUSED", "EHOSTUNREACH", "ENOTFOUND", "EAI_AGAIN"]);
 
 /** Ein Befehl an clamd (Befehle mit z-Praefix, Antwort endet mit NUL). */
 function sprich(o: ClamdOptionen, sende: (s: Socket) => void): Promise<string> {
   return new Promise((ok, fehler) => {
     const s = connect({ host: o.host, port: o.port });
     const teile: Buffer[] = [];
-    let fertig = false;
+    let fertig = false; let gesendet = false;
     s.setTimeout(o.timeoutMs ?? 120_000, () => s.destroy(new Error("clamd: Zeitueberschreitung")));
-    s.once("connect", () => sende(s));
+    s.once("connect", () => { gesendet = true; sende(s); });
     s.on("data", (d: Buffer) => { teile.push(d); if (d.includes(0)) { fertig = true; s.end(); } });
-    s.once("error", fehler);
+    // Fehler nach dem Senden nie wiederholbar machen: Code entfernen (Marker), Meldung bleibt.
+    s.once("error", (e: NodeJS.ErrnoException) => { if (gesendet) delete e.code; fehler(e); });
     s.once("close", (mitFehler) => {
       if (mitFehler) return; // error wurde bereits gemeldet
       if (fertig || teile.length) ok(Buffer.concat(teile).toString("utf8").replace(/\0/g, "").trim());

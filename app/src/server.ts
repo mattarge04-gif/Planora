@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { registriereDokumentRouten } from "./dokumente/routen.js";
 import { erzeugePruefer, raeumeAbgelehnteAuf } from "./dokumente/pruefer.js";
 import { clamdScanner } from "./dokumente/clamd.js";
-import { fakeScanner, scannerKonfig, type VirenScanner } from "./dokumente/scanner.js";
+import { scannerKonfig, type VirenScanner } from "./dokumente/scanner.js";
 import { registrierePreisdokumentRouten } from "./preisdokument/routen.js";
 import { erzeugeLaeufer, markiereAbgebrochen } from "./preisdokument/laeufer.js";
 import { openaiAdapter } from "./preisdokument/openai.js";
@@ -25,7 +25,7 @@ import { registriereWeb } from "./web.js";
 declare module "fastify" { interface FastifyInstance { ablage: Ablage } }
 
 // vertrauteProxies: nur Adressen des eigenen Reverse Proxy (Caddy im Compose-Netz); leer = Client-IP nur aus dem Socket (PP7-5)
-export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; secret: string; ablageWurzel: string; vertrauteProxies?: string[]; release?: string; /** gebautes Frontend; fehlt das Verzeichnis, wird nichts ausgeliefert */ webWurzel?: string; /** Tests injizieren hier einen Fake; undefined = Adapter aus OPENAI_API_KEY, null = aus */ leseAdapter?: LeseAdapter | null; /** Tests injizieren einen Fake; sonst clamd aus PLANORA_CLAMD_HOST, ohne Konfiguration Fake (Produktion erzwingt die Konfiguration in start/api.ts) */ virenScanner?: VirenScanner };
+export type ServerOptionen = { pool: pg.Pool; stufe: Stufe; baseURL: string; secret: string; ablageWurzel: string; vertrauteProxies?: string[]; release?: string; /** gebautes Frontend; fehlt das Verzeichnis, wird nichts ausgeliefert */ webWurzel?: string; /** Tests injizieren hier einen Fake; undefined = Adapter aus OPENAI_API_KEY, null = aus */ leseAdapter?: LeseAdapter | null; /** Tests injizieren einen Fake; sonst clamd aus PLANORA_CLAMD_HOST; ohne beides wirft baueServer (nie ein stiller Fake) */ virenScanner?: VirenScanner; /** false (Update-Smoke): keine Hintergrundarbeit (Pruefer-Requeue, Bereinigung, Leser-Reset); Standard true */ hintergrund?: boolean };
 
 const MUTIEREND = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -104,15 +104,21 @@ export async function baueServer(o: ServerOptionen) {
   // Anlagenakte (E46): Quarantaene + Virenpruefung im Hintergrund (max. 2), Neustart reiht offene Pruefungen neu ein.
   const quarantaene = dateiAblage(join(o.ablageWurzel, "quarantaene"));
   const clamd = scannerKonfig(process.env);
-  const scanner = o.virenScanner ?? (clamd ? clamdScanner(clamd) : fakeScanner());
+  const hintergrund = o.hintergrund !== false;
+  // Nie ein stiller Fake: ohne Injektion und ohne clamd-Konfiguration kein Server (ausser ohne Hintergrundarbeit, dann lehnt der Scanner jede Pruefung ab).
+  const scanner: VirenScanner = o.virenScanner ?? (clamd ? clamdScanner(clamd)
+    : hintergrund ? (() => { throw new Error("PLANORA_CLAMD_HOST fehlt: Virenpruefung ist Pflicht"); })()
+      : { pruefe: () => Promise.reject(new Error("Virenpruefung nicht konfiguriert")) });
   const pruefer = erzeugePruefer(o.pool, app.ablage, quarantaene, scanner);
-  void pruefer.reiheNeuEin().catch(() => {}); // DB evtl. nicht erreichbar (Wartung): Start nicht blockieren
   const bereinige = () => void raeumeAbgelehnteAuf(o.pool, quarantaene).catch(() => {});
-  bereinige();
-  const bereinigungsTakt = setInterval(bereinige, 24 * 60 * 60 * 1000);
-  bereinigungsTakt.unref();
+  if (hintergrund) {
+    void pruefer.reiheNeuEin().catch(() => {}); // DB evtl. nicht erreichbar (Wartung): Start nicht blockieren
+    bereinige();
+  }
+  const bereinigungsTakt = hintergrund ? setInterval(bereinige, 24 * 60 * 60 * 1000) : undefined;
+  bereinigungsTakt?.unref();
   app.addHook("onClose", async () => {
-    clearInterval(bereinigungsTakt);
+    if (bereinigungsTakt) clearInterval(bereinigungsTakt);
     await Promise.race([pruefer.warteLeer(), new Promise((r) => setTimeout(r, 5000).unref())]);
   });
   registriereDokumentRouten(app, o.pool, { pruefer, quarantaene }); // /api/dokumente/… (Kernmodul, immer aktiv)
@@ -123,7 +129,7 @@ export async function baueServer(o: ServerOptionen) {
     : schluessel ? openaiAdapter({ apiKey: schluessel, modell: process.env.PLANORA_KI_MODELL_PREIS || "gpt-6.2-sol", basisUrl: process.env.PLANORA_KI_BASIS_URL || undefined }) : null;
   // Nicht warten: bei nicht erreichbarer oder haengender DB darf der Serverstart (Wartungsmodus) nicht blockieren.
   // Markiert auch 'neu' (Warteschlange lebt nur im Speicher), damit "Erneut lesen" angeboten wird.
-  void markiereAbgebrochen(o.pool).catch(() => {});
+  if (hintergrund) void markiereAbgebrochen(o.pool).catch(() => {});
   const laeufer = erzeugeLaeufer(o.pool, app.ablage, leseAdapter, { limitUsd: Number(process.env.PLANORA_KI_BUDGET_USD_MONAT || 20) });
   // Beim Schliessen laufende Lesungen abwarten (max. 5 s), damit sie nicht auf einen geschlossenen Pool treffen.
   app.addHook("onClose", async () => { await Promise.race([laeufer.warteLeer(), new Promise((r) => setTimeout(r, 5000).unref())]); });

@@ -16,7 +16,7 @@ starte(async () => {
   const id = randomUUID(), audit = randomUUID(), email = `smoke-${id}@planora.invalid`, passwort = randomBytes(32).toString("base64url");
   const baseURL = env("PLANORA_BASE_URL"), secret = geheimnis("auth_secret");
   const auth = baueAuth(pool, { baseURL, secret });
-  const app = await baueServer({ pool, stufe: Number(env("PLANORA_STUFE", "1")) as Stufe, baseURL, secret, ablageWurzel: env("PLANORA_ABLAGE", "/daten/dokumente"), release: release() });
+  const app = await baueServer({ pool, stufe: Number(env("PLANORA_STUFE", "1")) as Stufe, baseURL, secret, ablageWurzel: env("PLANORA_ABLAGE", "/daten/dokumente"), release: release(), hintergrund: false });
   let datei: string | undefined;
   const ablage = dateiAblage(env("PLANORA_ABLAGE", "/daten/dokumente"));
   try {

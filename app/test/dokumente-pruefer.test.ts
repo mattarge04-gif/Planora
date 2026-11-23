@@ -9,7 +9,8 @@ import { pdf } from "./hilfe-dateien.js";
 import { dateiAblage, type Ablage } from "../src/ablage/ablage.js";
 import { legeDokumentAn } from "../src/dokumente/speicher.js";
 import { EICAR, fakeScanner, type VirenScanner } from "../src/dokumente/scanner.js";
-import { erzeugePruefer, raeumeAbgelehnteAuf, SCAN_FEHLER_TEXT } from "../src/dokumente/pruefer.js";
+import { loescheDokument } from "../src/dokumente/speicher.js";
+import { erzeugePruefer, raeumeAbgelehnteAuf, DATEI_FEHLT_TEXT, SCAN_FEHLER_TEXT } from "../src/dokumente/pruefer.js";
 
 let db: Awaited<ReturnType<typeof frischeDb>>;
 let ablage: Ablage, quarantaene: Ablage;
@@ -66,7 +67,7 @@ describe("Pruefer", () => {
     await quarantaene.entferne((await zeile(id2)).schluessel);
     const p2 = erzeugePruefer(db.pool, ablage, quarantaene, fakeScanner());
     p2.starte(id2); await p2.warteLeer();
-    expect((await zeile(id2)).scan_status).toBe("scan_fehler");
+    expect([(await zeile(id2)).scan_status, (await zeile(id2)).scan_grund]).toEqual(["scan_fehler", DATEI_FEHLT_TEXT]);
   });
   it("hoechstens 2 gleichzeitig", async () => {
     let offen = 0, max = 0;
@@ -102,5 +103,14 @@ describe("Pruefer", () => {
     expect(await raeumeAbgelehnteAuf(db.pool, quarantaene)).toBe(1);
     expect([await zeile(alt), (await zeile(jung)).scan_status]).toEqual([undefined, "abgelehnt"]);
     expect(await quarantaene.existiert(schluessel)).toBe(false);
+  });
+  it("loescheDokument gibt die Referenz auch bei nicht sauberem Dokument frei (Rest nach Absturz)", async () => {
+    const id = await neuesDokument(pdf(1, "% rest"));
+    const schluessel = (await zeile(id)).schluessel;
+    await q("insert into datei(schluessel, sha256, groesse) values ($1,$2,1) on conflict do nothing", [schluessel, schluessel.slice(-64)]);
+    await q("insert into datei_referenz(schluessel, objekt) values ($1,$2)", [schluessel, `dokument:${id}`]);
+    const c = await db.pool.connect();
+    try { await loescheDokument(c, id); } finally { c.release(); }
+    expect((await q("select 1 from datei_referenz where objekt=$1", [`dokument:${id}`])).rowCount).toBe(0);
   });
 });

@@ -8,6 +8,7 @@ import { gibReferenzFrei } from "./speicher.js";
 
 /** Fester Text in der DB; rohe Scanner-Meldungen nur im Log. */
 export const SCAN_FEHLER_TEXT = "Virenprüfung nicht erreichbar.";
+export const DATEI_FEHLT_TEXT = "Datei fehlt, bitte neu ablegen.";
 export interface Pruefer { starte(id: string): void; warteLeer(): Promise<void>; reiheNeuEin(): Promise<number> }
 
 /** Signaturname fuer DB und Anzeige: ohne Steuerzeichen, hoechstens 300 Zeichen. */
@@ -31,8 +32,8 @@ export function erzeugePruefer(pool: pg.Pool, ablage: Ablage, quarantaene: Ablag
   const warteschlange: string[] = [];
   const eingereiht = new Set<string>();
   let laufend = 0; let leer: (() => void)[] = [];
-  const setzeFehler = (id: string) => pool.query(
-    "update dokument set scan_status='scan_fehler', scan_grund=$2, gescannt_am=now() where id=$1 and scan_status='quarantaene'", [id, SCAN_FEHLER_TEXT]);
+  const setzeFehler = (id: string, text = SCAN_FEHLER_TEXT) => pool.query(
+    "update dokument set scan_status='scan_fehler', scan_grund=$2, gescannt_am=now() where id=$1 and scan_status='quarantaene'", [id, text]);
 
   async function pruefe(id: string) {
     const d = (await pool.query("select gebaeude_id, schluessel, sha256 from dokument where id=$1 and scan_status='quarantaene'", [id])).rows[0];
@@ -42,7 +43,7 @@ export function erzeugePruefer(pool: pg.Pool, ablage: Ablage, quarantaene: Ablag
       const teile: Buffer[] = [];
       for await (const t of quarantaene.lese(d.schluessel)) teile.push(t as Buffer);
       daten = Buffer.concat(teile);
-    } catch { await setzeFehler(id); return; }
+    } catch { await setzeFehler(id, DATEI_FEHLT_TEXT); return; }
     let erg;
     try { erg = await scanner.pruefe(daten); }
     catch (e) {

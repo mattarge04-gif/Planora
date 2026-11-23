@@ -55,7 +55,7 @@ export function erzeugeLaeufer(pool: pg.Pool, ablage: Ablage, adapter: LeseAdapt
   const bucheVerbrauch = (id: string, v: LeseVerbrauch, kosten: number) =>
     pool.query("insert into preis_lesung(dokument_id, modell, tokens_ein, tokens_aus, kosten_usd) values ($1,$2,$3,$4,$5)", [id, v.modell, v.tokensEin, v.tokensAus, kosten]);
   async function lies(id: string) {
-    const d = (await pool.query("update dokument set auslesen_status='liest', auslesen_fehler=null where id=$1 and auslesen_status in ('neu','abgebrochen','fehler') returning gebaeude_id, schluessel, dateiname, seiten", [id])).rows[0];
+    const d = (await pool.query("update dokument set auslesen_status='liest', auslesen_fehler=null where id=$1 and scan_status='sauber' and auslesen_status in ('neu','abgebrochen','fehler') returning gebaeude_id, schluessel, dateiname, seiten", [id])).rows[0];
     if (!d) return;
     const fehler = (text: string, v?: LeseVerbrauch, kosten?: number) => v
       ? pool.query("update dokument set auslesen_status='fehler', auslesen_fehler=$2, modell=$3, tokens_ein=$4, tokens_aus=$5, kosten_usd=$6, gelesen_am=now() where id=$1",

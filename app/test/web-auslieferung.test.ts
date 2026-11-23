@@ -5,6 +5,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { frischeDb } from "./hilfe.js";
+import { fakeScanner } from "../src/dokumente/scanner.js";
 import { baueServer } from "../src/server.js";
 import { WEB_CSP } from "../src/web.js";
 
@@ -27,7 +28,7 @@ beforeAll(async () => {
   writeFileSync(join(wurzel, ".env"), "ENV-GEHEIMNIS");
   mkdirSync(join(wurzel, ".git"));
   writeFileSync(join(wurzel, ".git", "config"), "GIT-GEHEIMNIS");
-  const basis = { pool: db.pool, stufe: 2 as const, baseURL: "http://localhost:3995", secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")) };
+  const basis = { pool: db.pool, stufe: 2 as const, baseURL: "http://localhost:3995", secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), virenScanner: fakeScanner() };
   mitWeb = await baueServer({ ...basis, webWurzel: wurzel });
   ohneWeb = await baueServer({ ...basis, webWurzel: join(tmpdir(), "gibt-es-nicht-" + randomBytes(4).toString("hex")) });
 });

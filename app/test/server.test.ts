@@ -5,6 +5,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { frischeDb } from "./hilfe.js";
+import { fakeScanner } from "../src/dokumente/scanner.js";
 import { baueServer } from "../src/server.js";
 import { erzeugeSetupToken, loeseSetupTokenEin } from "../src/auth/setup.js";
 
@@ -22,7 +23,7 @@ async function login(email: string) {
 
 beforeAll(async () => {
   db = await frischeDb();
-  app = await baueServer({ pool: db.pool, stufe: 2, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")) });
+  app = await baueServer({ pool: db.pool, stufe: 2, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), virenScanner: fakeScanner() });
   await loeseSetupTokenEin(db.pool, await erzeugeSetupToken(db.pool), "admin@planora.invalid", "Admin", pw);
   const { benutzerId } = await loeseSetupTokenEin(db.pool, await erzeugeSetupToken(db.pool), "betrieb@planora.invalid", "Betrieb", pw);
   await db.pool.query("update rolle_zuordnung set rolle='betreiber' where benutzer_id=$1", [benutzerId]);

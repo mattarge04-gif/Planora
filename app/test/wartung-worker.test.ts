@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { warte, workerSchleife } from "../src/start/worker.js";
 import { beendeBegrenzt } from "../src/start/konfig.js";
 import { wartungsLage } from "../src/betrieb/wartung.js";
+import { fakeScanner } from "../src/dokumente/scanner.js";
 import { baueServer } from "../src/server.js";
 
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -103,7 +104,7 @@ describe("PP9-5: DB nimmt Verbindungen an und antwortet nie", () => {
   });
   it("Health und Mutation liefern zeitbegrenzt 503 statt offen zu bleiben", async () => {
     const p = await stillerPool();
-    const app = await baueServer({ pool: p, stufe: 1, baseURL: "http://localhost:3995", secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")) });
+    const app = await baueServer({ pool: p, stufe: 1, baseURL: "http://localhost:3995", secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), virenScanner: fakeScanner() });
     try {
       const t0 = Date.now();
       const [h, m] = await Promise.all([
