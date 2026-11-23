@@ -1,5 +1,5 @@
 // Echter clamd (Spec Anlagenakte Abschnitt 6): EICAR abgelehnt, sauberes PDF durch. Eigener Container, Port nur auf 127.0.0.1.
-// Signaturen kommen aus dem Image bzw. freshclam beim Start; clamd-Konfiguration wie im Compose-Paket (StreamMaxLength >= 100 MB).
+// Signaturen kommen aus dem Image bzw. freshclam beim Start; clamd laeuft hier mit der Image-Standardkonfiguration (nicht mit clamd_conf aus compose.yaml; die 100-MB-Grenzen deckt dieser Test nicht ab).
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { DOCKER_TESTS, clamavReferenz, docker, stelleImageBereit } from "./paket-hilfe.js";
 import { clamdScanner } from "../src/dokumente/clamd.js";

@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { starteDienste } from "../src/betrieb/update/umgebung.js";
 import { aktualisiere, atomar, dateiSperre, leseZustand, type Betriebsumgebung, type Zustand } from "../src/betrieb/update/zustand.js";
 import { erzeugeRelease } from "../src/betrieb/release.js";
 
@@ -126,5 +127,25 @@ describe("Update-Zustandsmaschine (§8 / §14.4)", () => {
     const vor = readFileSync(o.datei, "utf8");
     await expect(aktualisiere(o, fake().u)).rejects.toThrow(/Lock vorhanden/);
     expect(readFileSync(o.datei, "utf8")).toBe(vor);
+  });
+});
+
+describe("Dienststart im Update (clamav vor api)", () => {
+  const lauf = (dienste: string[], bekannt: string) => {
+    const aufrufe: string[][] = [];
+    return { aufrufe, start: starteDienste(async (a) => { aufrufe.push(a); return { stdout: bekannt }; }, dienste) };
+  };
+  it("startet clamav mit langem Warten vor der api", async () => {
+    const l = lauf(["api"], "api\r\nclamav\ndb\n"); await l.start;
+    expect(l.aufrufe.map((a) => a.at(-1))).toEqual(["--services", "clamav", "api"]);
+    expect(l.aufrufe[1]).toContain("480");
+  });
+  it("Rueckweg auf Bundle ohne clamav startet ihn nicht", async () => {
+    const l = lauf(["api", "worker"], "api\ndb\n"); await l.start;
+    expect(l.aufrufe.map((a) => a.at(-1))).toEqual(["--services", "worker"]);
+  });
+  it("andere Dienste ohne api: kein clamav-Aufruf", async () => {
+    const l = lauf(["worker"], ""); await l.start;
+    expect(l.aufrufe).toHaveLength(1);
   });
 });

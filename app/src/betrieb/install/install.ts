@@ -155,7 +155,7 @@ export function dockerInstallUmgebung(docker: Ausfuehrer, platzPfad: string): In
     async volumes() { return zeilen((await mussGelingen(docker, ["volume", "ls", "--format", "{{.Name}}"], { timeoutMs: 60_000 })).stdout); },
     async ladeImage(archiv) { await mussGelingen(docker, ["load", "-i", archiv], { timeoutMs: 1_800_000 }); },
     imageId: (referenz) => imageId(docker, referenz),
-    async starte(i) { await mussGelingen(docker, [...composeArgs(i), "up", "-d", "--pull", "never", "--wait", "--wait-timeout", "300"], { timeoutMs: 600_000 }); },
+    async starte(i) { await mussGelingen(docker, [...composeArgs(i), "up", "-d", "--pull", "never", "--wait", "--wait-timeout", "480"], { timeoutMs: 700_000 }); },
     async backupStart(i) {
       await mussGelingen(docker, [...composeArgs(i), "run", "--pull", "never", "--rm", "-T", "backup", "initialisieren"]);
       await reconcileHost(docker, i);

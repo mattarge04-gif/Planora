@@ -176,7 +176,7 @@ services:
       start_period: 20s
 
   # Virenpruefung (Spec Anlagenakte 2026-11-23, E46): clamd per TCP 3310 nur im Netz intern, kein veroeffentlichter Port.
-  # Signaturen per freshclam ueber das Netz signaturen (abschaltbar, PO 6), einmal taeglich [A]. RAM 1-2 GB [A].
+  # Signaturen per freshclam ueber das Netz signaturen (abschaltbar, PO 6), einmal taeglich [A]. RAM 1-3 GB [A].
   # Das Laden der Signaturen dauert ~1 min; api startet erst, wenn clamd auf PING antwortet (Healthcheck unten).
   clamav:
     image: ${PLANORA_IMAGE_CLAMAV:-clamav/clamav:1.5@sha256:45fe5149fbee5a46509c9848ef20d0c354b7b2323c9369f285939a37cf33422a}
@@ -188,7 +188,8 @@ services:
         target: /etc/clamav/clamd.conf
     volumes:
       - clamav-signaturen:/var/lib/clamav
-    mem_limit: 2g
+    # [A] 3 GB: beim Neuladen der Signaturen liegen zeitweise zwei Datenbanken im Speicher; im ersten Docker-Lauf messen.
+    mem_limit: 3g
     security_opt: ["no-new-privileges:true"]
     networks: [intern, signaturen]
     healthcheck:

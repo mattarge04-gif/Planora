@@ -10,6 +10,19 @@ import { backupKonfigurieren } from "../install/backup.js";
 import { restoreHost } from "../restore/host.js";
 import { pruefeComposeBindung } from "./compose.js";
 
+type ComposeAufruf = (args: string[], timeoutMs?: number) => Promise<{ stdout: string }>;
+/**
+ * `up --no-deps` startet clamav nicht von selbst, die api haengt aber per depends_on von ihm ab: clamav zuerst und mit langem
+ * Warten (Signaturen laden). Rueckweg auf ein altes Bundle ohne clamav-Dienst: nur starten, wenn das Compose-Bundle ihn kennt.
+ */
+export async function starteDienste(compose: ComposeAufruf, dienste: string[]): Promise<void> {
+  if (dienste.includes("api")) {
+    const bekannt = (await compose(["config", "--services"], 60_000)).stdout.split(/\r?\n/).map((x) => x.trim());
+    if (bekannt.includes("clamav")) await compose(["up", "-d", "--no-deps", "--pull", "never", "--wait", "--wait-timeout", "480", "clamav"], 700_000);
+  }
+  await compose(["up", "-d", "--no-deps", "--pull", "never", "--wait", "--wait-timeout", "180", ...dienste]);
+}
+
 const text = (s: string) => `'${s.replace(/'/g, "''")}'`;
 export function dockerBetriebsumgebung(docker: Ausfuehrer, instanz: string, altesBundle: string): Betriebsumgebung {
   const pfade = instanzPfade(instanz);
@@ -28,7 +41,7 @@ export function dockerBetriebsumgebung(docker: Ausfuehrer, instanz: string, alte
     schreibeEnv(pfade.envDatei, w); bundle = z.bundle;
     if (w.PLANORA_BACKUP_ENV) backupKonfigurieren(instanz, JSON.parse(readFileSync(join(pfade.etc, "backup/konfiguration.json"), "utf8")).instanzId);
   };
-  const starte = async (dienste: string[]) => { await compose(["up", "-d", "--no-deps", "--pull", "never", "--wait", "--wait-timeout", "180", ...dienste]); };
+  const starte = (dienste: string[]) => starteDienste(compose, dienste);
   const health = async (erwartet: string, wartung: boolean) => {
     const r = await compose(["exec", "-T", "api", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(async r=>{if(!r.ok)process.exit(1);console.log(JSON.stringify(await r.json()))}).catch(()=>process.exit(1))"], 30_000);
     const h = JSON.parse(letzteZeile(r.stdout));

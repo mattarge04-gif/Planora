@@ -19,6 +19,7 @@ it("erzeugt ein ungeprueftes Dossier nur aus signiertem Release und ueberschreib
     expect(spawnSync(process.execPath, args, { windowsHide: true }).status).toBe(0);
     expect(JSON.parse(readFileSync(join(ausgabe, "komponenten.json"), "utf8")).status).toBe("UNGEPRUEFT");
     expect(readFileSync(join(ausgabe, "FREIGABE.md"), "utf8")).toContain("keine Lieferfreigabe");
+    expect(readFileSync(join(ausgabe, "FREIGABE.md"), "utf8")).toMatch(/ClamAV \(GPLv2\) als Pflicht-Image/);
     expect(JSON.parse(readFileSync(join(ausgabe, "komponenten.json"), "utf8")).npmWeb).toBeNull();
     expect(spawnSync(process.execPath, args, { windowsHide: true }).status).not.toBe(0);
     // Mit Web-Lockfile landen dessen Pakete unter npmWeb.
