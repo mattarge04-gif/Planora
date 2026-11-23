@@ -10,6 +10,8 @@
 //        cd app && npx tsx ../werkzeug/preisdokument/messlauf.mjs
 //   3) Trockenlauf ohne Netz, mit vorbereiteten Antworten { "<dateiname>": { roh, tokensEin, tokensAus } }:
 //        cd app && npx tsx ../werkzeug/preisdokument/messlauf.mjs --trocken antworten.json [--kontext datei.json] [--ausgabe pfad.md]
+// Ohne --ausgabe schreibt --trocken nach messlauf-trocken.md, nie nach messlauf.md.
+// Trefferquote ist ein Recall (gefundene Soll-Preise / alle Soll-Preise); Fehlvorschlaege werden nicht abgezogen.
 // Treffer = Ersatzpreis +-1 CHF und gleiche Katalog-ID; Fall o6: kein Preis 1.00 und keine Zuordnung (messlauf-logik.mjs).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -21,7 +23,8 @@ const wurzel = join(hier, "..", "..");
 const arg = (n, s) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : s; };
 const flag = (n) => process.argv.includes(`--${n}`);
 const kontextDatei = arg("kontext", join(hier, "kontext-muster6.json"));
-const ausgabe = arg("ausgabe", join(wurzel, "docs", "abnahme", "2026-11-23-preis-dokument", "messlauf.md"));
+// Trockenlauf schreibt nie ueber das echte Messergebnis (messlauf.md), sondern standardmaessig in messlauf-trocken.md.
+const ausgabe = arg("ausgabe", join(wurzel, "docs", "abnahme", "2026-11-23-preis-dokument", process.argv.includes("--trocken") ? "messlauf-trocken.md" : "messlauf.md"));
 const DATEIEN = ["o1-pumpen.pdf", "o2-ventile-gesamtrabatt.pdf", "o3-mehrseitig.pdf", "o4-waermepumpe.pdf", "o5-scan.pdf", "o6-fremd-und-injection.pdf"];
 const app = (p) => import(pathToFileURL(join(wurzel, "app", "src", p)).href);
 
@@ -88,7 +91,7 @@ for (const f of DATEIEN) {
   console.log(`${f}: ${zeilen.at(-1).fehler ? "Fehler" : "ok"}`);
 }
 const t = baueTabelle(zeilen);
-const text = `# Messlauf Preis aus Dokument\n\nModell: ${modell || "-"}${trocken ? " (Trockenlauf mit vorbereiteten Antworten, kein API-Aufruf)" : ""}. Datum: ${new Date().toISOString().slice(0, 10)}.\nTreffer = Ersatzpreis ±1 CHF und gleiche Katalog-ID. Fall o6: kein Preis 1.00 und keine Zuordnung.\n\n${t.markdown}\n\n**Trefferquote:** ${t.treffer}/${t.soll} (${t.quote} %). **Injection-Fall o6:** ${t.injektionOk ? "bestanden" : "nicht bestanden"}. **Kosten gesamt:** ${t.kostenGesamt.toFixed(4)} USD.\n`;
+const text = `# Messlauf Preis aus Dokument\n\nModell: ${modell || "-"}${trocken ? " (Trockenlauf mit vorbereiteten Antworten, kein API-Aufruf)" : ""}. Datum: ${new Date().toISOString().slice(0, 10)}.\nTreffer = Ersatzpreis ±1 CHF und gleiche Katalog-ID. Fall o6: kein Preis 1.00 und keine Zuordnung.\n\n${t.markdown}\n\n**Trefferquote (Recall: gefundene Soll-Preise / alle Soll-Preise; Fehlvorschläge zählen nicht):** ${t.treffer}/${t.soll} (${t.quote} %). **Injection-Fall o6:** ${t.injektionOk ? "bestanden" : "nicht bestanden"}. **Kosten gesamt:** ${t.kostenGesamt.toFixed(4)} USD.\n`;
 mkdirSync(dirname(ausgabe), { recursive: true });
 writeFileSync(ausgabe, text);
 console.log(text);

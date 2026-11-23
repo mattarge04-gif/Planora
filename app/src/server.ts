@@ -102,6 +102,7 @@ export async function baueServer(o: ServerOptionen) {
   const leseAdapter = o.leseAdapter !== undefined ? o.leseAdapter
     : schluessel ? openaiAdapter({ apiKey: schluessel, modell: process.env.PLANORA_KI_MODELL_PREIS || "gpt-6.2-sol", basisUrl: process.env.PLANORA_KI_BASIS_URL || undefined }) : null;
   // Nicht warten: bei nicht erreichbarer oder haengender DB darf der Serverstart (Wartungsmodus) nicht blockieren.
+  // Markiert auch 'neu' (Warteschlange lebt nur im Speicher), damit "Erneut lesen" angeboten wird.
   void markiereAbgebrochen(o.pool).catch(() => {});
   const laeufer = erzeugeLaeufer(o.pool, app.ablage, leseAdapter, { limitUsd: Number(process.env.PLANORA_KI_BUDGET_USD_MONAT || 20) });
   // Beim Schliessen laufende Lesungen abwarten (max. 5 s), damit sie nicht auf einen geschlossenen Pool treffen.

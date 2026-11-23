@@ -31,8 +31,9 @@ describe("Zeichensatz", () => {
     const a = dateiAblage(mkdtempSync(join(tmpdir(), "ablage-")));
     const d = await speichereUndReferenziere(db.pool, a, Readable.from(Buffer.from(`%PDF-1.7\n${randomBytes(8).toString("hex")}\n%%EOF`)), `dokument:${randomUUID()}`);
     const { id } = await legeDokumentAn(db.pool, { gebaeudeId: G, liegenschaftId: L, dateiname: "o.pdf", schluessel: d.schluessel, sha256: d.sha256, groesse: d.groesse, seiten: 1, von: randomUUID(), status: "neu" });
+    // Modulschalter hier fest an (istAktiv); der Test prueft nur die Kodierung
     const l = erzeugeLaeufer(db.pool, a, fakeAdapter(() => ({ vorschlaege: [{ position: TEXT, seite: 1, zitat: TEXT, materialNetto: null, rabattText: TEXT,
-      montageAnteil: null, ersatzpreis: 10, rechenweg: TEXT, katalogId: null, bauteilIds: [], sicherheit: "tief" }] })));
+      montageAnteil: null, ersatzpreis: 10, rechenweg: TEXT, katalogId: null, bauteilIds: [], sicherheit: "tief" }] })), { istAktiv: async () => true });
     l.starte(id); await l.warteLeer();
     expect((await db.pool.query("select auslesen_status s from dokument where id=$1", [id])).rows[0].s).toBe("fertig");
     const r = (await db.pool.query("select position, zitat, rabatt_text, rechenweg from preis_vorschlag where dokument_id=$1", [id])).rows[0];

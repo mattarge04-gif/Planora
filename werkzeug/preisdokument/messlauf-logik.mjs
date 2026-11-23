@@ -19,6 +19,8 @@ export function bewerteDokument(dateiname, soll, vorschlaege) {
   return { art: "preis", treffer, soll: soll.length, ok: treffer === soll.length, hinweis: "" };
 }
 
+// Preise [A] fest verdrahtet: 2.00 USD je 1 Mio. Eingabe-, 10.00 USD je 1 Mio. Ausgabe-Tokens (wie Laeufer-Standard);
+// vor dem echten Messlauf mit der aktuellen Preisliste des Modells abgleichen.
 export const kostenUsd = (ein, aus) => Math.round(((ein * 2.0 + aus * 10.0) / 1_000_000) * 10_000) / 10_000;
 
 /** zeilen: [{ dokument, bewertung, zeitMs, tokensEin, tokensAus, fehler? }] */

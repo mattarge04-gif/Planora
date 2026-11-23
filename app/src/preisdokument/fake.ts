@@ -1,4 +1,5 @@
 import type { LeseAdapter, LeseErgebnis } from "./adapter.js";
+/** Antwort als Error wird geworfen; ein LeseFehler mit verbrauch simuliert eine verrechnete, aber gescheiterte Antwort. */
 export function fakeAdapter(antwort: (dateiname: string) => unknown | Error, verzoegerungMs = 0): LeseAdapter & { aufrufe: string[] } {
   const aufrufe: string[] = [];
   return { aufrufe, async lies(_pdf, dateiname) {

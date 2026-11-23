@@ -24,6 +24,7 @@ beforeAll(async () => {
   const eg = await q("insert into geschoss(liegenschaft_id,gebaeude_id,code,reihenfolge,hoehe_m) values ($1,$2,'EG',0,3) returning id", [L, G]);
   const e = await q("insert into einheit(liegenschaft_id,geschoss_id,bezeichnung,art,reihenfolge) values ($1,$2,'Buero A','buero',0) returning id", [L, eg]);
   await q("insert into bauteil(liegenschaft_id,gebaeude_id,katalog_id,einheit_id,menge,status,reihenfolge) values ($1,$2,'heizung.heizkoerper',$3,4,'bestaetigt',0) returning id", [L, G, e]);
+  await db.pool.query("insert into modul_schalter(modul_id, aktiv) values ('preisdokument', true) on conflict (modul_id) do update set aktiv=true");
   B2 = await q("insert into bauteil(liegenschaft_id,gebaeude_id,katalog_id,geschoss_id,menge,status,reihenfolge) values ($1,$2,'heizung.umwaelzpumpe',$3,1,'bestaetigt',1) returning id", [L, G, eg]);
 });
 afterAll(async () => { await db.ende(); });
@@ -98,8 +99,7 @@ describe("Laeufer", () => {
   it("ohne Adapter -> aus, kein_schluessel", async () => {
     const a = ablage(), l = erzeugeLaeufer(db.pool, a, null);
     const id = await neuesDokument(a);
-    l.starte(id);
-    await new Promise((r) => setTimeout(r, 100));
+    l.starte(id); await l.warteLeer();
     expect((await zeile(id)).auslesen_status).toBe("aus");
     expect(l.zustand().auslesen).toBe("kein_schluessel");
   });
@@ -113,10 +113,63 @@ describe("Laeufer", () => {
     const r = (await db.pool.query("select reihenfolge from preis_vorschlag where dokument_id=$1 order by reihenfolge", [id])).rows.map((x) => x.reihenfolge);
     expect(r).toEqual([0, 1]);
   });
-  it("markiereAbgebrochen", async () => {
-    const a = ablage(); const id = await neuesDokument(a, "liest");
-    expect(await markiereAbgebrochen(db.pool)).toBe(1);
+  it("markiereAbgebrochen: 'liest' und wartende 'neu' -> abgebrochen, danach erneut lesbar", async () => {
+    await markiereAbgebrochen(db.pool); // Reste der Vortests
+    const a = ablage(); const id = await neuesDokument(a, "liest"); const wartend = await neuesDokument(a, "neu");
+    expect(await markiereAbgebrochen(db.pool)).toBe(2);
     expect((await zeile(id)).auslesen_status).toBe("abgebrochen");
+    expect((await zeile(wartend)).auslesen_status).toBe("abgebrochen");
+    const l = erzeugeLaeufer(db.pool, a, fakeAdapter(() => gueltig()));
+    l.starte(wartend); await l.warteLeer();
+    expect((await zeile(wartend)).auslesen_status).toBe("fertig");
+  });
+  it("Budget: verrechnete, aber gescheiterte Antwort zaehlt (LeseFehler mit Verbrauch)", async () => {
+    await db.pool.query("delete from preis_lesung");
+    const verbrauch = { modell: "fake", tokensEin: 30000, tokensAus: 4000 };
+    const a = ablage(), l = erzeugeLaeufer(db.pool, a, fakeAdapter(() => new LeseFehler("abgeschnitten", "x", verbrauch)));
+    const id = await neuesDokument(a);
+    l.starte(id); await l.warteLeer();
+    expect(await zeile(id)).toMatchObject({ auslesen_status: "fehler", auslesen_fehler: "Antwort war unvollständig.", modell: "fake", tokens_aus: 4000 });
+    expect(await l.zustand().verbrauchtUsd()).toBeCloseTo(0.1, 4);
+    // ohne Verbrauch (z. B. Netzfehler vor der Antwort) keine Ledger-Zeile
+    const l2 = erzeugeLaeufer(db.pool, a, fakeAdapter(() => new LeseFehler("api", "x")));
+    const id2 = await neuesDokument(a);
+    l2.starte(id2); await l2.warteLeer();
+    expect((await zeile(id2)).auslesen_status).toBe("fehler");
+    expect(await l.zustand().verbrauchtUsd()).toBeCloseTo(0.1, 4);
+  });
+  it("Budget: scheitert die Transaktion nach erfolgreicher Antwort, zaehlt der Verbrauch trotzdem", async () => {
+    await db.pool.query("delete from preis_lesung");
+    await db.pool.query(`create or replace function test_vorschlag_sperre() returns trigger language plpgsql as $$ begin raise exception 'test'; end $$`);
+    await db.pool.query("create trigger test_vorschlag_sperre before insert on preis_vorschlag for each row execute function test_vorschlag_sperre()");
+    try {
+      const a = ablage(), l = erzeugeLaeufer(db.pool, a, fakeAdapter(() => gueltig()));
+      const id = await neuesDokument(a);
+      l.starte(id); await l.warteLeer();
+      expect(await zeile(id)).toMatchObject({ auslesen_status: "fehler", auslesen_fehler: "Interner Fehler beim Lesen." });
+      expect(await anzahl(id)).toBe(0);
+      expect(await l.zustand().verbrauchtUsd()).toBeCloseTo(0.1, 4);
+    } finally {
+      await db.pool.query("drop trigger test_vorschlag_sperre on preis_vorschlag");
+      await db.pool.query("drop function test_vorschlag_sperre()");
+    }
+  });
+  it("Modul nach dem Einreihen abgeschaltet -> kein Adapter-Aufruf, Status aus", async () => {
+    const a = ablage(), f = fakeAdapter(() => gueltig()), l = erzeugeLaeufer(db.pool, a, f, { istAktiv: async () => false });
+    const id = await neuesDokument(a);
+    l.starte(id); await l.warteLeer();
+    expect(f.aufrufe).toHaveLength(0);
+    expect((await zeile(id)).auslesen_status).toBe("aus");
+  });
+  it("Modulschalter aus der DB wird gelesen", async () => {
+    await db.pool.query("update modul_schalter set aktiv=false where modul_id='preisdokument'");
+    try {
+      const a = ablage(), f = fakeAdapter(() => gueltig()), l = erzeugeLaeufer(db.pool, a, f);
+      const id = await neuesDokument(a);
+      l.starte(id); await l.warteLeer();
+      expect(f.aufrufe).toHaveLength(0);
+      expect((await zeile(id)).auslesen_status).toBe("aus");
+    } finally { await db.pool.query("update modul_schalter set aktiv=true where modul_id='preisdokument'"); }
   });
   it("Budget: Neu lesen und Loeschen entlasten das Monatsbudget nicht", async () => {
     await db.pool.query("update dokument set gelesen_am = null"); await db.pool.query("delete from preis_lesung");

@@ -72,6 +72,26 @@ describe("Preisdokument-API", () => {
     expect(g.statusCode).toBe(400);
     expect(g.json()).toEqual({ fehler: "kein_pdf" });
   });
+  it("Body ohne application/pdf (JSON, leer) -> 400 kein_pdf statt 500", async () => {
+    const j = await anfrage("POST", `/api/preisdokument/gebaeude/${G}/dokumente`, kBearb, { a: 1 });
+    expect([j.statusCode, j.json()]).toEqual([400, { fehler: "kein_pdf" }]);
+    const leer = await app.inject({ method: "POST", url: `/api/preisdokument/gebaeude/${G}/dokumente`, headers: { cookie: kBearb, origin: ORIGIN, "x-planora-request": "1" } });
+    expect([leer.statusCode, leer.json()]).toEqual([400, { fehler: "kein_pdf" }]);
+  });
+  it("Gebaeude zwischen Zugriffspruefung und Einfuegen geloescht -> 404", async () => {
+    const orig = db.pool.query.bind(db.pool);
+    const spion = vi.spyOn(db.pool, "query").mockImplementation(((sql: unknown, p?: unknown) =>
+      typeof sql === "string" && sql.startsWith("select liegenschaft_id from gebaeude") ? Promise.resolve({ rows: [] }) : orig(sql as string, p as unknown[])) as typeof db.pool.query);
+    try {
+      expect((await hochladen(kBearb, G, pdf(1, "% weg"))).statusCode).toBe(404);
+    } finally { spion.mockRestore(); }
+  });
+  it("Dateiname ohne Steuer- und Bidi-Zeichen", async () => {
+    const zeichen = [0x01, 0x1f, 0x7f, 0x200e, 0x200f, 0x202a, 0x202e, 0x2066, 0x2069].map((c) => String.fromCharCode(c)).join("");
+    const r = await hochladen(kBearb, G, pdf(1, "% bidi"), `Rechnung${zeichen}fdp.pdf`);
+    expect(r.statusCode).toBe(201);
+    expect(r.json().dateiname).toBe("Rechnungfdp.pdf");
+  });
   it("Leser liest, darf nicht hochladen; Fremd 404", async () => {
     const r = await anfrage("GET", liste(), kLeser);
     expect(r.statusCode).toBe(200);
@@ -88,6 +108,7 @@ describe("Preisdokument-API", () => {
     expect(r.statusCode).toBe(200);
     expect(r.headers["content-type"]).toContain("application/pdf");
     expect(String(r.headers["content-disposition"])).toMatch(/^inline/);
+    expect(r.headers["x-content-type-options"]).toBe("nosniff");
     expect(Buffer.compare(r.rawPayload, daten)).toBe(0);
     expect((await anfrage("GET", `/api/preisdokument/dokumente/${id}/datei`, kFremd)).statusCode).toBe(404);
   });
@@ -115,7 +136,8 @@ describe("Preisdokument-API mit Leseadapter", () => {
   const bauApp = (leseAdapter: any) => baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: SECRET, ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), leseAdapter });
   const gib = (a: FastifyInstance, method: "GET" | "POST", url: string, cookie: string) => a.inject({ method, url, headers: { cookie, origin: ORIGIN, "x-planora-request": "1" } });
   const warteStatus = async (id: string, status: string) => {
-    for (let i = 0; i < 40; i++) {
+    // grosszuegige Grenze (30 s), damit Last auf Windows/eingebettetem PG nicht zu Fehlalarmen fuehrt
+    for (let i = 0; i < 600; i++) {
       const d = (await gib(app2, "GET", liste(), kBearb)).json().dokumente.find((x: any) => x.id === id);
       if (d?.status === status) return d;
       await new Promise((r) => setTimeout(r, 50));

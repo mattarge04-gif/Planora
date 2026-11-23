@@ -7,8 +7,10 @@ export interface RohVorschlag {
 // roh wird erst von pruefeVorschlaege zu RohVorschlag[]
 export interface LeseErgebnis { roh: unknown; modell: string; tokensEin: number; tokensAus: number }
 export interface LeseAdapter { lies(pdf: Buffer, dateiname: string, kontext: LeseKontext): Promise<LeseErgebnis> }
+/** Verbrauch einer Antwort; bei Fehlern nach erhaltener (verrechneter) Antwort am LeseFehler mitgegeben. */
+export interface LeseVerbrauch { modell: string; tokensEin: number; tokensAus: number }
 export class LeseFehler extends Error {
-  constructor(public grund: "ablehnung" | "schema" | "abgeschnitten" | "api", meldung: string) { super(meldung); }
+  constructor(public grund: "ablehnung" | "schema" | "abgeschnitten" | "api", meldung: string, public verbrauch?: LeseVerbrauch) { super(meldung); }
 }
 export function kostenUsd(tokensEin: number, tokensAus: number, preisEin = 2.0, preisAus = 10.0): number {
   return Math.round(((tokensEin * preisEin + tokensAus * preisAus) / 1_000_000) * 10_000) / 10_000;

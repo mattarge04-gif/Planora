@@ -9,7 +9,7 @@
 // traegt dafuer in pg_hba.conf der Wegwerf-Instanz eine trust-Zeile fuer 127.0.0.1 ein und laedt die Konfiguration neu.
 // (3) Ohne --ohne-uebernahme wird der Pumpen-Vorschlag per API uebernommen (Anlagenkarte und Plan zeigen dann die Quelle).
 // --liest: o5-scan bleibt im Zustand "liest" (Fortschritt sichtbar; die Seite pollt dann dauernd). Sonst "abgebrochen".
-// Instanz-DB ist WIN1252 (Windows-Entwicklungsstart): nur Zeichen aus diesem Satz verwenden (z. B. "–" statt Minus "−").
+// Instanz-DB ist UTF8 (Entwicklungsstart initdb --encoding=UTF8, wie Produktion); Zeichen wie Minus "−" sind erlaubt.
 // Mehrfach ausfuehrbar: bestehende Vorschlaege der Dokumente werden ersetzt.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";

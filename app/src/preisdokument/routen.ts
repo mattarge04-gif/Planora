@@ -13,6 +13,11 @@ import { pruefe } from "../rechte/rechte.js";
 
 import type { Laeufer } from "./laeufer.js";
 
+/** Entfernt Steuer- und Bidi-Zeichen (Anzeige-Taeuschung, z. B. U+202E) und begrenzt auf 255 Zeichen. */
+export function bereinigeDateiname(name: string): string {
+  return name.replace(/[\u0000-\u001F\u007F\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, "").trim().slice(0, 255);
+}
+
 export function registrierePreisdokumentRouten(app: FastifyInstance, pool: pg.Pool, laeufer?: Laeufer) {
   const mitClient = async <T>(f: (c: pg.PoolClient) => Promise<T>) => { const c = await pool.connect(); try { return await f(c); } finally { c.release(); } };
   const inTx = <T>(art: string, f: (c: pg.PoolClient) => Promise<T>) => mitClient(async (c) => {
@@ -51,11 +56,14 @@ export function registrierePreisdokumentRouten(app: FastifyInstance, pool: pg.Po
       const z = await mitClient((c) => zugriff(c, k.benutzerId, req.params.id, true));
       if (z !== 200) return verweigert(reply, z);
       const g = (await pool.query("select liegenschaft_id from gebaeude where id=$1", [req.params.id])).rows[0];
-      const daten = req.body as Buffer;
+      if (!g) return verweigert(reply, 404); // zwischen Zugriffspruefung und Einfuegen geloescht
+      // Anderer Content-Type (JSON, leer): kein Buffer -> wie Nicht-PDF behandeln
+      const daten = req.body;
+      if (!Buffer.isBuffer(daten)) return reply.code(400).send({ fehler: "kein_pdf" });
       const p = pruefePdf(daten);
       if (!p.ok) return reply.code(400).send({ fehler: p.grund });
       let name = "Dokument.pdf";
-      try { name = decodeURIComponent(String(req.headers["x-dateiname"] ?? "")).slice(0, 255) || name; } catch { /* Standardname */ }
+      try { name = bereinigeDateiname(decodeURIComponent(String(req.headers["x-dateiname"] ?? ""))) || name; } catch { /* Standardname */ }
       const sha = createHash("sha256").update(daten).digest("hex");
       const zeileVon = async (id: string) => (await mitClient((c) => ladeDokumente(c, req.params.id))).find((d) => d.id === id);
       const vorhanden = (await pool.query("select id from dokument where gebaeude_id=$1 and sha256=$2", [req.params.id, sha])).rows[0];
@@ -145,6 +153,7 @@ export function registrierePreisdokumentRouten(app: FastifyInstance, pool: pg.Po
       const r = (await pool.query("select dateiname, schluessel from dokument where id=$1", [req.params.id])).rows[0];
       if (!r) return verweigert(reply, 404);
       return reply.type("application/pdf")
+        .header("x-content-type-options", "nosniff")
         .header("content-disposition", `inline; filename*=UTF-8''${encodeURIComponent(r.dateiname)}`)
         .send(app.ablage.lese(r.schluessel));
     });

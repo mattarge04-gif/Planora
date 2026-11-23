@@ -1,6 +1,6 @@
 import type pg from "pg";
 import type { Ablage } from "../ablage/ablage.js";
-import { LeseFehler, kostenUsd, type LeseAdapter, type LeseKontext } from "./adapter.js";
+import { LeseFehler, kostenUsd, type LeseAdapter, type LeseKontext, type LeseVerbrauch } from "./adapter.js";
 import { pruefeVorschlaege } from "./pruefung.js";
 import { KATALOG_V2 } from "../welt/katalog.v2.js";
 
@@ -29,35 +29,61 @@ export async function ladeKontext(c: Pick<pg.ClientBase, "query">, gebaeudeId: s
   return { bauteile, katalog: KATALOG_V2.eintraege.filter((e) => ids.has(e.id)).map((e) => ({ id: e.id, name: e.name })) };
 }
 
-/** Beim Serverstart: unterbrochene Lesevorgaenge als abgebrochen markieren. */
+/**
+ * Beim Serverstart: unterbrochene ('liest') und wartende ('neu') Lesevorgaenge als abgebrochen markieren.
+ * Die Warteschlange lebt nur im Speicher; 'neu' wuerde sonst ewig als laufend gelten. Bewusst kein
+ * automatisches Neu-Einreihen: kein unbemerkter KI-Aufruf nach einem Update, das FM liest per "Erneut lesen".
+ */
 export async function markiereAbgebrochen(pool: pg.Pool): Promise<number> {
-  return (await pool.query("update dokument set auslesen_status='abgebrochen' where auslesen_status='liest'")).rowCount ?? 0;
+  return (await pool.query("update dokument set auslesen_status='abgebrochen' where auslesen_status in ('neu','liest')")).rowCount ?? 0;
+}
+
+/** Modulschalter "preisdokument" direkt aus der DB (Lieferstufe prueft bereits der Routen-Guard beim Einreihen). */
+export async function preisdokumentAktiv(pool: pg.Pool): Promise<boolean> {
+  return (await pool.query("select aktiv from modul_schalter where modul_id='preisdokument'")).rows[0]?.aktiv === true;
 }
 
 export function erzeugeLaeufer(pool: pg.Pool, ablage: Ablage, adapter: LeseAdapter | null,
-  o: { gleichzeitig?: number; limitUsd?: number; preise?: { ein: number; aus: number } } = {}): Laeufer {
+  o: { gleichzeitig?: number; limitUsd?: number; preise?: { ein: number; aus: number }; istAktiv?: () => Promise<boolean> } = {}): Laeufer {
   const max = o.gleichzeitig ?? 2, limitUsd = o.limitUsd ?? 20, preise = o.preise ?? { ein: 2.0, aus: 10.0 };
+  const istAktiv = o.istAktiv ?? (() => preisdokumentAktiv(pool));
   const warteschlange: string[] = []; let laufend = 0; let leer: (() => void)[] = [];
   const verbrauchtUsd = async () => Number((await pool.query(
     "select coalesce(sum(kosten_usd),0) s from preis_lesung where am >= date_trunc('month', now())")).rows[0].s);
+  // Ledger-Zeile sofort nach der Antwort, eigene Anweisung vor der Vorschlags-Transaktion:
+  // so zaehlen auch verrechnete Antworten, die danach scheitern, zum Monatsbudget.
+  const bucheVerbrauch = (id: string, v: LeseVerbrauch, kosten: number) =>
+    pool.query("insert into preis_lesung(dokument_id, modell, tokens_ein, tokens_aus, kosten_usd) values ($1,$2,$3,$4,$5)", [id, v.modell, v.tokensEin, v.tokensAus, kosten]);
   async function lies(id: string) {
     const d = (await pool.query("update dokument set auslesen_status='liest', auslesen_fehler=null where id=$1 and auslesen_status in ('neu','abgebrochen','fehler') returning gebaeude_id, schluessel, dateiname, seiten", [id])).rows[0];
     if (!d) return;
-    const fehler = (text: string) => pool.query("update dokument set auslesen_status='fehler', auslesen_fehler=$2 where id=$1", [id, text]);
+    const fehler = (text: string, v?: LeseVerbrauch, kosten?: number) => v
+      ? pool.query("update dokument set auslesen_status='fehler', auslesen_fehler=$2, modell=$3, tokens_ein=$4, tokens_aus=$5, kosten_usd=$6, gelesen_am=now() where id=$1",
+        [id, text, v.modell, v.tokensEin, v.tokensAus, kosten])
+      : pool.query("update dokument set auslesen_status='fehler', auslesen_fehler=$2 where id=$1", [id, text]);
     try {
+      // ADR 0030 "KI aus -> 0 Anfragen": in der Warteschlange liegende Lesungen nach dem Abschalten nicht mehr senden.
+      if (!(await istAktiv())) { await pool.query("update dokument set auslesen_status='aus' where id=$1", [id]); return; }
       if ((await verbrauchtUsd()) >= limitUsd) { await fehler(TEXT.budget); return; }
       const chunks: Buffer[] = []; for await (const ch of ablage.lese(d.schluessel)) chunks.push(ch as Buffer);
       const kontext = await ladeKontext(pool, d.gebaeude_id);
-      const e = await adapter!.lies(Buffer.concat(chunks), d.dateiname, kontext);
+      let e;
+      try { e = await adapter!.lies(Buffer.concat(chunks), d.dateiname, kontext); }
+      catch (x) {
+        if (x instanceof LeseFehler && x.verbrauch) {
+          const kosten = kostenUsd(x.verbrauch.tokensEin, x.verbrauch.tokensAus, preise.ein, preise.aus);
+          await bucheVerbrauch(id, x.verbrauch, kosten);
+          console.error(`preisdokument: Lesefehler (${x.grund}): ${x.message}`); // Meldung bereits bereinigt
+          await fehler(TEXT[x.grund], x.verbrauch, kosten);
+          return;
+        }
+        throw x;
+      }
       const kosten = kostenUsd(e.tokensEin, e.tokensAus, preise.ein, preise.aus);
+      await bucheVerbrauch(id, e, kosten);
       let vorschlaege;
       try { vorschlaege = pruefeVorschlaege(e.roh, kontext, d.seiten); }
-      catch {
-        await pool.query("update dokument set auslesen_status='fehler', auslesen_fehler=$2, modell=$3, tokens_ein=$4, tokens_aus=$5, kosten_usd=$6, gelesen_am=now() where id=$1",
-          [id, TEXT.schema, e.modell, e.tokensEin, e.tokensAus, kosten]);
-        await pool.query("insert into preis_lesung(dokument_id, modell, tokens_ein, tokens_aus, kosten_usd) values ($1,$2,$3,$4,$5)", [id, e.modell, e.tokensEin, e.tokensAus, kosten]);
-        return;
-      }
+      catch { await fehler(TEXT.schema, e, kosten); return; }
       const c = await pool.connect();
       try {
         await c.query("begin");
@@ -69,7 +95,6 @@ export function erzeugeLaeufer(pool: pg.Pool, ablage: Ablage, adapter: LeseAdapt
           [id, start + i, v.position, v.seite, v.zitat, v.materialNetto, v.rabattText, v.montageAnteil, v.ersatzpreis, v.rechenweg, v.katalogId, v.bauteilIds, v.sicherheit]);
         await c.query("update dokument set auslesen_status='fertig', modell=$2, tokens_ein=$3, tokens_aus=$4, kosten_usd=$5, gelesen_am=now() where id=$1",
           [id, e.modell, e.tokensEin, e.tokensAus, kosten]);
-        await c.query("insert into preis_lesung(dokument_id, modell, tokens_ein, tokens_aus, kosten_usd) values ($1,$2,$3,$4,$5)", [id, e.modell, e.tokensEin, e.tokensAus, kosten]);
         await c.query("commit");
         c.release();
       } catch (x) {
@@ -81,15 +106,17 @@ export function erzeugeLaeufer(pool: pg.Pool, ablage: Ablage, adapter: LeseAdapt
       await fehler(x instanceof LeseFehler ? TEXT[x.grund] : TEXT.intern).catch(() => {});
     }
   }
+  // Jede Hintergrundarbeit zaehlt als laufend, damit warteLeer() auch sie abwartet (deterministische Tests, sauberes Schliessen).
+  function verfolge(p: Promise<unknown>) {
+    laufend++;
+    void p.catch(() => {}).finally(() => { laufend--; weiter(); if (!laufend && !warteschlange.length) { leer.forEach((f) => f()); leer = []; } });
+  }
   function weiter() {
-    while (laufend < max && warteschlange.length) {
-      const id = warteschlange.shift()!; laufend++;
-      void lies(id).catch(() => {}).finally(() => { laufend--; weiter(); if (!laufend && !warteschlange.length) { leer.forEach((f) => f()); leer = []; } });
-    }
+    while (laufend < max && warteschlange.length) verfolge(lies(warteschlange.shift()!));
   }
   return {
     starte(id: string) {
-      if (!adapter) { void pool.query("update dokument set auslesen_status='aus' where id=$1", [id]).catch(() => {}); return; }
+      if (!adapter) { verfolge(pool.query("update dokument set auslesen_status='aus' where id=$1", [id])); return; }
       warteschlange.push(id); weiter();
     },
     warteLeer: () => (!laufend && !warteschlange.length ? Promise.resolve() : new Promise<void>((r) => leer.push(r))),
