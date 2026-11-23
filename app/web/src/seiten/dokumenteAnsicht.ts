@@ -65,6 +65,15 @@ export function alleSicherenText(vorher: number, nachher: number): string {
   return `${teil}, ${nachher} übersprungen (von Hand erfasster Preis). Einzeln prüfen und übernehmen.`;
 }
 
+/**
+ * Reihenfolge paralleler Anfragen: jede Anfrage zieht eine Nummer; nur die zuletzt begonnene darf ihr Ergebnis setzen.
+ * Verhindert, dass eine aeltere Poll-Antwort die Antwort einer Aktion (mit neuerem stand) ueberschreibt.
+ */
+export function antwortFolge() {
+  let zuletzt = 0;
+  return { neu: () => ++zuletzt, aktuell: (nr: number) => nr === zuletzt };
+}
+
 /** "22.11.2026" in Schweizer Zeit. */
 export function datum(iso: string): string {
   const d = new Date(iso);

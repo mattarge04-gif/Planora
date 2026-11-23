@@ -446,12 +446,29 @@
 .ui-karte .tw-geschoss-chip .tw-geschoss-treffer { display: inline-block; margin-left: 5px; }
 .tw-tabelle-filter { display: inline-flex; align-items: center; gap: 10px; }
 
-/* Preis aus Dokument: Fundstelle in der Anlagenkarte, Einstieg in der Legende */
-.tw-ld-quellen .tw-ld-fundstelle { grid-column: 1 / -1; min-width: 0; overflow: hidden; margin-top: -2px; }
-.tw-ld-fundstelle a { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; color: var(--tw-link); font-weight: 500; text-decoration: none; border-radius: 4px; vertical-align: bottom; }
-.tw-ld-fundstelle a > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.tw-ld-fundstelle a svg { flex: none; }
-.tw-ld-fundstelle a:hover { color: var(--tw-link-hover); text-decoration: underline; text-underline-offset: 2px; }
-.tw-ld-fundstelle a:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-offset: 2px; }
-.ui-karte .tw-ld-dokument { display: inline-flex; align-items: center; gap: 5px; }
-.ui-karte .tw-ampel-dokumente { grid-column: 1 / -1; margin-top: 2px; }
+/* Preis aus Dokument: Herkunft neben dem Preis, Wege zum fehlenden Preis, Einstieg in der Legende */
+.tw-ld-quellen .tw-ld-quelle { font-variant-numeric: normal; }
+.tw-ld-quellen .tw-ld-mit-fundstelle { display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; min-width: 0; }
+.tw-ld-fundstelle { display: inline-flex; align-items: center; gap: 2px; min-width: 0; color: var(--tw-link); font-weight: 500; font-variant-numeric: normal; text-decoration: none; border-radius: 4px; }
+.tw-ld-fundstelle > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.tw-ld-fundstelle svg { flex: none; }
+.tw-ld-fundstelle:hover { color: var(--tw-link-hover); text-decoration: underline; text-underline-offset: 2px; }
+.tw-ld-fundstelle:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-offset: 2px; }
+.tw-ld-preis-wege { margin: 0; display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-size: 12px; color: var(--tw-sekundaer-kachel); }
+.ui-karte .tw-ld-textlink {
+  display: inline-flex; align-items: center; gap: 2px; padding: 2px 0; border: 0; background: none; font: inherit; font-size: 12px; font-weight: 500;
+  color: var(--tw-link); cursor: pointer; border-radius: 4px;
+}
+.ui-karte .tw-ld-textlink:hover { color: var(--tw-link-hover); text-decoration: underline; text-underline-offset: 2px; }
+.ui-karte .tw-ld-textlink:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-offset: 2px; }
+.tw-ampel-ohne-zeile { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; min-width: 0; }
+.tw-ampel-ohne-zeile .tw-ampel-trenner { color: var(--tw-sekundaer); font-size: 12px; }
+.ui-karte .tw-ampel-dokumente { margin-top: 0; }
+.tw-ld-mit-fundstelle .tw-ld-preis { flex: none; white-space: nowrap; }
+.tw-ld-quellen .tw-ld-mit-fundstelle { gap: 6px; }
+.tw-ld-quellen > div { display: contents; }
+.tw-ld-quellen > div.tw-ld-breit { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.tw-ld-breit dt { flex: none; }
+.tw-ld-breit dd { flex: 1 1 auto; }
+.tw-ld-fundstelle { white-space: nowrap; }
+.tw-ampel-erklaerung.tw-ampel-erklaerung-unten { margin-top: 10px; }

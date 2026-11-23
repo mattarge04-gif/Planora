@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alleSicherenText, datum, fuerBauteil, kandidaten, sortiert, startAuswahl, teileDateien, umfang } from "./dokumenteAnsicht";
+import { alleSicherenText, antwortFolge, datum, fuerBauteil, kandidaten, sortiert, startAuswahl, teileDateien, umfang } from "./dokumenteAnsicht";
 import type { LdStand } from "../lebensdauer/typen";
 import type { DokumentZeile, Uebersicht, VorschlagZeile } from "../preisdokument/typen";
 
@@ -82,5 +82,26 @@ describe("kandidaten am gleichen Ort", () => {
   it("nummeriert Bauteile mit gleichem Ort", () => {
     const s = { ...stand, bauteile: [bt("a", "heizung.ventil_3weg", "UG1 · Zentrale"), bt("b", "heizung.ventil_3weg", "UG1 · Zentrale")] } as LdStand;
     expect(kandidaten(s, "heizung.ventil_3weg", String).map((k) => k.ort)).toEqual(["UG1 · Zentrale, Nr. 1", "UG1 · Zentrale, Nr. 2"]);
+  });
+});
+
+describe("antwortFolge", () => {
+  it("verwirft eine aeltere Poll-Antwort, die nach der Aktion eintrifft", async () => {
+    const f = antwortFolge();
+    let u = "start";
+    const setze = (nr: number, wert: string) => { if (f.aktuell(nr)) u = wert; };
+    let pollFertig!: (s: string) => void;
+    const poll = (() => { const nr = f.neu(); return new Promise<string>((ok) => { pollFertig = ok; }).then((x) => setze(nr, x)); })();
+    const aktion = (async () => { const nr = f.neu(); setze(nr, "nach Aktion (stand 2)"); })();
+    await aktion;
+    pollFertig("alter Poll (stand 1)");
+    await poll;
+    expect(u).toBe("nach Aktion (stand 2)");
+  });
+  it("laesst die neueste Antwort zu", () => {
+    const f = antwortFolge();
+    const a = f.neu(), b = f.neu();
+    expect(f.aktuell(a)).toBe(false);
+    expect(f.aktuell(b)).toBe(true);
   });
 });

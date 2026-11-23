@@ -18,7 +18,7 @@
 }
 
 /* Ablage */
-.dk-liste { position: sticky; top: 74px; max-height: calc(100vh - 92px); overflow-y: auto; padding: 16px 16px 14px; display: grid; gap: 12px; box-sizing: border-box;
+.dk-liste { position: sticky; top: 70px; max-height: calc(100vh - 88px); overflow-y: auto; padding: 16px 16px 14px; display: grid; gap: 12px; box-sizing: border-box;
   transition: box-shadow var(--ep-hover-ms) var(--ep-kurve); }
 .dk-liste-kopf { margin-bottom: 0; padding: 2px 4px 0; }
 .dk-ziehen { box-shadow: 0 0 0 2px var(--ep-akzent), var(--ep-schatten); }
@@ -199,3 +199,9 @@
   .dk-inhalt { animation-name: ep-blende; }
   .dk-status-liest i::after { animation: none; width: 100%; opacity: 0.5; }
 }
+
+/* Fix r1: Hinweis «schon abgelegt» neutral, Leerzustand im Filter mit nächstem Schritt */
+.dk-ablage-fehler .dk-ablage-hinweis { color: var(--ep-sekundaer-kachel); }
+.dk-ablage-hinweis svg { color: var(--ep-akzent); }
+.dk-leer p strong { display: block; margin-bottom: 2px; color: var(--ep-text); font-weight: 600; }
+.dk-leer .ep-knopf { margin-top: 4px; }

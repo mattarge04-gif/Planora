@@ -199,3 +199,5 @@
 .ep-quelle-link > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .ep-quelle-link svg { flex: none; }
 .ep-quelle-link:hover { color: var(--ep-link-hover); text-decoration: underline; text-underline-offset: 2px; }
+/* Tabellenziffern nur für Zahlen: Bindestriche in Namen und Dateinamen sonst gesperrt (Kritik r1 M5) */
+.ep-tabelle td:not(.ep-zahl), .ep-tabelle th:not(.ep-zahl) { font-variant-numeric: normal; }

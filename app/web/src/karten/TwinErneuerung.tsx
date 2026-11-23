@@ -1,4 +1,4 @@
-import { ArrowUpRight, FileText, Tag, TriangleAlert, X } from "lucide-react";
+import { ArrowUpRight, Tag, TriangleAlert, X } from "lucide-react";
 import { Karte } from "../ui/Karte";
 import { AmpelZeichen } from "../ui/Ampel";
 import { AMPEL_FARBE, AMPEL_TEXT, legende } from "../lebensdauer/ansicht";
@@ -63,24 +63,27 @@ export function TwinErneuerung<A extends FilterAnlage & { name: string }>({ stan
           );
         })}
       </ul>
-      {aktiv
-        ? <Trefferliste filter={filter!} />
-        : <p className="tw-ampel-erklaerung">{filter ? "Posten antippen, um die Bauteile im Modell zu zeigen. " : ""}
-          Gezählt wird je Bauteil. Im Modell zeigt jede Anlage die Farbe ihres dringendsten Bauteils.</p>}
+      {aktiv && <Trefferliste filter={filter!} />}
       <div className="tw-ampel-summe">
         <span>Kosten nächste 5 Jahre</span>
         <strong>{l.summe5}</strong>
-        {l.ohnePreis > 0 && (() => {
+        {/* Hinweis und Einstieg in einer Zeile, damit der Einstieg bei 1440x900 sichtbar bleibt (Kritik r1 M1) */}
+        {l.ohnePreis > 0 && <div className="tw-ampel-ohne-zeile">{(() => {
           const text = <><TriangleAlert size={13} strokeWidth={2} aria-hidden="true" />
-            Unvollständig, {l.ohnePreis} {l.ohnePreis === 1 ? "Bauteil" : "Bauteile"} ohne Preis</>;
+            {l.ohnePreis} {l.ohnePreis === 1 ? "Bauteil" : "Bauteile"} ohne Preis</>;
           return filter
             ? <button type="button" className="tw-ampel-ohne tw-ampel-ohne-knopf" aria-pressed={filter.posten.has("ohnePreis")}
               onClick={() => filter.onPosten("ohnePreis")}>{text}</button>
             : <span className="tw-ampel-ohne">{text}</span>;
         })()}
-        {l.ohnePreis > 0 && onDokumente && <button type="button" className="tw-ziel tw-ampel-dokumente" onClick={onDokumente}>
-          <FileText size={13} strokeWidth={1.75} aria-hidden="true" />Preise aus Dokumenten lesen</button>}
+          {onDokumente && <><span className="tw-ampel-trenner" aria-hidden="true">·</span>
+            <button type="button" className="tw-ziel tw-ampel-dokumente" onClick={onDokumente} aria-label="Fehlende Preise aus Dokumenten lesen">
+              Aus Dokumenten<ArrowUpRight size={13} strokeWidth={1.75} aria-hidden="true" /></button></>}
+        </div>}
       </div>
+      {/* Erklärung unter der Summe: Summe, fehlende Preise und Einstieg bleiben auch bei 1280x720 sichtbar (Kritik r1 M1) */}
+      {!aktiv && <p className="tw-ampel-erklaerung tw-ampel-erklaerung-unten">{filter ? "Posten antippen, um die Bauteile im Modell zu zeigen. " : ""}
+        Gezählt wird je Bauteil. Im Modell zeigt jede Anlage die Farbe ihres dringendsten Bauteils.</p>}
       {onPlan && <button type="button" className="tw-ziel tw-ampel-plan" onClick={onPlan}>Erneuerungsplan öffnen<ArrowUpRight size={14} strokeWidth={1.75} aria-hidden="true" /></button>}
     </Karte>
   );

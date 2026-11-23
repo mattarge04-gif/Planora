@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from "react";
-import { ArrowLeft, ArrowUpRight, Check, FilePlus2, FileText, RotateCw, ScanSearch, Trash2, TriangleAlert, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, FilePlus2, FileText, Info, RotateCw, ScanSearch, Trash2, TriangleAlert, X } from "lucide-react";
 import { ApiFehler, holeJson } from "../api";
 import { TOKENS } from "../design/tokens";
 import { anzeigeName } from "../dashboard";
@@ -9,7 +9,7 @@ import { alleSicheren, dateiUrl, fehlerCode, ladeHoch, ladeUebersicht, liesNeu, 
 import { franken, gruppiere, laeuftNoch, offeneSichere, statusText, zuordnungText } from "../preisdokument/ansicht";
 import type { DokumentZeile, Uebersicht, VorschlagZeile } from "../preisdokument/typen";
 import { Marke } from "../ui/Kopfzeile";
-import { alleSicherenText, datum, fuerBauteil, kandidaten, sortiert, startAuswahl, teileDateien, umfang, type Kandidat } from "./dokumenteAnsicht";
+import { alleSicherenText, antwortFolge, datum, fuerBauteil, kandidaten, sortiert, startAuswahl, teileDateien, umfang, type Kandidat } from "./dokumenteAnsicht";
 import "./Erneuerungsplan.css";
 import "./Dokumente.css";
 
@@ -40,6 +40,7 @@ interface Props {
 }
 
 type Aktion = (e: unknown) => void;
+interface AblageHinweis { datei: string; text: string; art: "fehler" | "hinweis" }
 
 export function Dokumente({ gebaeudeId, name, bauteilId, zurueckText, onZurueck, onAbgelaufen }: Props) {
   const [u, setU] = useState<Uebersicht | null>(null);
@@ -50,12 +51,14 @@ export function Dokumente({ gebaeudeId, name, bauteilId, zurueckText, onZurueck,
   const [meldung, setMeldung] = useState<{ text: string; art: "ok" | "fehler" } | null>(null);
   const [filterId, setFilterId] = useState<string | null>(bauteilId ?? null);
   const [ablegen, setAblegen] = useState<string[]>([]);
-  const [ablageFehler, setAblageFehler] = useState<{ datei: string; text: string }[]>([]);
+  const [ablageFehler, setAblageFehler] = useState<AblageHinweis[]>([]);
   const [ziehen, setZiehen] = useState(false);
   const [aktivDok, setAktivDok] = useState<string | null>(null);
-  const [laeuft, setLaeuft] = useState(false);
   const dateiFeld = useRef<HTMLInputElement>(null);
   const ziehTiefe = useRef(0);
+  // Nur die zuletzt begonnene Anfrage setzt die Übersicht: eine ältere Poll-Antwort überschreibt nie das Ergebnis einer Aktion (inkl. stand).
+  const folge = useRef(antwortFolge()).current;
+  const [takt, setTakt] = useState(0);
 
   const fehlerBehandeln = useCallback<Aktion>((e) => {
     if (e instanceof ApiFehler && e.status === 401) onAbgelaufen();
@@ -68,7 +71,8 @@ export function Dokumente({ gebaeudeId, name, bauteilId, zurueckText, onZurueck,
   const laden = useCallback(() => {
     let aktiv = true;
     setFehler(null); setKonflikt(false);
-    ladeUebersicht(gebaeudeId).then((x) => { if (aktiv) setU(x); }, (e: Error) => {
+    const nr = folge.neu();
+    ladeUebersicht(gebaeudeId).then((x) => { if (aktiv && folge.aktuell(nr)) setU(x); }, (e: Error) => {
       if (!aktiv) return;
       if (e instanceof ApiFehler && e.status === 401) onAbgelaufen();
       else if (e instanceof ApiFehler && e.status === 404) setFehler(MELDUNG_404);
@@ -77,16 +81,30 @@ export function Dokumente({ gebaeudeId, name, bauteilId, zurueckText, onZurueck,
     void ladeLd();
     holeJson<Katalog>("/api/katalog/v2").then((k) => { if (aktiv) setKatalog(k); }, () => { /* Namen fallen auf Katalog-ID zurueck */ });
     return () => { aktiv = false; };
-  }, [gebaeudeId, onAbgelaufen, ladeLd]);
+  }, [gebaeudeId, onAbgelaufen, ladeLd, folge]);
   useEffect(() => laden(), [laden]);
 
-  // Solange ein Dokument gelesen wird: alle 2 s neu laden.
+  /** Übersicht neu holen; die Antwort zählt nur, wenn seither keine neuere Anfrage begonnen hat. */
+  const aktualisiere = useCallback(async () => {
+    const nr = folge.neu();
+    const x = await ladeUebersicht(gebaeudeId);
+    if (folge.aktuell(nr)) setU(x);
+    return x;
+  }, [folge, gebaeudeId]);
+
+  // Solange ein Dokument gelesen wird: alle 2 s neu laden, nicht während einer Aktion. Nach jedem Versuch (auch
+  // verworfen oder fehlgeschlagen) neu planen, damit das Pollen nie still stehen bleibt.
   const pollen = !!u && laeuftNoch(u);
+  const [laeuft, setLaeuft] = useState(false);
   useEffect(() => {
-    if (!pollen) return;
-    const t = window.setTimeout(() => { ladeUebersicht(gebaeudeId).then(setU, fehlerBehandeln); }, POLL_MS);
-    return () => window.clearTimeout(t);
-  }, [pollen, u, gebaeudeId, fehlerBehandeln]);
+    if (!pollen || laeuft) return;
+    let aktiv = true;
+    const t = window.setTimeout(() => {
+      aktualisiere().catch((e: unknown) => { if (e instanceof ApiFehler && e.status === 401) onAbgelaufen(); /* sonst beim nächsten Takt erneut */ })
+        .finally(() => { if (aktiv) setTakt((n) => n + 1); });
+    }, POLL_MS);
+    return () => { aktiv = false; window.clearTimeout(t); };
+  }, [pollen, laeuft, takt, aktualisiere, onAbgelaufen]);
 
   useEffect(() => {
     if (!meldung || meldung.art !== "ok") return;
@@ -113,23 +131,35 @@ export function Dokumente({ gebaeudeId, name, bauteilId, zurueckText, onZurueck,
   const sichere = u ? offeneSichere(u) : 0;
   const offen = u ? u.dokumente.reduce((n, d) => n + d.vorschlaege.filter((v) => v.status === "offen").length, 0) : 0;
   const vorschlaegeDa = u ? u.dokumente.some((d) => d.vorschlaege.length > 0) : false;
+  const offenGefiltert = gruppen.je.reduce((n, g) => n + g.vorschlaege.filter((v) => v.status === "offen").length, 0);
 
   async function dateienAblegen(liste: File[]) {
     const { pdf, abgelehnt } = teileDateien(liste);
-    setAblageFehler(abgelehnt.map((f) => ({ datei: f.name, text: "Nur PDF-Dateien ablegen." })));
+    setAblageFehler(abgelehnt.map((f) => ({ datei: f.name, text: "Nur PDF-Dateien ablegen.", art: "fehler" as const })));
     if (!pdf.length) return;
     setAblegen(pdf.map((f) => f.name));
-    const neueFehler: { datei: string; text: string }[] = [];
+    const neueFehler: AblageHinweis[] = [];
+    // Gleicher Inhalt schon abgelegt: der Server antwortet mit dem bestehenden Dokument (200) -> melden und hinzeigen.
+    const bekannt = new Set(u?.dokumente.map((d) => d.id) ?? []);
+    let doppelt: string | null = null;
     for (const f of pdf) {
-      try { await ladeHoch(gebaeudeId, f); }
+      try {
+        const d = await ladeHoch(gebaeudeId, f);
+        if (bekannt.has(d.id)) {
+          neueFehler.push({ datei: f.name, text: d.dateiname === f.name ? "Ist schon abgelegt." : `Ist schon abgelegt als ${d.dateiname}.`, art: "hinweis" });
+          doppelt = d.id;
+        }
+        bekannt.add(d.id);
+      }
       catch (e) {
         if (e instanceof ApiFehler && e.status === 401) { onAbgelaufen(); return; }
-        neueFehler.push({ datei: f.name, text: e instanceof Error ? e.message : "Ablegen fehlgeschlagen" });
+        neueFehler.push({ datei: f.name, text: e instanceof Error ? e.message : "Ablegen fehlgeschlagen", art: "fehler" });
       }
       setAblegen((a) => a.filter((n) => n !== f.name));
     }
     setAblageFehler((a) => [...a, ...neueFehler]);
-    try { setU(await ladeUebersicht(gebaeudeId)); } catch (e) { fehlerBehandeln(e); }
+    try { await aktualisiere(); } catch (e) { fehlerBehandeln(e); }
+    if (doppelt) { const id = doppelt; setAktivDok(id); requestAnimationFrame(() => document.getElementById(`dk-dok-${id}`)?.scrollIntoView({ block: "nearest" })); }
   }
 
   const zieheUeber = (e: DragEvent) => { if (!darf) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; };
@@ -143,7 +173,8 @@ export function Dokumente({ gebaeudeId, name, bauteilId, zurueckText, onZurueck,
 
   async function mitStand(f: () => Promise<Uebersicht>, nachher?: (x: Uebersicht) => void) {
     setLaeuft(true); setMeldung(null);
-    try { const x = await f(); setU(x); setKonflikt(false); nachher?.(x); void ladeLd(); }
+    const nr = folge.neu();
+    try { const x = await f(); if (folge.aktuell(nr)) setU(x); setKonflikt(false); nachher?.(x); void ladeLd(); }
     finally { setLaeuft(false); }
   }
 
@@ -160,7 +191,7 @@ export function Dokumente({ gebaeudeId, name, bauteilId, zurueckText, onZurueck,
     catch (e) { fehlerBehandeln(e); }
   };
   const neuLesen = async (d: DokumentZeile) => {
-    try { await liesNeu(d.id); setU(await ladeUebersicht(gebaeudeId)); }
+    try { await liesNeu(d.id); await aktualisiere(); }
     catch (e) {
       if (fehlerCode(e) === "liest_bereits") setMeldung({ text: `${d.dateiname} wird bereits gelesen.`, art: "ok" });
       else if (fehlerCode(e) === "auslesen_aus") setMeldung({ text: "Auslesen ist ausgeschaltet.", art: "fehler" });
@@ -168,7 +199,7 @@ export function Dokumente({ gebaeudeId, name, bauteilId, zurueckText, onZurueck,
     }
   };
   const loeschen = async (d: DokumentZeile) => {
-    try { await loescheDokument(d.id); setU(await ladeUebersicht(gebaeudeId)); setMeldung({ text: `${d.dateiname} gelöscht. Übernommene Preise bleiben erhalten.`, art: "ok" }); }
+    try { await loescheDokument(d.id); await aktualisiere(); setMeldung({ text: `${d.dateiname} gelöscht. Übernommene Preise bleiben erhalten.`, art: "ok" }); }
     catch (e) { fehlerBehandeln(e); }
   };
   const zeigeDokument = (id: string) => {
@@ -218,7 +249,8 @@ export function Dokumente({ gebaeudeId, name, bauteilId, zurueckText, onZurueck,
             <button type="button" className="ep-knopf" onClick={() => dateiFeld.current?.click()}>Datei wählen</button>
           </div>}
           {ablageFehler.length > 0 && <ul className="dk-ablage-fehler" role="alert">
-            {ablageFehler.map((f, i) => <li key={i}><TriangleAlert size={13} strokeWidth={2} aria-hidden="true" /><span><strong>{f.datei}</strong>{f.text}</span></li>)}
+            {ablageFehler.map((f, i) => <li key={i} className={f.art === "hinweis" ? "dk-ablage-hinweis" : undefined}>{f.art === "hinweis"
+              ? <Info size={13} strokeWidth={2} aria-hidden="true" /> : <TriangleAlert size={13} strokeWidth={2} aria-hidden="true" />}<span><strong>{f.datei}</strong>{f.text}</span></li>)}
             <li><button type="button" className="dk-leise" onClick={() => setAblageFehler([])}>Ausblenden</button></li>
           </ul>}
           {u.dokumente.length === 0 && ablegen.length === 0
@@ -234,7 +266,7 @@ export function Dokumente({ gebaeudeId, name, bauteilId, zurueckText, onZurueck,
 
         <section className="dk-vorschlaege" aria-labelledby="dk-vorschlaege-titel">
           <div className="dk-vorschlaege-kopf">
-            <h2 id="dk-vorschlaege-titel">Preisvorschläge {offen > 0 && <span className="ep-anzahl">{offen} offen</span>}</h2>
+            <h2 id="dk-vorschlaege-titel">Preisvorschläge {(offen > 0 || filter) && <span className="ep-anzahl">{filter ? `${offenGefiltert} von ${offen} offen` : `${offen} offen`}</span>}</h2>
             {filter && <button type="button" className="ep-filter" onClick={() => setFilterId(null)} aria-label={`Filter ${filterText} aufheben`}>
               Nur {filterText}<X size={14} strokeWidth={2} aria-hidden="true" /></button>}
           </div>
@@ -252,7 +284,11 @@ export function Dokumente({ gebaeudeId, name, bauteilId, zurueckText, onZurueck,
               ? "PDF ablegen. Planora liest Positionen mit Ersatzpreis, zeigt die Fundstelle und schlägt passende Bauteile vor."
               : pollen ? "Dokumente werden gelesen. Vorschläge erscheinen hier." : "In den abgelegten Dokumenten wurden keine Preise gefunden."}</p>
           </div>}
-          {filter && vorschlaegeDa && gruppen.je.length === 0 && <p className="dk-leer dk-leer-klein">Kein Vorschlag passt zu {filterText}. Filter aufheben, um alle zu sehen.</p>}
+          {filter && vorschlaegeDa && gruppen.je.length === 0 && <div className="dk-leer">
+            <ScanSearch size={22} strokeWidth={1.6} aria-hidden="true" />
+            <p><strong>Noch kein Vorschlag für {filterText}.</strong>{darf ? "Offerte oder Rechnung links als PDF ablegen oder alle Vorschläge ansehen." : "Alle Vorschläge ansehen."}</p>
+            <button type="button" className="ep-knopf" onClick={() => setFilterId(null)}>Filter aufheben</button>
+          </div>}
 
           {gruppen.je.map(({ dokument: d, vorschlaege }) => (
             <div key={d.id} id={`dk-gruppe-${d.id}`} className={`dk-gruppe${aktivDok === d.id ? " dk-gruppe-aktiv" : ""}`}>
@@ -283,7 +319,7 @@ function DokumentEintrag({ d, darf, an, aktiv, zeigen, onZeigen, onNeuLesen, onL
   const status = d.status === "fertig" && d.vorschlaege.length > 0 && offen < d.vorschlaege.length
     ? `${statusText(d)}, ${offen === 0 ? "alle entschieden" : `${offen} offen`}` : statusText(d);
   return (
-    <li className={`dk-dok${aktiv ? " dk-dok-aktiv" : ""}`}>
+    <li id={`dk-dok-${d.id}`} className={`dk-dok${aktiv ? " dk-dok-aktiv" : ""}`}>
       <span className="dk-dok-icon" aria-hidden="true"><FileText size={16} strokeWidth={1.75} /></span>
       <span className="dk-dok-text">
         {zeigen
@@ -363,7 +399,7 @@ function VorschlagKarte({ v, dokument, mitDatei, darf, laeuft, kandidaten, typNa
         </div>
         <div className="dk-vk-preis">
           <strong>{franken(v.ersatzpreis)}</strong>
-          <span>Ersatzpreis netto je Stück</span>
+          <span>{v.katalogId ? "Ersatzpreis netto je Stück" : "Betrag netto laut Dokument"}</span>
           {v.rechenweg && <span className="dk-vk-rechenweg">{v.rechenweg}</span>}
         </div>
       </div>

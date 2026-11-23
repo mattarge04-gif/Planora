@@ -4,7 +4,7 @@ import { AMPEL_RANG, AMPEL_TEXT, ZUSTAND_TEXT, akteZeilen, preisEingabe, preisTe
 import { formularAus, koerperAus, type Formular } from "../lebensdauer/bearbeiten";
 import type { LdStand, Zustand } from "../lebensdauer/typen";
 import { AmpelZeichen } from "../ui/Ampel";
-import { ArrowUpRight, FileSearch } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { dokumentQuelle } from "./preisQuelle";
 
 const ZUSTAENDE = Object.keys(ZUSTAND_TEXT) as Zustand[];
@@ -42,13 +42,19 @@ export function TwinLebensdauer({ stand, bauteilIds, darfAendern, onGespeichert,
             {offen?.id === z.id
               ? <FormularBlock stand={stand} id={z.id} start={offen.start} onZu={() => schliessen(z.id)}
                   onGespeichert={(s) => { schliessen(z.id); onGespeichert(s); }} />
-              : (darfAendern || (z.preis.fehlt && onDokument)) && <div className="tw-ld-aktionen">
-                  {darfAendern && <button type="button" className="tw-ld-knopf" ref={(el) => { if (el) knoepfe.current.set(z.id, el); else knoepfe.current.delete(z.id); }}
-                    onClick={() => setOffen({ id: z.id, start: "baujahr" })}>Bearbeiten</button>}
-                  {darfAendern && z.preis.fehlt && <button type="button" className="tw-ld-knopf tw-ld-knopf-leise" onClick={() => setOffen({ id: z.id, start: "preis" })}>Preis erfassen</button>}
-                  {z.preis.fehlt && onDokument && <button type="button" className="tw-ld-knopf tw-ld-knopf-leise tw-ld-dokument" onClick={() => onDokument(z.id)}>
-                    <FileSearch size={13} strokeWidth={1.75} aria-hidden="true" />Aus Dokument …</button>}
-                </div>}
+              : <>
+                  {/* Wege zum fehlenden Preis als Textlinks in einer Zeile (Kritik r1 M2), kein dritter Knopf */}
+                  {z.preis.fehlt && (darfAendern || onDokument) && <p className="tw-ld-preis-wege">
+                    {darfAendern && <button type="button" className="tw-ld-textlink" onClick={() => setOffen({ id: z.id, start: "preis" })}>Preis erfassen</button>}
+                    {darfAendern && onDokument && <span aria-hidden="true">·</span>}
+                    {onDokument && <button type="button" className="tw-ld-textlink" onClick={() => onDokument(z.id)} aria-label="Preis aus Dokument übernehmen, öffnet die Seite Dokumente">
+                      aus Dokument<ArrowUpRight size={12} strokeWidth={1.75} aria-hidden="true" /></button>}
+                  </p>}
+                  {darfAendern && <div className="tw-ld-aktionen">
+                    <button type="button" className="tw-ld-knopf" ref={(el) => { if (el) knoepfe.current.set(z.id, el); else knoepfe.current.delete(z.id); }}
+                      onClick={() => setOffen({ id: z.id, start: "baujahr" })}>Bearbeiten</button>
+                  </div>}
+                </>}
           </li>
         ))}
       </ul>
@@ -76,14 +82,17 @@ function ZeileAnsicht({ z, mehrere, stand }: { z: AkteZeile; mehrere: boolean; s
         </div>
       </div>
       <dl className="tw-ld-quellen">
-        <dt>Baujahr</dt><dd>{z.baujahr.wert}<span className="tw-ld-quelle">{z.baujahr.quelle}</span></dd>
-        <dt>Lebensdauer</dt><dd>{z.lebensdauer.wert}<span className="tw-ld-quelle">{z.lebensdauer.quelle}</span></dd>
-        {z.zustand && <><dt>Zustand</dt><dd>{z.zustand.text}{z.zustand.wirkung && <span className="tw-ld-quelle">{z.zustand.wirkung}</span>}</dd></>}
-        <dt>Stückpreis</dt><dd>{z.preis.fehlt ? "–" : z.preis.wert}<span className={`tw-ld-quelle${z.preis.fehlt ? " tw-ld-fehlt" : ""}`}>{dok?.typpreis ? "Typwert" : z.preis.quelle}</span></dd>
-        {dok && <><dd className="tw-ld-fundstelle">{dok.href
-          ? <a href={dok.href} target="_blank" rel="noopener" title={dok.dateiname ?? undefined} aria-label={`${dok.text} öffnen (neuer Tab)`}>
-            <span>{dok.text}</span><ArrowUpRight size={12} strokeWidth={1.75} aria-hidden="true" /></a>
-          : <span className="tw-ld-quelle">{dok.text}</span>}</dd></>}
+        {/* Zeilen als div-Gruppen (display: contents); nur die Preiszeile mit Fundstelle nutzt die volle Breite */}
+        <div><dt>Baujahr</dt><dd>{z.baujahr.wert}<span className="tw-ld-quelle">{z.baujahr.quelle}</span></dd></div>
+        <div><dt>Lebensdauer</dt><dd>{z.lebensdauer.wert}<span className="tw-ld-quelle">{z.lebensdauer.quelle}</span></dd></div>
+        {z.zustand && <div><dt>Zustand</dt><dd>{z.zustand.text}{z.zustand.wirkung && <span className="tw-ld-quelle">{z.zustand.wirkung}</span>}</dd></div>}
+        {/* Herkunft in derselben Zeile wie der Preis: «CHF 1'296  o1-pumpen.pdf, S. 1 ↗» (Kritik r1 M2) */}
+        <div className={dok ? "tw-ld-breit" : undefined}><dt>Stückpreis</dt><dd className={dok ? "tw-ld-mit-fundstelle" : undefined}>{dok ? <span className="tw-ld-preis">{z.preis.wert}</span> : z.preis.fehlt ? "–" : z.preis.wert}{dok
+          ? dok.href
+            ? <a className="tw-ld-fundstelle" href={dok.href} target="_blank" rel="noopener" title={`${dok.typpreis ? "Typwert " : ""}${dok.text}`}
+              aria-label={`${dok.typpreis ? "Typwert " : ""}${dok.text}, Dokument öffnen (neuer Tab)`}><span>{dok.kurzName}</span>{dok.stelle}<ArrowUpRight size={12} strokeWidth={1.75} aria-hidden="true" /></a>
+            : <span className="tw-ld-quelle">{dok.kurz}</span>
+          : <span className={`tw-ld-quelle${z.preis.fehlt ? " tw-ld-fehlt" : ""}`}>{z.preis.quelle}</span>}</dd></div>
       </dl>
     </>
   );

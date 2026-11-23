@@ -1,0 +1,15 @@
+{
+  "beschreibung": "Preis aus Dokument (T8 Fix r1): Einstieg «aus Dokument» aus der Anlagenkarte (Speicher, Preis fehlt) -> Seite Dokumente gefiltert, Leerzustand mit nächstem Schritt und Zähler «0 von n offen». Vorher wie preisdokument.json.",
+  "fenster": [[1440, 900], [1280, 720]],
+  "schritte": [
+    { "klick": "Muster 6 L-Form viele Gruppen" },
+    { "warte": 6000 },
+    { "knopf": "Erneuerung", "exakt": true },
+    { "warte": 2500 },
+    { "selektor": "tr[data-schluessel]:has-text('Speicher')" },
+    { "warte": 2500 },
+    { "knopf": "Preis aus Dokument übernehmen" },
+    { "warte": 1500 },
+    { "bild": "gefiltert-leer" }
+  ]
+}
