@@ -6,7 +6,7 @@ const stand: LdStand = {
   gebaeudeId: "g", stand: 3, heizungBaujahr: 2008, typen: [],
   bauteile: [
     { id: "a", katalogId: "heizung.verteiler", menge: 1, baujahr: null, hersteller: null, typ: null, ort: "EG · Technik", akte: null },
-    { id: "b", katalogId: "heizung.heizkoerper", menge: 10, baujahr: 2020, hersteller: "Zehnder", typ: null, ort: "OG1 · Büro", akte: { zustand: null, lebensdauerJahre: null, stueckpreis: 800, quellePreis: "kunde", notiz: null } },
+    { id: "b", katalogId: "heizung.heizkoerper", menge: 10, baujahr: 2020, hersteller: "Zehnder", typ: null, ort: "OG1 · Büro", akte: { zustand: null, lebensdauerJahre: null, stueckpreis: 800, quellePreis: "kunde", notiz: null, preisQuelle: null } },
     { id: "c", katalogId: "heizung.heizkoerper", menge: 2, baujahr: null, hersteller: null, typ: null, ort: "OG1 · Büro", akte: null },
   ],
   ergebnis: { stichtag: 2026, zaehler: { gruen: 1, gelb: 0, rot: 1, grau: 1 }, summe5: { betrag: 12500, ohnePreis: 1 },
@@ -63,7 +63,7 @@ describe("Ansicht Lebensdauer", () => {
     expect(preisEingabe("35000")).toBe("35'000"); expect(preisEingabe("abc")).toBe("abc"); expect(preisEingabe("")).toBe("");
   });
   it("Zustand mit Wirkung aus Ersatzjahr abgeleitet", () => {
-    const s2: LdStand = { ...stand, bauteile: stand.bauteile.map((b) => b.id === "a" ? { ...b, akte: { zustand: "schlecht", lebensdauerJahre: null, stueckpreis: null, quellePreis: null, notiz: null } } : b),
+    const s2: LdStand = { ...stand, bauteile: stand.bauteile.map((b) => b.id === "a" ? { ...b, akte: { zustand: "schlecht", lebensdauerJahre: null, stueckpreis: null, quellePreis: null, notiz: null, preisQuelle: null } } : b),
       ergebnis: { ...stand.ergebnis, bauteile: stand.ergebnis.bauteile.map((b) => b.id === "a" ? { ...b, ersatzjahr: 2033, restjahre: 7 } : b) } };
     expect(akteZeilen(s2, ["a"])[0].zustand).toEqual({ text: "Schlecht", wirkung: "5 Jahre früher" });
     expect(akteZeilen(stand, ["b"])[0].zustand).toBeNull();

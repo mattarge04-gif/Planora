@@ -3,6 +3,8 @@
 export type Ampel = "gruen" | "gelb" | "rot" | "grau";
 export type Zustand = "gut" | "mittel" | "schlecht" | "kritisch";
 export type PreisHerkunft = "kunde" | "dokument";
+/** Fundstelle eines Dokumentpreises (Backend: PreisQuelle). */
+export interface PreisQuelle { dokumentId: string | null; dateiname: string | null; seite: number | null }
 
 export interface LdAkte {
   zustand: Zustand | null;
@@ -10,6 +12,7 @@ export interface LdAkte {
   stueckpreis: number | null;
   quellePreis: PreisHerkunft | null;
   notiz: string | null;
+  preisQuelle: PreisQuelle | null;
 }
 
 export interface LdBauteil {
@@ -28,6 +31,7 @@ export interface LdTyp {
   lMittel: number | null;
   stueckpreis: number | null;
   quellePreis: PreisHerkunft | null;
+  preisQuelle: PreisQuelle | null;
   gelbJahre: number | null;
   standard: number;
   bereich: { min: number; max: number };

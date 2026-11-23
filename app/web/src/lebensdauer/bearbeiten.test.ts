@@ -4,7 +4,7 @@ import type { LdStand } from "./typen";
 
 const stand = { gebaeudeId: "g", stand: 4, heizungBaujahr: 2008, typen: [], ergebnis: { stichtag: 2026, bauteile: [], jahre: [], summe5: { betrag: 0, ohnePreis: 0 }, zaehler: { gruen: 0, gelb: 0, rot: 0, grau: 0 } },
   bauteile: [{ id: "a", katalogId: "heizung.verteiler", menge: 1, baujahr: null, hersteller: null, typ: null, ort: "EG",
-    akte: { zustand: "mittel", lebensdauerJahre: null, stueckpreis: 2500, quellePreis: "kunde", notiz: null } }] } as LdStand;
+    akte: { zustand: "mittel", lebensdauerJahre: null, stueckpreis: 2500, quellePreis: "kunde", notiz: null, preisQuelle: null } }] } as LdStand;
 
 describe("Bearbeiten", () => {
   it("Formular aus Stand", () => {

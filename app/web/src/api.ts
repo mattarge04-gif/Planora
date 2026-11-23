@@ -2,11 +2,28 @@
 export class ApiFehler extends Error {
   readonly status: number;
   readonly meldungen: string[];
-  constructor(status: number, meldungen: string[]) {
+  /** Maschinenlesbare Fehlercodes (z. B. "handeingabe", "stand_veraltet", "liest_bereits"). */
+  readonly codes: string[];
+  constructor(status: number, meldungen: string[], codes: string[] = []) {
     super(meldungen.join(" ") || `Fehler ${status}`);
     this.status = status;
     this.meldungen = meldungen;
+    this.codes = codes;
   }
+}
+
+/** Codes aus Planora-Fehlern: { fehler: [{ code }] } oder { fehler: "code" }. */
+export function fehlerCodes(j: unknown): string[] {
+  if (j === null || typeof j !== "object") return [];
+  const f = (j as { fehler?: unknown }).fehler;
+  if (Array.isArray(f)) return f.map((x) => (x && typeof x === "object" && typeof (x as { code?: unknown }).code === "string" ? (x as { code: string }).code : "")).filter(Boolean);
+  if (typeof f === "string") return [f];
+  return [];
+}
+
+/** Erster Fehlercode einer ApiFehler-Ausnahme, sonst null. */
+export function fehlerCode(e: unknown): string | null {
+  return e instanceof ApiFehler ? (e.codes[0] ?? null) : null;
 }
 
 /** Meldungen aus Planora-Fehlern ({ fehler: [...] } oder { fehler: "..." }) und Better-Auth ({ message }). */
@@ -34,7 +51,7 @@ async function anfrage<T>(methode: "GET" | "POST" | "PUT" | "DELETE", pfad: stri
   if (!r.ok) {
     let j: unknown = null;
     try { j = await r.json(); } catch { /* kein JSON */ }
-    throw new ApiFehler(r.status, fehlerMeldungen(j));
+    throw new ApiFehler(r.status, fehlerMeldungen(j), fehlerCodes(j));
   }
   const text = await r.text();
   return (text ? JSON.parse(text) : undefined) as T;
