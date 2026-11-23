@@ -1,19 +1,20 @@
 import type pg from "pg";
 import { FachFehler } from "../welt/speicher.js";
 export type Status = "neu" | "liest" | "fertig" | "fehler" | "abgebrochen" | "aus";
-export interface DokumentZeile { id: string; dateiname: string; groesse: number; seiten: number; hochgeladenAm: string; status: Status; fehler: string | null; vorschlaege: VorschlagZeile[] }
+import type { ScanStatus } from "../dokumente/speicher.js";
+export interface DokumentZeile { id: string; scanStatus: ScanStatus; dateiname: string; groesse: number; seiten: number; hochgeladenAm: string; status: Status; fehler: string | null; vorschlaege: VorschlagZeile[] }
 export interface VorschlagZeile { id: string; position: string; seite: number; zitat: string; materialNetto: number | null; rabattText: string | null;
   montageAnteil: number | null; ersatzpreis: number; rechenweg: string; katalogId: string | null; bauteilIds: string[]; fehlendeBauteile: string[];
   sicherheit: "hoch" | "mittel" | "tief"; status: "offen" | "uebernommen" | "verworfen"; alsTyppreis: boolean }
 const zahl = (v: string | null) => (v === null ? null : Number(v));
 
 export async function ladeDokumente(c: pg.ClientBase, gebaeudeId: string): Promise<DokumentZeile[]> {
-  const d = (await c.query(`select id, dateiname, groesse, seiten, hochgeladen_am, auslesen_status, auslesen_fehler from dokument where gebaeude_id=$1 and art='pdf' order by hochgeladen_am, id`, [gebaeudeId])).rows;
+  const d = (await c.query(`select id, scan_status, dateiname, groesse, seiten, hochgeladen_am, auslesen_status, auslesen_fehler from dokument where gebaeude_id=$1 and art='pdf' order by hochgeladen_am, id`, [gebaeudeId])).rows;
   const ids = d.map((r) => r.id);
   const vorhandene = new Set((await c.query("select id from bauteil where gebaeude_id=$1", [gebaeudeId])).rows.map((r) => r.id as string));
   const v = ids.length ? (await c.query(`select * from preis_vorschlag where dokument_id = any($1) order by dokument_id, reihenfolge`, [ids])).rows : [];
   return d.map((r) => ({
-    id: r.id, dateiname: r.dateiname, groesse: Number(r.groesse), seiten: r.seiten, hochgeladenAm: r.hochgeladen_am.toISOString(),
+    id: r.id, scanStatus: r.scan_status, dateiname: r.dateiname, groesse: Number(r.groesse), seiten: r.seiten, hochgeladenAm: r.hochgeladen_am.toISOString(),
     status: r.auslesen_status, fehler: r.auslesen_fehler,
     vorschlaege: v.filter((x) => x.dokument_id === r.id).map((x) => ({
       id: x.id, position: x.position, seite: x.seite, zitat: x.zitat, materialNetto: zahl(x.material_netto), rabattText: x.rabatt_text,

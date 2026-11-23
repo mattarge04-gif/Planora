@@ -134,6 +134,7 @@ describe("Preisdokument-API mit Leseadapter", () => {
     await db.pool.query("update dokument set scan_status='quarantaene' where id=$1", [id]);
     const q = await gib(app2, "POST", `/api/preisdokument/dokumente/${id}/neu-lesen`, kBearb);
     expect([q.statusCode, q.json()]).toEqual([409, { fehler: "nicht_sauber" }]);
+    expect((await gib(app2, "GET", liste(), kBearb)).json().dokumente.find((d: any) => d.id === id).scanStatus).toBe("quarantaene");
   });
   it("ohne Adapter: neu-lesen -> 409", async () => {
     const app3 = await bauApp(null);

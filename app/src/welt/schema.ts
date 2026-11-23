@@ -1,6 +1,6 @@
 import { GRUPPEN_ARTEN } from "./typen.js";
 // JSON-Schemas fuer Fastify (ajv). Strukturfehler → 400; fachliche Regeln prueft pruefung.ts (→ 422).
-const UUID = { type: "string", pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" };
+export const UUID = { type: "string", pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" };
 const DREI = { type: "string", enum: ["ja", "nein", "unbekannt"] };
 const HEIZ = { hk: DREI, fbh: DREI, tabs: DREI };
 const INDEX = { type: "integer", minimum: 0 };

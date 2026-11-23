@@ -239,3 +239,74 @@ describe("baueServer: Scanner und Hintergrund", () => {
     expect((await db.pool.query("select scan_status from dokument where id=$1", [id])).rows[0].scan_status).toBe("quarantaene");
   });
 });
+
+describe("Dokumente-API: Verknuepfen und Kategorie", () => {
+  let D: string, B_FREMD: string;
+  beforeAll(async () => {
+    D = (await ablegen(kBearb, pdf(2, "% verkn"), "Pumpe.pdf")).json().id;
+    await warteScan(D);
+    const G2 = (await anfrage("POST", `/api/struktur/liegenschaften/${L1}/gebaeude`, kBetr, { ...HUELLE, name: "Haus 2" })).json().id;
+    const gs = (await db.pool.query("select id from geschoss where gebaeude_id=$1 order by reihenfolge limit 1", [G2])).rows[0].id;
+    B_FREMD = (await db.pool.query("insert into bauteil(liegenschaft_id, gebaeude_id, katalog_id, geschoss_id, status, reihenfolge) values ($1,$2,'heizung.verteiler',$3,'bestaetigt',0) returning id", [L1, G2, gs])).rows[0].id;
+  });
+  it("setzen, ersetzen, leeren; Leser 403; fremdes Bauteil 400", async () => {
+    const put = (ids: string[], k = kBearb) => anfrage("PUT", `/api/dokumente/${D}/bauteile`, k, { bauteilIds: ids });
+    expect((await put([B1, B2])).json().bauteilIds.sort()).toEqual([B1, B2].sort());
+    expect((await put([B2])).json().bauteilIds).toEqual([B2]);
+    expect((await liste()).json().dokumente.find((d: any) => d.id === D).bauteilIds).toEqual([B2]);
+    expect((await put([B1], kLeser)).statusCode).toBe(403);
+    const f = await put([B_FREMD]);
+    expect([f.statusCode, f.json().fehler[0].code]).toEqual([400, "bauteil_unbekannt"]);
+    expect((await put([])).json().bauteilIds).toEqual([]);
+    expect((await anfrage("PUT", `/api/dokumente/${D}/bauteile`, kBearb, { bauteilIds: ["x"] })).statusCode).toBe(400);
+  });
+  it("nur bei sauber; Ablegen mit ?bauteile verknuepft sofort", async () => {
+    ausfall = true;
+    const r = await ablegen(kBearb, pdf(1, "% sofort"), "Sofort.pdf", `?bauteile=${B1},${B2}`);
+    expect(r.json().bauteilIds.sort()).toEqual([B1, B2].sort());
+    await warteScan(r.json().id);
+    ausfall = false;
+    const p = await anfrage("PUT", `/api/dokumente/${r.json().id}/bauteile`, kBearb, { bauteilIds: [B1] });
+    expect([p.statusCode, p.json().fehler[0].code]).toEqual([409, "nicht_sauber"]);
+    expect((await ablegen(kBearb, pdf(1, "% fremd2"), "F.pdf", `?bauteile=${B_FREMD}`)).statusCode).toBe(400);
+  });
+  it("Duplikat mit ?bauteile ergaenzt Verknuepfungen (Vereinigung); Befund entfernt sie", async () => {
+    const daten = pdf(1, "% dup");
+    const a = await ablegen(kBearb, daten, "Dup.pdf", `?bauteile=${B1}`);
+    expect([a.statusCode, a.json().bauteilIds]).toEqual([201, [B1]]);
+    await warteScan(a.json().id);
+    const b = await ablegen(kBearb, daten, "Dup.pdf", `?bauteile=${B2}`);
+    expect([b.statusCode, b.json().id, b.json().bauteilIds.sort()]).toEqual([200, a.json().id, [B1, B2].sort()]);
+    const v = (await ablegen(kBearb, Buffer.concat([pdf(1, "% vir"), Buffer.from(EICAR)]), "v.pdf", `?bauteile=${B1}`)).json().id;
+    expect((await warteScan(v)).scanStatus).toBe("abgelehnt");
+    expect((await db.pool.query("select 1 from dokument_bauteil where dokument_id=$1", [v])).rowCount).toBe(0);
+  });
+  it("Bauteil geloescht -> Verknuepfung weg", async () => {
+    const tmp = (await db.pool.query("insert into bauteil(liegenschaft_id, gebaeude_id, katalog_id, geschoss_id, status, reihenfolge) values ($1,$2,'heizung.verteiler',(select id from geschoss where gebaeude_id=$2 order by reihenfolge limit 1),'bestaetigt',99) returning id", [L1, G])).rows[0].id;
+    expect((await anfrage("PUT", `/api/dokumente/${D}/bauteile`, kBearb, { bauteilIds: [tmp] })).json().bauteilIds).toEqual([tmp]);
+    await db.pool.query("delete from bauteil where id=$1", [tmp]);
+    expect((await liste()).json().dokumente.find((d: any) => d.id === D).bauteilIds).toEqual([]);
+  });
+  it("Kategorie aendern; ungueltig 400; abgelehnt 409", async () => {
+    const r = await anfrage("PUT", `/api/dokumente/${D}/kategorie`, kBearb, { kategorie: "datenblatt" });
+    expect([r.statusCode, r.json().kategorie]).toEqual([200, "datenblatt"]);
+    expect((await anfrage("PUT", `/api/dokumente/${D}/kategorie`, kBearb, { kategorie: "rechnung" })).statusCode).toBe(400);
+    expect((await anfrage("PUT", `/api/dokumente/${D}/kategorie`, kLeser, { kategorie: "plan" })).statusCode).toBe(403);
+    const ab = (await ablegen(kBearb, Buffer.concat([pdf(1, "% ab"), Buffer.from(EICAR)]), "a.pdf")).json().id;
+    await warteScan(ab);
+    expect((await anfrage("PUT", `/api/dokumente/${ab}/kategorie`, kBearb, { kategorie: "plan" })).json()).toEqual({ fehler: "abgelehnt" });
+  });
+  it("Loeschen: Verknuepfungen weg, uebernommener Preis behaelt Quelle dokument", async () => {
+    const id = (await ablegen(kBearb, pdf(1, "% preis"), "Offerte.pdf")).json().id;
+    await warteScan(id);
+    await anfrage("PUT", `/api/dokumente/${id}/bauteile`, kBearb, { bauteilIds: [B1] });
+    const v = (await db.pool.query(`insert into preis_vorschlag(dokument_id, reihenfolge, position, seite, zitat, ersatzpreis, rechenweg, katalog_id, bauteil_ids, sicherheit, status)
+      values ($1,0,'HK',1,'z',250,'r','heizung.heizkoerper',$2,'hoch','uebernommen') returning id`, [id, [B1]])).rows[0].id;
+    await db.pool.query(`insert into bauteil_akte(bauteil_id, liegenschaft_id, stueckpreis, quelle_preis, preis_vorschlag_id) values ($1,$2,250,'dokument',$3)
+      on conflict (bauteil_id) do update set stueckpreis=250, quelle_preis='dokument', preis_vorschlag_id=$3`, [B1, L1, v]);
+    expect((await anfrage("DELETE", `/api/dokumente/${id}`, kBearb)).statusCode).toBe(204);
+    expect((await db.pool.query("select 1 from dokument_bauteil where dokument_id=$1", [id])).rowCount).toBe(0);
+    expect((await db.pool.query("select stueckpreis, quelle_preis, preis_vorschlag_id from bauteil_akte where bauteil_id=$1", [B1])).rows[0])
+      .toEqual({ stueckpreis: "250.00", quelle_preis: "dokument", preis_vorschlag_id: null });
+  });
+});

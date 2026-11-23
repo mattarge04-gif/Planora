@@ -41,6 +41,8 @@ Neues Optionsmodul `preisdokument` (braucht `dokumente`, `lebensdauer`; Lieferst
 
 KI-Adapter `ki/openai.ts` (Produktion, offizielles SDK `openai`, Responses API, `text.format` `json_schema` mit `strict: true`, `store: false`) und `ki/fake.ts` (Tests) hinter einem Port `liesPreise(pdf, kontext) -> { vorschlaege, usage }`. SDK-Aufrufe nur nach offizieller OpenAI-Doku, nicht aus dem Gedaechtnis. Der Port bleibt anbieterneutral, damit ein Claude-Adapter (ADR 0030) spaeter moeglich bleibt.
 
+**Nachtrag 23.11.2026 (E46, Spec Anlagenakte 4.9):** Kein automatisches Lesen mehr nach dem Ablegen. "Preise lesen" ist ein Knopf und nur bei sauberen PDFs (Virenprüfung) und eingeschalteter KI möglich; die Ablage gehört zum Kernmodul dokumente.
+
 ## 5. Oberflaeche (planora-design, Stufe mittel)
 
 - Neue Seite **Dokumente** je Gebaeude; Einstieg aus Twin-Kopf, Erneuerungsplan und Legende ("n Bauteile ohne Preis -> Preise aus Dokumenten lesen").

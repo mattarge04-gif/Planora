@@ -1,4 +1,5 @@
 import type pg from "pg";
+import { FachFehler } from "../welt/speicher.js";
 import type { Art, Kategorie } from "./typ.js";
 type Q = Pick<pg.ClientBase, "query">;
 
@@ -61,4 +62,24 @@ export async function loescheDokument(c: Q, dokumentId: string): Promise<{ schlu
   if (!r) return null;
   await gibReferenzFrei(c, r.schluessel, `dokument:${dokumentId}`); // idempotent: raeumt auch Reste nach Absturz oder gescheiterter Uebernahme
   return { schluessel: r.schluessel, scanStatus: r.scan_status };
+}
+
+/** Normalisiert IDs; alle muessen zum Gebaeude gehoeren (sonst 400 bauteil_unbekannt). */
+export async function pruefeBauteile(c: Q, gebaeudeId: string, ids: string[]): Promise<string[]> {
+  const eindeutig = [...new Set(ids.map((x) => x.toLowerCase()))];
+  if (!eindeutig.length) return [];
+  const da = (await c.query("select id from bauteil where gebaeude_id=$1 and id = any($2::uuid[])", [gebaeudeId, eindeutig])).rows.length;
+  if (da !== eindeutig.length) throw new FachFehler([{ pfad: "bauteilIds", code: "bauteil_unbekannt", meldung: "Bauteil gehört nicht zu diesem Gebäude" }], 400);
+  return eindeutig;
+}
+
+/** Ersetzt die verknuepften Bauteile des Dokuments durch `ids` (bereits geprueft). */
+export async function setzeVerknuepfungen(c: Q, dokumentId: string, ids: string[]) {
+  await c.query("delete from dokument_bauteil where dokument_id=$1 and not (bauteil_id = any($2::uuid[]))", [dokumentId, ids]);
+  await ergaenzeVerknuepfungen(c, dokumentId, ids);
+}
+
+/** Fuegt Verknuepfungen hinzu, ohne vorhandene zu entfernen (Duplikat-Upload). */
+export async function ergaenzeVerknuepfungen(c: Q, dokumentId: string, ids: string[]) {
+  for (const b of ids) await c.query("insert into dokument_bauteil(dokument_id, bauteil_id) values ($1,$2) on conflict do nothing", [dokumentId, b]);
 }
