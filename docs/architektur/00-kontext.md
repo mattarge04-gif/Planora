@@ -2,6 +2,14 @@
 
 Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
 
+## E46 – Anlagenakte schlank, Kosten erst mit Firma (PO, 2026-11-23, Brainstorming)
+
+Rohantworten: "nein das kommt am schluss" (KI-Probe/Messlauf); "ich will das erstmachen wenn ich intern eine firma gegründet habe mit einem budget dafür" -> Rueckfrage "Nur Kosten"; Umfang "Schlank (Recommended)"; Ablage "Gebäude + Verknüpfung (Recommended)"; Dateitypen "PDF, Bild, Office (Recommended)"; Bibliothek "Heizung fertig (Recommended)"; Ansatz "1"; Abschnitte 1–4 "passt"; "danach direkt weitermachen".
+
+- Kostenpflichtiges (CH-VM, echte KI-Laeufe, bezahlte Dienste) erst nach Gruendung einer internen Firma mit Budget; lokales Bauen geht weiter. Probe/Messlauf Preis aus Dokument ganz am Schluss.
+- Anlagenakte schlank: Ablage je Gebaeude mit Verknuepfung zu Bauteilen, Quarantaene + ClamAV, Viewer PDF/Bild, Office nur Download, Bibliothek Heizung fertig. Bestehende Preis-Ablage wird Modul `dokumente`; Preise lesen nur noch per Knopf. Kein Multipart (Nachtrag ADR 0016).
+- Spec `docs/superpowers/specs/2026-11-23-anlagenakte-design.md`, Aufwand [A] 7–10 PT.
+
 ## E45 – Preis-Auslesen mit OpenAI gpt-6.2-sol (PO, 2026-11-22)
 
 Rohantworten: "sag mir zuerst welches die beste api ist für ihren preis", "und mit openai", nach Vergleichstabelle "nutze 6.2 sol von openai".

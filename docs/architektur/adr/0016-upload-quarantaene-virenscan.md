@@ -1,5 +1,7 @@
 # 0016 – Upload-Sicherheit: Quarantaene und Virenscan
 
+> **Nachtrag E46 (2026-11-23):** Upload in einem Request (≤ 100 MB [A]) statt Uppy-Multipart/tus, weil der Speicher lokal ist (ADR 0027). Quarantaene, ClamAV (`clamd` INSTREAM), Magic-Byte-Pruefung und "Fehler/unbekannt gilt nie als sauber" bleiben. Details: `docs/superpowers/specs/2026-11-23-anlagenakte-design.md`.
+
 > **Status ab Welle 4: angepasst (E34–E37, 2026-11-09).**
 > [A] Quarantaene, ClamAV und serverseitiger Multipart-Abschluss bleiben; Prefixe/Signierung auf den gewaehlten lokalen Speicher (ADR 0027) und Objekt-Rechte statt Mandantenprefix.
 > [A] K01 gilt erst nach Race-/Crash-Test auf dem ausgelieferten Speicher als geschlossen. AV-Ausfall, volle Disk und Signaturversorgung auch On-Premise festlegen.
