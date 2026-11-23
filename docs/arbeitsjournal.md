@@ -3,6 +3,34 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-23 – Preis aus Dokument umgesetzt
+
+### 1. Was gemacht wurde
+
+- [F] Plan `docs/superpowers/plans/2026-11-22-preis-aus-dokument.md` (E43 Teil 2): T1–T8 vollstaendig, T9 (Messlauf-Werkzeug, UTF8-Cluster, Abnahme-README) teilweise, per Subagenten mit Review je Task. Commits `0abe702`..HEAD auf `m2c-interview`, nicht gepusht, kein Merge.
+- [F] Gesamtreview "mit Korrekturen" -> Fixwelle `b8028f4` -> Re-Review ohne offene Befunde. visual-critic r1 "verbessern", r2 "bereit" (`docs/design/kritiken/2026-11-23-preis-dokument/`).
+- [F] Pruefstand: Backend 693/693, Web 560/560, Typen und Build gruen.
+
+### 2. Inhaltlich gelernt (Rulings)
+
+- [F] Budget laeuft ueber die Buchungstabelle `preis_lesung`: jede bezahlte Lesung zaehlt, auch Fehler, Neu-Lesen und Loeschen.
+- [F] Kein FK dokument->datei; Schutz ueber `datei_referenz`. Seitenzaehlung mit zlib-Inflate. Uebersicht liefert `stand`. Nach Neustart werden Lesungen im Zustand neu/liest zu abgebrochen.
+- [A] PDF-Eingabe bei gpt-6.2-sol unbestaetigt (Modellseite nennt nur Text/Bild). [A] `["number","null"]` im strict-Schema unbestaetigt.
+
+### 3. Ueber die Zusammenarbeit gelernt
+
+- [F] Der Schluessel fehlt noch; alles, was das echte Modell braucht (Probe, Messlauf, Browser-Abnahme), wartet auf PO-OK und Umgebungsvariable. Bis dahin ist die Abnahme nur teilweise moeglich.
+
+### 4. Technisch zeitsparend
+
+- [F] Dev/Test-Postgres war auf Windows WIN1252 (Umlaute kaputt, Prod nicht betroffen); jetzt UTF8 mit `--locale=C` (weicht von Prod-Kollation ab). Laufende alte Testinstanzen neu starten, sonst bleibt die alte Kodierung.
+- [F] Messlauf-Werkzeug `werkzeug/preisdokument/probe.mjs` (Probe < $0.05) und Messlauf (< $2) nur mit PO-OK starten.
+
+### 5. Wo es weitergeht
+
+- Wartet auf PO: `OPENAI_API_KEY` als Benutzer-Umgebungsvariable setzen, OK fuer Probe und Messlauf; danach Browser-Abnahme (o1, o2, o4, "Alle sicheren", Legende ohne Preis 8 -> <= 2) und CLAUDE.md-Nachtrag. Details: `docs/abnahme/2026-11-23-preis-dokument/README.md`, Abschnitt "Offen – wartet auf PO".
+- Kann: P3 aus r2 (Dateiname gekuerzt bei 1440, Kartenende bei 1280, Legende 3–4 px); "Alle sicheren" ueberspringt Vorschlag bei geloeschtem Bauteil; Messlauf misst nur Recall.
+
 ## 2026-11-19/20 – Lebensdauer/Ampel umgesetzt
 
 ### 1. Was gemacht wurde

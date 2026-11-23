@@ -17,7 +17,17 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 **Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
 
-## 0b. Stand – zuletzt aktualisiert 22.11.2026
+## 0b. Stand – zuletzt aktualisiert 23.11.2026
+
+### Preis aus Dokument umgesetzt (23.11.2026) [F]
+
+- Einstieg naechste Sitzung: "weiter" -> diesen Block lesen, dann `docs/abnahme/2026-11-23-preis-dokument/README.md`, Abschnitt "Offen – wartet auf PO".
+- Plan `docs/superpowers/plans/2026-11-22-preis-aus-dokument.md`: T1–T8 vollstaendig, T9 teilweise, per Subagenten umgesetzt. Commits `0abe702`..HEAD auf `m2c-interview`, nicht gepusht, kein Merge.
+- Pruefstand: Backend 693/693, Web 560/560, Typen und Build gruen. Gesamtreview "mit Korrekturen" -> Fixwelle `b8028f4` -> Re-Review ohne offene Befunde. visual-critic r2 "bereit" (`docs/design/kritiken/2026-11-23-preis-dokument/`).
+- Rulings: Budget ueber Buchungstabelle `preis_lesung` (zaehlt jede bezahlte Lesung, auch Fehler/Neu-Lesen/Loeschen); kein FK dokument->datei, Schutz ueber `datei_referenz`; Seitenzaehlung mit zlib-Inflate; Uebersicht liefert `stand`; nach Neustart werden neu/liest zu abgebrochen; Dev/Test-Postgres jetzt UTF8 (vorher WIN1252 auf Windows, Prod nicht betroffen; laufende alte Testinstanzen neu starten).
+- [A] PDF-Eingabe bei gpt-6.2-sol unbestaetigt (Modellseite nennt nur Text/Bild); [A] `["number","null"]` im strict-Schema unbestaetigt.
+- Offen, wartet auf PO: `OPENAI_API_KEY` lokal als Benutzer-Umgebungsvariable setzen; PO-OK fuer Probe (`node werkzeug/preisdokument/probe.mjs`, < $0.05) und Messlauf (< $2); danach Browser-Abnahme mit Schluessel (o1, o2, o4, "Alle sicheren", Legende ohne Preis 8 -> <= 2) und CLAUDE.md-Nachtrag.
+- Offen (Kann): P3 aus r2 (Dateiname gekuerzt bei 1440, Kartenende bei 1280, Legende 3–4 px); "Alle sicheren" ueberspringt Vorschlag bei geloeschtem Bauteil; Messlauf misst nur Recall; `--locale=C` weicht von Prod-Kollation ab.
 
 ### Ampel-Marker neu (22.11.2026) [F]
 
