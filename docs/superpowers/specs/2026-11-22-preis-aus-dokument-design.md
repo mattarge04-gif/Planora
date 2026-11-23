@@ -8,7 +8,7 @@ Der FM legt Offerten/Rechnungen (PDF) im Gebaeude ab. Die KI liest Positionen mi
 
 PO-Entscheide (22.11., AskUserQuestion): Auslesen per KI-API (zuerst Claude, dann PO 22.11. "nutze 6.2 sol von openai" -> **OpenAI `gpt-6.2-sol`**, E45, ADR 0033); **Ablage je Gebaeude**, die KI schlaegt Zuordnungen vor; Fundstelle als **Zitat + PDF auf Seite** (kein eingebetteter Viewer); Ersatzpreis = **netto inkl. Montage anteilig, ohne MWST**; Preis **je Bauteil, Typpreis als Option**; Technik **Ansatz A** (Hintergrund im Server-Prozess, Status in DB).
 
-Nicht im Schnitt: eingebetteter Viewer mit Markierung (ADR 0022), Virenscan/Quarantaene (ADR 0016, vor erstem echten Kundenbetrieb [?]), pg-boss-Warteschlange (ADR 0006), andere Dokumentarten als PDF, Dokumentsuche, Teuerung.
+Nicht im Schnitt: eingebetteter Viewer mit Markierung (ADR 0022), Virenscan/Quarantaene (ADR 0016, vor erstem echten Kundenbetrieb [?]), pg-boss-Warteschlange (ADR 0006), andere Dokumentarten als PDF, Dokumentsuche, Teuerung. (überholt, siehe Nachtrag E46)
 
 ## 2. Modell und Anbieter
 
@@ -55,7 +55,7 @@ KI-Adapter `ki/openai.ts` (Produktion, offizielles SDK `openai`, Responses API, 
 
 ## 6. Sicherheit
 
-- Upload: Signatur, Groesse, Seitenzahl; Dateiname nur zur Anzeige (Ablage nach sha256). Kein Virenscan in der Demo [A], offen vor Kundenbetrieb.
+- Upload: Signatur, Groesse, Seitenzahl; Dateiname nur zur Anzeige (Ablage nach sha256). Kein Virenscan in der Demo [A], offen vor Kundenbetrieb. (überholt, siehe Nachtrag E46)
 - Injection: Dokumentinhalt ist Daten; Ausgabe nur ueber Schema; Server uebernimmt nur gegen gepruefte IDs; Testdokument mit eingeschleustem Text.
 - Rechte: Hochladen/Auslesen/Uebernehmen/Loeschen = Schreibrecht Lebensdauer; Lesen = Leserecht Lebensdauer.
 - Schluessel nur in Umgebung/Secret, nie in DB/Log/Antwort. KI aus -> 0 externe Requests (ADR 0030).
@@ -86,6 +86,6 @@ KI-Adapter `ki/openai.ts` (Produktion, offizielles SDK `openai`, Responses API, 
 
 - [?] Siemens: Inhaltsabfluss an OpenAI (ADR 0033), EU-Residenz-Zugang und ZDR – bis Klaerung nur Demo mit eigenen Dokumenten.
 - [?] PDF-Eingabe fuer `gpt-6.2-sol` per Probeaufruf bestaetigen (Plan Schritt 1).
-- [?] Virenscan/Quarantaene (ADR 0016) vor erstem echten Kundenbetrieb.
+- [?] Virenscan/Quarantaene (ADR 0016) vor erstem echten Kundenbetrieb. (überholt, siehe Nachtrag E46)
 - [A] Budget $20/Monat, 2 gleichzeitige Lesungen, Grenzen 32 MB/100 Seiten.
 - OpenAI-API-Schluessel (`OPENAI_API_KEY`) fuer Probeaufruf/Messlauf/Demo: PO legt ihn lokal in die Umgebung (nicht ins Repo).

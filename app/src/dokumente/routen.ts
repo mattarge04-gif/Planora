@@ -75,6 +75,7 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
         const dup = await bestehendes(req.params.id, sha);
         if (dup) return fachlich(reply, async () => reply.code(200).send(await ergaenzeUndLade(req.params.id, dup, verknuepfen))); // paralleler Upload gleichen Inhalts; die Kopie gehoert ihm
         await raeumeQuarantaeneKopie(pool, o.quarantaene, x.schluessel);
+        if (e instanceof FachFehler) return reply.code(e.status).send({ fehler: e.fehler }); // z. B. Bauteil zwischen Pruefung und Einfuegen geloescht
         throw e;
       }
       // Antwortzeile vor dem Start laden: sonst hinge der gemeldete Status vom Timing der Pruefung ab.

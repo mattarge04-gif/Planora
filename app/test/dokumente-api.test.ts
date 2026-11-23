@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { randomBytes } from "node:crypto";
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { frischeDb } from "./hilfe.js";
@@ -320,7 +320,7 @@ describe("Dokumente-API: Duplikat-Verknuepfung Rennen und FK", () => {
     await warteScan(id);
     await db.pool.query("update dokument set scan_status='abgelehnt' where id=$1", [id]);
     const c = await db.pool.connect();
-    try { await ergaenzeVerknuepfungen(c, id, [B1]); } finally { c.release(); }
+    try { await c.query("begin"); await ergaenzeVerknuepfungen(c, id, [B1]); await c.query("commit"); } finally { c.release(); }
     expect((await db.pool.query("select 1 from dokument_bauteil where dokument_id=$1", [id])).rowCount).toBe(0);
     const d = await ablegen(kBearb, daten, "R.pdf", `?bauteile=${B1}`);
     expect([d.statusCode, d.json().bauteilIds]).toEqual([200, []]);
@@ -331,5 +331,21 @@ describe("Dokumente-API: Duplikat-Verknuepfung Rennen und FK", () => {
       const id = (await ablegen(kBearb, pdf(1, "% fk"), "FK.pdf")).json().id;
       await expect(ergaenzeVerknuepfungen(c, id, ["00000000-0000-4000-8000-000000000000"])).rejects.toMatchObject({ status: 400 });
     } finally { c.release(); }
+  });
+  it("Upload: Bauteil im Rennen geloescht (FK) -> 400 bauteil_unbekannt, keine Quarantaene-Kopie", async () => {
+    const dateien = (d: string): string[] => !existsSync(d) ? [] : readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? dateien(join(d, e.name)) : [join(d, e.name)]);
+    const q = join(WURZEL, "quarantaene");
+    await db.pool.query(`create function t4_fk() returns trigger language plpgsql as $$ begin raise exception 'fk' using errcode='23503'; end $$`);
+    await db.pool.query("create trigger t4_fk before insert on dokument_bauteil for each row execute function t4_fk()");
+    try {
+      const vorher = new Set(dateien(q));
+      const r = await ablegen(kBearb, pdf(1, "% fkrace"), "Race.pdf", `?bauteile=${B1}`);
+      expect([r.statusCode, r.json().fehler[0].code]).toEqual([400, "bauteil_unbekannt"]);
+      expect(dateien(q).filter((f) => !vorher.has(f))).toEqual([]); // keine neue Kopie uebrig (Pruefer darf alte entfernen)
+      expect((await db.pool.query("select 1 from dokument where dateiname='Race.pdf'")).rowCount).toBe(0);
+    } finally {
+      await db.pool.query("drop trigger t4_fk on dokument_bauteil");
+      await db.pool.query("drop function t4_fk()");
+    }
   });
 });
