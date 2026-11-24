@@ -31,6 +31,7 @@ export interface DokumentZeile {
   hochgeladenAm: string;
   status: DokumentStatus;
   fehler: string | null;
+  scanStatus: "quarantaene" | "sauber" | "abgelehnt" | "scan_fehler";
   vorschlaege: VorschlagZeile[];
 }
 

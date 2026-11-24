@@ -7,13 +7,23 @@ const NAMEN: Record<string, string> = {
   "heizung.umwaelzpumpe": "Umwälzpumpe", "heizung.verteiler": "Heizungsverteiler", "heizung.heizkoerper": "Heizkörper",
   "heizung.fbh_kreis": "FBH-Kreis", "heizung.tabs_feld": "TABS-Feld",
   "heizung.wmz": "Wärmezähler", "heizung.ventil_3weg": "3-Weg-Ventil", "heizung.ventil_2weg": "Durchgangsventil",
+  "heizung.ausdehnungsgefaess": "Ausdehnungsgefäss", "heizung.sonstiges": "Sonstiges",
 };
-export type IconSchluessel = "waermepumpe" | "kessel" | "fernwaerme" | "speicher" | "pumpe" | "verteiler" | "heizkoerper" | "flaechenheizung" | "anlage";
+export type IconSchluessel = "waermepumpe" | "kessel" | "fernwaerme" | "speicher" | "pumpe" | "verteiler" | "heizkoerper" | "flaechenheizung" | "ventil" | "zaehler" | "ausdehnung" | "anlage";
 const ICONS: Record<string, IconSchluessel> = {
   "heizung.waermepumpe": "waermepumpe", "heizung.gaskessel": "kessel", "heizung.oelkessel": "kessel",
   "heizung.fernwaerme_uebergabe": "fernwaerme", "heizung.speicher": "speicher", "heizung.umwaelzpumpe": "pumpe",
   "heizung.verteiler": "verteiler", "heizung.heizkoerper": "heizkoerper", "heizung.fbh_kreis": "flaechenheizung", "heizung.tabs_feld": "flaechenheizung",
+  "heizung.ventil_3weg": "ventil", "heizung.ventil_2weg": "ventil", "heizung.wmz": "zaehler",
+  "heizung.ausdehnungsgefaess": "ausdehnung", "heizung.sonstiges": "anlage",
 };
+const ICON_SCHLUESSEL = new Set<string>(["waermepumpe", "kessel", "fernwaerme", "speicher", "pumpe", "verteiler", "heizkoerper", "flaechenheizung", "ventil", "zaehler", "ausdehnung", "anlage"]);
+/** Icon: Katalogfeld `icon` ist die Quelle; die lokale Tabelle ist nur Rueckfall fuer unbekannte Schluessel. */
+export function iconFuer(katalogId: string, katalog: KatalogEintrag[] = []): IconSchluessel {
+  const k = katalog.find((e) => e.id === katalogId)?.icon;
+  if (k && ICON_SCHLUESSEL.has(k)) return k as IconSchluessel;
+  return Object.hasOwn(ICONS, katalogId) ? ICONS[katalogId] : "anlage";
+}
 const ERZEUGER = new Set(["heizung.waermepumpe", "heizung.gaskessel", "heizung.oelkessel", "heizung.fernwaerme_uebergabe"]);
 
 export function anzeigeName(katalogId: string, katalog: KatalogEintrag[] = []): string {
@@ -84,7 +94,7 @@ export function objektKarte(welt: Welt, beschreibung: Beschreibung, katalog: Kat
   const panel = panelDaten(welt, beschreibung, katalog, schluessel);
   if (!s || !panel) return null;
   return { ...anlagenZeile(welt, beschreibung, katalog, s, panel), id: s.schluessel,
-    icon: Object.hasOwn(ICONS, s.katalogId) ? ICONS[s.katalogId] : "anlage", zeilen: panel.zeilen, versorgt: panel.versorgt, dokumente: [] };
+    icon: iconFuer(s.katalogId, katalog), zeilen: panel.zeilen, versorgt: panel.versorgt, dokumente: [] };
 }
 
 export interface HinweisZeile { id: string; code: string; bezug: string; text: string; status: "offen" | "erledigt" | null; ziel: Zielort | null }

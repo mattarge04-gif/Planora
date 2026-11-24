@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Beschreibung, Hinweis, KatalogEintrag, Welt, WeltSymbol } from "../typen";
-import { anlagenZeilen, anzeigeName, geschossListe, hinweisListe, kennzahlen, objektKarte, zentraleGeschoss } from "./index";
+import { anlagenZeilen, anzeigeName, geschossListe, hinweisListe, iconFuer, kennzahlen, objektKarte, zentraleGeschoss } from "./index";
 
 // Gleiche erfasste Anlagen und Einheiten wie app/src/welt/beispiel.ts, mit festen Test-IDs.
 const katalog: KatalogEintrag[] = [
@@ -107,6 +107,16 @@ describe("Anzeigenamen und Anlagen", () => {
     expect(objektKarte(welt, beschreibung, katalog, "fehlt")).toBeNull();
     const w = { ...welt, symbole: [{ ...welt.symbole[0], katalogId: "neu" }] };
     expect(objektKarte(w, beschreibung, [], "wp")).toMatchObject({ icon: "anlage", name: "neu" });
+  });
+  it("Icon: Katalogfeld ist die Quelle, lokale Tabelle nur Rueckfall", () => {
+    const k = (id: string, icon?: string) => [{ id, name: "x", bereich: "zubehoer" as const, icon }];
+    expect(iconFuer("heizung.neu", k("heizung.neu", "ventil"))).toBe("ventil");
+    expect(iconFuer("heizung.verteiler", k("heizung.verteiler", "zaehler"))).toBe("zaehler"); // Katalog gewinnt
+    expect(iconFuer("heizung.verteiler", k("heizung.verteiler", "unbekannt"))).toBe("verteiler"); // unbekannter Schluessel -> Rueckfall
+    expect(iconFuer("heizung.wmz", [])).toBe("zaehler");
+    expect(iconFuer("heizung.sonstiges")).toBe("anlage");
+    expect(iconFuer("heizung.ausdehnungsgefaess")).toBe("ausdehnung");
+    expect(iconFuer("nix", k("nix"))).toBe("anlage");
   });
 });
 

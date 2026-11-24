@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { Box, CircleGauge, Cylinder, Fan, FileText, Flame, Heater, Spline, Split, Upload, Waves, Waypoints, X, type LucideIcon } from "lucide-react";
+import { Box, CircleGauge, Cylinder, Droplet, Fan, FileText, Flame, Gauge, Heater, SlidersHorizontal, Spline, Split, Upload, Waves, Waypoints, X, type LucideIcon } from "lucide-react";
 import type { IconSchluessel, ObjektKarte } from "../dashboard";
 import { useSpeicher, type Speicher } from "../ui/speicher";
 import type { BildschirmPunkt } from "../szene3/Interaktion";
@@ -9,7 +9,7 @@ import { TwinLebensdauer } from "./TwinLebensdauer";
 
 export const ANLAGEN_ICON: Record<IconSchluessel, LucideIcon> = {
   waermepumpe: Fan, kessel: Flame, fernwaerme: Waypoints, speicher: Cylinder, pumpe: CircleGauge,
-  verteiler: Split, heizkoerper: Heater, flaechenheizung: Waves, anlage: Box,
+  verteiler: Split, heizkoerper: Heater, flaechenheizung: Waves, ventil: SlidersHorizontal, zaehler: Gauge, ausdehnung: Droplet, anlage: Box,
 };
 const STATUS = { bestaetigt: "Bestätigt", vorgeschlagen: "Vorgeschlagen" } as const;
 

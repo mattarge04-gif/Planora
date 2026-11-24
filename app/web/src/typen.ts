@@ -1,3 +1,4 @@
+import type { DatenblattFeld } from "./bestand/datenblatt";
 // Spiegel der API-Typen aus app/src/welt/typen.ts (Welt, Beschreibung). Bei Aenderungen dort hier nachziehen.
 export type BauteilStatus = "vorgeschlagen" | "bestaetigt";
 export type Dreiwertig = "ja" | "nein" | "unbekannt";
@@ -67,6 +68,7 @@ export interface BeschreibungEingabe {
   gruppen?: GruppeEingabe[];
   hinweise?: Hinweis[]; // nur lesend
 }
-export interface KatalogEintrag { id: string; name: string; bereich: "zentrale" | "verteilung" | "einheit" | "zubehoer"; masse?: [number, number, number] }
+export interface KatalogEintrag { id: string; name: string; bereich: "zentrale" | "verteilung" | "einheit" | "zubehoer"; masse?: [number, number, number];
+  datenblatt?: DatenblattFeld[]; lebensdauerQuelle?: { text: string; jahr: number }; icon?: string }
 export interface Katalog { version: number; eintraege: KatalogEintrag[] }
 export interface GebaeudeEintrag { id: string; name: string; liegenschaftId: string; liegenschaftName: string; geschosse: number }

@@ -8,7 +8,7 @@ const vz = (o: Partial<VorschlagZeile> & { id: string }): VorschlagZeile => ({
   katalogId: "heizung.umwaelzpumpe", bauteilIds: [], fehlendeBauteile: [], sicherheit: "hoch", status: "offen", alsTyppreis: false, ...o,
 });
 const dz = (o: Partial<DokumentZeile> & { id: string }): DokumentZeile => ({
-  dateiname: "a.pdf", groesse: 1, seiten: 1, hochgeladenAm: "2026-11-22T10:00:00.000Z", status: "fertig", fehler: null, vorschlaege: [], ...o,
+  dateiname: "a.pdf", groesse: 1, seiten: 1, hochgeladenAm: "2026-11-22T10:00:00.000Z", status: "fertig", fehler: null, scanStatus: "sauber", vorschlaege: [], ...o,
 });
 const u = (dokumente: DokumentZeile[]): Uebersicht => ({ dokumente, darfAendern: true, auslesen: "an", budget: { verbrauchtUsd: 0, limitUsd: 20 }, stand: 1 });
 
