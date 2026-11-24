@@ -10,7 +10,8 @@ import type { Katalog } from "../typen";
 import { AmpelZeichen } from "../ui/Ampel";
 import { Marke } from "../ui/Kopfzeile";
 import { dokumentQuelle } from "../karten/preisQuelle";
-import { useDokumenteVerfuegbar } from "./dokumenteVerfuegbar";
+import { usePreiseVerfuegbar } from "./dokumenteVerfuegbar";
+import { useViewer } from "../viewer/useViewer";
 import "./Erneuerungsplan.css";
 
 const F = TOKENS.farbe;
@@ -36,8 +37,11 @@ interface Props { gebaeudeId: string; name: string; onTwin: () => void; onAbgela
   onDokumente?: () => void }
 
 export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen, onDokumente }: Props) {
-  const dokumenteAn = useDokumenteVerfuegbar(gebaeudeId);
+  const dokumenteAn = usePreiseVerfuegbar(gebaeudeId);
   const zuDokumenten = dokumenteAn ? onDokumente : undefined;
+  const [viewerFehler, setViewerFehler] = useState<string | null>(null);
+  const viewer = useViewer(gebaeudeId, { onAbgelaufen, onFehlt: setViewerFehler });
+  const fundstelle = useCallback((id: string, seite: number | null) => { setViewerFehler(null); void viewer.oeffneId(id, seite); }, [viewer]);
   const [stand, setStand] = useState<LdStand | null>(null);
   const [katalog, setKatalog] = useState<Katalog | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -208,7 +212,7 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen, onDoku
                   <td className="ep-zustand">{z.zustand ? <>{z.zustand.text}{z.zustand.wirkung && <small>{z.zustand.wirkung}</small>}</> : <span className="ep-ort">unbekannt</span>}</td>
                   <td className="ep-zahl ep-betont">{z.ersatzjahr}</td>
                   <td className="ep-zahl">{z.preis.fehlt ? <span className="ep-preis-fehlt">Preis fehlt</span> : z.kosten}</td>
-                  <td className="ep-quelle"><Preisquelle stand={stand} id={z.id} quelle={z.preis.fehlt ? null : z.preis.quelle} /></td>
+                  <td className="ep-quelle"><Preisquelle stand={stand} id={z.id} quelle={z.preis.fehlt ? null : z.preis.quelle} onFundstelle={fundstelle} /></td>
                 </tr>))}</tbody>
             </table></div>}
         </section>
@@ -244,17 +248,20 @@ export function Erneuerungsplan({ gebaeudeId, name, onTwin, onAbgelaufen, onDoku
           </>}
         </details>
       </div>}
+      {viewerFehler && <p className="ep-meldung ep-meldung-konflikt ep-meldung-fix" role="alert"><TriangleAlert size={15} strokeWidth={2} aria-hidden="true" />{viewerFehler}
+        <button type="button" className="ep-knopf" onClick={() => setViewerFehler(null)}>Schliessen</button></p>}
+      {viewer.element}
     </main>
   );
 }
 
-/** Herkunft des Stückpreises; Dokumentpreise mit Fundstelle (neuer Tab). */
-function Preisquelle({ stand, id, quelle }: { stand: LdStand; id: string; quelle: string | null }) {
+/** Herkunft des Stückpreises; Dokumentpreise mit Fundstelle (öffnet den Viewer auf Seite n). */
+function Preisquelle({ stand, id, quelle, onFundstelle }: { stand: LdStand; id: string; quelle: string | null; onFundstelle: (dokumentId: string, seite: number | null) => void }) {
   const dok = dokumentQuelle(stand, id);
   if (!dok) return <span className="ep-ort">{quelle ?? "–"}</span>;
   const text = (dok.typpreis ? "Typwert " : "") + dok.text;
-  return dok.href
-    ? <a className="ep-quelle-link" href={dok.href} target="_blank" rel="noopener" title={dok.dateiname ?? undefined} aria-label={`${text} öffnen (neuer Tab)`}>
-      <span>{text}</span><ArrowUpRight size={12} strokeWidth={1.75} aria-hidden="true" /></a>
+  return dok.dokumentId
+    ? <button type="button" className="ep-quelle-link" onClick={() => onFundstelle(dok.dokumentId!, dok.seite)} title={dok.dateiname ?? undefined} aria-label={`${text}, im Viewer öffnen`}>
+      <span>{text}</span><ArrowUpRight size={12} strokeWidth={1.75} aria-hidden="true" /></button>
     : <span className="ep-ort">{text}</span>;
 }

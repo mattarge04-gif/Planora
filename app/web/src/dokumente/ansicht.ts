@@ -5,10 +5,11 @@ export const KATEGORIEN: { id: Kategorie; name: string }[] = [
   { id: "foto", name: "Foto" }, { id: "protokoll", name: "Protokoll" }, { id: "sonstiges", name: "Sonstiges" },
 ];
 export const kategorieName = (k: Kategorie) => KATEGORIEN.find((x) => x.id === k)?.name ?? k;
-export function scanAnzeige(d: Pick<AblageZeile, "scanStatus" | "scanGrund">): { text: string; art: "laeuft" | "ok" | "fehler" | "abgelehnt" } {
+/** Kundentext zum Scan-Zustand; der Signaturname des Befunds nur als Detail (Tooltip), nie als Haupttext. */
+export function scanAnzeige(d: Pick<AblageZeile, "scanStatus" | "scanGrund">): { text: string; art: "laeuft" | "ok" | "fehler" | "abgelehnt"; detail?: string } {
   if (d.scanStatus === "quarantaene") return { text: "wird geprüft …", art: "laeuft" };
   if (d.scanStatus === "sauber") return { text: "geprüft", art: "ok" };
-  if (d.scanStatus === "abgelehnt") return { text: `abgelehnt: ${d.scanGrund ?? "Befund"}`, art: "abgelehnt" };
+  if (d.scanStatus === "abgelehnt") return d.scanGrund ? { text: "Datei abgelehnt (Virenprüfung)", art: "abgelehnt", detail: `Befund: ${d.scanGrund}` } : { text: "Datei abgelehnt (Virenprüfung)", art: "abgelehnt" };
   return { text: "Prüfung fehlgeschlagen", art: "fehler" };
 }
 const zahl = new Intl.NumberFormat("de-CH", { maximumFractionDigits: 1 });
@@ -41,7 +42,8 @@ const FEHLER: Record<string, string> = {
   typ_unbekannt: "Dateityp nicht erlaubt. Erlaubt sind PDF, JPG, PNG, HEIC, Word, Excel und PowerPoint.",
   makro: "Dateien mit Makros werden nicht abgelegt.", zu_gross: "Datei grösser als 100 MB.", leer: "Datei ist leer.",
   nicht_sauber: "Datei ist noch nicht freigegeben.", bauteil_unbekannt: "Bauteil gehört nicht zu diesem Gebäude.",
-  abgelehnt: "Abgelehnte Dateien lassen sich nicht ändern.", nicht_scan_fehler: "Die Prüfung ist nicht fehlgeschlagen.",
+  abgelehnt: "Abgelehnte Dateien lassen sich nicht ändern.", nicht_scan_fehler: "Nur fehlgeschlagene Prüfungen lassen sich wiederholen.",
+  auslesen_aus: "Auslesen ist ausgeschaltet. Der Admin kann es einschalten.",
   bauteil_gemischt: "Die Bauteile müssen vom gleichen Typ und im gleichen Gebäude sein.",
   feld_unbekannt: "Unbekanntes Datenblatt-Feld.", feld_typ: "Ungültiger Wert im Datenblatt.",
   liest_bereits: "Das Dokument wird bereits gelesen.", kein_pdf: "Nur PDF-Dateien lassen sich auslesen.",

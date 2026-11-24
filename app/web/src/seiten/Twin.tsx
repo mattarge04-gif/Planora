@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ApiFehler, holeJson } from "../api";
+import { ApiFehler, fehlerCode, holeJson } from "../api";
 import type { LdStand } from "../lebensdauer/typen";
 import { TOKENS } from "../design/tokens";
 import { Szene3 } from "../szene3/Szene3";
@@ -27,7 +27,12 @@ import { pegelJeGeschoss } from "../szene3/pegelband";
 import type { FilterStufe } from "../szene3/ampelFilter";
 import { erneuerungFilter, POSTEN_TEXT, umschalten } from "../karten/erneuerungFilter";
 import { anzeigeWelt } from "../szene3/gruppenNetz";
-import { useDokumenteVerfuegbar } from "./dokumenteVerfuegbar";
+import { usePreiseVerfuegbar } from "./dokumenteVerfuegbar";
+import { ladeAblage, legeAb } from "../dokumente/api";
+import { ablageFehlerText, unterlagenFuer, vorpruefen } from "../dokumente/ansicht";
+import type { AblageAntwort } from "../dokumente/typen";
+import type { AblageMeldung } from "../karten/TwinUnterlagen";
+import { useViewer } from "../viewer/useViewer";
 import "./Twin.css";
 
 function webglVorhanden(): boolean {
@@ -87,14 +92,23 @@ interface Props {
   onBearbeiten?: () => void;
   /** Öffnet die Seite Erneuerungsplan (nur sichtbar, wenn Lebensdauer geladen ist). */
   onPlan?: () => void;
-  /** Öffnet die Seite Dokumente (Preise aus Dokumenten), optional gefiltert auf ein Bauteil. */
-  onDokumente?: (bauteilId?: string) => void;
+  /** Öffnet die Seite Dokumente: "alle" (Ablage) oder "preise" (Preise prüfen, optional auf ein Bauteil gefiltert). */
+  onDokumente?: (ansicht: "alle" | "preise", bauteilId?: string) => void;
   onAbmelden: () => void; onAbgelaufen: () => void;
 }
 
 export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPlan, onDokumente, onAbmelden, onAbgelaufen }: Props) {
-  const dokumenteAn = useDokumenteVerfuegbar(gebaeudeId);
-  const zuDokumenten = dokumenteAn ? onDokumente : undefined;
+  const preiseAn = usePreiseVerfuegbar(gebaeudeId);
+  // Preis-Einstiege nur, wenn "Preis aus Dokument" lesbar ist; die Ablage selbst ist immer erreichbar (Kernmodul).
+  const zuPreisen = preiseAn && onDokumente ? (bauteilId?: string) => onDokumente("preise", bauteilId) : undefined;
+  const [ablage, setAblage] = useState<AblageAntwort | null>(null);
+  const ladeAblageNeu = useCallback(() => {
+    ladeAblage(gebaeudeId).then(setAblage, (e: unknown) => { if (e instanceof ApiFehler && e.status === 401) onAbgelaufen(); /* sonst ohne Unterlagen */ });
+  }, [gebaeudeId, onAbgelaufen]);
+  useEffect(() => { setAblage(null); ladeAblageNeu(); }, [ladeAblageNeu]);
+  const viewer = useViewer(gebaeudeId, { onAbgelaufen });
+  const viewerOffen = useRef(false);
+  viewerOffen.current = viewer.ziel !== null;
   const [welt, setWelt] = useState<Welt | null>(null);
   const [beschreibung, setBeschreibung] = useState<Beschreibung | null>(null);
   const [katalog, setKatalog] = useState<Katalog | null>(null);
@@ -163,7 +177,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
   useEffect(() => {
     // Esc schliesst zuerst die Anlagenkarte, danach den Geschossschnitt.
     const taste = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
+      if (e.key !== "Escape" || viewerOffen.current) return; // offener Viewer schliesst zuerst (eigener Esc)
       setOrtZiel(null);
       // Reihenfolge: Anlagenkarte, dann Filter, dann Geschossschnitt.
       if (auswahlRef.current) setAuswahl(null);
@@ -328,6 +342,23 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
     } else waehleModus("technik");
   };
 
+  /** "+ Ablegen" in der Anlagenkarte: Dateien ablegen und gleich mit den Bauteilen verknüpfen (auch beim Duplikat, Ruling 5). */
+  const ablegenFuer = async (dateien: File[], bauteilIds: string[]): Promise<AblageMeldung[]> => {
+    const { ok, zuGross } = vorpruefen(dateien);
+    const m: AblageMeldung[] = zuGross.map((f) => ({ datei: f.name, text: ablageFehlerText("zu_gross"), art: "fehler" }));
+    for (const f of ok) {
+      try {
+        const r = await legeAb(gebaeudeId, f, { bauteilIds });
+        if (!r.neu) m.push({ datei: f.name, text: r.zeile.dateiname === f.name ? "Ist schon abgelegt." : `Ist schon abgelegt als ${r.zeile.dateiname}.`, art: "hinweis" });
+      } catch (e) {
+        if (e instanceof ApiFehler && e.status === 401) { onAbgelaufen(); return m; }
+        m.push({ datei: f.name, text: ablageFehlerText(fehlerCode(e), e instanceof ApiFehler ? e.status : undefined, "Ablegen fehlgeschlagen."), art: "fehler" });
+      }
+    }
+    ladeAblageNeu();
+    return m;
+  };
+
   const liegenschaft = liste?.find((g) => g.id === gebaeudeId)?.liegenschaftName ?? null;
 
   return (
@@ -340,7 +371,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
           hinweise={daten ? daten.hinweise.length : null} onHinweise={zeigeHinweise}
           reduziert={reduziert} onReduziert={setReduziert}
           erneuerung={lebensdauer ? { an: erneuerung, onUm: umErneuerung } : undefined}
-          onListe={onListe} onBearbeiten={onBearbeiten} onPlan={lebensdauer ? onPlan : undefined} onDokumente={zuDokumenten ? () => zuDokumenten() : undefined} onAbmelden={onAbmelden} />
+          onListe={onListe} onBearbeiten={onBearbeiten} onPlan={lebensdauer ? onPlan : undefined} onDokumente={onDokumente ? () => onDokumente("alle") : undefined} onAbmelden={onAbmelden} />
 
         {(!webgl || fehler || !daten) && <div className="tw-meldung-platz">
           {!webgl && <p className="ui-glas tw-meldung" role="alert">3D-Darstellung nicht verfügbar. Dein Browser unterstützt WebGL 2 nicht.</p>}
@@ -352,7 +383,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
           <aside className="tw-links" ref={links} aria-label="Gebäude und Hinweise">
             <TwinGebaeude name={name} liegenschaft={liegenschaft} welt={welt} zahlen={daten.zahlen} />
             {/* Legende links: rechts bleibt der Platz für Geschosse und Anlagenkarte */}
-            {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} onPlan={onPlan} onDokumente={zuDokumenten ? () => zuDokumenten() : undefined} filter={{
+            {erneuerung && lebensdauer && <TwinErneuerung stand={lebensdauer} onPlan={onPlan} onDokumente={zuPreisen ? () => zuPreisen() : undefined} filter={{
               posten, onPosten: umPosten, onAufheben: () => { setPosten(new Set()); sage("Filter aufgehoben"); },
               treffer: filterErgebnis?.treffer ?? [], geschossCode, auswahl, onTreffer: waehleZeile,
               bezug, fokus: trefferFokus, onFokus: fokussiereTreffer, hover3d: hoverTreffer,
@@ -377,7 +408,10 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
               pegel={pegel} hoverId={geschossHover} onHover={setGeschossHover} treffer={filterErgebnis?.jeGeschoss} />
             {karte
               ? <TwinObjekt key={karte.id} karte={karte} bezug={straenge.find((st) => st.zubehoer.includes(karte.schluessel)) ? bezug(karte) : null} kartenRef={objektRef} onSchliessen={schliesseKarte}
-                lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} onDokument={zuDokumenten} />
+                lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} onDokument={zuPreisen}
+                onFundstelle={(id, seite) => void viewer.oeffneId(id, seite)} katalog={katalog?.eintraege} onAbgelaufen={onAbgelaufen}
+                {...(ablage ? { unterlagen: unterlagenFuer(ablage.dokumente, karte.bauteilIds), darfAblegen: ablage.darfAendern,
+                  onOeffnen: viewer.oeffne, onNeuLaden: ladeAblageNeu, onAblegen: (dateien: File[]) => ablegenFuer(dateien, karte.bauteilIds) } : {})} />
               : gruppe ? <TwinGruppe key={gruppe.id} karte={gruppe} kartenRef={objektRef} onSchliessen={schliesseKarte} />
               : <p className="tw-objekt-leer">Anlage oder Leitung im Modell wählen, um Details zu sehen.</p>}
           </aside>
@@ -388,6 +422,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
         </>}
       </div>
       <p className="ui-sr" role="status" aria-live="polite" aria-atomic="true">{ansage}</p>
+      {viewer.element}
     </main>
   );
 }

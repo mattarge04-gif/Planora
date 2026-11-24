@@ -1,4 +1,3 @@
-import { dateiUrl } from "../preisdokument/api";
 import type { LdStand } from "../lebensdauer/typen";
 
 /** Fundstelle eines Dokumentpreises fuer Anlagenkarte und Erneuerungsplan; null, wenn der Preis nicht aus einem Dokument stammt. */
@@ -10,8 +9,9 @@ export interface DokumentQuelle {
   /** Teile von `kurz`: Name (darf gekuerzt werden) und Seite (bleibt sichtbar). */
   kurzName: string;
   stelle: string;
-  /** Link auf das PDF an der Fundstelle (neuer Tab); null, wenn das Dokument geloescht ist. */
-  href: string | null;
+  /** Ziel fuer den Viewer (Dokument, Seite); dokumentId null, wenn das Dokument geloescht ist. */
+  dokumentId: string | null;
+  seite: number | null;
   /** Preis gilt ueber den Typwert (alle Bauteile dieses Typs). */
   typpreis: boolean;
   dateiname: string | null;
@@ -23,11 +23,11 @@ export function dokumentQuelle(stand: LdStand, bauteilId: string): DokumentQuell
   const b = stand.bauteile.find((x) => x.id === bauteilId);
   const typpreis = e.quellen.preis === "typ";
   const q = typpreis ? stand.typen.find((t) => t.katalogId === b?.katalogId)?.preisQuelle ?? null : b?.akte?.preisQuelle ?? null;
-  if (!q || !q.dokumentId) return { text: "aus Dokument (gelöscht)", kurz: "Dokument (gelöscht)", kurzName: "Dokument (gelöscht)", stelle: "", href: null, typpreis, dateiname: null };
+  if (!q || !q.dokumentId) return { text: "aus Dokument (gelöscht)", kurz: "Dokument (gelöscht)", kurzName: "Dokument (gelöscht)", stelle: "", dokumentId: null, seite: null, typpreis, dateiname: null };
   const seite = q.seite ?? undefined;
   const name = q.dateiname ?? "Dokument";
   const stelle = seite ? `, S. ${seite}` : "";
   // Neben dem Preis ohne Endung ".pdf" (Platz in der Anlagenkarte); voller Name im Titel.
   const kurzName = name.replace(/\.pdf$/i, "");
-  return { text: `aus ${name}${stelle}`, kurz: kurzName + stelle, kurzName, stelle, href: dateiUrl(q.dokumentId, seite), typpreis, dateiname: q.dateiname };
+  return { text: `aus ${name}${stelle}`, kurz: kurzName + stelle, kurzName, stelle, dokumentId: q.dokumentId, seite: q.seite ?? null, typpreis, dateiname: q.dateiname };
 }

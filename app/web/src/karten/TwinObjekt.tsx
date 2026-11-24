@@ -1,11 +1,15 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { Box, CircleGauge, Cylinder, Droplet, Fan, FileText, Flame, Gauge, Heater, SlidersHorizontal, Spline, Split, Upload, Waves, Waypoints, X, type LucideIcon } from "lucide-react";
+import { Box, CircleGauge, Cylinder, Droplet, Fan, Flame, Gauge, Heater, SlidersHorizontal, Spline, Split, Waves, Waypoints, X, type LucideIcon } from "lucide-react";
 import type { IconSchluessel, ObjektKarte } from "../dashboard";
 import { useSpeicher, type Speicher } from "../ui/speicher";
 import type { BildschirmPunkt } from "../szene3/Interaktion";
 import type { GruppenKarte } from "./gruppenKarte";
 import type { LdStand } from "../lebensdauer/typen";
 import { TwinLebensdauer } from "./TwinLebensdauer";
+import { TwinUnterlagen, type AblageMeldung } from "./TwinUnterlagen";
+import { TwinDatenblatt } from "./TwinDatenblatt";
+import type { AblageZeile } from "../dokumente/typen";
+import type { KatalogEintrag } from "../typen";
 
 export const ANLAGEN_ICON: Record<IconSchluessel, LucideIcon> = {
   waermepumpe: Fan, kessel: Flame, fernwaerme: Waypoints, speicher: Cylinder, pumpe: CircleGauge,
@@ -24,10 +28,19 @@ interface Props { karte: ObjektKarte; onSchliessen: () => void; lebensdauer?: Ld
   /** Seite Dokumente, gefiltert auf ein Bauteil ("Preis fehlt" -> aus Dokument). */
   onDokument?: (bauteilId: string) => void;
   /** Gruppe des Zubehörs (Pumpe, Ventil), unterscheidet gleichnamige Anlagen wie in der Trefferliste (Kritik r5). */
-  bezug?: string | null }
+  bezug?: string | null;
+  /** Öffnet den Viewer an der Fundstelle eines Dokumentpreises. */
+  onFundstelle?: (dokumentId: string, seite: number | null) => void;
+  /** Mit den Bauteilen der Karte verknüpfte Unterlagen (Ablage des Gebäudes); ohne Prop kein Abschnitt. */
+  unterlagen?: AblageZeile[]; darfAblegen?: boolean;
+  onOeffnen?: (d: AblageZeile, seite?: number) => void;
+  onAblegen?: (dateien: File[]) => Promise<AblageMeldung[]>;
+  onNeuLaden?: () => void;
+  katalog?: KatalogEintrag[]; onAbgelaufen?: () => void }
 
-/** Anlagenkarte rechts, Inhalt aus objektKarte(). Dokumente sind noch nicht angebunden. */
-export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAendern, onLebensdauer, onDokument, bezug = null }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
+/** Anlagenkarte rechts, Inhalt aus objektKarte(); Lebensdauer, Datenblatt und Unterlagen als Abschnitte. */
+export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAendern, onLebensdauer, onDokument, bezug = null,
+  onFundstelle, unterlagen, darfAblegen = false, onOeffnen, onAblegen, onNeuLaden, katalog, onAbgelaufen }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
   const Icon = ANLAGEN_ICON[karte.icon];
   return (
     <section ref={kartenRef} className="ui-glas ui-karte tw-objekt" aria-labelledby="karte-objekt">
@@ -53,12 +66,10 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAe
         <h3>Versorgt</h3>
         <ul className="tw-versorgt">{karte.versorgt.map((v) => <li key={v}>{v}</li>)}</ul>
       </div>}
-      {lebensdauer && onLebensdauer && <TwinLebensdauer stand={lebensdauer} bauteilIds={karte.bauteilIds} darfAendern={darfAendern === true} onGespeichert={onLebensdauer} onDokument={onDokument} />}
-      <div className="tw-objekt-block tw-dokumente">
-        <h3>Dokumente</h3>
-        <button type="button" disabled aria-label="Hochladen, folgt"><Upload size={14} strokeWidth={1.75} aria-hidden="true" />Hochladen<span className="tw-folgt">folgt</span></button>
-        <p><FileText size={16} strokeWidth={1.75} aria-hidden="true" />Noch keine Dokumente</p>
-      </div>
+      {lebensdauer && onLebensdauer && <TwinLebensdauer stand={lebensdauer} bauteilIds={karte.bauteilIds} darfAendern={darfAendern === true} onGespeichert={onLebensdauer} onDokument={onDokument} onFundstelle={onFundstelle} />}
+      {katalog && karte.bauteilIds.length > 0 && <TwinDatenblatt bauteilIds={karte.bauteilIds} katalog={katalog} onAbgelaufen={onAbgelaufen} />}
+      {unterlagen && onOeffnen && onAblegen && onNeuLaden && <TwinUnterlagen unterlagen={unterlagen} darfAblegen={darfAblegen}
+        onOeffnen={onOeffnen} onAblegen={onAblegen} onNeuLaden={onNeuLaden} />}
       </div>
     </section>
   );

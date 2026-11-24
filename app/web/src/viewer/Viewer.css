@@ -1,0 +1,142 @@
+/* Viewer: Overlay über Seite und Twin. Papier auf hellem Grau, Werkzeuge als ruhige Pillen-Gruppen im Kopf. */
+.vw-grund {
+  position: fixed; inset: 0; z-index: 60; display: grid; padding: 20px;
+  background: rgb(31 38 48 / 0.26); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  font: 13px/1.5 var(--vw-schrift); color: var(--vw-text); font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased;
+  animation: vw-blende var(--vw-panel-ms) var(--vw-kurve) both;
+}
+.vw {
+  display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; max-width: 1480px; width: 100%; margin: 0 auto;
+  border-radius: var(--vw-radius); background: var(--vw-grund); overflow: hidden; outline: none;
+  box-shadow: 0 0 0 0.5px rgb(31 38 48 / 0.08), var(--vw-schatten), 0 24px 64px rgb(31 38 48 / 0.14);
+  animation: vw-ein var(--vw-panel-ms) var(--vw-kurve) both;
+}
+@keyframes vw-blende { from { opacity: 0; } }
+@keyframes vw-ein { from { opacity: 0; transform: translateY(8px) scale(0.99); } }
+.vw h2, .vw h3, .vw p, .vw ol { margin: 0; padding: 0; }
+.vw ol { list-style: none; }
+
+/* Kopf */
+.vw-kopf {
+  display: grid; grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr); align-items: center; gap: 16px;
+  min-height: 60px; padding: 10px 12px 10px 16px; box-sizing: border-box; background: var(--vw-flaeche); box-shadow: 0 1px 0 var(--vw-grau-1);
+}
+.vw-titel { display: grid; grid-template-columns: 34px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 10px; align-items: center; min-width: 0; }
+.vw-titel-icon { grid-row: 1 / 3; display: grid; place-items: center; width: 34px; height: 34px; border-radius: var(--vw-radius-kachel); background: var(--vw-flaeche-2); color: var(--vw-sekundaer-kachel); }
+.vw-titel h2 { font-size: 13px; font-weight: 600; line-height: 1.3; letter-spacing: -0.005em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vw-titel-art { font-size: 12px; line-height: 1.35; color: var(--vw-sekundaer); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vw-werkzeuge { display: flex; align-items: center; gap: 8px; }
+.vw-gruppe { display: flex; align-items: center; gap: 2px; height: 34px; padding: 0 3px; border-radius: 999px; background: var(--vw-flaeche-2); }
+.vw-symbol {
+  display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 999px; background: none; color: var(--vw-text); cursor: pointer;
+  transition: background-color var(--vw-hover-ms) var(--vw-kurve), color var(--vw-hover-ms) var(--vw-kurve), transform 120ms var(--vw-kurve);
+}
+.vw-symbol:hover:not(:disabled) { background: var(--vw-flaeche); box-shadow: 0 1px 2px rgb(31 38 48 / 0.08); }
+.vw-symbol:active:not(:disabled) { transform: scale(0.94); }
+.vw-symbol:disabled { color: var(--vw-grau-3); cursor: default; }
+.vw-seite { display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 12px; color: var(--vw-sekundaer-kachel); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vw .vw-seite input {
+  width: 34px; height: 24px; box-sizing: border-box; padding: 0 4px; border: 0; border-radius: 6px; text-align: center;
+  font: inherit; font-size: 12px; font-weight: 600; color: var(--vw-text); background: var(--vw-flaeche); box-shadow: inset 0 0 0 1px var(--vw-grau-1);
+}
+.vw-zoom { min-width: 44px; text-align: center; font-size: 12px; font-weight: 500; color: var(--vw-sekundaer-kachel); font-variant-numeric: tabular-nums; }
+.vw-suche {
+  display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; background: var(--vw-flaeche-2); color: var(--vw-sekundaer-kachel);
+  transition: box-shadow var(--vw-hover-ms) var(--vw-kurve), background-color var(--vw-hover-ms) var(--vw-kurve);
+}
+.vw-suche:focus-within { background: var(--vw-flaeche); box-shadow: inset 0 0 0 1.5px var(--vw-akzent); }
+.vw .vw-suche input { width: 150px; border: 0; padding: 0; background: none; outline: none; font: inherit; font-size: 12px; color: var(--vw-text); }
+.vw .vw-suche input::placeholder { color: var(--vw-sekundaer-kachel); }
+.vw-suche-stand { font-size: 12px; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.vw-suche-stand:empty { display: none; }
+.vw-aktionen { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.vw-knopf {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 500;
+  color: var(--vw-text); text-decoration: none; background: var(--vw-flaeche); box-shadow: inset 0 0 0 1px var(--vw-grau-1), 0 1px 2px rgb(31 38 48 / 0.05);
+  transition: box-shadow var(--vw-hover-ms) var(--vw-kurve), background-color var(--vw-hover-ms) var(--vw-kurve), transform 120ms var(--vw-kurve);
+}
+.vw-knopf:hover { box-shadow: inset 0 0 0 1px var(--vw-grau-2), 0 1px 3px rgb(31 38 48 / 0.08); }
+.vw-knopf:active { transform: scale(0.97); }
+.vw-knopf-haupt { background: var(--vw-text); color: #fff; box-shadow: 0 1px 2px rgb(31 38 48 / 0.18), 0 4px 10px rgb(31 38 48 / 0.1); }
+.vw-knopf-haupt:hover { background: #2c3542; box-shadow: 0 1px 2px rgb(31 38 48 / 0.18), 0 6px 14px rgb(31 38 48 / 0.14); }
+.vw-zu {
+  display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 999px; background: none; color: var(--vw-sekundaer); cursor: pointer;
+  transition: background-color var(--vw-hover-ms) var(--vw-kurve), color var(--vw-hover-ms) var(--vw-kurve);
+}
+.vw-zu:hover { background: var(--vw-flaeche-2); color: var(--vw-text); }
+.vw button:focus-visible, .vw a:focus-visible, .vw-flaeche:focus-visible, .vw-seite input:focus-visible { outline: 2px solid var(--vw-akzent); outline-offset: 2px; }
+.vw-flaeche:focus-visible { outline-offset: -4px; }
+
+/* Inhalt: Seitenleiste links, Papier mittig */
+.vw-inhalt { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
+.vw-mit-leiste { grid-template-columns: 76px minmax(0, 1fr); }
+.vw-leiste { overflow-y: auto; padding: 14px 0 20px; box-shadow: 1px 0 0 var(--vw-grau-1); background: rgb(255 255 255 / 0.5); scrollbar-width: thin; }
+.vw-leiste ol { display: grid; gap: 6px; justify-items: center; }
+.vw-blatt {
+  position: relative; display: grid; justify-items: center; gap: 3px; width: 52px; padding: 4px 0 3px; border: 0; border-radius: var(--vw-radius-kachel);
+  background: none; font: inherit; font-size: 11.5px; font-weight: 500; color: var(--vw-sekundaer-kachel); font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: background-color var(--vw-hover-ms) var(--vw-kurve), color var(--vw-hover-ms) var(--vw-kurve);
+}
+.vw-blatt-papier {
+  width: 30px; height: 40px; border-radius: 3px; background: var(--vw-flaeche); box-shadow: 0 0 0 1px var(--vw-grau-1), 0 1px 2px rgb(31 38 48 / 0.06);
+  transition: box-shadow var(--vw-hover-ms) var(--vw-kurve);
+}
+.vw-blatt:hover { color: var(--vw-text); }
+.vw-blatt:hover .vw-blatt-papier { box-shadow: 0 0 0 1px var(--vw-grau-2), 0 2px 6px rgb(31 38 48 / 0.08); }
+.vw-blatt[aria-current="page"] { color: var(--vw-text); font-weight: 600; }
+.vw-blatt[aria-current="page"] .vw-blatt-papier { box-shadow: 0 0 0 2px var(--vw-akzent), 0 2px 6px rgb(31 38 48 / 0.1); }
+/* Treffer der Textsuche: eisblaue Marke am Blatt (kein Statusfarbton) */
+.vw-blatt-treffer .vw-blatt-papier { background: linear-gradient(var(--vw-eis), var(--vw-eis)) 5px 14px / 20px 4px no-repeat, var(--vw-flaeche); }
+.vw-blatt-treffer::after { content: ""; position: absolute; top: 2px; right: 8px; width: 8px; height: 8px; border-radius: 999px; background: var(--vw-akzent); box-shadow: 0 0 0 2px var(--vw-grund); }
+
+.vw-flaeche { position: relative; overflow: auto; display: grid; place-items: start center; padding: 28px 32px 40px; min-height: 0; scrollbar-width: thin; }
+.vw-papier { position: relative; min-width: 200px; min-height: 260px; }
+.vw-papier canvas { display: block; background: #fff; border-radius: 2px; box-shadow: 0 0 0 0.5px rgb(31 38 48 / 0.1), 0 2px 6px rgb(31 38 48 / 0.06), 0 16px 40px rgb(31 38 48 / 0.08); }
+.vw-papier:not(.vw-papier-bereit) canvas { display: none; }
+.vw-papier:not(.vw-papier-bereit) {
+  width: min(595px, 100%); aspect-ratio: 1 / 1.414; display: grid; place-items: center; border-radius: 2px; background: var(--vw-flaeche);
+  box-shadow: 0 0 0 0.5px rgb(31 38 48 / 0.08), 0 2px 6px rgb(31 38 48 / 0.05);
+}
+.vw-papier-bereit { animation: vw-blende var(--vw-panel-ms) var(--vw-kurve) both; }
+.vw-laden { display: grid; justify-items: center; gap: 10px; font-size: 12px; color: var(--vw-sekundaer); }
+.vw-laden-balken { position: relative; width: 64px; height: 3px; border-radius: 999px; background: var(--vw-grau-1); overflow: hidden; }
+.vw-laden-balken::after { content: ""; position: absolute; inset: 0; width: 40%; border-radius: inherit; background: var(--vw-akzent); animation: vw-lauf 1.2s var(--vw-kurve) infinite; }
+@keyframes vw-lauf { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+.vw-bild { display: block; max-width: none; align-self: center; border-radius: 4px; background: var(--vw-flaeche); opacity: 0;
+  box-shadow: 0 0 0 0.5px rgb(31 38 48 / 0.1), 0 16px 40px rgb(31 38 48 / 0.1); transition: opacity var(--vw-panel-ms) var(--vw-kurve); }
+.vw-bild-bereit { opacity: 1; }
+.vw-flaeche:has(.vw-bild) { place-items: center; }
+
+.vw-hinweis {
+  align-self: center; display: grid; justify-items: center; gap: 6px; max-width: 380px; padding: 28px 28px 24px; text-align: center;
+  border-radius: var(--vw-radius); background: var(--vw-flaeche); box-shadow: 0 0 0 0.5px rgb(31 38 48 / 0.05), 0 1px 2px rgb(31 38 48 / 0.06), 0 8px 24px rgb(31 38 48 / 0.08);
+}
+.vw-hinweis-icon { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 6px; border-radius: 999px; background: var(--vw-flaeche-2); color: var(--vw-sekundaer-kachel); }
+.vw-hinweis h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.vw-hinweis p { font-size: 13px; line-height: 1.55; color: var(--vw-sekundaer); text-wrap: pretty; }
+.vw-hinweis .vw-knopf { margin-top: 10px; }
+
+@media (max-width: 1100px) {
+  .vw-kopf { grid-template-columns: minmax(0, 1fr) auto; }
+  .vw-werkzeuge { grid-column: 1 / -1; grid-row: 2; justify-content: center; flex-wrap: wrap; }
+  .vw-aktionen { grid-column: 2; grid-row: 1; }
+}
+@media (max-width: 640px) {
+  .vw-grund { padding: 0; }
+  .vw { border-radius: 0; }
+  .vw-mit-leiste { grid-template-columns: minmax(0, 1fr); }
+  .vw-leiste { display: none; }
+  .vw-suche input { width: 110px; }
+  .vw-knopf { padding: 0 12px; }
+  .vw-flaeche { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vw-grund, .vw, .vw-papier-bereit { animation: vw-blende 1ms both; }
+  .vw-laden-balken::after { animation: none; width: 100%; opacity: 0.5; }
+  .vw-bild { transition: none; }
+}
+/* Viewer liegt auch über der Seite Dokumente (.ep input): eigene Felder mit höherer Spezifität absichern */
+.vw-grund .vw .vw-suche input, .vw-grund .vw .vw-suche input:hover, .vw-grund .vw .vw-suche input:focus-visible { height: auto; border: 0; box-shadow: none; outline: none; padding: 0; background: none; transition: none; }
+.vw-grund .vw .vw-seite input { height: 24px; width: 34px; padding: 0 4px; border: 0; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--vw-grau-1); background: var(--vw-flaeche); font-size: 12px; font-weight: 600; }
+.vw-grund .vw .vw-seite input:hover { border: 0; box-shadow: inset 0 0 0 1px var(--vw-grau-2); }
+.vw-grund .vw .vw-seite input:focus-visible { border: 0; outline: 2px solid var(--vw-akzent); outline-offset: 1px; box-shadow: none; }

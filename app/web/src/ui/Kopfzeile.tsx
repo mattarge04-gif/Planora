@@ -22,7 +22,7 @@ interface Props {
   onBearbeiten?: () => void;
   /** Öffnet den Erneuerungsplan; nur gesetzt, wenn das Modul Daten liefert. */
   onPlan?: () => void;
-  /** Öffnet die Seite Dokumente; nur gesetzt, wenn das Modul Preis aus Dokument lesbar ist. */
+  /** Öffnet die Seite Dokumente (Ablage des Gebäudes, Kernmodul). */
   onDokumente?: () => void;
   /** Pill «Erneuerung» (Lebensdauer-Ampel); nur wenn das Modul Daten liefert. */
   erneuerung?: { an: boolean; onUm: (an: boolean) => void };
@@ -92,7 +92,7 @@ export function Kopfzeile(p: Props) {
               <CalendarClock {...ICON} />Erneuerungsplan
             </button>}
             {p.onDokumente && <button type="button" role="menuitem" className="ui-eintrag" onClick={() => { schliessen(); p.onDokumente?.(); }}>
-              <FileText {...ICON} />Dokumente und Preise
+              <FileText {...ICON} />Dokumente
             </button>}
           </>}
         </Menue>

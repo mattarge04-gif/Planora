@@ -88,8 +88,3 @@ export function umfang(d: Pick<DokumentZeile, "seiten" | "groesse">): string {
   return `${s}, ${g}`;
 }
 
-/** Nur PDF-Dateien ablegen (Endung oder MIME-Typ); Rest mit Grund zurueck. */
-export function teileDateien<T extends { name: string; type: string }>(dateien: T[]): { pdf: T[]; abgelehnt: T[] } {
-  const istPdf = (f: T) => f.type === "application/pdf" || /\.pdf$/i.test(f.name);
-  return { pdf: dateien.filter(istPdf), abgelehnt: dateien.filter((f) => !istPdf(f)) };
-}

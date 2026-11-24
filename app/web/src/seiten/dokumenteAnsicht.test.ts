@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alleSicherenText, antwortFolge, datum, fuerBauteil, kandidaten, sortiert, startAuswahl, teileDateien, umfang } from "./dokumenteAnsicht";
+import { alleSicherenText, antwortFolge, datum, fuerBauteil, kandidaten, sortiert, startAuswahl, umfang } from "./dokumenteAnsicht";
 import type { LdStand } from "../lebensdauer/typen";
 import type { DokumentZeile, Uebersicht, VorschlagZeile } from "../preisdokument/typen";
 
@@ -70,11 +70,6 @@ describe("Texte", () => {
     expect(datum("x")).toBe("–");
     expect(umfang({ seiten: 1, groesse: 500 })).toBe("1 Seite, 1 kB");
     expect(umfang({ seiten: 3, groesse: 2.5 * 1024 * 1024 })).toBe("3 Seiten, 2.5 MB");
-  });
-  it("legt nur PDFs ab", () => {
-    const r = teileDateien([{ name: "a.pdf", type: "" }, { name: "b.PDF", type: "" }, { name: "c.docx", type: "application/msword" }, { name: "d", type: "application/pdf" }]);
-    expect(r.pdf.map((f) => f.name)).toEqual(["a.pdf", "b.PDF", "d"]);
-    expect(r.abgelehnt.map((f) => f.name)).toEqual(["c.docx"]);
   });
 });
 

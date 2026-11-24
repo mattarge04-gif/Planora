@@ -14,3 +14,9 @@ export function naechsterTreffer(treffer: { seite: number }[], aktuell: number, 
   const s = treffer.map((t) => t.seite);
   return richtung === 1 ? (s.find((x) => x > aktuell) ?? s[0]) : ([...s].reverse().find((x) => x < aktuell) ?? s[s.length - 1]);
 }
+/** Startzoom "an Breite": groesste Stufe zwischen 0.5 und 1.5, mit der die Seite (Breite bei Massstab 1) in die Flaeche passt. */
+export function zoomFuerBreite(seitenBreite: number, flaecheBreite: number): number {
+  const passt = (flaecheBreite - 64) / seitenBreite;
+  const stufen = ZOOM_STUFEN.filter((s) => s <= 1.5);
+  return [...stufen].reverse().find((s) => s <= passt) ?? stufen[0];
+}

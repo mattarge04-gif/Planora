@@ -7,3 +7,6 @@ werkzeug/design/.lauf/
 werkzeug/preisdokument/pdf/
 
 werkzeug/preisdokument/kontext-muster6.json
+
+# pdfjs-dist: kopierte Assets (werkzeug/pdfjs-assets.mjs)
+app/web/public/pdfjs/

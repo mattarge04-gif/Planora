@@ -201,3 +201,7 @@
 .ep-quelle-link:hover { color: var(--ep-link-hover); text-decoration: underline; text-underline-offset: 2px; }
 /* Tabellenziffern nur für Zahlen: Bindestriche in Namen und Dateinamen sonst gesperrt (Kritik r1 M5) */
 .ep-tabelle td:not(.ep-zahl), .ep-tabelle th:not(.ep-zahl) { font-variant-numeric: normal; }
+
+/* Fundstelle als Knopf (öffnet den Viewer statt neuen Tab) */
+button.ep-quelle-link { border: 0; padding: 0; background: none; font: inherit; font-weight: 500; cursor: pointer; text-align: left; }
+.ep-meldung-fix { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 3; max-width: 520px; margin: 0; }

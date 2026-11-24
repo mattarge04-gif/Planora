@@ -14,7 +14,7 @@ type Zustand =
   | { art: "laden" } | { art: "login" } | { art: "liste" }
   | { art: "twin"; gebaeudeId: string; name: string }
   | { art: "plan"; gebaeudeId: string; name: string }
-  | { art: "dokumente"; gebaeudeId: string; name: string; bauteilId?: string; herkunft: "twin" | "plan" }
+  | { art: "dokumente"; gebaeudeId: string; name: string; bauteilId?: string; herkunft: "twin" | "plan"; ansicht?: "alle" | "preise" }
   | { art: "assistent"; route: AssistentRoute };
 
 /** Adresszeile nachführen (nur der Assistent hat eigene Pfade; übrige Ansichten bleiben auf "/"). */
@@ -54,14 +54,15 @@ export function App() {
     onListe={() => setZustand({ art: "liste" })}
     onBearbeiten={() => setZustand({ art: "assistent", route: { art: "bearbeiten", gebaeudeId: zustand.gebaeudeId } })}
     onPlan={() => setZustand({ art: "plan", gebaeudeId: zustand.gebaeudeId, name: zustand.name })}
-    onDokumente={(bauteilId) => setZustand({ art: "dokumente", gebaeudeId: zustand.gebaeudeId, name: zustand.name, herkunft: "twin", ...(bauteilId ? { bauteilId } : {}) })}
+    onDokumente={(ansicht, bauteilId) => setZustand({ art: "dokumente", gebaeudeId: zustand.gebaeudeId, name: zustand.name, herkunft: "twin", ansicht, ...(bauteilId ? { bauteilId } : {}) })}
     onAbmelden={abmelden} onAbgelaufen={abgelaufen} /></Suspense>;
   if (zustand.art === "plan") return <Suspense fallback={<div role="status" style={ladeStil}>Erneuerungsplan wird geladen …</div>}>
     <Erneuerungsplan gebaeudeId={zustand.gebaeudeId} name={zustand.name}
       onTwin={() => setZustand({ art: "twin", gebaeudeId: zustand.gebaeudeId, name: zustand.name })}
-      onDokumente={() => setZustand({ art: "dokumente", gebaeudeId: zustand.gebaeudeId, name: zustand.name, herkunft: "plan" })} onAbgelaufen={abgelaufen} /></Suspense>;
+      onDokumente={() => setZustand({ art: "dokumente", gebaeudeId: zustand.gebaeudeId, name: zustand.name, herkunft: "plan", ansicht: "preise" })} onAbgelaufen={abgelaufen} /></Suspense>;
   if (zustand.art === "dokumente") return <Suspense fallback={<div role="status" style={ladeStil}>Dokumente werden geladen …</div>}>
-    <Dokumente key={zustand.gebaeudeId + (zustand.bauteilId ?? "")} gebaeudeId={zustand.gebaeudeId} name={zustand.name} bauteilId={zustand.bauteilId}
+    <Dokumente key={zustand.gebaeudeId + (zustand.bauteilId ?? "") + (zustand.ansicht ?? "")} gebaeudeId={zustand.gebaeudeId} name={zustand.name} bauteilId={zustand.bauteilId}
+      ansicht={zustand.ansicht ?? "alle"}
       zurueckText={zustand.herkunft === "plan" ? "Erneuerungsplan" : "Digital Twin"}
       onZurueck={() => setZustand({ art: zustand.herkunft, gebaeudeId: zustand.gebaeudeId, name: zustand.name })} onAbgelaufen={abgelaufen} /></Suspense>;
   if (zustand.art === "assistent") return <Suspense fallback={<div role="status" style={ladeStil}>Assistent wird geladen …</div>}>

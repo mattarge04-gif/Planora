@@ -11,11 +11,13 @@ const ZUSTAENDE = Object.keys(ZUSTAND_TEXT) as Zustand[];
 const FELDER: (keyof Formular)[] = ["baujahr", "zustand", "lebensdauer", "preis", "notiz"];
 interface Props { stand: LdStand; bauteilIds: string[]; darfAendern: boolean; onGespeichert: (s: LdStand) => void;
   /** Öffnet die Seite Dokumente gefiltert auf das Bauteil (nur wenn das Modul lesbar ist). */
-  onDokument?: (bauteilId: string) => void }
+  onDokument?: (bauteilId: string) => void;
+  /** Öffnet den Viewer an der Fundstelle eines Dokumentpreises ("S. n"). */
+  onFundstelle?: (dokumentId: string, seite: number | null) => void }
 interface Offen { id: string; start: keyof Formular }
 
 /** Block "Lebensdauer" der Anlagenkarte: Ampel, Ersatzjahr, Kosten mit Quellen; Bearbeiten nur mit Recht. */
-export function TwinLebensdauer({ stand, bauteilIds, darfAendern, onGespeichert, onDokument }: Props) {
+export function TwinLebensdauer({ stand, bauteilIds, darfAendern, onGespeichert, onDokument, onFundstelle }: Props) {
   const zeilen = akteZeilen(stand, bauteilIds);
   const [offen, setOffen] = useState<Offen | null>(null);
   // Nach Schliessen des Formulars (Esc, Abbrechen, Speichern) zurück auf "Bearbeiten" derselben Zeile.
@@ -38,7 +40,7 @@ export function TwinLebensdauer({ stand, bauteilIds, darfAendern, onGespeichert,
       <ul className="tw-ld-liste">
         {zeilen.map((z) => (
           <li key={z.id} className="tw-ld-eintrag">
-            <ZeileAnsicht z={z} mehrere={zeilen.length > 1} stand={stand} />
+            <ZeileAnsicht z={z} mehrere={zeilen.length > 1} stand={stand} onFundstelle={onFundstelle} />
             {offen?.id === z.id
               ? <FormularBlock stand={stand} id={z.id} start={offen.start} onZu={() => schliessen(z.id)}
                   onGespeichert={(s) => { schliessen(z.id); onGespeichert(s); }} />
@@ -62,7 +64,7 @@ export function TwinLebensdauer({ stand, bauteilIds, darfAendern, onGespeichert,
   );
 }
 
-function ZeileAnsicht({ z, mehrere, stand }: { z: AkteZeile; mehrere: boolean; stand: LdStand }) {
+function ZeileAnsicht({ z, mehrere, stand, onFundstelle }: { z: AkteZeile; mehrere: boolean; stand: LdStand; onFundstelle?: (dokumentId: string, seite: number | null) => void }) {
   const dok = dokumentQuelle(stand, z.id);
   const rest = z.restjahre === "–" ? null : z.restjahre === "fällig" ? "fällig" : `noch ${z.restjahre}`;
   return (
@@ -88,9 +90,9 @@ function ZeileAnsicht({ z, mehrere, stand }: { z: AkteZeile; mehrere: boolean; s
         {z.zustand && <div><dt>Zustand</dt><dd>{z.zustand.text}{z.zustand.wirkung && <span className="tw-ld-quelle">{z.zustand.wirkung}</span>}</dd></div>}
         {/* Herkunft in derselben Zeile wie der Preis: «CHF 1'296  o1-pumpen.pdf, S. 1 ↗» (Kritik r1 M2) */}
         <div className={dok ? "tw-ld-breit" : undefined}><dt>Stückpreis</dt><dd className={dok ? "tw-ld-mit-fundstelle" : undefined}>{dok ? <span className="tw-ld-preis">{z.preis.wert}</span> : z.preis.fehlt ? "–" : z.preis.wert}{dok
-          ? dok.href
-            ? <a className="tw-ld-fundstelle" href={dok.href} target="_blank" rel="noopener" title={`${dok.typpreis ? "Typwert " : ""}${dok.text}`}
-              aria-label={`${dok.typpreis ? "Typwert " : ""}${dok.text}, Dokument öffnen (neuer Tab)`}><span>{dok.kurzName}</span>{dok.stelle}<ArrowUpRight size={12} strokeWidth={1.75} aria-hidden="true" /></a>
+          ? dok.dokumentId && onFundstelle
+            ? <button type="button" className="tw-ld-fundstelle" onClick={() => onFundstelle(dok.dokumentId!, dok.seite)} title={`${dok.typpreis ? "Typwert " : ""}${dok.text}`}
+              aria-label={`${dok.typpreis ? "Typwert " : ""}${dok.text}, im Viewer öffnen`}><span>{dok.kurzName}</span>{dok.stelle}<ArrowUpRight size={12} strokeWidth={1.75} aria-hidden="true" /></button>
             : <span className="tw-ld-quelle">{dok.kurz}</span>
           : <span className={`tw-ld-quelle${z.preis.fehlt ? " tw-ld-fehlt" : ""}`}>{z.preis.quelle}</span>}</dd></div>
       </dl>

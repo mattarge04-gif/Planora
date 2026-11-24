@@ -10,7 +10,7 @@ describe("Ablage-Anzeige", () => {
   it("Scan-Status", () => {
     expect(scanAnzeige(d({ scanStatus: "quarantaene" }))).toEqual({ text: "wird geprüft …", art: "laeuft" });
     expect(scanAnzeige(d())).toEqual({ text: "geprüft", art: "ok" });
-    expect(scanAnzeige(d({ scanStatus: "abgelehnt", scanGrund: "Eicar-Test-Signature" }))).toEqual({ text: "abgelehnt: Eicar-Test-Signature", art: "abgelehnt" });
+    expect(scanAnzeige(d({ scanStatus: "abgelehnt", scanGrund: "Eicar-Test-Signature" }))).toEqual({ text: "Datei abgelehnt (Virenprüfung)", art: "abgelehnt", detail: "Befund: Eicar-Test-Signature" });
     expect(scanAnzeige(d({ scanStatus: "scan_fehler", scanGrund: "x" }))).toEqual({ text: "Prüfung fehlgeschlagen", art: "fehler" });
   });
   it("Groesse und Kategorie", () => {
@@ -42,13 +42,14 @@ describe("Ablage-Anzeige", () => {
   });
   it("Fehlertexte und Vorpruefung", () => {
     expect(ablageFehlerText("typ_unbekannt")).toBe("Dateityp nicht erlaubt. Erlaubt sind PDF, JPG, PNG, HEIC, Word, Excel und PowerPoint.");
+    expect([ablageFehlerText("nicht_sauber"), ablageFehlerText("auslesen_aus")]).toEqual(["Datei ist noch nicht freigegeben.", "Auslesen ist ausgeschaltet. Der Admin kann es einschalten."]);
     expect(ablageFehlerText("makro")).toBe("Dateien mit Makros werden nicht abgelegt.");
     expect(ablageFehlerText(null, 413)).toBe("Datei grösser als 100 MB.");
     expect(ablageFehlerText("toString")).toBe("Aktion fehlgeschlagen.");
     expect(ablageFehlerText(null, 500, "Ablegen fehlgeschlagen.")).toBe("Ablegen fehlgeschlagen.");
     expect([ablageFehlerText("abgelehnt"), ablageFehlerText("nicht_scan_fehler"), ablageFehlerText("bauteil_gemischt"), ablageFehlerText("feld_unbekannt"),
       ablageFehlerText("feld_typ"), ablageFehlerText("liest_bereits"), ablageFehlerText("kein_pdf"), ablageFehlerText("zu_viele_seiten")]).toEqual([
-      "Abgelehnte Dateien lassen sich nicht ändern.", "Die Prüfung ist nicht fehlgeschlagen.", "Die Bauteile müssen vom gleichen Typ und im gleichen Gebäude sein.",
+      "Abgelehnte Dateien lassen sich nicht ändern.", "Nur fehlgeschlagene Prüfungen lassen sich wiederholen.", "Die Bauteile müssen vom gleichen Typ und im gleichen Gebäude sein.",
       "Unbekanntes Datenblatt-Feld.", "Ungültiger Wert im Datenblatt.", "Das Dokument wird bereits gelesen.", "Nur PDF-Dateien lassen sich auslesen.",
       "Das Dokument hat zu viele Seiten zum Auslesen."]);
     const v = vorpruefen([{ size: 10 }, { size: MAX_BYTES + 1 }]);
