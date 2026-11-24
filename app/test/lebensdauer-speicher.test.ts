@@ -87,4 +87,11 @@ describe("Lebensdauer-Speicher", () => {
     await mit((c) => schreibeLebensdauer(c, G, { stand: vor.stand, bauteile: [{ id: ids[0], stueckpreis: 800 }], typen: [{ katalogId: "heizung.heizkoerper", stueckpreis: 95 }] }));
     expect(await q()).toEqual(["kunde", "kunde"]);
   });
+  it("Leeren der Lebensdauer behaelt das Datenblatt", async () => {
+    await db.pool.query(`insert into bauteil_akte(bauteil_id, liegenschaft_id, zustand, datenblatt) values ($1,$2,'gut','{"dn":25}')
+      on conflict (bauteil_id) do update set zustand='gut', datenblatt='{"dn":25}'`, [ids[1], L]);
+    const vor = (await mit((c) => ladeLebensdauer(c, G, S)))!;
+    await mit((c) => schreibeLebensdauer(c, G, { stand: vor.stand, bauteile: [{ id: ids[1], zustand: null, lebensdauerJahre: null, stueckpreis: null, notiz: null }] }));
+    expect((await db.pool.query("select zustand, datenblatt from bauteil_akte where bauteil_id=$1", [ids[1]])).rows[0]).toEqual({ zustand: null, datenblatt: { dn: 25 } });
+  });
 });

@@ -233,6 +233,6 @@ export function registriereWeltRouten(app: FastifyInstance, pool: pg.Pool) {
   }));
   app.get("/api/katalog/v2", async () => ({
     version: KATALOG_V2.version,
-    eintraege: KATALOG_V2.eintraege.map(({ id, name, bereich, masse }) => ({ id, name, bereich, masse })),
+    eintraege: KATALOG_V2.eintraege.map(({ id, name, bereich, masse, datenblatt, lebensdauerQuelle, icon }) => ({ id, name, bereich, masse, datenblatt, lebensdauerQuelle, icon })),
   }));
 }

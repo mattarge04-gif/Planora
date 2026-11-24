@@ -2,7 +2,12 @@ import type { GruppenArt, HeizArt } from "./typen.js";
 
 /** Pseudo-Art fuer Bauteile, die direkt am Geschoss stehen (ohne Einheit). */
 export const STANDORT_GESCHOSS = "_geschoss";
-export interface KatalogEintrag { id: string; name: string; bereich: "zentrale" | "verteilung" | "einheit" | "zubehoer"; heizArt: HeizArt | null; mengeMax: number; masse?: [number, number, number] }
+export interface DatenblattFeld { schluessel: string; bezeichnung: string; einheit: string | null; art: "zahl" | "text" }
+export interface KatalogEintrag { id: string; name: string; bereich: "zentrale" | "verteilung" | "einheit" | "zubehoer"; heizArt: HeizArt | null; mengeMax: number;
+  masse?: [number, number, number];
+  /** Felder des Datenblatts (Bibliothek, Spec Anlagenakte 3) [A]. */ datenblatt?: DatenblattFeld[];
+  /** Quelle der Standard-Lebensdauer (src/lebensdauer/standard.ts) [A]. */ lebensdauerQuelle?: { text: string; jahr: number };
+  /** Icon-Schluessel fuer das Web (einzige Quelle, dashboard/daten.ts IconSchluessel). */ icon?: string }
 export interface Katalog { version: number; eintraege: KatalogEintrag[] }
 export interface Regelwerk {
   version: number;

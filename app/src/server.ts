@@ -13,6 +13,7 @@ import { registriereWeltRouten } from "./welt/routen.js";
 import { registriereLebensdauerRouten } from "./lebensdauer/routen.js";
 import { join } from "node:path";
 import { registriereDokumentRouten } from "./dokumente/routen.js";
+import { registriereBestandRouten } from "./bestand/routen.js";
 import { erzeugePruefer, raeumeAbgelehnteAuf } from "./dokumente/pruefer.js";
 import { clamdScanner } from "./dokumente/clamd.js";
 import { scannerKonfig, type VirenScanner } from "./dokumente/scanner.js";
@@ -122,6 +123,7 @@ export async function baueServer(o: ServerOptionen) {
     await Promise.race([pruefer.warteLeer(), new Promise((r) => setTimeout(r, 5000).unref())]);
   });
   registriereDokumentRouten(app, o.pool, { pruefer, quarantaene }); // /api/dokumente/… (Kernmodul, immer aktiv)
+  registriereBestandRouten(app, o.pool); // Datenblatt je Bauteil (Bibliothek, E46)
   registriereLebensdauerRouten(app, o.pool); // M7 Demo-Schnitt: /api/lebensdauer/… (Modul-Guard schaltet)
   // Preis aus Dokument: Hintergrundleser; ohne Schluessel kein Adapter (Status "aus")
   const schluessel = process.env.OPENAI_API_KEY?.trim();

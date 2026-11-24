@@ -80,7 +80,11 @@ export async function schreibeLebensdauer(c: pg.ClientBase, gebaeudeId: string, 
       notiz: b.notiz !== undefined ? b.notiz : alt.notiz ?? null,
     };
     const quelle = neu.preis === null ? null : b.stueckpreis !== undefined && b.stueckpreis !== zahl(alt.stueckpreis ?? null) ? "kunde" : alt.quelle_preis ?? "kunde";
-    if (Object.values(neu).every((v) => v === null)) await c.query("delete from bauteil_akte where bauteil_id=$1", [id]);
+    if (Object.values(neu).every((v) => v === null)) {
+      // Datenblatt (Bestand) bleibt: Zeile nur loeschen, wenn auch kein Datenblatt erfasst ist.
+      await c.query("delete from bauteil_akte where bauteil_id=$1 and datenblatt is null", [id]);
+      await c.query("update bauteil_akte set zustand=null, lebensdauer_jahre=null, stueckpreis=null, quelle_preis=null, notiz=null, preis_vorschlag_id=null where bauteil_id=$1", [id]);
+    }
     else await c.query(`insert into bauteil_akte(bauteil_id, liegenschaft_id, zustand, lebensdauer_jahre, stueckpreis, quelle_preis, notiz)
       values ($1,$2,$3,$4,$5,$6,$7) on conflict (bauteil_id) do update set zustand=excluded.zustand, lebensdauer_jahre=excluded.lebensdauer_jahre,
       stueckpreis=excluded.stueckpreis, quelle_preis=excluded.quelle_preis, notiz=excluded.notiz,

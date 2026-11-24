@@ -82,8 +82,8 @@ describe("GET /api/katalog/v2", () => {
   it("liefert Eintraege mit Masse, ohne Sitzung 401", async () => {
     const k = (await anfrage("GET", "/api/katalog/v2", kLeser)).json();
     expect(k.version).toBe(2);
-    expect(k.eintraege).toHaveLength(13);
-    expect(k.eintraege.find((e: any) => e.id === "heizung.wmz")).toEqual({ id: "heizung.wmz", name: "Waermezaehler", bereich: "zubehoer", masse: [0.25, 0.2, 0.15] });
+    expect(k.eintraege).toHaveLength(15);
+    expect(k.eintraege.find((e: any) => e.id === "heizung.wmz")).toMatchObject({ id: "heizung.wmz", name: "Waermezaehler", bereich: "zubehoer", masse: [0.25, 0.2, 0.15], icon: "zaehler" });
     expect((await app.inject({ url: "/api/katalog/v2" })).statusCode).toBe(401);
   });
 });
