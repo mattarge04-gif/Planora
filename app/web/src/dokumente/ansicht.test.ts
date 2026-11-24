@@ -44,7 +44,13 @@ describe("Ablage-Anzeige", () => {
     expect(ablageFehlerText("typ_unbekannt")).toBe("Dateityp nicht erlaubt. Erlaubt sind PDF, JPG, PNG, HEIC, Word, Excel und PowerPoint.");
     expect(ablageFehlerText("makro")).toBe("Dateien mit Makros werden nicht abgelegt.");
     expect(ablageFehlerText(null, 413)).toBe("Datei grösser als 100 MB.");
-    expect(ablageFehlerText("toString")).toBe("Ablegen fehlgeschlagen.");
+    expect(ablageFehlerText("toString")).toBe("Aktion fehlgeschlagen.");
+    expect(ablageFehlerText(null, 500, "Ablegen fehlgeschlagen.")).toBe("Ablegen fehlgeschlagen.");
+    expect([ablageFehlerText("abgelehnt"), ablageFehlerText("nicht_scan_fehler"), ablageFehlerText("bauteil_gemischt"), ablageFehlerText("feld_unbekannt"),
+      ablageFehlerText("feld_typ"), ablageFehlerText("liest_bereits"), ablageFehlerText("kein_pdf"), ablageFehlerText("zu_viele_seiten")]).toEqual([
+      "Abgelehnte Dateien lassen sich nicht ändern.", "Die Prüfung ist nicht fehlgeschlagen.", "Die Bauteile müssen vom gleichen Typ und im gleichen Gebäude sein.",
+      "Unbekanntes Datenblatt-Feld.", "Ungültiger Wert im Datenblatt.", "Das Dokument wird bereits gelesen.", "Nur PDF-Dateien lassen sich auslesen.",
+      "Das Dokument hat zu viele Seiten zum Auslesen."]);
     const v = vorpruefen([{ size: 10 }, { size: MAX_BYTES + 1 }]);
     expect([v.ok.length, v.zuGross.length]).toEqual([1, 1]);
   });
