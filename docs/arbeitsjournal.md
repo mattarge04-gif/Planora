@@ -3,6 +3,28 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-23/24 – Anlagenakte schlank (E46), T1–T7 fertig, T8 begonnen
+
+### 1. Was gemacht wurde
+
+- [F] PO-Entscheide E46: Kostenpflichtiges (CH-VM, KI-Laeufe, bezahlte Dienste) erst nach Gruendung einer internen Firma mit Budget; Probe/Messlauf Preis aus Dokument ganz am Schluss. Anlagenakte "schlank": Ablage je Gebaeude mit Verknuepfung zu Bauteilen, Quarantaene + ClamAV, Viewer PDF/Bild, Office nur Download, Bibliothek Heizung fertig.
+- [F] Spec `docs/superpowers/specs/2026-11-23-anlagenakte-design.md`, Nachtrag ADR 0016 (kein Multipart), Plan `docs/superpowers/plans/2026-11-23-anlagenakte.md` (10 Tasks). Umsetzung per Subagenten mit Review je Task.
+- [F] Fertig und reviewt: T1 Modul `dokumente` + Migration 018 (gemeinsame Helfer `app/src/rechte/zugriff.ts`), T2 Dateityp aus Magic Bytes (inkl. OLE2-Verzeichnis, Makro-Ablehnung), T3 Quarantaene + Scanner-Port + clamd + Pruefer (fail-closed, kein stiller Fake-Scanner), T4 Verknuepfen/Kategorie/Loeschen, "Preise lesen" nur per Knopf, T5 ClamAV fest im Compose-Paket (Update startet clamav, Dossier-Text), T6 Bibliothek (Datenblatt-Felder, Quelle, Icon, Ausdehnungsgefaess, Sonstiges, Datenblatt-API), T7 Web-Typen/API/Fehlertexte.
+- [F] T8 (Seite Dokumente, PDF-Viewer, Unterlagen, Datenblatt) auf PO-Wunsch abgebrochen; Zwischenstand `93ebeb8` committet, ungeprueft (tsc gruen, Web 572/572, kein Build, kein Review, keine visuelle Kritik).
+- [F] Pruefstand: Backend 757/757, Web 572/572, Typen gruen.
+
+### 2. Gelernt
+
+- [F] Reviews fanden wiederholt Sicherheitsluecken, die der Plan-Code vorgab (Makro-Umgehung ueber ZIP-Limit/OLE2-Teilstring, stiller Fake-Scanner im Update-Smoke, Update ohne clamav-Start). Plan-Code nicht ungeprueft uebernehmen.
+- [F] Docker Desktop lief nicht; `test:docker` mit echtem clamd ist offen (Healthcheck/nc im Image, clamd.conf-Override, Speicherbedarf beim Signatur-Reload ungeprueft).
+
+### 3. Offen
+
+- [?] Offline-Betrieb ClamAV (vorbefuelltes Signaturvolume) – Entscheid Stufe 4; Netzfreigabe freshclam (HTTPS) mit Siemens.
+- [?] clamav-SBOM im Abnahme-Dossier (Stufe 4); WSL-Gesamtabnahme weiter nicht wiederholt.
+- [A] Datenblatt-Felder, Lebensdauer-Quellen und Werte der neuen Typen fachlich nicht freigegeben; 100 MB, 7 Tage Quarantaene, alte Office-Formate.
+- Weiter: T8 fertigstellen (Review + visual-critic), T9 GLB-Modelle, T10 Browser-Abnahme; danach Gesamtreview. Ledger `.superpowers/sdd/2026-11-23-anlagenakte/progress.md` (lokal, git-ignoriert) mit allen Rulings und Minors.
+
 ## 2026-11-23 – Preis aus Dokument umgesetzt
 
 ### 1. Was gemacht wurde

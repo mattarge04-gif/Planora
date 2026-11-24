@@ -17,7 +17,16 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 **Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
 
-## 0b. Stand – zuletzt aktualisiert 23.11.2026
+## 0b. Stand – zuletzt aktualisiert 24.11.2026
+
+### Anlagenakte schlank in Arbeit (24.11.2026) [F]
+
+- Einstieg naechste Sitzung: "weiter" -> diesen Block, dann Ledger `.superpowers/sdd/2026-11-23-anlagenakte/progress.md` (lokal; Rulings, Minors, Stand je Task) und `docs/arbeitsjournal.md` 23./24.11.
+- PO-Entscheid E46: Kostenpflichtiges (CH-VM, KI-Laeufe, bezahlte Dienste) erst nach Gruendung einer internen Firma mit Budget; Probe/Messlauf Preis aus Dokument ganz am Schluss. Anlagenakte schlank: Spec `docs/superpowers/specs/2026-11-23-anlagenakte-design.md`, Plan `docs/superpowers/plans/2026-11-23-anlagenakte.md` (10 Tasks).
+- T1–T7 fertig und reviewt (Modul `dokumente`, Magic Bytes, Quarantaene + ClamAV fail-closed, Verknuepfen, Compose mit clamav, Bibliothek Heizung + Datenblatt-API, Web-Schicht). T8 (Seite, PDF-Viewer, Unterlagen, Datenblatt) abgebrochen, Zwischenstand `93ebeb8` ungeprueft. Naechstes: T8 fertig + Review + visual-critic, T9 GLB-Modelle, T10 Abnahme, Gesamtreview.
+- Pruefstand: Backend 757/757, Web 572/572, Typen gruen. `test:docker` mit echtem clamd offen (Docker Desktop lief nicht).
+- Offen [?]: Offline-Signaturen ClamAV (Stufe 4), freshclam-Netzfreigabe Siemens, clamav-SBOM im Dossier. Dev-Start nutzt Fake-Scanner; Produktion verlangt `PLANORA_CLAMD_HOST`.
+- Branch `m2c-interview` am 24.11. auf PO-Auftrag gepusht; kein Merge nach `main`.
 
 ### Preis aus Dokument umgesetzt (23.11.2026) [F]
 
