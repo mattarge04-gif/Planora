@@ -1,0 +1,119 @@
+{
+  "zeit": "2026-11-25T21:10:45.393Z",
+  "fenster": "1440x900",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002207) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "schritte": [
+    {
+      "name": "1 Ablegen",
+      "klicks": 5,
+      "befunde": [],
+      "ok": [
+        "EICAR: Ergebnis: abgelehnt (Eicar-Test-Signature)",
+        "datenblatt-pumpe.pdf abgelegt, geprüft",
+        "foto-zentrale.png abgelegt, geprüft",
+        "kosten.xlsx abgelegt, geprüft",
+        "o1-pumpen.pdf abgelegt, geprüft",
+        "eicar-test.pdf in der Liste als abgelehnt"
+      ]
+    },
+    {
+      "name": "2 Kategorie und Verknuepfen",
+      "klicks": 7,
+      "befunde": [],
+      "ok": [
+        "4 Pumpen zur Auswahl, 0 vorgeschlagen",
+        "2 Bauteile verknüpft",
+        "Kategorie Datenblatt"
+      ]
+    },
+    {
+      "name": "3 Unterlagen und Viewer",
+      "klicks": 6,
+      "befunde": [],
+      "ok": [
+        "Sprungmarke: \"1 Unterlage\"",
+        "Seite 2 angesprungen",
+        "Suche \"Förderhöhe\": 1 / 1",
+        "Esc schliesst den Viewer",
+        "Anlagenkarte bleibt offen"
+      ]
+    },
+    {
+      "name": "4 Datenblatt erfassen",
+      "klicks": 4,
+      "befunde": [
+        "zweite verknuepfte Pumpe zeigt DN 32 / 6.5 m"
+      ],
+      "ok": [
+        "gespeichert: Nennweite DN 32 Förderhöhe 6.5 m Leistungsaufnahme –",
+        "Hinweis Gruppe: keiner",
+        "Pumpen: verknuepft {\"dn\":32,\"foerderhoehe_m\":6.5}; verknuepft {}; frei {}; frei {}"
+      ]
+    },
+    {
+      "name": "5 Excel herunterladen",
+      "klicks": 4,
+      "befunde": [],
+      "ok": [
+        "kein Öffnen-Knopf (keine Vorschau)",
+        "Download startet: kosten.xlsx",
+        "kein Viewer geöffnet"
+      ]
+    },
+    {
+      "name": "6 Offerte, Preise lesen",
+      "klicks": 3,
+      "befunde": [
+        "\"Preise lesen\" ohne Schluessel nicht sichtbar (Plan: sichtbar und gesperrt mit Hinweis)"
+      ],
+      "ok": [
+        "Knopf \"Preise lesen\": nicht sichtbar",
+        "Umschalter: Preise prüfen 0"
+      ]
+    },
+    {
+      "name": "7 Foto löschen",
+      "klicks": 3,
+      "befunde": [],
+      "ok": [
+        "Rückfrage erscheint",
+        "Foto entfernt",
+        "Offerte bleibt"
+      ]
+    },
+    {
+      "name": "8 Leser-Ansicht (simuliert)",
+      "klicks": 4,
+      "befunde": [],
+      "ok": [
+        "kein Ablegen",
+        "kein Löschen",
+        "Kategorie nur lesbar",
+        "kein Verknüpfen",
+        "Leser öffnet das PDF im Viewer",
+        "Karte: kein Bearbeiten im Datenblatt",
+        "Karte: kein Ablegen bei Unterlagen"
+      ]
+    }
+  ],
+  "meldungen": [
+    "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+    "warning: THREE.WebGLProgram: Program Info Log: (817,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value\n(85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value",
+    "warning: THREE.WebGLProgram: Program Info Log: (958,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+    "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+    "warning: THREE.WebGLProgram: Program Info Log: (821,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.WebGLProgram: Program Info Log: (815,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+    "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+    "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+  ]
+}
