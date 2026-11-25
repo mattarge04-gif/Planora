@@ -6,8 +6,6 @@ const arg = (n, s) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ?
 const basis = `http://localhost:${arg("port", "3100")}`;
 const name = arg("gebaeude", "Muster 6 L-Form viele Gruppen");
 const NEU = ["heizung.ausdehnungsgefaess", "heizung.sonstiges"];
-// Generator stellt beide frei in den Raum; fuer das Bild neben Speicher bzw. Waermepumpe (Weltkoordinaten Muster 6).
-const POS = { "heizung.ausdehnungsgefaess": { x: 17.65, z: 1.75 }, "heizung.sonstiges": { x: 15.75, z: 0.9 } };
 
 const anmeldung = await fetch(`${basis}/entwicklung/anmelden`, { redirect: "manual" });
 const cookie = (anmeldung.headers.getSetCookie?.() ?? [anmeldung.headers.get("set-cookie")]).filter(Boolean).map((c) => c.split(";")[0]).join("; ");
@@ -27,7 +25,7 @@ const b = await api("GET", url);
 const technik = b.einheiten.find((e) => e.art === "technik");
 if (!technik?.id) throw new Error(`${name}: keine Einheit mit art "technik"`);
 const gruppe1 = b.gruppen?.find((gr) => gr.nummer === 1)?.id;
-const neuTeile = [...NEU.map((katalogId) => ({ katalogId, positionManuell: POS[katalogId] })), ...(gruppe1 ? [{ katalogId: "heizung.wmz", ort: { gruppe: { gruppeId: gruppe1 } } }] : [])];
+const neuTeile = [...NEU.map((katalogId) => ({ katalogId })), ...(gruppe1 ? [{ katalogId: "heizung.wmz", ort: { gruppe: { gruppeId: gruppe1 } } }] : [])];
 const fehlend = neuTeile.filter((n) => !b.bauteile.some((t) => t.katalogId === n.katalogId && t.standort?.einheitId === technik.id));
 if (!fehlend.length) {
   console.log(`${name}: bereits vorhanden in "${technik.bezeichnung}"`);
