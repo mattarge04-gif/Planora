@@ -57,7 +57,21 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
       catch (e) { if (e instanceof FachFehler) return reply.code(e.status).send({ fehler: e.fehler }); throw e; }
       const sha = createHash("sha256").update(daten).digest("hex");
       const vorhanden = await bestehendes(req.params.id, sha);
-      if (vorhanden) return fachlich(reply, async () => reply.code(200).send(await ergaenzeUndLade(req.params.id, vorhanden, verknuepfen)));
+      if (vorhanden) {
+        // W3: haengende oder fehlgeschlagene Pruefung (z. B. Kopie nach Restore weg): Kopie aus den neuen Bytes, Pruefung neu.
+        if (vorhanden.scanStatus === "scan_fehler" || vorhanden.scanStatus === "quarantaene") {
+          const x = await o.quarantaene.schreibeNeu(Readable.from(daten));
+          const neu = await pool.query("update dokument set scan_status='quarantaene', scan_grund=null, schluessel=$2 where id=$1 and scan_status in ('scan_fehler','quarantaene') returning id",
+            [vorhanden.id, x.schluessel]);
+          if (!neu.rowCount) await raeumeQuarantaeneKopie(pool, o.quarantaene, x.schluessel); // inzwischen sauber, abgelehnt oder geloescht
+          return fachlich(reply, async () => {
+            const antwort = await ergaenzeUndLade(req.params.id, (await zeile(req.params.id, vorhanden.id)) ?? vorhanden, verknuepfen);
+            if (neu.rowCount) o.pruefer.starte(vorhanden.id); // erst nach dem Laden: gemeldeter Status unabhaengig vom Timing
+            return reply.code(200).send(antwort);
+          });
+        }
+        return fachlich(reply, async () => reply.code(200).send(await ergaenzeUndLade(req.params.id, vorhanden, verknuepfen)));
+      }
       const id = randomUUID();
       const seiten = t.typ.art === "pdf" ? zaehleSeiten(daten) : null;
       const kategorie = req.query.kategorie ?? startKategorie(t.typ.art);
@@ -73,7 +87,10 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
         });
       } catch (e) {
         const dup = await bestehendes(req.params.id, sha);
-        if (dup) return fachlich(reply, async () => reply.code(200).send(await ergaenzeUndLade(req.params.id, dup, verknuepfen))); // paralleler Upload gleichen Inhalts; die Kopie gehoert ihm
+        if (dup) { // paralleler Upload gleichen Inhalts; Kopie nur behalten, solange ein ungeprueftes Dokument sie braucht (G6)
+          await raeumeQuarantaeneKopie(pool, o.quarantaene, x.schluessel);
+          return fachlich(reply, async () => reply.code(200).send(await ergaenzeUndLade(req.params.id, dup, verknuepfen)));
+        }
         await raeumeQuarantaeneKopie(pool, o.quarantaene, x.schluessel);
         if (e instanceof FachFehler) return reply.code(e.status).send({ fehler: e.fehler }); // z. B. Bauteil zwischen Pruefung und Einfuegen geloescht
         throw e;
@@ -104,6 +121,8 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
         return reply.type(r.mime)
           .header("x-content-type-options", "nosniff")
           .header("cache-control", "private, no-store")
+          // G1: bei direktem Aufruf (Lesezeichen, geteilter Link) laeuft im eingebauten PDF-Viewer kein Skript; fetch/img sind nicht betroffen.
+          .header("content-security-policy", "sandbox; default-src 'none'")
           .header("content-disposition", `${anhang ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(r.dateiname)}`)
           .send(app.ablage.lese(r.schluessel));
       });

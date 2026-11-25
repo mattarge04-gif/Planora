@@ -12,6 +12,7 @@ import { dateiAblage } from "../src/ablage/ablage.js";
 import { baueServer } from "../src/server.js";
 import { EICAR, fakeScanner } from "../src/dokumente/scanner.js";
 import { ergaenzeVerknuepfungen } from "../src/dokumente/speicher.js";
+import { MAX_BYTES } from "../src/dokumente/typ.js";
 
 const ORIGIN = "http://localhost:3995";
 const pw = randomBytes(12).toString("base64url");
@@ -83,6 +84,12 @@ describe("Dokumente-API: Ablegen", () => {
     expect([leer.statusCode, leer.json()]).toEqual([400, { fehler: "leer" }]);
     expect((await ablegen(kBearb, Buffer.from("GIF89a"))).json()).toEqual({ fehler: "typ_unbekannt" });
   });
+  it("ueber 100 MB per HTTP: knapp darueber 400 zu_gross, ueber dem Body-Limit 413", async () => {
+    const gross = Buffer.alloc(MAX_BYTES + 1); pdf(1).copy(gross);
+    const r = await ablegen(kBearb, gross);
+    expect([r.statusCode, r.json()]).toEqual([400, { fehler: "zu_gross" }]);
+    expect((await ablegen(kBearb, Buffer.alloc(MAX_BYTES + 2048))).statusCode).toBe(413);
+  }, 60_000);
   it("Dateiname ohne Steuer- und Bidi-Zeichen", async () => {
     const zeichen = [0x01, 0x1f, 0x7f, 0x200e, 0x200f, 0x202a, 0x202e, 0x2066, 0x2069].map((c) => String.fromCharCode(c)).join("");
     const r = await ablegen(kBearb, pdf(1, "% bidi"), `Rechnung${zeichen}fdp.pdf`);
@@ -118,6 +125,7 @@ describe("Dokumente-API: Oeffnen, Herunterladen, Loeschen", () => {
     expect(r.headers["content-type"]).toContain("application/pdf");
     expect(String(r.headers["content-disposition"])).toMatch(/^inline/);
     expect(r.headers["x-content-type-options"]).toBe("nosniff");
+    expect(r.headers["content-security-policy"]).toBe("sandbox; default-src 'none'");
     expect(Buffer.compare(r.rawPayload, daten)).toBe(0);
     expect(String((await anfrage("GET", `/api/dokumente/${id}/datei?download=1`, kLeser)).headers["content-disposition"])).toMatch(/^attachment/);
     expect((await anfrage("GET", `/api/dokumente/${id}/datei?download=ja`, kLeser)).statusCode).toBe(400);
@@ -210,6 +218,28 @@ describe("Dokumente-API: Virenpruefung", () => {
     expect([r.statusCode, r.json().scanStatus]).toEqual([202, "quarantaene"]);
     expect((await warteScan(id)).scanStatus).toBe("sauber");
     expect((await anfrage("POST", `/api/dokumente/${id}/erneut-pruefen`, kBearb, {})).json()).toEqual({ fehler: "nicht_scan_fehler" });
+  });
+  it("Kopie fehlt (z. B. nach Restore): gleiche Datei neu ablegen schreibt die Kopie neu und prueft erneut (W3)", async () => {
+    const daten = pdf(1, "% kopie fehlt");
+    ausfall = true;
+    const id = (await ablegen(kBearb, daten)).json().id;
+    expect((await warteScan(id)).scanStatus).toBe("scan_fehler");
+    ausfall = false;
+    const schluessel = (await db.pool.query("select schluessel from dokument where id=$1", [id])).rows[0].schluessel;
+    await dateiAblage(join(WURZEL, "quarantaene")).entferne(schluessel);
+    const fehlt = await anfrage("POST", `/api/dokumente/${id}/erneut-pruefen`, kBearb, {});
+    expect(fehlt.statusCode).toBe(202);
+    expect(await warteScan(id)).toMatchObject({ scanStatus: "scan_fehler", scanGrund: "Datei fehlt, bitte neu ablegen." });
+    const r = await ablegen(kBearb, daten, "neu.pdf");
+    expect([r.statusCode, r.json().id, r.json().scanStatus, r.json().scanGrund]).toEqual([200, id, "quarantaene", null]);
+    expect(await warteScan(id)).toMatchObject({ scanStatus: "sauber" });
+    expect((await anfrage("GET", `/api/dokumente/${id}/datei`, kBearb)).statusCode).toBe(200);
+  });
+  it("Duplikat einer sauberen oder abgelehnten Datei startet keine neue Pruefung", async () => {
+    const r = await ablegen(kBearb, Buffer.concat([pdf(1, "% eicar dup"), Buffer.from(EICAR)]), "e.pdf");
+    await warteScan(r.json().id);
+    const r2 = await ablegen(kBearb, Buffer.concat([pdf(1, "% eicar dup"), Buffer.from(EICAR)]), "e.pdf");
+    expect([r2.statusCode, r2.json().scanStatus]).toEqual([200, "abgelehnt"]);
   });
   it("Loeschen in Quarantaene: Zeile weg, Quarantaene-Kopie weg, Audit", async () => {
     const x = await dateiAblage(join(WURZEL, "quarantaene")).schreibeNeu(Readable.from(pdf(1, "% quarantaenekopie")));
