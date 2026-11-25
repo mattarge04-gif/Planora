@@ -45,6 +45,14 @@ describe("Geschlossenes Techniknetz", () => {
     expect(verbindungen(ohne, katalog).filter((v) => v.art === "haupt")).toEqual([{ art: "haupt", von: "wp", nach: "v" }]);
     expect(verbindungen({ ...welt, symbole: [] }, katalog)).toEqual([]);
   });
+  it("bindet Ausdehnungsgefäss und Sonstiges an das nächste Zentralgerät", () => {
+    const mit = { ...welt, symbole: [...welt.symbole, s("mag", "ausdehnungsgefaess", 29.25, 0, 5), s("so", "sonstiges", 27.75, 0, 2)] };
+    expect(verbindungen(mit, katalog).filter((v) => ["mag", "so"].includes(v.nach))).toEqual([
+      { art: "haupt", von: "speicher", nach: "mag" }, { art: "haupt", von: "wp", nach: "so" },
+    ]);
+    const nurNeben = { ...welt, symbole: [s("mag", "ausdehnungsgefaess", 29.25, 0, 5)] };
+    expect(verbindungen(nurNeben, katalog)).toEqual([]);
+  });
   it("verbindet jeden vorhandenen FBH-Schrank und ersetzt Einheitsmitten durch vorhandene Abgaben", () => {
     const v = verbindungen(welt, katalog).filter((v) => v.art === "verteil");
     expect(v.map((v) => v.nach).sort()).toEqual(["fbh-a", "fbh-b", "hk"]);

@@ -13,6 +13,8 @@ import { direktVerbindung } from "./router/direkt";
 import { routerAnschluss, type SteigBereich } from "./router/anschluss";
 
 const ERZEUGER = new Set(["heizung.waermepumpe", "heizung.gaskessel", "heizung.oelkessel", "heizung.fernwaerme_uebergabe"]);
+/** Nebengeräte der Zentrale ohne eigene Versorgung; Anbindung ans nächste Zentralgerät (Gefäss am Rücklauf) [A]. */
+const NEBEN = new Set(["heizung.ausdehnungsgefaess", "heizung.sonstiges"]);
 const ABGABE = new Set(["heizung.heizkoerper", "heizung.fbh_kreis", "heizung.tabs_feld"]);
 export interface Verbindung { art: "haupt" | "verteil"; von: string; nach: string }
 export interface Rohrstueck { punkte: V3[]; radius: number; startRadius: number; endRadius: number; boden: number; daten: Verbindung & { bauteilIds: string[]; gruppeId?: string }; frei: boolean }
@@ -54,6 +56,12 @@ export function verbindungen(welt: Welt, katalog: KatalogEintrag[]): Verbindung[
       if (abgabe.length) abgabe.forEach((s) => hinzu("verteil", l.von, s.schluessel));
       else hinzu("verteil", l.von, l.nach);
     }
+  }
+  const zentrale = [speicher, erzeuger].filter((z) => z !== undefined);
+  for (const s of symbole.filter((s) => NEBEN.has(s.katalogId))) {
+    const d = (z: WeltSymbol) => Math.hypot(z.position.x - s.position.x, z.position.y - s.position.y, z.position.z - s.position.z);
+    const quelle = [...zentrale].sort((a, b) => d(a) - d(b))[0];
+    if (quelle) hinzu("haupt", quelle.schluessel, s.schluessel);
   }
   for (const s of symbole.filter((s) => ABGABE.has(s.katalogId))) {
     if (ergebnis.some((v) => v.nach === s.schluessel)) continue;

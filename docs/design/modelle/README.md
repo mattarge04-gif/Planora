@@ -18,7 +18,7 @@ python docs/design/modelle/pruefen.py
 
 - Datei `app/web/public/modelle/<katalogId>.glb`, ohne Draco/Meshopt, ohne Texturen, ohne UV, keine Erweiterungen.
 - glTF +Y oben, Vorderseite +Z, Ursprung Mitte Grundfläche (y = 0), Meter, Transformationen angewendet. Ein Mesh-Knoten (vier Primitive = vier Draw-Calls) plus Empty `anschluss`.
-- Materialien genau `gehaeuse` (#eef0f3, rough 0.55, metal 0.05), `detail` (#a7aeb8, 0.45 / 0.35), `dunkel` (#5e6670, 0.6 / 0.1, nur Display, Lüftergitter, Schauglas), `koo` (#e5322d, 0.6 / 0 – Farbe ersetzt der Code zur Laufzeit).
+- Materialien genau `gehaeuse` (#eef0f3, rough 0.55, metal 0.05), `detail` (#a7aeb8, 0.45 / 0.35), `dunkel` (#5e6670, 0.6 / 0.1, nur Display, Lüftergitter, Schauglas und kleine Kunststoffteile wie Kappen und Verschraubungen bis ca. 3 cm), `koo` (#e5322d, 0.6 / 0 – Farbe ersetzt der Code zur Laufzeit).
 - Kanten per Bevel (Gehäuse 3–4 cm, Kleinteile 0.3–1 cm), Normalen weich, Kanten > 50° hart.
 - KOO-Teile: Anschlussmanschetten, Kugelhahnhebel Vorlauf, Farbband (Speicher-Kappenfuge, Ölbrenner-Flansch), Thermostatring, FBH-Vorlaufmanschetten. Keine roten Knöpfe/Punkte (Verwechslung mit Status, Prinzip 10).
 
@@ -66,4 +66,5 @@ Geprüft: 9, bestanden: 9. Geprüft wird: Bounding-Box gegen Zielmass (±5 cm), 
 | `heizung.sonstiges.glb` | 0.500 × 0.500 × 0.419 | 0.50 × 0.50 × 0.40 | 2428 | 48.3 kB | -0.13, 0.50, -0.08 | ok |
 
 - Wärmezähler `heizung.wmz` (Track C4) nur im Stil geprüft, unverändert (Befund in `docs/design/kritiken/2026-11-25-anlagenakte-modelle/`).
-- [A] Schwarze Ventilkappe bzw. Kabelverschraubungen nutzen `dunkel` (Vertrag: Display/Gitter/Schauglas) – kleine Kunststoffteile, keine Statusfarbe.
+- Schwarze Ventilkappe bzw. Kabelverschraubungen nutzen `dunkel` (kleine Kunststoffteile bis ca. 3 cm, Vertrag ergänzt nach Kritik r1).
+- Anbindung im Twin: `szene3/netz.ts` verbindet beide mit dem nächsten Zentralgerät (Speicher oder Erzeuger) als Hauptleitung; nahe Geräte führt der Router als Direktverbindung.
