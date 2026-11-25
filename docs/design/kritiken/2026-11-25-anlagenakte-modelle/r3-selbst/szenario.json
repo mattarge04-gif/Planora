@@ -1,0 +1,158 @@
+{
+ "beschreibung": "Anlagenakte T9 r3-selbst: Nebengeraete am Reihenanfang (Rang -1).",
+ "fenster": [
+  [
+   1440,
+   900
+  ],
+  [
+   1280,
+   720
+  ],
+  [
+   1920,
+   1080
+  ]
+ ],
+ "schritte": [
+  {
+   "klick": "Muster 6 L-Form viele Gruppen"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "technik-uebersicht"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "selektor": ".tw-anlagen tbody tr:has-text(\"Ausdehnungsgef\")"
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "mag-nah"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "selektor": ".tw-anlagen tbody tr:has-text(\"Sonstiges\")"
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.3,
+    0.75,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "sonstiges-nah"
+  },
+  {
+   "fps": 3000
+  }
+ ]
+}
