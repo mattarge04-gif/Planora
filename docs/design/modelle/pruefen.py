@@ -28,6 +28,8 @@ ZIELE = {
     "heizung.ventil_3weg": (0.2, 0.25, 0.2),
     "heizung.ventil_2weg": (0.15, 0.25, 0.15),
     "heizung.wmz": (0.25, 0.2, 0.15),
+    "heizung.ausdehnungsgefaess": (0.45, 0.7, 0.45),
+    "heizung.sonstiges": (0.5, 0.5, 0.4),
 }
 # Verteiler mit Gruppen (Modellreihe, Laenge wie verteilerLaenge() in szene3/technik.ts)
 for _k in range(1, 9):

@@ -1,0 +1,326 @@
+{
+ "beschreibung": "Anlagenakte T9 (25.11.2026): GLB Ausdehnungsgefäss und Sonstiges in der Technikzentrale Muster 6, Wärmezähler in Gruppe 1. Vorher: instanz.sh start --muster; node werkzeug/design/lebensdauer-daten.mjs; node app/web/werkzeug/akte-testdaten.mjs; node werkzeug/design/anlagenakte-daten.mjs.",
+ "fenster": [
+  [
+   1440,
+   900
+  ],
+  [
+   1280,
+   720
+  ],
+  [
+   1920,
+   1080
+  ]
+ ],
+ "schritte": [
+  {
+   "klick": "Muster 6 L-Form viele Gruppen"
+  },
+  {
+   "warte": 7000
+  },
+  {
+   "knopf": "Technik",
+   "exakt": true
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "technik-uebersicht"
+  },
+  {
+   "rad": [
+    0.6,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.6,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.6,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.6,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.6,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.6,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.6,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.6,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "zentrale-mittel"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "selektor": ".tw-anlagen tbody tr:has-text(\"Ausdehnungsgef\")"
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "mag-auswahl"
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "mag-nah"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "selektor": ".tw-anlagen tbody tr:has-text(\"Sonstiges\")"
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "sonstiges-nah"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 500
+  },
+  {
+   "selektor": ".tw-anlagen tbody tr:has-text(\"Wärmezähler\")"
+  },
+  {
+   "warte": 3000
+  },
+  {
+   "bild": "wmz-auswahl"
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    -300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "wmz-nah"
+  },
+  {
+   "taste": "Escape"
+  },
+  {
+   "warte": 1000
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    300
+   ]
+  },
+  {
+   "rad": [
+    0.5,
+    0.4,
+    300
+   ]
+  },
+  {
+   "warte": 1500
+  },
+  {
+   "bild": "zentrale-nah-ohne-auswahl"
+  },
+  {
+   "fps": 3000
+  }
+ ]
+}

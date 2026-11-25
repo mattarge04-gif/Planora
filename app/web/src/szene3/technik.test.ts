@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import type { V3 } from "../szene2/huelle";
 import type { Welt, WeltSymbol } from "../typen";
-import { anlagenDaten, anlageSichtbar, anschlussFuehrung, modellFuer, ROHR, rohrAbschluesse, rohrAchse, rohrPfad, rohrSchnitt } from "./technik";
+import { anlagenDaten, ANSCHLUSS_STANDARD, anlageSichtbar, anschlussFuehrung, modellFuer, ROHR, rohrAbschluesse, rohrAchse, rohrPfad, rohrSchnitt } from "./technik";
 import { rohrGeometrie } from "./technikGeometrie";
 
 const symbol = (y: number): WeltSymbol => ({
@@ -25,6 +25,12 @@ describe("Katalog und Modellvertrag", () => {
     const m = modellFuer(`heizung.${id}`);
     expect(m.pfad).toBe(`/modelle/heizung.${id}.glb`);
     expect(m.masse.every((x) => x > 0)).toBe(true);
+  });
+  it("neue Bibliothekstypen haben Modell und Anschluss", () => {
+    for (const id of ["heizung.ausdehnungsgefaess", "heizung.sonstiges"]) {
+      expect(modellFuer(id).pfad).toBe(`/modelle/${id}.glb`);
+      expect(ANSCHLUSS_STANDARD[id]).toHaveLength(3);
+    }
   });
   it("teilt das FBH-Modell mit TABS", () => {
     expect(modellFuer("heizung.tabs_feld")).toEqual(modellFuer("heizung.fbh_kreis"));

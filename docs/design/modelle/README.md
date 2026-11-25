@@ -54,3 +54,16 @@ Geprüft: 9, bestanden: 9. Geprüft wird: Bounding-Box gegen Zielmass (±5 cm), 
 - Neu im selben Skript: `heizung.ventil_3weg`, `heizung.ventil_2weg`, `heizung.wmz` (Teile in einer senkrechten Leitung: Rohrachse durch den Ursprung, Rohrenden bei y = 0 und y = H, `anschluss` = unteres Rohrende, Stellantrieb/Rechenwerk nach vorn +Z, Rohrradius 0.02 wie `ROHR.stock`) und `heizung.verteiler.n1` … `n8` (Verteiler mit k Gruppenabgängen im Abstand 0.34 m, Länge wie `verteilerLaenge()` in `szene3/technik.ts`).
 - `pruefen.py`: 20/20 bestanden. Für die drei Leitungsteile wird statt der Grundflächenmitte die Rohrachse im Ursprung geprüft (Antrieb vorn verschiebt die Bounding-Box). Verteiler-Reihe mit wachsendem Budget (+1400 Dreiecke, +30 kB je Abgang über 4); `n8` = 12 608 Dreiecke, 256 kB [A].
 - Masse aus Katalog v2 (`masse`) innerhalb ±5 cm; Ventile schmaler als der Katalogwert (0.15 statt 0.20 bzw. 0.11 statt 0.15 m).
+
+## Anlagenakte T9 (25.11.2026): Ausdehnungsgefäss und Sonstiges
+
+- Neu: `heizung.ausdehnungsgefaess` (stehendes Membran-Druckausdehnungsgefäss: Standring mit drei Fussblechen, Behälter mit gewölbten Böden aus `drehkoerper()`, Umfangsnaht, Gasfüllventil mit schwarzer Kappe, oben Kappenventil mit KOO-Hebel und KOO-Manschette; `anschluss` oben am Stutzen) und `heizung.sonstiges` (neutrales Technikgehäuse ohne Display/Lüfter: Sockel mit Schattenfuge, Revisionstür, Vor-/Rücklaufstutzen oben, KOO nur am Vorlauf, zwei schwarze Kabelverschraubungen; `anschluss` am Vorlaufstutzen).
+- Masse aus Katalog v2 (`[0.45, 0.7, 0.45]`, `[0.5, 0.5, 0.4]`); `pruefen.py` 22/22 bestanden.
+
+| Datei | B × H × T ist (m) | Soll | Dreiecke | Grösse | anschluss (x, y, z) | Ergebnis |
+|---|---|---|---|---|---|---|
+| `heizung.ausdehnungsgefaess.glb` | 0.438 × 0.700 × 0.442 | 0.45 × 0.70 × 0.45 | 5792 | 110.3 kB | 0.00, 0.70, 0.00 | ok |
+| `heizung.sonstiges.glb` | 0.500 × 0.500 × 0.419 | 0.50 × 0.50 × 0.40 | 2428 | 48.3 kB | -0.13, 0.50, -0.08 | ok |
+
+- Wärmezähler `heizung.wmz` (Track C4) nur im Stil geprüft, unverändert (Befund in `docs/design/kritiken/2026-11-25-anlagenakte-modelle/`).
+- [A] Schwarze Ventilkappe bzw. Kabelverschraubungen nutzen `dunkel` (Vertrag: Display/Gitter/Schauglas) – kleine Kunststoffteile, keine Statusfarbe.

@@ -18,6 +18,7 @@ const MASSE: Record<string, V3> = {
   "heizung.verteiler": [1.2, 1, 0.3], "heizung.heizkoerper": [1, 0.65, 0.12],
   "heizung.fbh_kreis": [0.6, 0.8, 0.15],
   "heizung.ventil_3weg": [0.2, 0.25, 0.2], "heizung.ventil_2weg": [0.15, 0.25, 0.15], "heizung.wmz": [0.25, 0.2, 0.15],
+  "heizung.ausdehnungsgefaess": [0.45, 0.7, 0.45], "heizung.sonstiges": [0.5, 0.5, 0.4],
 };
 
 /** Anschluss-Empties der GLB (docs/design/modelle/README.md); gelten bis das Modell geladen ist und für reine Ableitungen. */
@@ -25,6 +26,7 @@ export const ANSCHLUSS_STANDARD: Record<string, V3> = {
   "heizung.waermepumpe": [-0.25, 1.2, -0.08], "heizung.gaskessel": [-0.13, 1.57, 0.12], "heizung.oelkessel": [-0.16, 1.37, -0.05],
   "heizung.fernwaerme_uebergabe": [0, 0.08, -0.03], "heizung.speicher": [0, 1.48, 0.49], "heizung.umwaelzpumpe": [0.175, 0.12, 0],
   "heizung.verteiler": [-0.6, 0.62, 0.02], "heizung.heizkoerper": [0.445, 0.05, 0], "heizung.fbh_kreis": [-0.262, 0.06, -0.02],
+  "heizung.ausdehnungsgefaess": [0, 0.7, 0], "heizung.sonstiges": [-0.13, 0.5, -0.08],
 };
 
 export function modellFuer(katalogId: string, katalog?: KatalogEintrag[]): { pfad: string | null; masse: V3 } {

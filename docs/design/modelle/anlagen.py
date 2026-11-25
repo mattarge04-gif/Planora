@@ -656,6 +656,108 @@ def verteiler_reihe(k):
                 zyl(0.03, 0.012, (x, -0.02, 0.006), "detail", n=16, fase=0.003)
     anschluss(-halb, -0.02, 0.62)
 
+
+# ---------------------------------------------------------------------------
+# Anlagenakte (T9, 25.11.2026): Ausdehnungsgefaess und Sonstiges
+# ---------------------------------------------------------------------------
+
+def drehkoerper(profil, mat, n=48, name="dreh"):
+    """Rotationskoerper um die Z-Achse aus einem Profil [(r, z), ...] von unten nach oben.
+    Punkte mit r = 0 werden zu Polen (Dreiecksfaecher), so entstehen geschlossene gewoelbte Boeden."""
+    bm = bmesh.new()
+    ringe = []
+    for r, z in profil:
+        if r < 1e-6:
+            ringe.append([bm.verts.new((0.0, 0.0, z))])
+        else:
+            ringe.append([bm.verts.new((r * math.cos(2 * math.pi * i / n), r * math.sin(2 * math.pi * i / n), z)) for i in range(n)])
+    for a, b in zip(ringe, ringe[1:]):
+        if len(a) == 1 and len(b) == 1:
+            continue
+        for i in range(n):
+            j = (i + 1) % n
+            if len(a) == 1:
+                bm.faces.new((a[0], b[i], b[j]))
+            elif len(b) == 1:
+                bm.faces.new((a[i], a[j], b[0]))
+            else:
+                bm.faces.new((a[i], a[j], b[j], b[i]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return _objekt(bm, name, mat)
+
+
+def _klopperboden(R, z_rand, tiefe, richtung, k=7):
+    """Profil eines gewoelbten (elliptischen) Behaelterbodens vom Mantelrand bis zum Pol."""
+    pts = []
+    for i in range(k + 1):
+        t = (math.pi / 2) * i / k
+        pts.append((R * math.cos(t), z_rand + richtung * tiefe * math.sin(t)))
+    return pts
+
+
+def ausdehnungsgefaess():
+    # 0.45 x 0.7 x 0.45 – stehendes Membran-Druckausdehnungsgefaess (MAG): Standring, Behaelter mit
+    # gewoelbten Boeden und Umfangsnaht, Kappenventil und Anschlussstutzen oben.
+    R = 0.214
+    zu, zo = 0.165, 0.535            # Mantel von zu bis zo, Boeden je 0.075 tief
+    # Standring mit drei Aussparungen (Fussbleche) und Bodenteller
+    zyl(0.17, 0.012, (0, 0, 0.006), "detail", n=40, fase=0.004)
+    for i in range(3):
+        a = math.radians(90 + 120 * i)
+        ob = kasten(0.09, 0.022, 0.11, 0, 0, 0.0, 0.006, "detail", segmente=2)
+        ob.data.transform(Matrix.Translation((0.152 * math.cos(a), 0.152 * math.sin(a), 0.0)) @ Matrix.Rotation(a + math.pi / 2, 4, "Z"))
+    zyl(0.158, 0.03, (0, 0, 0.1), "detail", n=40, fase=0.006)                      # Auflagering
+    # Behaelter: unterer Boden (Pol zuerst), Mantel, oberer Boden
+    unten = list(reversed(_klopperboden(R, zu, 0.075, -1)))
+    oben = _klopperboden(R, zo, 0.075, 1)
+    drehkoerper(unten + oben, "gehaeuse", n=48, name="behaelter")
+    zyl(R + 0.005, 0.016, (0, 0, (zu + zo) / 2 + 0.03), "detail", n=48, fase=0.004)  # Umfangsnaht (Membranflansch)
+    zyl(R + 0.002, 0.006, (0, 0, zu + 0.004), "detail", n=48, fase=0.002)           # Fuge unten
+    zyl(R + 0.002, 0.006, (0, 0, zo - 0.004), "detail", n=48, fase=0.002)           # Fuge oben
+    typenschild(0.0, -R - 0.001, 0.305, 0.13, 0.07)
+    # Gasfuellventil (Vordruck) vorn am unteren Boden, schwarze Schutzkappe
+    zyl(0.016, 0.03, (0.0, -0.19, 0.16), "detail", "Y", n=16, fase=0.003)
+    zyl(0.018, 0.022, (0.0, -0.212, 0.16), "dunkel", "Y", n=16, fase=0.004)
+    # Oben: Muffe, Kappenventil mit Hebel (KOO, quer nach rechts), Stutzen mit KOO-Manschette bis 0.70
+    zp = zo + 0.075                                                                  # Pol oben (0.61)
+    zyl(0.034, 0.024, (0, 0, zp + 0.004), "detail", n=24, fase=0.006)                # Muffe
+    zyl(0.018, 0.70 - zp, (0, 0, (zp + 0.70) / 2), "detail", n=20)                  # Stutzen
+    zv = 0.646
+    zyl(0.027, 0.05, (0, 0, zv), "detail", n=16, fase=0.008)                        # Ventilkoerper
+    for dz in (-0.028, 0.028):
+        zyl(0.031, 0.01, (0, 0, zv + dz), "detail", n=6, fase=0.002)               # Sechskant
+    zyl(0.008, 0.03, (0, -0.038, zv), "detail", "Y", n=12)                          # Spindel
+    kasten(0.08, 0.01, 0.014, 0.03, -0.056, zv - 0.007, 0.004, "koo", segmente=1)  # Hebel
+    zyl(0.0205, 0.014, (0, 0, 0.681), "koo", n=20, fase=0.003)                     # KOO-Manschette
+    zyl(0.0235, 0.012, (0, 0, 0.694), "detail", n=6, fase=0.003)                   # Verschraubung
+    anschluss(0.0, 0.0, 0.70)
+
+
+def sonstiges():
+    # 0.5 x 0.5 x 0.4 – neutrales Technikgehaeuse ohne Funktionsandeutung (kein Display, kein Luefter):
+    # Sockel mit Schattenfuge, Korpus, abgesetzter Deckel, Revisionstuer, Vor-/Ruecklaufstutzen oben.
+    W, D = 0.5, 0.4
+    kasten(W - 0.06, D - 0.06, 0.035, 0, 0, 0.0, 0.01, "detail")                  # Sockel (Schattenfuge)
+    kasten(W, D, 0.37, 0, 0, 0.03, 0.03, "gehaeuse")                                 # Korpus
+    kasten(W - 0.03, D - 0.03, 0.026, 0, 0, 0.398, 0.012, "gehaeuse")               # Deckel
+    yf = -D / 2
+    kasten(W - 0.07, 0.012, 0.28, 0, yf - 0.002, 0.075, 0.012, "gehaeuse", segmente=2)   # Revisionstuer
+    kasten(0.016, 0.014, 0.1, W / 2 - 0.07, yf - 0.012, 0.165, 0.005, "detail", segmente=2)  # Griffleiste
+    for x in (-(W / 2 - 0.06), W / 2 - 0.06):                                         # Scharniere/Riegel
+        for z in (0.1, 0.33):
+            if x > 0:
+                continue
+            kasten(0.012, 0.01, 0.04, x, yf - 0.01, z - 0.02, 0.003, "detail", segmente=1)
+    typenschild(-0.1, yf - 0.012, 0.14, 0.13, 0.05)
+    # Oben hinten: Vor-/Ruecklauf (KOO am Vorlauf), dazwischen Kabelverschraubungen (schwarz)
+    for x, warm in ((-0.13, True), (-0.04, False)):
+        stutzen(x, 0.08, 0.424, 0.076, 0.02, koo=warm)
+    for x in (0.08, 0.14):
+        zyl(0.016, 0.016, (x, 0.09, 0.432), "dunkel", n=6, fase=0.002)
+        zyl(0.011, 0.012, (x, 0.09, 0.446), "dunkel", n=16, fase=0.003)
+    anschluss(-0.13, 0.08, 0.5)
+
+
 MODELLE = {
     "heizung.waermepumpe": (waermepumpe, (1.0, 1.2, 0.6)),
     "heizung.gaskessel": (gaskessel, (0.6, 1.6, 0.6)),
@@ -669,6 +771,8 @@ MODELLE = {
     "heizung.ventil_3weg": (ventil_3weg, (0.2, 0.25, 0.2)),
     "heizung.ventil_2weg": (ventil_2weg, (0.15, 0.25, 0.15)),
     "heizung.wmz": (wmz, (0.25, 0.2, 0.15)),
+    "heizung.ausdehnungsgefaess": (ausdehnungsgefaess, (0.45, 0.7, 0.45)),
+    "heizung.sonstiges": (sonstiges, (0.5, 0.5, 0.4)),
 }
 # Verteiler mit Gruppen: Modellreihe 1..8 Abgaenge (nicht in der Uebersicht)
 for _k in range(1, 9):
