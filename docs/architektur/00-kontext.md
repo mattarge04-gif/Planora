@@ -2,6 +2,14 @@
 
 Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
 
+## E48 – Abnahme Anlagenakte, Suche + Ordner-Ablage (PO, 2026-11-25/26)
+
+Rohantworten: Datenblatt "es wird nur eingetragen zb grundfoss magna 32 dann datenblatt eif dazu"; "Preise lesen" ohne Schluessel "Verstecken (Recommended)"; Suche-Technik + gemeinsame Spec "Passt"; Ordner-Ablage "genau für die ablage will ich noch ein extra register wie zb bei erneuerung wo ein popup kommt und man einfach zb den ganzen explorer ordner anwählt dann werden alle dateien angezigt und man kann sie zu bauteile, allgemein geschosse oder einheiten oder als undefiniert zb zuteilen damit man nicht im 3d in jedes bauteil drücken muss"; Vorschlag "Ja, mit KI (Recommended)".
+
+- Datenblatt gehoert zum Typ (Hersteller + Typ, z. B. Grundfos Magna 32): einmal erfassen bzw. ablegen, alle Bauteile dieses Typs zeigen es [A: Auslegung der Rohantwort].
+- "Preise lesen" bleibt ohne Schluessel versteckt.
+- Schlaue Suche (Frage mit Antwort, Sinn, Tippfehler; OpenAI; PDF mit Text + Office) und Register "Ablage" (Ordner waehlen, Zuordnung zu Bauteil/Geschoss/Einheit/allgemein/undefiniert, KI-Vorschlag) in einer gemeinsamen Spec, [A] ca. 8 PT.
+
 ## E47 – Siemens-Demo in 3–4 Wochen, Budget freigegeben (PO, 2026-11-25)
 
 Rohantworten: "zustimmung ist gekommen damit wir bald es siemens zeigen also jetzt weiter arbeiten damit wir das in den nächsten wochen siemens zeigen können"; Termin "In 3–4 Wochen"; Ort "Online-Server"; Kosten "Ja, Budget da".
