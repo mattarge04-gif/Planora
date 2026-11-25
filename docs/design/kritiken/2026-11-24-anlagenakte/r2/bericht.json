@@ -1,0 +1,103 @@
+{
+  "szenario": "C:/Users/matta/AppData/Local/Temp/claude/bcf0c113125feb8e/eb34396b-93c5-4fc0-b613-a4c0423bca99/scratchpad/kritik-r2.json",
+  "zeit": "2026-11-25T20:03:46.993Z",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002207) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "ansichten": [
+    {
+      "fenster": "1440x900",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-liste-300ms-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-liste-fertig-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-pdf-start-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-suche-pumpe-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-suche-enter2-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-pdf-zoom-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-pdf-einpassen-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-bild-rad-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-bild-gezogen-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-bild-taste0-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-karte-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-karte-sprung-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-viewer-aus-karte-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-ende-1440x900.png"
+      ],
+      "fps": [
+        47
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.WebGLProgram: Program Info Log: (817,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value\n(85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value",
+        "warning: THREE.WebGLProgram: Program Info Log: (958,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.WebGLProgram: Program Info Log: (821,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (815,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (960,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (954,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)"
+      ]
+    },
+    {
+      "fenster": "1280x720",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-liste-300ms-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-liste-fertig-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-pdf-start-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-suche-pumpe-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-suche-enter2-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-pdf-zoom-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-pdf-einpassen-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-bild-rad-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-bild-gezogen-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-bild-taste0-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-karte-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-karte-sprung-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-viewer-aus-karte-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-ende-1280x720.png"
+      ],
+      "fps": [
+        51
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+      ]
+    },
+    {
+      "fenster": "1920x1080",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-liste-300ms-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-liste-fertig-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-pdf-start-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-suche-pumpe-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-suche-enter2-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-pdf-zoom-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-pdf-einpassen-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-bild-rad-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-bild-gezogen-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-bild-taste0-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-karte-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-karte-sprung-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-viewer-aus-karte-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r2\\k-ende-1920x1080.png"
+      ],
+      "fps": [
+        52
+      ],
+      "meldungen": [
+        "error: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+      ]
+    }
+  ]
+}
