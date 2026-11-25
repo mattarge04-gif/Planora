@@ -115,12 +115,12 @@
 .ui-karte .tw-schliessen { display: grid; place-items: center; width: 28px; height: 28px; margin: -2px -6px 0 0; border-radius: 6px; color: var(--tw-sekundaer); transition: background-color var(--tw-hover-ms) var(--tw-kurve), color var(--tw-hover-ms) var(--tw-kurve); }
 .ui-karte .tw-schliessen:hover { background: rgb(31 38 48 / 0.06); color: var(--tw-text); }
 .tw-objekt-marken { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-.tw-objekt-sprung {
+.ui-karte .tw-objekt-sprung {
   display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 8px; border: 0; border-radius: 999px; font: inherit; font-size: 12px; font-weight: 500;
   color: var(--tw-text); background: var(--tw-flaeche-2); cursor: pointer; transition: background-color 150ms ease, box-shadow 150ms ease;
 }
-.tw-objekt-sprung:hover { box-shadow: inset 0 0 0 1px var(--tw-grau-2, rgb(31 38 48 / 0.16)); }
-.tw-objekt-sprung:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-offset: 2px; }
+.ui-karte .tw-objekt-sprung:hover { box-shadow: inset 0 0 0 1px var(--tw-grau-2, rgb(31 38 48 / 0.16)); }
+.ui-karte .tw-objekt-sprung:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-offset: 2px; }
 .tw-unterlagen h3:focus { outline: none; }
 .tw-unterlagen h3:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-offset: 2px; border-radius: 4px; }
 .tw-badge { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px 1px 7px; border-radius: 999px; font-size: 12px; font-weight: 500; background: var(--tw-flaeche-2); }
@@ -504,6 +504,8 @@ a.tw-ul-wahl:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-of
 .tw-rechts:has(> .tw-objekt) { overflow: hidden; }
 .tw-rechts > .tw-objekt { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .tw-objekt > .tw-objekt-kopf { flex: none; }
+/* Gescrollt: obere Kante blendet weich aus, angeschnittene Reste des vorigen Abschnitts wirken nicht wie halbe Knöpfe (Kritik r2). */
+.tw-objekt-inhalt.tw-gescrollt { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px); mask-image: linear-gradient(to bottom, transparent 0, #000 22px); }
 .tw-objekt-inhalt { min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin-right: -10px; padding-right: 10px; scrollbar-width: thin; scrollbar-color: var(--tw-grau-2) transparent; }
 .tw-ld-form > .tw-ld-aktionen {
   position: sticky; bottom: 0; z-index: 1; margin: 2px -12px -12px; padding: 8px 12px 12px; border-radius: 0 0 var(--tw-radius-kachel) var(--tw-radius-kachel);

@@ -8,6 +8,7 @@ import type { LdStand } from "../lebensdauer/typen";
 import { TwinLebensdauer } from "./TwinLebensdauer";
 import { TwinUnterlagen, type AblageMeldung } from "./TwinUnterlagen";
 import { TwinDatenblatt } from "./TwinDatenblatt";
+import { zeigeInKarte } from "./kartenScroll";
 import type { AblageZeile } from "../dokumente/typen";
 import type { KatalogEintrag } from "../typen";
 
@@ -38,11 +39,9 @@ interface Props { karte: ObjektKarte; onSchliessen: () => void; lebensdauer?: Ld
   onNeuLaden?: () => void;
   katalog?: KatalogEintrag[]; onAbgelaufen?: () => void }
 
-/** Scrollt die Karte zu Datenblatt/Unterlagen und setzt den Fokus auf die Überschrift der Unterlagen. */
+/** Bewegt nur den Scrollbereich der Karte zu Datenblatt/Unterlagen und setzt den Fokus auf die Überschrift der Unterlagen. */
 function zuUnterlagen(karte: HTMLElement | null) {
-  const ziel = karte?.querySelector<HTMLElement>(".tw-datenblatt") ?? karte?.querySelector<HTMLElement>(".tw-unterlagen");
-  const ruhig = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  ziel?.scrollIntoView({ block: "start", behavior: ruhig ? "auto" : "smooth" });
+  zeigeInKarte(karte?.querySelector<HTMLElement>(".tw-datenblatt") ?? karte?.querySelector<HTMLElement>(".tw-unterlagen"));
   const kopf = karte?.querySelector<HTMLElement>(".tw-unterlagen h3");
   if (kopf) { kopf.tabIndex = -1; kopf.focus({ preventScroll: true }); }
 }
@@ -51,6 +50,7 @@ function zuUnterlagen(karte: HTMLElement | null) {
 export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAendern, onLebensdauer, onDokument, bezug = null,
   onFundstelle, unterlagen, darfAblegen = false, onOeffnen, onAblegen, onNeuLaden, katalog, onAbgelaufen }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
   const Icon = ANLAGEN_ICON[karte.icon];
+  const [gescrollt, setGescrollt] = useState(false);
   return (
     <section ref={kartenRef} className="ui-glas ui-karte tw-objekt" aria-labelledby="karte-objekt">
       <header className="tw-objekt-kopf">
@@ -68,7 +68,7 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAe
           <X size={16} strokeWidth={1.75} aria-hidden="true" />
         </button>
       </header>
-      <div className="tw-objekt-inhalt">
+      <div className={`tw-objekt-inhalt${gescrollt ? " tw-gescrollt" : ""}`} onScroll={(e) => setGescrollt(e.currentTarget.scrollTop > 2)}>
       <dl className="tw-zeilen tw-objekt-daten">
         <div><dt>Hersteller / Typ</dt><dd>{karte.herstellerTyp ?? <span className="tw-fehlt" title="Nicht erfasst" aria-label="Nicht erfasst">–</span>}</dd></div>
         <div><dt>Standort</dt><dd>{karte.standort}</dd></div>

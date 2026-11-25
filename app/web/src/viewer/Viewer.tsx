@@ -8,7 +8,7 @@ import { ApiFehler, fehlerCode } from "../api";
 import { TOKENS } from "../design/tokens";
 import { DokumentSymbol, endung } from "../ui/dokumentSymbol";
 import {
-  blaettereTreffer, jeSeite, klemmeSeite, klemmeVersatz, naechsterZoom, startTreffer, teileText, trefferListe, versatzUmPunkt, zoomEinpassen, ZOOM_STUFEN,
+  blaettereTreffer, jeSeite, klemmeSeite, klemmeVersatz, naechsterZoom, startTreffer, teileText, trefferListe, versatzUmPunkt, zoomBreite, zoomEinpassen, ZOOM_STUFEN,
 } from "./seiten";
 import "./Viewer.css";
 
@@ -44,7 +44,8 @@ export function Viewer({ dokument, seite: start = 1, markiere, onSchliessen }: P
   const [seite, setSeite] = useState(start);
   const [seiteEingabe, setSeiteEingabe] = useState(String(start));
   const [zoom, setZoom] = useState<number | null>(null);
-  const [eingepasst, setEingepasst] = useState(true);
+  /** PDF-Massstab: Start "breite" (Seitenbreite, höchstens 125 %, Controller-Entscheid r2), "einpassen" (ganze Seite, Taste 0) oder "frei" (Zoom-Knöpfe). */
+  const [modus, setModus] = useState<"breite" | "einpassen" | "frei">("breite");
   const [seitenMass, setSeitenMass] = useState<{ b: number; h: number } | null>(null);
   const [suche, setSuche] = useState(markiere ?? "");
   const [texte, setTexte] = useState<string[][] | null>(null);
@@ -85,17 +86,18 @@ export function Viewer({ dokument, seite: start = 1, markiere, onSchliessen }: P
     setBz(ziel);
   }, [bildMass, bildFit, flaecheMass, bz]);
 
-  const pdfEinpassen = useCallback(() => {
-    if (!seitenMass || !flaecheMass.b) return;
-    setZoom(zoomEinpassen(seitenMass.b, seitenMass.h, flaecheMass.b - RAND_B + 48, flaecheMass.h - RAND_H + 48));
-    setEingepasst(true);
-  }, [seitenMass, flaecheMass]);
+  // Breite/Einpassen folgen Fenstergrösse und Seitenformat; "frei" bleibt beim gewählten Zoom.
+  useEffect(() => {
+    if (!seitenMass || !flaecheMass.b || modus === "frei") return;
+    setZoom(modus === "breite" ? zoomBreite(seitenMass.b, flaecheMass.b - RAND_B)
+      : zoomEinpassen(seitenMass.b, seitenMass.h, flaecheMass.b - RAND_B + 48, flaecheMass.h - RAND_H + 48));
+  }, [modus, seitenMass, flaecheMass]);
   const einpassen = useCallback(() => {
-    if (art === "bild") { setBz(1); setVersatz({ x: 0, y: 0 }); } else pdfEinpassen();
-  }, [art, pdfEinpassen]);
+    if (art === "bild") { setBz(1); setVersatz({ x: 0, y: 0 }); } else setModus("einpassen");
+  }, [art]);
   const zoomen = useCallback((richtung: 1 | -1) => {
     if (art === "bild") bildZoom(bz * (richtung === 1 ? 1.25 : 0.8));
-    else { setZoom((alt) => naechsterZoom(alt ?? 1, richtung)); setEingepasst(false); }
+    else { setZoom((alt) => naechsterZoom(alt ?? 1, richtung)); setModus("frei"); }
   }, [art, bildZoom, bz]);
 
   // Fokus in den Dialog, beim Schliessen zurück an den Auslöser.
@@ -148,8 +150,6 @@ export function Viewer({ dokument, seite: start = 1, markiere, onSchliessen }: P
     void import("./pdf").then(({ seitenMass: mass }) => mass(doc, seite)).then((m) => { if (aktivMass) setSeitenMass((alt) => (alt && alt.b === m.b && alt.h === m.h ? alt : m)); });
     return () => { aktivMass = false; };
   }, [doc, seite]);
-  // Eingepasst bleibt eingepasst, auch bei Fenstergrösse oder anderem Seitenformat.
-  useEffect(() => { if (eingepasst) pdfEinpassen(); }, [eingepasst, pdfEinpassen]);
 
   // Seite zeichnen, danach die Textebene (markier- und kopierbar).
   useEffect(() => {
@@ -262,7 +262,7 @@ export function Viewer({ dokument, seite: start = 1, markiere, onSchliessen }: P
     : undefined, [bildGroesse, versatz]);
   const scan = scanAnzeige(dokument);
   const mitZoom = (art === "pdf" && doc) || (art === "bild" && bildMass);
-  const istEingepasst = art === "bild" ? bz <= 1.0001 : eingepasst;
+  const istEingepasst = art === "bild" ? bz <= 1.0001 : modus === "einpassen";
   const zoomMin = art === "bild" ? bz <= BILD_MIN + 1e-4 : z <= ZOOM_STUFEN[0] + 1e-4;
   const zoomMax = art === "bild" ? bz >= BILD_MAX - 1e-4 : z >= ZOOM_STUFEN[ZOOM_STUFEN.length - 1] - 1e-4;
   const sucheStand = sucheAktiv ? (texte ? (treffer.length ? `${aktiv + 1} / ${treffer.length}` : "Kein Treffer") : "sucht …") : "";

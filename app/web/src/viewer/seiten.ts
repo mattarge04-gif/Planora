@@ -47,13 +47,19 @@ export function zoomEinpassen(breite: number, hoehe: number, flaecheB: number, f
   const z = Math.min((flaecheB - rand) / breite, (flaecheH - rand) / hoehe);
   return Math.round(Math.min(3, Math.max(0.25, z)) * 100) / 100;
 }
+/** Start fuer PDF: Seitenbreite fuellt die Flaeche (ohne Rand), hoechstens 125 % (lesbar ohne Riesenblatt), mindestens 25 %. */
+export function zoomBreite(breite: number, flaecheB: number, max = 1.25): number {
+  if (!(breite > 0 && flaecheB > 0)) return 1;
+  return Math.round(Math.min(max, Math.max(0.25, flaecheB / breite)) * 100) / 100;
+}
 /** Zoom um einen Punkt (relativ zur Flaechenmitte): der Bildpunkt unter `punkt` bleibt stehen. */
 export function versatzUmPunkt(z1: number, z2: number, versatz: { x: number; y: number }, punkt: { x: number; y: number }) {
   const f = z2 / z1;
   return { x: punkt.x - (punkt.x - versatz.x) * f, y: punkt.y - (punkt.y - versatz.y) * f };
 }
-/** Versatz so begrenzen, dass das Bild die Flaeche nicht verlaesst (kleiner als die Flaeche: zentriert). */
+/** Versatz so begrenzen, dass das Bild die Flaeche immer ganz deckt (kleiner als die Flaeche: zentriert). */
 export function klemmeVersatz(v: { x: number; y: number }, bild: { b: number; h: number }, flaeche: { b: number; h: number }) {
-  const mx = Math.max(0, (bild.b - flaeche.b) / 2 + 24), my = Math.max(0, (bild.h - flaeche.h) / 2 + 24);
+  // Buendig am Rand: das Bild laesst sich nie ueber die Flaechenkante hinausschieben (Kritik r2).
+  const mx = Math.max(0, (bild.b - flaeche.b) / 2), my = Math.max(0, (bild.h - flaeche.h) / 2);
   return { x: Math.min(mx, Math.max(-mx, v.x)) || 0, y: Math.min(my, Math.max(-my, v.y)) || 0 };
 }

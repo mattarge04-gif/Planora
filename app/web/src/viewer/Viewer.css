@@ -77,7 +77,9 @@
 }
 .vw-zu:hover { background: var(--vw-flaeche-2); color: var(--vw-text); }
 .vw button:focus-visible, .vw a:focus-visible, .vw-flaeche:focus-visible, .vw-seite input:focus-visible { outline: 2px solid var(--vw-akzent); outline-offset: 2px; }
-.vw-flaeche:focus-visible { outline-offset: -4px; }
+.vw-flaeche:focus-visible { outline-offset: -4px; border-bottom-right-radius: calc(var(--vw-radius) - 2px); }
+/* Ohne Seitenleiste liegt die Fläche auch an der linken unteren Panelecke: Rahmen folgt der Rundung (Kritik r2). */
+.vw-inhalt:not(.vw-mit-leiste) > .vw-flaeche:focus-visible { border-bottom-left-radius: calc(var(--vw-radius) - 2px); }
 
 /* Inhalt: Seitenleiste links, Papier mittig */
 .vw-inhalt { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }

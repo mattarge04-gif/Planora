@@ -7,7 +7,7 @@ describe("Viewer-Navigation", () => {
     expect([naechsterZoom(1, 1), naechsterZoom(1, -1), naechsterZoom(3, 1), naechsterZoom(0.5, -1), naechsterZoom(1.1, 1)]).toEqual([1.25, 0.75, 3, 0.5, 1.25]);
   });
 });
-import { blaettereTreffer, jeSeite, klemmeVersatz, startTreffer, teileText, trefferListe, versatzUmPunkt, zoomEinpassen } from "./seiten";
+import { zoomBreite, blaettereTreffer, jeSeite, klemmeVersatz, startTreffer, teileText, trefferListe, versatzUmPunkt, zoomEinpassen } from "./seiten";
 describe("Suche mit Markierung", () => {
   const s = [["Umwälzpumpe Wilo", "Pumpe"], ["nichts"], ["PUMPE pumpe"]];
   it("Treffer je Textstück in Lesereihenfolge", () => {
@@ -32,11 +32,14 @@ describe("Einpassen und Bild-Zoom", () => {
     expect(zoomEinpassen(400, 300, 1400, 800)).toBe(2.51);
     expect(zoomEinpassen(0, 1, 1, 1)).toBe(1);
   });
+  it("Start Seitenbreite, höchstens 125 %", () => {
+    expect([zoomBreite(595, 1252), zoomBreite(595, 595), zoomBreite(595, 297.5), zoomBreite(0, 9)]).toEqual([1.25, 1, 0.5, 1]);
+  });
   it("Punkt unter dem Mauszeiger bleibt stehen", () => {
     expect(versatzUmPunkt(1, 2, { x: 0, y: 0 }, { x: 100, y: -50 })).toEqual({ x: -100, y: 50 });
     expect(versatzUmPunkt(2, 1, { x: -100, y: 50 }, { x: 100, y: -50 })).toEqual({ x: 0, y: 0 });
   });
   it("Versatz begrenzt, kleines Bild bleibt zentriert", () => {
-    expect(klemmeVersatz({ x: 500, y: -500 }, { b: 1000, h: 400 }, { b: 800, h: 600 })).toEqual({ x: 124, y: 0 });
+    expect(klemmeVersatz({ x: 500, y: -500 }, { b: 1000, h: 400 }, { b: 800, h: 600 })).toEqual({ x: 100, y: 0 });
   });
 });

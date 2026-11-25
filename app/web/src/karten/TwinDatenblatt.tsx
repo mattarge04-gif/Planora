@@ -1,4 +1,5 @@
-import { useEffect, useId, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { zeigeInKarte } from "./kartenScroll";
 import { ApiFehler, fehlerCode } from "../api";
 import { ladeDatenblatt, speichereDatenblatt, werteAusEingabe, wertText, type DatenblattAntwort } from "../bestand/datenblatt";
 import { ablageFehlerText } from "../dokumente/ansicht";
@@ -19,6 +20,13 @@ export function TwinDatenblatt({ bauteilIds, katalog, onAbgelaufen }: Props) {
   const [meldung, setMeldung] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const erstes = bauteilIds[0];
+  const block = useRef<HTMLDivElement>(null);
+  // Bearbeiten: Abschnitt oben im Scrollbereich der Karte, erstes Feld fokussieren ohne den Browser scrollen zu lassen.
+  useEffect(() => {
+    if (!offen) return;
+    zeigeInKarte(block.current);
+    block.current?.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
+  }, [offen]);
   useEffect(() => {
     if (!erstes) return;
     let aktiv = true;
@@ -57,7 +65,7 @@ export function TwinDatenblatt({ bauteilIds, katalog, onAbgelaufen }: Props) {
   const mehrere = bauteilIds.length > 1;
 
   return (
-    <div className="tw-objekt-block tw-datenblatt">
+    <div ref={block} className="tw-objekt-block tw-datenblatt">
       <div className="tw-db-kopf">
         <h3>Datenblatt</h3>
         {d?.darfAendern && !offen && d.felder.length > 0 && <button type="button" className="tw-ld-knopf tw-db-bearbeiten" onClick={oeffnen}>Bearbeiten</button>}
@@ -65,12 +73,12 @@ export function TwinDatenblatt({ bauteilIds, katalog, onAbgelaufen }: Props) {
       {ladeFehler && <p className="tw-db-meldung" role="alert">{ladeFehler}</p>}
       {d && d.felder.length > 0 && (offen
         ? <form className="tw-db-form" onKeyDown={taste} onSubmit={(e) => { e.preventDefault(); void speichern(); }} noValidate aria-label="Datenblatt bearbeiten">
-          {d.felder.map((f, i) => {
+          {d.felder.map((f) => {
             const id = `${uid}-${f.schluessel}`;
             return <div key={f.schluessel} className="tw-db-feld">
               <label htmlFor={id}>{f.bezeichnung}</label>
               <span className={`tw-db-eingabe${f.einheit === "DN" ? " tw-db-vorne" : ""}`}>
-                <input id={id} autoFocus={i === 0} inputMode={f.art === "zahl" ? "decimal" : undefined} value={eingabe[f.schluessel] ?? ""}
+                <input id={id} inputMode={f.art === "zahl" ? "decimal" : undefined} value={eingabe[f.schluessel] ?? ""}
                   aria-invalid={fehler[f.schluessel] ? true : undefined} aria-describedby={fehler[f.schluessel] ? `${id}-f` : undefined}
                   onChange={(e) => setEingabe((a) => ({ ...a, [f.schluessel]: e.target.value }))} />
                 {f.einheit && <span className="tw-db-einheit" aria-hidden="true">{f.einheit}</span>}

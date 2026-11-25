@@ -91,6 +91,13 @@ try {
       return gl ? (ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)) : "kein WebGL2";
     });
 
+    // 0. Ladegerüst: Ablage-Antwort nur in diesem Lauf künstlich verzögert (2.5 s), damit der Zustand belegt ist
+    await page.route("**/api/dokumente/gebaeude/**", async (r) => { await new Promise((x) => setTimeout(x, 2500)); await r.continue().catch(() => {}); });
+    await zuDokumenten(GEBAEUDE);
+    await bild("dokumente-laedt");
+    await page.unroute("**/api/dokumente/gebaeude/**").catch(() => {});
+    await page.waitForTimeout(2500);
+
     // 1. Leere Ablage
     await zuDokumenten(LEER);
     await bild("dokumente-leer");
@@ -144,6 +151,15 @@ try {
     await knopf("Vergrössern").click(); await knopf("Vergrössern").click();
     await page.waitForTimeout(500);
     await bild("viewer-bild-zoom");
+    // Ziehen weit nach links: Bild bleibt bündig am rechten Rand (kein grauer Streifen)
+    { const f = await page.locator(".vw-flaeche").boundingBox();
+      await page.mouse.move(f.x + f.width / 2, f.y + f.height / 2); await page.mouse.down();
+      await page.mouse.move(f.x + 20, f.y + f.height / 2, { steps: 12 }); await page.mouse.up(); }
+    await page.waitForTimeout(400);
+    await bild("viewer-bild-gezogen");
+    await page.keyboard.press("0");
+    await page.waitForTimeout(400);
+    await bild("viewer-bild-taste0");
     await page.keyboard.press("Escape");
 
     // 4. Preise prüfen
@@ -159,6 +175,10 @@ try {
     await page.locator("tr[data-schluessel]", { hasText: "Umwälzpumpe" }).first().click();
     await page.waitForTimeout(2500);
     await bild("karte-unterlagen-datenblatt");
+    await page.locator(".tw-objekt-sprung").click();
+    await page.waitForTimeout(900);
+    await bild("karte-sprung-unterlagen");
+    await page.locator(".tw-objekt-inhalt").evaluate((e) => { e.scrollTop = 0; });
     await page.locator(".tw-objekt-inhalt").evaluate((e) => { e.scrollTop = e.scrollHeight; });
     await page.waitForTimeout(400);
     await bild("karte-unterlagen-unten");
@@ -174,6 +194,9 @@ try {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
     await bild("karte-nach-esc");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(600);
+    await bild("nach-esc-esc");
 
     // 6. Leser-Ansicht (simuliert): Seite und Karte ohne Schreibknoepfe
     await simuliere(page, { leser: true });
