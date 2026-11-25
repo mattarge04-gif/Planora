@@ -28,6 +28,14 @@ describe("einrichten", () => {
     expect(sp.x - breite(SP) / 2 - (vt.x + breite(VT) / 2)).toBeCloseTo(0.5, 9);
     expect(wp.x - breite(WP) / 2 - (sp.x + breite(SP) / 2)).toBeCloseTo(0.5, 9);
   });
+  it("Ausdehnungsgefaess und Sonstiges stehen in der Wandreihe zwischen Speicher und Verteiler", () => {
+    const p = einrichten({ ...RAUM, breite: 14 }, "-z", "+z", [s("wp", WP), s("sp", SP), s("vt", VT), s("mag", "heizung.ausdehnungsgefaess"), s("so", "heizung.sonstiges")], KATALOG_V2, { x: 0.3, z: 9.3 });
+    const [sp, mag, so, vt] = ["sp", "mag", "so", "vt"].map((k) => p.get(k)!);
+    const vorne = (k: string, z: number) => z - tiefe(k) / 2; // Vorderkanten buendig mit dem Speicher = gleiche Wandreihe
+    expect(vorne("heizung.ausdehnungsgefaess", mag.z)).toBeCloseTo(vorne(SP, sp.z), 9); expect(vorne("heizung.sonstiges", so.z)).toBeCloseTo(vorne(SP, sp.z), 9);
+    expect(mag.x).toBeLessThan(sp.x); expect(so.x).toBeLessThan(sp.x);
+    expect(vt.x).toBeLessThan(Math.min(mag.x, so.x));
+  });
   it("Steigzone rechts: Fluss laeuft nach rechts, Verteiler rechts", () => {
     const p = einrichten(RAUM, "-z", "+z", [s("wp", WP), s("sp", SP), s("vt", VT)], KATALOG_V2, { x: 8.7, z: 9.3 });
     expect(p.get("wp")!.x).toBeLessThan(p.get("sp")!.x);

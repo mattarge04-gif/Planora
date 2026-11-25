@@ -83,8 +83,10 @@ export function einrichten(einheit: Rechteck, gangSeite: Seite, fassadenSeite: S
 
   // 1. Zentrale: Fluss als Reihe an der Rueckwand (gangabgewandt)
   if (zentrale) {
-    const basis = eigen.filter((s) => !s.vor && (ERZEUGER.includes(s.katalogId) || s.katalogId === SPEICHER || istVerteiler(s)));
-    const rang = (s: SymbolEntwurf) => (ERZEUGER.includes(s.katalogId) ? 0 : s.katalogId === SPEICHER ? 1 : 2);
+    // Ausdehnungsgefaess und Sonstiges stehen an der Wand zwischen Speicher und Verteiler, sonst frei im Raster mitten im Raum
+    const wandnah = (s: SymbolEntwurf) => s.katalogId === "heizung.ausdehnungsgefaess" || s.katalogId === "heizung.sonstiges";
+    const basis = eigen.filter((s) => !s.vor && (ERZEUGER.includes(s.katalogId) || s.katalogId === SPEICHER || istVerteiler(s) || wandnah(s)));
+    const rang = (s: SymbolEntwurf) => (ERZEUGER.includes(s.katalogId) ? 0 : s.katalogId === SPEICHER ? 1 : wandnah(s) ? 1.5 : 2);
     const folge = [...basis].sort((a, b) => rang(a) - rang(b)).map((s) => s.schluessel); // stabil: Eingabereihenfolge je Rang
     const verteiler = new Set(basis.filter(istVerteiler).map((s) => s.schluessel));
     for (const s of eigen) {

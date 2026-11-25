@@ -2,6 +2,15 @@
 
 Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
 
+## E47 – Siemens-Demo in 3–4 Wochen, Budget freigegeben (PO, 2026-11-25)
+
+Rohantworten: "zustimmung ist gekommen damit wir bald es siemens zeigen also jetzt weiter arbeiten damit wir das in den nächsten wochen siemens zeigen können"; Termin "In 3–4 Wochen"; Ort "Online-Server"; Kosten "Ja, Budget da".
+
+- Ziel: Demo bei Siemens in 3–4 Wochen (ca. Mitte Dezember 2026 [A]) auf einem Online-Server, Siemens soll selbst klicken koennen.
+- Budget ist da; E46 "Kosten erst mit Firma" ist damit aufgehoben. Jeder kostenpflichtige Schritt (CH-VM bestellen, KI-Probe/Messlauf, SMTP) weiterhin einzeln mit PO-OK vor dem Ausloesen.
+- Anlagenakte (T8–T10) wird fertig gebaut.
+- Server (PO 25.11.: "es muss nur einer sein für paar tage aber das machen wir als letztes"): nur fuer wenige Tage um die Demo, als letzter Schritt. Infomaniak VPS Lite verlangt Jahresbindung -> monatlich/stuendlich kuendbares Angebot waehlen [A], Preis vor Bestellung pruefen.
+
 ## E46 – Anlagenakte schlank, Kosten erst mit Firma (PO, 2026-11-23, Brainstorming)
 
 Rohantworten: "nein das kommt am schluss" (KI-Probe/Messlauf); "ich will das erstmachen wenn ich intern eine firma gegründet habe mit einem budget dafür" -> Rueckfrage "Nur Kosten"; Umfang "Schlank (Recommended)"; Ablage "Gebäude + Verknüpfung (Recommended)"; Dateitypen "PDF, Bild, Office (Recommended)"; Bibliothek "Heizung fertig (Recommended)"; Ansatz "1"; Abschnitte 1–4 "passt"; "danach direkt weitermachen".
