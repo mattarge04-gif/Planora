@@ -4,11 +4,13 @@ import { speichereUndReferenziere, type Ablage } from "../ablage/ablage.js";
 import { auditEreignis } from "../audit/audit.js";
 import { inTx } from "../rechte/zugriff.js";
 import type { VirenScanner } from "./scanner.js";
+import { GrenzeFehler } from "./clamd.js";
 import { gibReferenzFrei } from "./speicher.js";
 
 /** Fester Text in der DB; rohe Scanner-Meldungen nur im Log. */
 export const SCAN_FEHLER_TEXT = "Virenprüfung nicht erreichbar.";
 export const DATEI_FEHLT_TEXT = "Datei fehlt, bitte neu ablegen.";
+export const GRENZE_TEXT = "Datei zu gross oder zu verschachtelt für die Virenprüfung.";
 export interface Pruefer { starte(id: string): void; warteLeer(): Promise<void>; reiheNeuEin(): Promise<number> }
 
 /** Signaturname fuer DB und Anzeige: ohne Steuerzeichen, hoechstens 300 Zeichen. */
@@ -48,7 +50,7 @@ export function erzeugePruefer(pool: pg.Pool, ablage: Ablage, quarantaene: Ablag
     try { erg = await scanner.pruefe(daten); }
     catch (e) {
       console.error(`dokumente: Virenpruefung fehlgeschlagen: ${e instanceof Error ? e.message.slice(0, 200) : "unbekannt"}`);
-      await setzeFehler(id); return;
+      await setzeFehler(id, e instanceof GrenzeFehler ? GRENZE_TEXT : SCAN_FEHLER_TEXT); return;
     }
     if (erg.ergebnis === "befund") {
       const signatur = bereinigeSignatur(erg.signatur);

@@ -10,7 +10,8 @@ import { dateiAblage, type Ablage } from "../src/ablage/ablage.js";
 import { legeDokumentAn } from "../src/dokumente/speicher.js";
 import { EICAR, fakeScanner, type VirenScanner } from "../src/dokumente/scanner.js";
 import { loescheDokument } from "../src/dokumente/speicher.js";
-import { erzeugePruefer, raeumeAbgelehnteAuf, DATEI_FEHLT_TEXT, SCAN_FEHLER_TEXT } from "../src/dokumente/pruefer.js";
+import { erzeugePruefer, raeumeAbgelehnteAuf, raeumeQuarantaeneKopie, DATEI_FEHLT_TEXT, GRENZE_TEXT, SCAN_FEHLER_TEXT } from "../src/dokumente/pruefer.js";
+import { GrenzeFehler } from "../src/dokumente/clamd.js";
 
 let db: Awaited<ReturnType<typeof frischeDb>>;
 let ablage: Ablage, quarantaene: Ablage;
@@ -68,6 +69,38 @@ describe("Pruefer", () => {
     const p2 = erzeugePruefer(db.pool, ablage, quarantaene, fakeScanner());
     p2.starte(id2); await p2.warteLeer();
     expect([(await zeile(id2)).scan_status, (await zeile(id2)).scan_grund]).toEqual(["scan_fehler", DATEI_FEHLT_TEXT]);
+  });
+  it("Grenze von clamd erreicht: scan_fehler mit eigenem Grund", async () => {
+    const p = erzeugePruefer(db.pool, ablage, quarantaene, { pruefe: () => Promise.reject(new GrenzeFehler("clamd: Heuristics.Limits.Exceeded.MaxScanSize")) });
+    const id = await neuesDokument(pdf(1, "% grenze"));
+    p.starte(id); await p.warteLeer();
+    expect([(await zeile(id)).scan_status, (await zeile(id)).scan_grund]).toEqual(["scan_fehler", GRENZE_TEXT]);
+  });
+  it("Loeschen waehrend der Pruefung: keine Zeile, Referenz freigegeben, Kopie weg", async () => {
+    let weiter!: () => void;
+    const halt = new Promise<void>((r) => { weiter = r; });
+    const basis = fakeScanner();
+    const p = erzeugePruefer(db.pool, ablage, quarantaene, { async pruefe(d) { await halt; return basis.pruefe(d); } });
+    const id = await neuesDokument(pdf(1, "% loeschen waehrend"));
+    const schluessel = (await zeile(id)).schluessel;
+    p.starte(id);
+    await new Promise((r) => setTimeout(r, 50)); // Pruefung laeuft (Datei gelesen, Scanner wartet)
+    const c = await db.pool.connect();
+    try { await loescheDokument(c, id); } finally { c.release(); }
+    weiter(); await p.warteLeer();
+    expect(await zeile(id)).toBeUndefined();
+    expect((await q("select 1 from datei_referenz where objekt=$1", [`dokument:${id}`])).rowCount).toBe(0);
+    await raeumeQuarantaeneKopie(db.pool, quarantaene, schluessel); // wie die Loesch-Route
+    expect(await quarantaene.existiert(schluessel)).toBe(false);
+  });
+  it("reiheNeuEin im Takt: laufende Pruefungen werden nicht doppelt gestartet", async () => {
+    let aufrufe = 0;
+    const basis = fakeScanner({ verzoegerungMs: 50 });
+    const p = erzeugePruefer(db.pool, ablage, quarantaene, { pruefe(d) { aufrufe++; return basis.pruefe(d); } });
+    const id = await neuesDokument(pdf(1, "% takt"));
+    await p.reiheNeuEin(); await p.reiheNeuEin();
+    await p.warteLeer();
+    expect([aufrufe, (await zeile(id)).scan_status]).toEqual([1, "sauber"]);
   });
   it("hoechstens 2 gleichzeitig", async () => {
     let offen = 0, max = 0;

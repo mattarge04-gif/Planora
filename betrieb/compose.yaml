@@ -202,7 +202,9 @@ services:
 
 configs:
   # clamd wie Image-Standard, Grenzen fuer Dateien bis 100 MB (Spec Anlagenakte; MAX_BYTES = 100 MB). clamd-Standard fuer
-  # StreamMaxLength waere 25 MB. Grenzueberschreitung meldet clamd als Fehler -> scan_fehler.
+  # StreamMaxLength waere 25 MB. StreamMaxLength-Ueberschreitung meldet clamd als Fehler. AlertExceedsMax: Ueberschreitung von
+  # MaxScanSize/MaxFiles/MaxRecursion (z. B. Zip-Bombe in xlsx) meldet clamd als Heuristics.Limits.Exceeded statt "OK".
+  # Beides -> scan_fehler (fail closed).
   clamd_conf:
     content: |
       DatabaseDirectory /var/lib/clamav
@@ -216,6 +218,7 @@ configs:
       StreamMaxLength 101M
       MaxFileSize 101M
       MaxScanSize 400M
+      AlertExceedsMax yes
 
   # Erstinitialisierung der DB (laeuft genau einmal bei leerem pgdata, als Superuser ueber den lokalen Socket).
   # Die Migrationen legen die Rollen NOLOGIN an, falls sie fehlen; hier entstehen sie vorher mit LOGIN und Passwort aus

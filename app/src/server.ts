@@ -118,8 +118,12 @@ export async function baueServer(o: ServerOptionen) {
   }
   const bereinigungsTakt = hintergrund ? setInterval(bereinige, 24 * 60 * 60 * 1000) : undefined;
   bereinigungsTakt?.unref();
+  // Holt Pruefungen nach, wenn die DB beim Start fehlte (laufende ueberspringt der Pruefer selbst).
+  const nachholTakt = hintergrund ? setInterval(() => void pruefer.reiheNeuEin().catch(() => {}), 5 * 60 * 1000) : undefined;
+  nachholTakt?.unref();
   app.addHook("onClose", async () => {
     if (bereinigungsTakt) clearInterval(bereinigungsTakt);
+    if (nachholTakt) clearInterval(nachholTakt);
     await Promise.race([pruefer.warteLeer(), new Promise((r) => setTimeout(r, 5000).unref())]);
   });
   registriereDokumentRouten(app, o.pool, { pruefer, quarantaene }); // /api/dokumente/… (Kernmodul, immer aktiv)

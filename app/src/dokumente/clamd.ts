@@ -40,8 +40,13 @@ async function mitWiederholung<T>(o: ClamdOptionen, f: () => Promise<T>): Promis
   }
 }
 
+/** clamd hat eine Grenze (MaxScanSize, MaxFiles, MaxRecursion ...) erreicht: nicht geprueft, aber auch kein Virenbefund. */
+export class GrenzeFehler extends Error {}
+
 export function deuteAntwort(antwort: string): ScanErgebnis {
   if (antwort === "stream: OK") return { ergebnis: "sauber" };
+  // AlertExceedsMax yes (compose): Grenzueberschreitung kommt als Befund und gilt als scan_fehler, nie als sauber.
+  if (/^stream: Heuristics\.Limits\.Exceeded\S* FOUND$/.test(antwort)) throw new GrenzeFehler(`clamd: ${antwort.slice(0, 200)}`);
   const m = /^stream: (.+) FOUND$/.exec(antwort);
   if (m) return { ergebnis: "befund", signatur: m[1] };
   throw new Error(`clamd: ${antwort.slice(0, 200) || "leere Antwort"}`);

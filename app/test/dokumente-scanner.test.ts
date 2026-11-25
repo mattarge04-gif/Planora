@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { createServer, type AddressInfo } from "node:net";
 import { EICAR, fakeScanner, scannerKonfig } from "../src/dokumente/scanner.js";
-import { clamdScanner, deuteAntwort } from "../src/dokumente/clamd.js";
+import { readFileSync } from "node:fs";
+import { clamdScanner, deuteAntwort, GrenzeFehler } from "../src/dokumente/clamd.js";
 import { pdf } from "./hilfe-dateien.js";
 
 /** Minimaler clamd (zPING, zINSTREAM) fuer Protokolltests. */
@@ -52,6 +53,14 @@ describe("clamd-Adapter", () => {
     expect(deuteAntwort("stream: Win.Test.EICAR_HDB-1 FOUND")).toEqual({ ergebnis: "befund", signatur: "Win.Test.EICAR_HDB-1" });
     expect(() => deuteAntwort("INSTREAM size limit exceeded. ERROR")).toThrow(/size limit/);
     expect(() => deuteAntwort("")).toThrow(/leere Antwort/);
+  });
+  it("Grenzueberschreitung (AlertExceedsMax) ist nie sauber und kein Virenbefund, sondern scan_fehler", () => {
+    expect(() => deuteAntwort("stream: Heuristics.Limits.Exceeded.MaxScanSize FOUND")).toThrow(GrenzeFehler);
+  });
+  it("compose: clamd meldet Grenzueberschreitungen (fail closed, Gesamtreview W1)", () => {
+    const conf = readFileSync(new URL("../../betrieb/compose.yaml", import.meta.url), "utf8").split("clamd_conf:")[1].split("db_rollen:")[0];
+    expect(conf).toMatch(/^\s*AlertExceedsMax yes\s*$/m);
+    expect(conf).toMatch(/^\s*StreamMaxLength 101M\s*$/m);
   });
   it("INSTREAM in Bloecken, Antwort OK/FOUND, PING", async () => {
     let erhalten: Buffer = Buffer.alloc(0);
