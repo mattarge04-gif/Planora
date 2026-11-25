@@ -5,7 +5,7 @@ import { closeSync, cpSync, mkdirSync, mkdtempSync, openSync, readFileSync, rmSy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
-import { APP, BETRIEB, DOCKER_TESTS, TEST, baueImage, docker, https } from "./paket-hilfe.js";
+import { APP, BETRIEB, DOCKER_TESTS, TEST, baueImage, clamavReferenz, docker, https, stelleImageBereit } from "./paket-hilfe.js";
 import { dockerAusfuehrer, dockerBinary } from "../src/betrieb/update/docker.js";
 import { reconcileHost, sicherungHost } from "../src/betrieb/host.js";
 import { dockerInstallUmgebung, installiere } from "../src/betrieb/install/install.js";
@@ -64,6 +64,8 @@ describe.skipIf(!DOCKER_TESTS)("Host-Update (Docker)", () => {
     const pg = "postgres:18.6-bookworm@sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5";
     const caddyId = (await docker(["image", "inspect", caddy, "--format", "{{.Id}}"])).stdout.trim();
     const pgId = (await docker(["image", "inspect", pg, "--format", "{{.Id}}"])).stdout.trim();
+    const clamav = clamavReferenz(); await stelleImageBereit(clamav); // Pflichtimage seit der Anlagenakte (release.ts)
+    const clamavId = (await docker(["image", "inspect", clamav, "--format", "{{.Id}}"])).stdout.trim();
     const bundle = (name: string, image: typeof image1, migrationen: string, von: string[]) => {
       const b = join(dir, name); mkdirSync(b);
       for (const f of ["compose.yaml", "Caddyfile", "wartung.html", "planora-betrieb@.service", "planora-sicherung@.service", "planora-sicherung@.timer"]) cpSync(join(BETRIEB, f), join(b, f));
@@ -76,6 +78,7 @@ describe.skipIf(!DOCKER_TESTS)("Host-Update (Docker)", () => {
           { dienst: "app", referenz: image.referenz, digest: null, imageId: image.imageId, architektur: "amd64" },
           { dienst: "db", referenz: pg, digest: pg.split("@")[1], imageId: pgId, architektur: "amd64" },
           { dienst: "proxy", referenz: caddy, digest: caddy.split("@")[1], imageId: caddyId, architektur: "amd64" },
+          { dienst: "clamav", referenz: clamav, digest: clamav.split("@")[1], imageId: clamavId, architektur: "amd64" },
         ] });
       writeFileSync(join(b, "release.json"), JSON.stringify(signiereRelease(r, privat))); return b;
     };

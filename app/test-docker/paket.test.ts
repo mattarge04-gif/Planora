@@ -261,7 +261,9 @@ describe.skipIf(!DOCKER_TESTS)("Compose-Paket (Docker)", () => {
 
   it("Virenpruefung: clamav laeuft im Paket ohne Port, api erreicht clamd (PING)", async () => {
     const ps = (await inst.compose(["ps", "--format", "{{.Service}}|{{.Ports}}"])).stdout;
-    expect(ps).toMatch(/^clamav\|$/m);
+    // Ports zeigt auch nur exponierte Container-Ports (3310/tcp); veroeffentlicht waere "->".
+    expect(ps).toMatch(/^clamav\|/m);
+    expect(ps.split(/\r?\n/).find((z) => z.startsWith("clamav|"))).not.toContain("->");
     const r = await inst.compose(["exec", "-T", "api", "node", "--input-type=module", "-e",
       `import {connect} from 'node:net';
        const ping=()=>new Promise((ok)=>{const s=connect(3310,'clamav');let t='';s.on('connect',()=>s.write('zPING\\0'));
@@ -269,5 +271,10 @@ describe.skipIf(!DOCKER_TESTS)("Compose-Paket (Docker)", () => {
        for(let i=0;i<300;i++){if(await ping()==='PONG'){console.log('PONG');process.exit(0);}await new Promise(r=>setTimeout(r,1000));}
        process.exit(1);`], { timeoutMs: 400_000 });
     expect(r.stdout.trim()).toBe("PONG");
+    // W2: Compose-configs.content ersetzt die Image-Konfiguration, eigener Healthcheck (nc + PING) meldet healthy.
+    expect((await inst.inspect("clamav")).State.Health.Status).toBe("healthy");
+    const conf = (await inst.compose(["exec", "-T", "clamav", "cat", "/etc/clamav/clamd.conf"])).stdout;
+    expect(conf).toMatch(/^AlertExceedsMax yes$/m);
+    expect(conf).toMatch(/^StreamMaxLength 101M$/m);
   });
 });
