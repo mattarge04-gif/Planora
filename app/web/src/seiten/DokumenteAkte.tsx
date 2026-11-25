@@ -65,7 +65,8 @@ export function AkteListe({ dokumente, darf, aktivId, ablegen, hinweise, onWahl,
   const [nurUnverknuepft, setNurUnverknuepft] = useState(false);
   const feld = useRef<HTMLInputElement>(null);
   const { ziehen, ziel } = useAblegen(darf, onDateien);
-  const sichtbar = useMemo(() => [...filtere(dokumente, { kategorie, nurUnverknuepft })].reverse(), [dokumente, kategorie, nurUnverknuepft]);
+  // Server liefert neueste zuerst (hochgeladen_am desc): neu Abgelegtes steht oben.
+  const sichtbar = useMemo(() => filtere(dokumente, { kategorie, nurUnverknuepft }), [dokumente, kategorie, nurUnverknuepft]);
   const vorhanden = KATEGORIEN.filter((k) => dokumente.some((d) => d.kategorie === k.id));
   const unverknuepft = dokumente.filter((d) => d.bauteilIds.length === 0).length;
   const leer = dokumente.length === 0 && ablegen.length === 0;
@@ -190,6 +191,7 @@ export function AkteDetail({ d, bauteile, katalog, darf, laeuft, lesen, onOeffne
   useEffect(() => { setFrage(false); setWahl(false); }, [d.id]);
   const art = oeffnenArt(d);
   const sauber = d.scanStatus === "sauber";
+  const nurLoeschen = !sauber && !(d.scanStatus === "scan_fehler" && darf);
   const name = (k: string) => anzeigeName(k, katalog);
   const verknuepft = d.bauteilIds.map((id) => bauteile.find((b) => b.id === id)).filter((b): b is AblageBauteil => !!b);
   const meta = [endung(d), groesseText(d.groesse), d.seiten ? (d.seiten === 1 ? "1 Seite" : `${d.seiten} Seiten`) : null, `abgelegt ${datum(d.hochgeladenAm)}`].filter(Boolean);
@@ -206,8 +208,11 @@ export function AkteDetail({ d, bauteile, katalog, darf, laeuft, lesen, onOeffne
         {sauber && <a className={`ep-knopf${art === "herunterladen" ? " ep-knopf-haupt" : ""}`} href={dateiUrl(d.id, true)} download={d.dateiname}><Download size={15} strokeWidth={1.75} aria-hidden="true" />Herunterladen</a>}
         {lesen && <button type="button" className="ep-knopf" disabled={laeuft} onClick={lesen.onLesen}><ScanSearch size={15} strokeWidth={1.75} aria-hidden="true" />{lesen.text}</button>}
         {d.scanStatus === "scan_fehler" && darf && <button type="button" className="ep-knopf" disabled={laeuft} onClick={onErneut}><RotateCw size={14} strokeWidth={1.75} aria-hidden="true" />Erneut prüfen</button>}
-        {darf && <button type="button" className="dk-symbol dk-symbol-loeschen dk-detail-loeschen" onClick={() => setFrage(true)} aria-label={`${d.dateiname} löschen`} title="Löschen" aria-expanded={frage}>
-          <Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /></button>}
+        {darf && (nurLoeschen
+          // Gesperrte Datei ohne weitere Aktion: Löschen als lesbarer Knopf statt einsamem Symbol am Zeilenende.
+          ? <button type="button" className="ep-knopf" onClick={() => setFrage(true)} aria-expanded={frage}><Trash2 size={14} strokeWidth={1.75} aria-hidden="true" />Löschen</button>
+          : <button type="button" className="dk-symbol dk-symbol-loeschen dk-detail-loeschen" onClick={() => setFrage(true)} aria-label={`${d.dateiname} löschen`} title="Löschen" aria-expanded={frage}>
+            <Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /></button>)}
       </div>
       {frage && <div className="dk-frage dk-detail-frage" role="group" aria-label="Löschen bestätigen" onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setFrage(false); } }}>
         <p>Dokument löschen? Verknüpfungen und offene Preisvorschläge entfallen, übernommene Preise bleiben.</p>

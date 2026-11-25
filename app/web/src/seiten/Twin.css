@@ -540,3 +540,16 @@ a.tw-ul-wahl:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-of
 .tw-ld-fundstelle { white-space: nowrap; }
 .tw-ampel-erklaerung.tw-ampel-erklaerung-unten { margin-top: 10px; }
 .ui-karte button.tw-ul-wahl:focus-visible, a.tw-ul-wahl:focus-visible { outline-offset: -2px; }
+
+/* Fundstelle nicht mehr abrufbar (Dokument gelöscht): ruhige Meldung unten mittig, schliessbar. */
+.tw-viewer-fehler {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 40;
+  display: flex; align-items: center; gap: 10px; margin: 0; padding: 10px 10px 10px 16px;
+  color: var(--tw-text); font-size: 13px; line-height: 1.4; max-width: min(520px, calc(100vw - 32px));
+}
+.tw-viewer-fehler-zu {
+  display: inline-grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 8px;
+  background: transparent; color: inherit; cursor: pointer;
+}
+.tw-viewer-fehler-zu:hover { background: rgba(0, 0, 0, 0.05); }
+.tw-viewer-fehler-zu:focus-visible { outline: 2px solid var(--tw-eis); outline-offset: 2px; }

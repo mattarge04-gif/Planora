@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
 import { ApiFehler } from "../api";
 import { ladeAblage } from "../dokumente/api";
+import { ablageFehlerText } from "../dokumente/ansicht";
+import { fehlerCode } from "../api";
 import type { AblageZeile } from "../dokumente/typen";
 import { Viewer } from "./Viewer";
 
@@ -19,10 +21,10 @@ export function useViewer(gebaeudeId: string, o: { onAbgelaufen?: () => void; on
       const a = await ladeAblage(gebaeudeId);
       const d = a.dokumente.find((x) => x.id === dokumentId);
       if (d) setZiel({ dokument: d, ...(seite ? { seite } : {}) });
-      else onFehlt?.("Das Dokument ist nicht mehr abgelegt.");
+      else onFehlt?.(ablageFehlerText(null, 404));
     } catch (e) {
       if (e instanceof ApiFehler && e.status === 401) onAbgelaufen?.();
-      else onFehlt?.("Dokument konnte nicht geöffnet werden.");
+      else onFehlt?.(ablageFehlerText(fehlerCode(e), e instanceof ApiFehler ? e.status : undefined, "Dokument konnte nicht geöffnet werden."));
     }
   }, [gebaeudeId, onAbgelaufen, onFehlt]);
   const schliesse = useCallback(() => setZiel(null), []);

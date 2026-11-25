@@ -1,0 +1,118 @@
+{
+  "zeit": "2026-11-25T19:07:14.393Z",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002207) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "ansichten": [
+    {
+      "fenster": "1440x900",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\dokumente-leer-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\liste-detail-datenblatt-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-bauteile-hinzufuegen-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-abgelehnt-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-scan-fehler-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-office-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-foto-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-pdf-s1-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-pdf-s2-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-suche-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-bild-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-bild-zoom-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\preise-pruefen-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-unterlagen-datenblatt-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-unterlagen-unten-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-datenblatt-bearbeiten-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-aus-karte-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-nach-esc-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\leser-dokumente-1440x900.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\leser-karte-1440x900.png"
+      ],
+      "meldungen": [
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.WebGLProgram: Program Info Log: (817,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (997,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (1004,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value\n(85,12-86): warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value",
+        "warning: THREE.WebGLProgram: Program Info Log: (958,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (999,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.WebGLProgram: Program Info Log: (821,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.WebGLProgram: Program Info Log: (815,1): warning X4000: use of potentially uninitialized variable (f_getShadow_float4)",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+      ]
+    },
+    {
+      "fenster": "1280x720",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\dokumente-leer-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\liste-detail-datenblatt-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-bauteile-hinzufuegen-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-abgelehnt-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-scan-fehler-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-office-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-foto-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-pdf-s1-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-pdf-s2-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-suche-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-bild-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-bild-zoom-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\preise-pruefen-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-unterlagen-datenblatt-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-unterlagen-unten-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-datenblatt-bearbeiten-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-aus-karte-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-nach-esc-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\leser-dokumente-1280x720.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\leser-karte-1280x720.png"
+      ],
+      "meldungen": [
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+      ]
+    },
+    {
+      "fenster": "1920x1080",
+      "bilder": [
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\dokumente-leer-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\liste-detail-datenblatt-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-bauteile-hinzufuegen-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-abgelehnt-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-scan-fehler-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-office-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\detail-foto-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-pdf-s1-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-pdf-s2-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-suche-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-bild-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-bild-zoom-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\preise-pruefen-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-unterlagen-datenblatt-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-unterlagen-unten-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-datenblatt-bearbeiten-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\viewer-aus-karte-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\karte-nach-esc-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\leser-dokumente-1920x1080.png",
+        "C:\\web agency\\planora\\Planora\\docs\\design\\kritiken\\2026-11-24-anlagenakte\\r1-selbst\\zustaende\\leser-karte-1920x1080.png"
+      ],
+      "meldungen": [
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.",
+        "warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+      ]
+    }
+  ]
+}

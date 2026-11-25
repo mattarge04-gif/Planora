@@ -47,6 +47,8 @@ describe("Ablage-Anzeige", () => {
     expect(ablageFehlerText(null, 413)).toBe("Datei grösser als 100 MB.");
     expect(ablageFehlerText("toString")).toBe("Aktion fehlgeschlagen.");
     expect(ablageFehlerText(null, 500, "Ablegen fehlgeschlagen.")).toBe("Ablegen fehlgeschlagen.");
+    expect([ablageFehlerText(null, 403, "Ablegen fehlgeschlagen."), ablageFehlerText(null, 403), ablageFehlerText(null, 404)])
+      .toEqual(["Keine Berechtigung zum Ablegen.", "Keine Berechtigung für diese Aktion.", "Das Dokument ist nicht mehr abgelegt."]);
     expect([ablageFehlerText("abgelehnt"), ablageFehlerText("nicht_scan_fehler"), ablageFehlerText("bauteil_gemischt"), ablageFehlerText("feld_unbekannt"),
       ablageFehlerText("feld_typ"), ablageFehlerText("liest_bereits"), ablageFehlerText("kein_pdf"), ablageFehlerText("zu_viele_seiten")]).toEqual([
       "Abgelehnte Dateien lassen sich nicht ändern.", "Nur fehlgeschlagene Prüfungen lassen sich wiederholen.", "Die Bauteile müssen vom gleichen Typ und im gleichen Gebäude sein.",

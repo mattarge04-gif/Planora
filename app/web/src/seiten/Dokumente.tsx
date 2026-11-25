@@ -9,7 +9,7 @@ import { alleSicheren, fehlerCode, ladeUebersicht, liesNeu, uebernimm, verwirf }
 import { franken, gruppiere, laeuftNoch, offeneSichere, statusText, zuordnungText } from "../preisdokument/ansicht";
 import type { DokumentZeile, Uebersicht, VorschlagZeile } from "../preisdokument/typen";
 import { ladeAblage, legeAb, loesche, pruefeErneut, setzeKategorie, verknuepfe } from "../dokumente/api";
-import { ablageFehlerText, pruefungLaeuft, scanAnzeige, vorpruefen } from "../dokumente/ansicht";
+import { ABLEGEN_FEHLT, ablageFehlerText, pruefungLaeuft, scanAnzeige, vorpruefen } from "../dokumente/ansicht";
 import type { AblageAntwort, Kategorie } from "../dokumente/typen";
 import { Marke } from "../ui/Kopfzeile";
 import { useViewer } from "../viewer/useViewer";
@@ -75,7 +75,6 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
   const fehlerBehandeln = useCallback<Aktion>((e) => {
     if (e instanceof ApiFehler && e.status === 401) onAbgelaufen();
     else if (fehlerCode(e) === "stand_veraltet") setKonflikt(true);
-    else if (e instanceof ApiFehler && e.status === 403) setMeldung({ text: "Keine Berechtigung zum Ändern.", art: "fehler" });
     else setMeldung({ text: fehlerText(e), art: "fehler" });
   }, [onAbgelaufen]);
 
@@ -146,7 +145,7 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
   useEffect(() => {
     if (!ablage) return;
     if (aktivId && ablage.dokumente.some((d) => d.id === aktivId)) return;
-    setAktivId(ablage.dokumente.length ? ablage.dokumente[ablage.dokumente.length - 1].id : null);
+    setAktivId(ablage.dokumente.length ? ablage.dokumente[0].id : null); // Server: neueste zuerst
   }, [ablage, aktivId]);
 
   const nameVon = useCallback((id: string) => anzeigeName(id, katalog?.eintraege ?? []), [katalog]);
@@ -192,7 +191,7 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
         zuletzt = r.zeile.id;
       } catch (e) {
         if (e instanceof ApiFehler && e.status === 401) { onAbgelaufen(); return; }
-        neu.push({ datei: f.name, text: fehlerText(e, "Ablegen fehlgeschlagen."), art: "fehler" });
+        neu.push({ datei: f.name, text: fehlerText(e, ABLEGEN_FEHLT), art: "fehler" });
       }
       setAblegen((a) => a.filter((n) => n !== f.name));
     }
@@ -234,7 +233,7 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
   const neuLesen = async (id: string, dateiname: string) => {
     try { await liesNeu(id); await aktualisiere(); }
     catch (e) {
-      if (fehlerCode(e) === "liest_bereits") setMeldung({ text: `${dateiname} wird bereits gelesen.`, art: "ok" });
+      if (fehlerCode(e) === "liest_bereits") setMeldung({ text: ablageFehlerText("liest_bereits"), art: "ok" });
       else fehlerBehandeln(e);
     }
   };

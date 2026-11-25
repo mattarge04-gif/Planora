@@ -3,7 +3,8 @@ import { ChevronLeft, ChevronRight, Download, Lock, Minus, Plus, Search, X } fro
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import type { AblageZeile } from "../dokumente/typen";
 import { dateiUrl, ladeBytes } from "../dokumente/api";
-import { kategorieName, oeffnenArt, scanAnzeige } from "../dokumente/ansicht";
+import { ablageFehlerText, kategorieName, oeffnenArt, scanAnzeige } from "../dokumente/ansicht";
+import { ApiFehler, fehlerCode } from "../api";
 import { TOKENS } from "../design/tokens";
 import { DokumentSymbol, endung } from "../ui/dokumentSymbol";
 import { klemmeSeite, naechsterTreffer, naechsterZoom, trefferSeiten, zoomFuerBreite, ZOOM_STUFEN } from "./seiten";
@@ -81,7 +82,7 @@ export function Viewer({ dokument, seite: start = 1, onSchliessen }: Props) {
       if (!aktiv) return;
       setZoom(zoomFuerBreite(breite, flaeche.current?.clientWidth ?? 800));
       setDoc(offen); setSeite((s) => klemmeSeite(s, offen!.numPages));
-    }).catch(() => { if (aktiv) setFehler("Dokument konnte nicht geöffnet werden. Herunterladen und lokal öffnen."); });
+    }).catch((e: unknown) => { if (aktiv) setFehler(ablageFehlerText(fehlerCode(e), e instanceof ApiFehler ? e.status : undefined, "Dokument konnte nicht geöffnet werden. Herunterladen und lokal öffnen.")); });
     return () => { aktiv = false; zu?.(); };
   }, [art, dokument.id]);
   useEffect(() => {
@@ -91,7 +92,7 @@ export function Viewer({ dokument, seite: start = 1, onSchliessen }: Props) {
       if (!aktiv || !canvas.current) return;
       const r = zeichneSeite(doc, seite, canvas.current, zoom);
       z = r;
-      r.fertig.then(() => { if (aktiv) setGezeichnet(true); }, () => { if (aktiv) setFehler("Seite konnte nicht dargestellt werden."); });
+      r.fertig.then(() => { if (aktiv) setGezeichnet(true); }, () => { if (aktiv) setFehler(ablageFehlerText(null, undefined, "Seite konnte nicht dargestellt werden.")); });
     });
     return () => { aktiv = false; z?.abbrechen(); };
   }, [doc, seite, zoom]);
@@ -185,7 +186,7 @@ export function Viewer({ dokument, seite: start = 1, onSchliessen }: Props) {
               </div>)}
             {art === "bild" && <img className={`vw-bild${bildMass ? " vw-bild-bereit" : ""}`} src={dateiUrl(dokument.id)} alt={dokument.dateiname} style={bildStil}
               onLoad={(e) => setBildMass({ b: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
-              onError={() => setFehler("Bild konnte nicht geladen werden.")} />}
+              onError={() => setFehler(ablageFehlerText(null, undefined, "Bild konnte nicht geladen werden."))} />}
             {art === "bild" && fehler && <Hinweis titel="Nicht darstellbar" text={fehler} />}
             {art === "herunterladen" && <Hinweis titel={dokument.mime === "image/heic" ? "Keine Vorschau für HEIC" : "Office-Datei"}
               text={dokument.mime === "image/heic" ? "HEIC-Fotos lassen sich im Browser nicht anzeigen. Herunterladen und lokal öffnen." : "Word-, Excel- und PowerPoint-Dateien zeigt Planora nicht an. Herunterladen und lokal öffnen."}

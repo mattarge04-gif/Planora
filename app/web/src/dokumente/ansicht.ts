@@ -49,11 +49,13 @@ const FEHLER: Record<string, string> = {
   liest_bereits: "Das Dokument wird bereits gelesen.", kein_pdf: "Nur PDF-Dateien lassen sich auslesen.",
   zu_viele_seiten: "Das Dokument hat zu viele Seiten zum Auslesen.",
 };
+export const ABLEGEN_FEHLT = "Ablegen fehlgeschlagen.";
 /** `fallback` je Aktion, z. B. "Ablegen fehlgeschlagen." beim Upload. */
 export function ablageFehlerText(code: string | null, status?: number, fallback = "Aktion fehlgeschlagen."): string {
   if (code && Object.hasOwn(FEHLER, code)) return FEHLER[code];
   if (status === 413) return FEHLER.zu_gross;
-  if (status === 403) return "Keine Berechtigung zum Ablegen.";
+  if (status === 403) return fallback === ABLEGEN_FEHLT ? "Keine Berechtigung zum Ablegen." : "Keine Berechtigung für diese Aktion.";
+  if (status === 404) return "Das Dokument ist nicht mehr abgelegt.";
   return fallback;
 }
 export const unterlagenFuer = (d: AblageZeile[], bauteilIds: string[]) => d.filter((x) => x.bauteilIds.some((id) => bauteilIds.includes(id)));
