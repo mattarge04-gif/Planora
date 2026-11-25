@@ -26,6 +26,13 @@ const technik = b.einheiten.find((e) => e.art === "technik");
 if (!technik?.id) throw new Error(`${name}: keine Einheit mit art "technik"`);
 const gruppe1 = b.gruppen?.find((gr) => gr.nummer === 1)?.id;
 const neuTeile = [...NEU.map((katalogId) => ({ katalogId })), ...(gruppe1 ? [{ katalogId: "heizung.wmz", ort: { gruppe: { gruppeId: gruppe1 } } }] : [])];
+// E48 (Datenblatt je Typ): Umwaelzpumpen der Zentrale ohne Angabe erhalten Hersteller und Typ, damit ein Datenblatt fuer beide gilt.
+const ohneTyp = b.bauteile.filter((t) => t.katalogId === "heizung.umwaelzpumpe" && t.standort?.einheitId === technik.id && !t.hersteller && !t.typ);
+if (ohneTyp.length) {
+  await api("PUT", url, { ...b, bauteile: b.bauteile.map((t) => (ohneTyp.includes(t) ? { ...t, hersteller: "Grundfos", typ: "Magna3 32-80" } : t)) });
+  console.log(`${name}: ${ohneTyp.length} Umwälzpumpe(n) mit Grundfos Magna3 32-80`);
+  Object.assign(b, await api("GET", url));
+}
 const fehlend = neuTeile.filter((n) => !b.bauteile.some((t) => t.katalogId === n.katalogId && t.standort?.einheitId === technik.id));
 if (!fehlend.length) {
   console.log(`${name}: bereits vorhanden in "${technik.bezeichnung}"`);
