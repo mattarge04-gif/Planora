@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { Box, CircleGauge, Cylinder, Droplet, Fan, Flame, Gauge, Heater, SlidersHorizontal, Spline, Split, Waves, Waypoints, X, type LucideIcon } from "lucide-react";
+import { Box, CircleGauge, Paperclip, Cylinder, Droplet, Fan, Flame, Gauge, Heater, SlidersHorizontal, Spline, Split, Waves, Waypoints, X, type LucideIcon } from "lucide-react";
 import type { IconSchluessel, ObjektKarte } from "../dashboard";
 import { useSpeicher, type Speicher } from "../ui/speicher";
 import type { BildschirmPunkt } from "../szene3/Interaktion";
@@ -38,6 +38,15 @@ interface Props { karte: ObjektKarte; onSchliessen: () => void; lebensdauer?: Ld
   onNeuLaden?: () => void;
   katalog?: KatalogEintrag[]; onAbgelaufen?: () => void }
 
+/** Scrollt die Karte zu Datenblatt/Unterlagen und setzt den Fokus auf die Überschrift der Unterlagen. */
+function zuUnterlagen(karte: HTMLElement | null) {
+  const ziel = karte?.querySelector<HTMLElement>(".tw-datenblatt") ?? karte?.querySelector<HTMLElement>(".tw-unterlagen");
+  const ruhig = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  ziel?.scrollIntoView({ block: "start", behavior: ruhig ? "auto" : "smooth" });
+  const kopf = karte?.querySelector<HTMLElement>(".tw-unterlagen h3");
+  if (kopf) { kopf.tabIndex = -1; kopf.focus({ preventScroll: true }); }
+}
+
 /** Anlagenkarte rechts, Inhalt aus objektKarte(); Lebensdauer, Datenblatt und Unterlagen als Abschnitte. */
 export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAendern, onLebensdauer, onDokument, bezug = null,
   onFundstelle, unterlagen, darfAblegen = false, onOeffnen, onAblegen, onNeuLaden, katalog, onAbgelaufen }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
@@ -48,7 +57,12 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAe
         <span className="tw-objekt-icon" aria-hidden="true"><Icon size={18} strokeWidth={1.75} /></span>
         <div className="tw-objekt-titel">
           <h2 id="karte-objekt">{karte.name}</h2>
-          <span className={`tw-badge tw-badge-${karte.status}`}>{STATUS[karte.status]}</span>
+          <div className="tw-objekt-marken">
+            <span className={`tw-badge tw-badge-${karte.status}`}>{STATUS[karte.status]}</span>
+            {/* Unterlagen und Datenblatt liegen unten in der Karte: Sprungmarke im Kopf, damit sie ohne Suchen erreichbar sind (Kritik r1). */}
+            {unterlagen && (unterlagen.length > 0 || darfAblegen) && <button type="button" className="tw-objekt-sprung" onClick={() => zuUnterlagen(kartenRef.current)}>
+              <Paperclip size={12} strokeWidth={2} aria-hidden="true" />{unterlagen.length === 0 ? "Unterlagen" : unterlagen.length === 1 ? "1 Unterlage" : `${unterlagen.length} Unterlagen`}</button>}
+          </div>
         </div>
         <button type="button" className="tw-schliessen" onClick={onSchliessen} aria-label="Anlagenkarte schliessen (Esc)">
           <X size={16} strokeWidth={1.75} aria-hidden="true" />

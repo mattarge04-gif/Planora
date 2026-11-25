@@ -9,7 +9,7 @@ import { alleSicheren, fehlerCode, ladeUebersicht, liesNeu, uebernimm, verwirf }
 import { franken, gruppiere, laeuftNoch, offeneSichere, statusText, zuordnungText } from "../preisdokument/ansicht";
 import type { DokumentZeile, Uebersicht, VorschlagZeile } from "../preisdokument/typen";
 import { ladeAblage, legeAb, loesche, pruefeErneut, setzeKategorie, verknuepfe } from "../dokumente/api";
-import { ABLEGEN_FEHLT, ablageFehlerText, pruefungLaeuft, scanAnzeige, vorpruefen } from "../dokumente/ansicht";
+import { ablageFehlerText, ablegenFehlerText, pruefungLaeuft, scanAnzeige, vorpruefen } from "../dokumente/ansicht";
 import type { AblageAntwort, Kategorie } from "../dokumente/typen";
 import { Marke } from "../ui/Kopfzeile";
 import { useViewer } from "../viewer/useViewer";
@@ -145,7 +145,8 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
   useEffect(() => {
     if (!ablage) return;
     if (aktivId && ablage.dokumente.some((d) => d.id === aktivId)) return;
-    setAktivId(ablage.dokumente.length ? ablage.dokumente[0].id : null); // Server: neueste zuerst
+    // Neuestes geprüftes Dokument (Server: neueste zuerst); abgelehnte oder noch gesperrte nie als erster Eindruck.
+    setAktivId(ablage.dokumente.find((d) => d.scanStatus === "sauber")?.id ?? null);
   }, [ablage, aktivId]);
 
   const nameVon = useCallback((id: string) => anzeigeName(id, katalog?.eintraege ?? []), [katalog]);
@@ -191,7 +192,7 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
         zuletzt = r.zeile.id;
       } catch (e) {
         if (e instanceof ApiFehler && e.status === 401) { onAbgelaufen(); return; }
-        neu.push({ datei: f.name, text: fehlerText(e, ABLEGEN_FEHLT), art: "fehler" });
+        neu.push({ datei: f.name, text: ablegenFehlerText(fehlerCode(e), e instanceof ApiFehler ? e.status : undefined, f.name), art: "fehler" });
       }
       setAblegen((a) => a.filter((n) => n !== f.name));
     }
@@ -237,7 +238,10 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
       else fehlerBehandeln(e);
     }
   };
-  const loeschen = (id: string, dateiname: string) => ablageAktion(() => loesche(id), `${dateiname} gelöscht. Übernommene Preise bleiben erhalten.`);
+  const loeschen = (id: string, dateiname: string) => {
+    const mitPreisen = !!u?.dokumente.find((x) => x.id === id)?.vorschlaege.some((v) => v.status === "uebernommen");
+    return ablageAktion(() => loesche(id), `${dateiname} gelöscht.${mitPreisen ? " Übernommene Preise bleiben erhalten." : ""}`);
+  };
   const zeigeDokument = (id: string) => {
     setAktivDok(id);
     document.getElementById(`dk-gruppe-${id}`)?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
@@ -255,7 +259,8 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
   const aktivPreise = aktiv ? u?.dokumente.find((d) => d.id === aktiv.id) ?? null : null;
   const lesbar = !!aktiv && aktiv.art === "pdf" && aktiv.scanStatus === "sauber" && an && darf && !!aktivPreise
     && aktivPreise.status !== "neu" && aktivPreise.status !== "liest";
-  const zeigeUmschalter = preise === "an";
+  // Umschalter schon beim Laden zeigen (kein Springen des Layouts); verschwindet nur, wenn Preise nicht lesbar sind.
+  const zeigeUmschalter = preise !== "aus";
 
   return (
     <main className="ep dk" style={stil} aria-label="Dokumente">
@@ -274,16 +279,16 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
       {zeigeUmschalter && <div className="dk-umschalter-zeile">
         <div className="dk-umschalter" role="tablist" aria-label="Ansicht">
           <button type="button" role="tab" id="dk-tab-alle" aria-selected={ansicht === "alle"} aria-controls="dk-bereich" onClick={() => setAnsicht("alle")}>
-            Alle Dokumente{ablage && <span className="dk-umschalter-zahl">{ablage.dokumente.length}</span>}</button>
+            Alle Dokumente<span className="dk-umschalter-zahl">{ablage ? ablage.dokumente.length : "–"}</span></button>
           <button type="button" role="tab" id="dk-tab-preise" aria-selected={ansicht === "preise"} aria-controls="dk-bereich" onClick={() => setAnsicht("preise")}>
-            Preise prüfen<span className={`dk-umschalter-zahl${offen > 0 ? " dk-umschalter-offen" : ""}`}>{offen}</span></button>
+            Preise prüfen<span className={`dk-umschalter-zahl${offen > 0 ? " dk-umschalter-offen" : ""}`}>{u ? offen : "–"}</span></button>
         </div>
       </div>}
 
       {fehler && <p className="ep-meldung" role="alert">{fehler}</p>}
       {konflikt && <p className="ep-meldung ep-meldung-konflikt" role="alert"><TriangleAlert size={15} strokeWidth={2} aria-hidden="true" />{MELDUNG_409}
         <button type="button" className="ep-knopf" onClick={laden}>Neu laden</button></p>}
-      {!ablage && !fehler && <p className="ep-meldung ep-laden" role="status">Dokumente werden geladen …</p>}
+      {!ablage && !fehler && <AkteGeruest />}
       <p className="ui-sr" role="status" aria-live="polite">{meldung?.art === "ok" ? meldung.text : ""}</p>
       {ansicht === "alle" && meldung && <Meldung m={meldung} onZu={() => setMeldung(null)} schwebend />}
 
@@ -360,6 +365,21 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
       </section>
     </div>;
   }
+}
+
+/** Gerüst während des Ladens: gleiche Spalten wie die Ablage, ruhige Platzhalterzeilen (keine Bewegung bei reduzierter Bewegung). */
+function AkteGeruest() {
+  return (
+    <div className="dk-akte dk-geruest" role="status" aria-label="Dokumente werden geladen">
+      <span className="ui-sr">Dokumente werden geladen …</span>
+      <section className="ep-karte dk-akte-liste" aria-hidden="true">
+        <div className="dk-akte-kopf"><span className="dk-g dk-g-titel" /></div>
+        <span className="dk-g dk-g-ablage" />
+        {[0, 1, 2, 3, 4].map((i) => <div key={i} className="dk-g-zeile"><span className="dk-g dk-g-icon" /><span className="dk-g-text"><span className="dk-g" /><span className="dk-g dk-g-kurz" /></span><span className="dk-g dk-g-rest" /></div>)}
+      </section>
+      <section className="ep-karte dk-detail" aria-hidden="true"><span className="dk-g dk-g-vorschau" /><span className="dk-g dk-g-titel" /><span className="dk-g dk-g-kurz" /></section>
+    </div>
+  );
 }
 
 function Meldung({ m, onZu, schwebend = false }: { m: { text: string; art: "ok" | "fehler" }; onZu: () => void; schwebend?: boolean }) {

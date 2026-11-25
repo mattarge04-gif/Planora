@@ -1,4 +1,4 @@
-import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from "pdfjs-dist";
+import { getDocument, GlobalWorkerOptions, TextLayer, type PDFDocumentProxy } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 // Worker aus eigener Domain (gebuendeltes Asset), kein CDN; CSP default-src 'self' deckt ihn ab.
@@ -47,11 +47,41 @@ export async function seitenBreite(doc: PDFDocumentProxy, nr = 1): Promise<numbe
   return (await doc.getPage(nr)).getViewport({ scale: 1 }).width;
 }
 
-export async function seitenTexte(doc: PDFDocumentProxy): Promise<string[]> {
-  const texte: string[] = [];
+/** Textstuecke je Seite in der Reihenfolge der Textebene (Grundlage fuer Suche und Markierung). */
+export async function seitenTexte(doc: PDFDocumentProxy): Promise<string[][]> {
+  const texte: string[][] = [];
   for (let i = 1; i <= doc.numPages; i++) {
     const t = await (await doc.getPage(i)).getTextContent();
-    texte.push(t.items.map((x) => ("str" in x ? x.str : "")).join(" "));
+    texte.push(t.items.flatMap((x) => ("str" in x ? [x.str] : [])));
   }
   return texte;
+}
+
+/** Seitengroesse bei Massstab 1 (CSS-Pixel), fuer "Einpassen". */
+export async function seitenMass(doc: PDFDocumentProxy, nr: number): Promise<{ b: number; h: number }> {
+  const vp = (await doc.getPage(nr)).getViewport({ scale: 1 });
+  return { b: vp.width, h: vp.height };
+}
+
+/**
+ * Textebene ueber dem Canvas (markier- und kopierbar, Grundlage der Treffer-Markierung). PDF.js setzt Groessen nur ueber
+ * CSSOM (style.setProperty), keine style-Attribute oder <style>-Elemente: CSP style-src 'self' bleibt eingehalten.
+ * `fertig` liefert die Textstuecke (Elemente und Texte, gleiche Indizes wie seitenTexte).
+ */
+export function zeichneText(doc: PDFDocumentProxy, nr: number, container: HTMLElement, massstab: number): { fertig: Promise<{ elemente: HTMLElement[]; texte: string[] } | null>; abbrechen(): void } {
+  let ebene: TextLayer | null = null;
+  let abgebrochen = false;
+  const fertig = (async () => {
+    const seite = await doc.getPage(nr);
+    if (abgebrochen) return null;
+    const inhalt = await seite.getTextContent();
+    if (abgebrochen) return null;
+    container.replaceChildren();
+    container.style.setProperty("--total-scale-factor", String(massstab));
+    ebene = new TextLayer({ textContentSource: inhalt, container, viewport: seite.getViewport({ scale: massstab }) });
+    try { await ebene.render(); } catch { return null; }
+    if (abgebrochen) return null;
+    return { elemente: ebene.textDivs, texte: ebene.textContentItemsStr };
+  })();
+  return { fertig, abbrechen: () => { abgebrochen = true; ebene?.cancel(); } };
 }

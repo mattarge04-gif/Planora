@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ablageFehlerText, bauteilKandidaten, datenblattVorschlag, filtere, groesseText, kategorieName, oeffnenArt, pruefungLaeuft, scanAnzeige, unterlagenFuer, vorpruefen, MAX_BYTES } from "./ansicht";
+import { ablageFehlerText, ablegenFehlerText, bauteilKandidaten, datenblattVorschlag, filtere, groesseText, kategorieName, oeffnenArt, pruefungLaeuft, scanAnzeige, unterlagenFuer, vorpruefen, MAX_BYTES } from "./ansicht";
 import type { AblageBauteil, AblageZeile } from "./typen";
 
 const d = (x: Partial<AblageZeile> = {}): AblageZeile => ({ id: "d1", dateiname: "a.pdf", art: "pdf", mime: "application/pdf", kategorie: "sonstiges", groesse: 1000, seiten: 1,
@@ -47,6 +47,8 @@ describe("Ablage-Anzeige", () => {
     expect(ablageFehlerText(null, 413)).toBe("Datei grösser als 100 MB.");
     expect(ablageFehlerText("toString")).toBe("Aktion fehlgeschlagen.");
     expect(ablageFehlerText(null, 500, "Ablegen fehlgeschlagen.")).toBe("Ablegen fehlgeschlagen.");
+    expect([ablegenFehlerText("typ_unbekannt", 400, "setup.PDF"), ablegenFehlerText("typ_unbekannt", 400, "a.exe"), ablegenFehlerText(null, 500, "a.pdf")])
+      .toEqual(["Inhalt passt nicht zur Endung .pdf.", "Dateityp nicht erlaubt. Erlaubt sind PDF, JPG, PNG, HEIC, Word, Excel und PowerPoint.", "Ablegen fehlgeschlagen."]);
     expect([ablageFehlerText(null, 403, "Ablegen fehlgeschlagen."), ablageFehlerText(null, 403), ablageFehlerText(null, 404)])
       .toEqual(["Keine Berechtigung zum Ablegen.", "Keine Berechtigung für diese Aktion.", "Das Dokument ist nicht mehr abgelegt."]);
     expect([ablageFehlerText("abgelehnt"), ablageFehlerText("nicht_scan_fehler"), ablageFehlerText("bauteil_gemischt"), ablageFehlerText("feld_unbekannt"),

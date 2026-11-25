@@ -30,7 +30,7 @@ import { erneuerungFilter, POSTEN_TEXT, umschalten } from "../karten/erneuerungF
 import { anzeigeWelt } from "../szene3/gruppenNetz";
 import { usePreiseVerfuegbar } from "./dokumenteVerfuegbar";
 import { ladeAblage, legeAb } from "../dokumente/api";
-import { ABLEGEN_FEHLT, ablageFehlerText, unterlagenFuer, vorpruefen } from "../dokumente/ansicht";
+import { ablageFehlerText, ablegenFehlerText, unterlagenFuer, vorpruefen } from "../dokumente/ansicht";
 import type { AblageAntwort } from "../dokumente/typen";
 import type { AblageMeldung } from "../karten/TwinUnterlagen";
 import { useViewer } from "../viewer/useViewer";
@@ -354,7 +354,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
         if (!r.neu) m.push({ datei: f.name, text: r.zeile.dateiname === f.name ? "Ist schon abgelegt." : `Ist schon abgelegt als ${r.zeile.dateiname}.`, art: "hinweis" });
       } catch (e) {
         if (e instanceof ApiFehler && e.status === 401) { onAbgelaufen(); return m; }
-        m.push({ datei: f.name, text: ablageFehlerText(fehlerCode(e), e instanceof ApiFehler ? e.status : undefined, ABLEGEN_FEHLT), art: "fehler" });
+        m.push({ datei: f.name, text: ablegenFehlerText(fehlerCode(e), e instanceof ApiFehler ? e.status : undefined, f.name), art: "fehler" });
       }
     }
     ladeAblageNeu();

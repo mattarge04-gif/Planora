@@ -114,6 +114,15 @@
 .tw-objekt-titel h2 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3; }
 .ui-karte .tw-schliessen { display: grid; place-items: center; width: 28px; height: 28px; margin: -2px -6px 0 0; border-radius: 6px; color: var(--tw-sekundaer); transition: background-color var(--tw-hover-ms) var(--tw-kurve), color var(--tw-hover-ms) var(--tw-kurve); }
 .ui-karte .tw-schliessen:hover { background: rgb(31 38 48 / 0.06); color: var(--tw-text); }
+.tw-objekt-marken { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.tw-objekt-sprung {
+  display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 8px; border: 0; border-radius: 999px; font: inherit; font-size: 12px; font-weight: 500;
+  color: var(--tw-text); background: var(--tw-flaeche-2); cursor: pointer; transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+.tw-objekt-sprung:hover { box-shadow: inset 0 0 0 1px var(--tw-grau-2, rgb(31 38 48 / 0.16)); }
+.tw-objekt-sprung:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-offset: 2px; }
+.tw-unterlagen h3:focus { outline: none; }
+.tw-unterlagen h3:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-offset: 2px; border-radius: 4px; }
 .tw-badge { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px 1px 7px; border-radius: 999px; font-size: 12px; font-weight: 500; background: var(--tw-flaeche-2); }
 .tw-badge::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
 .tw-badge-bestaetigt::before { background: var(--tw-ok); }
@@ -152,7 +161,10 @@
 .tw-db-eingabe:has(.tw-db-einheit) input { padding-right: 34px; }
 .tw-db-eingabe input:focus { outline: none; border-color: var(--tw-eis-akzent); box-shadow: 0 0 0 3px rgb(95 136 176 / 0.18); }
 .tw-db-eingabe input[aria-invalid="true"] { border-color: var(--tw-stoerung); }
-.tw-db-einheit { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 11.5px; color: var(--tw-sekundaer); pointer-events: none; }
+/* Einheit auf der Grundlinie der Ziffern (gleiche Schriftgrösse und Zeilenhöhe wie das Feld); DN steht fachlich vor dem Wert. */
+.tw-db-einheit { position: absolute; right: 8px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 13px; line-height: 1; color: var(--tw-sekundaer); font-variant-numeric: tabular-nums; pointer-events: none; }
+.tw-db-vorne .tw-db-einheit { right: auto; left: 9px; }
+.tw-db-eingabe.tw-db-vorne:has(.tw-db-einheit) input { padding-right: 8px; padding-left: 32px; }
 .tw-db-form > .tw-ld-aktionen { margin-top: 4px; }
 
 /* Anlagenkarte: Unterlagen (verknüpfte Dateien) */

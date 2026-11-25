@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Download, Lock, Minus, Plus, Search, X } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Download, Lock, Minus, Plus, Search, X } from "lucide-react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import type { AblageZeile } from "../dokumente/typen";
 import { dateiUrl, ladeBytes } from "../dokumente/api";
@@ -7,10 +7,19 @@ import { ablageFehlerText, kategorieName, oeffnenArt, scanAnzeige } from "../dok
 import { ApiFehler, fehlerCode } from "../api";
 import { TOKENS } from "../design/tokens";
 import { DokumentSymbol, endung } from "../ui/dokumentSymbol";
-import { klemmeSeite, naechsterTreffer, naechsterZoom, trefferSeiten, zoomFuerBreite, ZOOM_STUFEN } from "./seiten";
+import {
+  blaettereTreffer, jeSeite, klemmeSeite, klemmeVersatz, naechsterZoom, startTreffer, teileText, trefferListe, versatzUmPunkt, zoomEinpassen, ZOOM_STUFEN,
+} from "./seiten";
 import "./Viewer.css";
 
-interface Props { dokument: AblageZeile; seite?: number; onSchliessen: () => void }
+interface Props {
+  dokument: AblageZeile;
+  /** Startseite (Fundstelle "S. n"). */
+  seite?: number;
+  /** Suchbegriff, der beim Öffnen markiert wird (z. B. aus einer späteren Dokumentsuche). */
+  markiere?: string;
+  onSchliessen: () => void;
+}
 
 const F = TOKENS.farbe;
 const stil = {
@@ -22,27 +31,72 @@ const stil = {
 } as CSSProperties;
 
 const istEingabe = (t: EventTarget | null) => t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement;
+/** Innenabstand der Fläche (CSS .vw-flaeche): links/rechts 32, oben 28, unten 40. */
+const RAND_B = 64, RAND_H = 68;
+const BILD_MIN = 1, BILD_MAX = 8;
+const fehlerVon = (e: unknown, fallback: string) => ablageFehlerText(fehlerCode(e), e instanceof ApiFehler ? e.status : undefined, fallback);
 
-/** Overlay-Viewer (Esc schliesst): PDF mit Seitenleiste, Seite n, Zoom, Textsuche; Bilder mit Zoom; Office nur Herunterladen. */
-export function Viewer({ dokument, seite: start = 1, onSchliessen }: Props) {
+/** Overlay-Viewer (Esc schliesst): PDF mit Miniaturen, Seite n, Einpassen/Zoom, Textsuche mit Markierung; Bilder mit Zoom und Ziehen; Office nur Herunterladen. */
+export function Viewer({ dokument, seite: start = 1, markiere, onSchliessen }: Props) {
   const art = oeffnenArt(dokument);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [seite, setSeite] = useState(start);
   const [seiteEingabe, setSeiteEingabe] = useState(String(start));
-  const [zoom, setZoom] = useState<number | null>(art === "bild" ? 1 : null);
-  const [suche, setSuche] = useState("");
-  const [texte, setTexte] = useState<string[] | null>(null);
+  const [zoom, setZoom] = useState<number | null>(null);
+  const [eingepasst, setEingepasst] = useState(true);
+  const [seitenMass, setSeitenMass] = useState<{ b: number; h: number } | null>(null);
+  const [suche, setSuche] = useState(markiere ?? "");
+  const [texte, setTexte] = useState<string[][] | null>(null);
+  const [aktiv, setAktiv] = useState(-1);
   const [gezeichnet, setGezeichnet] = useState(false);
-  const [bildMass, setBildMass] = useState<{ b: number; h: number } | null>(null);
+  const [textStand, setTextStand] = useState<{ seite: number; elemente: HTMLElement[]; texte: string[] } | null>(null);
   const [flaecheMass, setFlaecheMass] = useState<{ b: number; h: number }>({ b: 0, h: 0 });
+  // Bild: Zoom relativ zum Einpassen (1 = ganz sichtbar) und Versatz aus der Mitte.
+  const [bildMass, setBildMass] = useState<{ b: number; h: number } | null>(null);
+  const [bz, setBz] = useState(1);
+  const [versatz, setVersatz] = useState({ x: 0, y: 0 });
+  const [zieht, setZieht] = useState(false);
+  const ziehStart = useRef<{ x: number; y: number; vx: number; vy: number; id: number } | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const textEbene = useRef<HTMLDivElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
   const flaeche = useRef<HTMLDivElement>(null);
   const leiste = useRef<HTMLElement>(null);
-  const treffer = useMemo(() => (texte ? trefferSeiten(texte, suche) : []), [texte, suche]);
+  const seiteRef = useRef(seite);
+  seiteRef.current = seite;
+
+  const treffer = useMemo(() => (texte ? trefferListe(texte, suche) : []), [texte, suche]);
+  const trefferJeSeite = useMemo(() => jeSeite(treffer), [treffer]);
   const anzahl = doc?.numPages ?? 0;
   const zuSeite = useCallback((n: number) => { if (doc) setSeite(klemmeSeite(n, doc.numPages)); }, [doc]);
+  const sucheAktiv = suche.trim().length >= 2;
+
+  // Bild: Einpass-Massstab (nie über 100 %, kleine Bilder bleiben scharf).
+  const bildFit = bildMass && flaecheMass.b ? Math.min(1, zoomEinpassen(bildMass.b, bildMass.h, flaecheMass.b, flaecheMass.h, 64)) : 1;
+  const bildGroesse = bildMass ? { b: bildMass.b * bildFit * bz, h: bildMass.h * bildFit * bz } : null;
+  const z = art === "bild" ? bildFit * bz : zoom ?? 1;
+
+  const bildZoom = useCallback((neu: number, punkt = { x: 0, y: 0 }) => {
+    if (!bildMass) return;
+    const ziel = Math.min(BILD_MAX, Math.max(BILD_MIN, neu));
+    setVersatz((v) => ziel <= 1.0001 ? { x: 0, y: 0 }
+      : klemmeVersatz(versatzUmPunkt(bz, ziel, v, punkt), { b: bildMass.b * bildFit * ziel, h: bildMass.h * bildFit * ziel }, flaecheMass));
+    setBz(ziel);
+  }, [bildMass, bildFit, flaecheMass, bz]);
+
+  const pdfEinpassen = useCallback(() => {
+    if (!seitenMass || !flaecheMass.b) return;
+    setZoom(zoomEinpassen(seitenMass.b, seitenMass.h, flaecheMass.b - RAND_B + 48, flaecheMass.h - RAND_H + 48));
+    setEingepasst(true);
+  }, [seitenMass, flaecheMass]);
+  const einpassen = useCallback(() => {
+    if (art === "bild") { setBz(1); setVersatz({ x: 0, y: 0 }); } else pdfEinpassen();
+  }, [art, pdfEinpassen]);
+  const zoomen = useCallback((richtung: 1 | -1) => {
+    if (art === "bild") bildZoom(bz * (richtung === 1 ? 1.25 : 0.8));
+    else { setZoom((alt) => naechsterZoom(alt ?? 1, richtung)); setEingepasst(false); }
+  }, [art, bildZoom, bz]);
 
   // Fokus in den Dialog, beim Schliessen zurück an den Auslöser.
   useEffect(() => {
@@ -53,13 +107,17 @@ export function Viewer({ dokument, seite: start = 1, onSchliessen }: Props) {
   useEffect(() => {
     const taste = (e: KeyboardEvent) => {
       if (e.key === "Escape") { e.stopPropagation(); e.preventDefault(); onSchliessen(); return; }
+      if (istEingabe(e.target)) { if (doc && (e.key === "PageDown" || e.key === "PageUp")) { e.preventDefault(); setSeite((s) => klemmeSeite(s + (e.key === "PageDown" ? 1 : -1), doc.numPages)); } return; }
+      if (e.key === "0") { e.preventDefault(); einpassen(); return; }
+      if (e.key === "+" || e.key === "=") { e.preventDefault(); zoomen(1); return; }
+      if (e.key === "-") { e.preventDefault(); zoomen(-1); return; }
       if (!doc) return;
-      if (e.key === "PageDown" || (!istEingabe(e.target) && e.key === "ArrowRight")) { e.preventDefault(); setSeite((s) => klemmeSeite(s + 1, doc.numPages)); }
-      else if (e.key === "PageUp" || (!istEingabe(e.target) && e.key === "ArrowLeft")) { e.preventDefault(); setSeite((s) => klemmeSeite(s - 1, doc.numPages)); }
+      if (e.key === "PageDown" || e.key === "ArrowRight") { e.preventDefault(); setSeite((s) => klemmeSeite(s + 1, doc.numPages)); }
+      else if (e.key === "PageUp" || e.key === "ArrowLeft") { e.preventDefault(); setSeite((s) => klemmeSeite(s - 1, doc.numPages)); }
     };
     window.addEventListener("keydown", taste, true);
     return () => window.removeEventListener("keydown", taste, true);
-  }, [doc, onSchliessen]);
+  }, [doc, onSchliessen, einpassen, zoomen]);
   useLayoutEffect(() => {
     const el = flaeche.current;
     if (!el) return;
@@ -70,31 +128,49 @@ export function Viewer({ dokument, seite: start = 1, onSchliessen }: Props) {
     return () => ro.disconnect();
   }, []);
 
+  // PDF laden.
   useEffect(() => {
     if (art !== "pdf") return;
-    let aktiv = true; let offen: PDFDocumentProxy | null = null; let zu: (() => void) | null = null;
+    let aktivLaden = true; let zu: (() => void) | null = null;
     ladeBytes(dokument.id).then(async (b) => {
-      const { oeffnePdf, seitenBreite, schliessePdf } = await import("./pdf");
-      offen = await oeffnePdf(b);
-      zu = () => schliessePdf(offen!);
-      if (!aktiv) { zu(); return; }
-      const breite = await seitenBreite(offen, 1);
-      if (!aktiv) return;
-      setZoom(zoomFuerBreite(breite, flaeche.current?.clientWidth ?? 800));
-      setDoc(offen); setSeite((s) => klemmeSeite(s, offen!.numPages));
-    }).catch((e: unknown) => { if (aktiv) setFehler(ablageFehlerText(fehlerCode(e), e instanceof ApiFehler ? e.status : undefined, "Dokument konnte nicht geöffnet werden. Herunterladen und lokal öffnen.")); });
-    return () => { aktiv = false; zu?.(); };
+      const { oeffnePdf, schliessePdf } = await import("./pdf");
+      const offen = await oeffnePdf(b);
+      zu = () => schliessePdf(offen);
+      if (!aktivLaden) { zu(); return; }
+      setDoc(offen); setSeite((s) => klemmeSeite(s, offen.numPages));
+    }).catch((e: unknown) => { if (aktivLaden) setFehler(fehlerVon(e, "Dokument konnte nicht geöffnet werden. Herunterladen und lokal öffnen.")); });
+    return () => { aktivLaden = false; zu?.(); };
   }, [art, dokument.id]);
+  // Seitengrösse der aktuellen Seite (Seiten können verschieden gross sein).
+  useEffect(() => {
+    if (!doc) return;
+    let aktivMass = true;
+    void import("./pdf").then(({ seitenMass: mass }) => mass(doc, seite)).then((m) => { if (aktivMass) setSeitenMass((alt) => (alt && alt.b === m.b && alt.h === m.h ? alt : m)); });
+    return () => { aktivMass = false; };
+  }, [doc, seite]);
+  // Eingepasst bleibt eingepasst, auch bei Fenstergrösse oder anderem Seitenformat.
+  useEffect(() => { if (eingepasst) pdfEinpassen(); }, [eingepasst, pdfEinpassen]);
+
+  // Seite zeichnen, danach die Textebene (markier- und kopierbar).
   useEffect(() => {
     if (!doc || !canvas.current || zoom === null) return;
-    let z: { abbrechen(): void } | null = null; let aktiv = true;
-    void import("./pdf").then(({ zeichneSeite }) => {
-      if (!aktiv || !canvas.current) return;
+    let aktivZeichnen = true;
+    const abbruch: (() => void)[] = [];
+    setTextStand(null);
+    void import("./pdf").then(({ zeichneSeite, zeichneText }) => {
+      if (!aktivZeichnen || !canvas.current) return;
       const r = zeichneSeite(doc, seite, canvas.current, zoom);
-      z = r;
-      r.fertig.then(() => { if (aktiv) setGezeichnet(true); }, () => { if (aktiv) setFehler(ablageFehlerText(null, undefined, "Seite konnte nicht dargestellt werden.")); });
+      abbruch.push(r.abbrechen);
+      r.fertig.then(() => {
+        if (!aktivZeichnen) return;
+        setGezeichnet(true);
+        if (!textEbene.current) return;
+        const t = zeichneText(doc, seite, textEbene.current, zoom);
+        abbruch.push(t.abbrechen);
+        void t.fertig.then((x) => { if (aktivZeichnen && x) setTextStand({ seite, ...x }); });
+      }, (e: unknown) => { if (aktivZeichnen) setFehler(fehlerVon(e, "Seite konnte nicht dargestellt werden.")); });
     });
-    return () => { aktiv = false; z?.abbrechen(); };
+    return () => { aktivZeichnen = false; abbruch.forEach((a) => a()); };
   }, [doc, seite, zoom]);
   // Seitenwechsel: Fläche nach oben, Seitenleiste zeigt die aktuelle Seite, Eingabefeld folgt.
   useEffect(() => {
@@ -102,10 +178,74 @@ export function Viewer({ dokument, seite: start = 1, onSchliessen }: Props) {
     flaeche.current?.scrollTo({ top: 0 });
     leiste.current?.querySelector<HTMLElement>(`[data-seite="${seite}"]`)?.scrollIntoView({ block: "nearest" });
   }, [seite]);
+
+  // Suche: Texte einmal laden; neuer Begriff springt zum ersten Treffer ab der aktuellen Seite.
   useEffect(() => {
-    if (!doc || suche.trim().length < 2 || texte) return;
+    if (!doc || !sucheAktiv || texte) return;
     void import("./pdf").then(({ seitenTexte }) => seitenTexte(doc)).then(setTexte, () => setTexte([]));
-  }, [doc, suche, texte]);
+  }, [doc, sucheAktiv, texte]);
+  useEffect(() => {
+    const i = startTreffer(treffer, seiteRef.current);
+    setAktiv(i);
+    if (i >= 0 && treffer[i].seite !== seiteRef.current) setSeite(treffer[i].seite);
+  }, [treffer]);
+  const blaettern = (richtung: 1 | -1) => {
+    if (!treffer.length) return;
+    const n = blaettereTreffer(treffer.length, aktiv, richtung);
+    setAktiv(n); zuSeite(treffer[n].seite);
+  };
+  // Treffer in der Textebene markieren (eisblau), den aktiven kräftiger und in die Mitte holen.
+  useEffect(() => {
+    if (!textStand) return;
+    const { elemente, texte: stuecke, seite: s } = textStand;
+    const hier = treffer.map((t, nr) => ({ ...t, nr })).filter((t) => t.seite === s);
+    let aktivEl: HTMLElement | null = null;
+    elemente.forEach((el, i) => {
+      const t = hier.filter((x) => x.stueck === i);
+      if (!t.length) { if (el.childElementCount) el.textContent = stuecke[i]; return; }
+      el.replaceChildren(...teileText(stuecke[i], t).map((teil) => {
+        if (teil.nr === null) return document.createTextNode(teil.text);
+        const m = document.createElement("span");
+        m.className = teil.nr === aktiv ? "vw-mark vw-mark-aktiv" : "vw-mark";
+        m.textContent = teil.text;
+        if (teil.nr === aktiv) aktivEl = m;
+        return m;
+      }));
+    });
+    (aktivEl as HTMLElement | null)?.scrollIntoView({ block: "center", inline: "nearest" });
+  }, [textStand, treffer, aktiv]);
+
+  // Bild: Mausrad zoomt um den Mauszeiger (nicht passiv, damit die Seite nicht scrollt).
+  useEffect(() => {
+    const el = flaeche.current;
+    if (art !== "bild" || !el) return;
+    const rad = (e: WheelEvent) => {
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      bildZoom(bz * Math.exp(-e.deltaY * 0.0015), { x: e.clientX - r.left - r.width / 2, y: e.clientY - r.top - r.height / 2 });
+    };
+    el.addEventListener("wheel", rad, { passive: false });
+    return () => el.removeEventListener("wheel", rad);
+  }, [art, bildZoom, bz]);
+  const kannZiehen = !!bildGroesse && (bildGroesse.b > flaecheMass.b || bildGroesse.h > flaecheMass.h);
+  const ziehenStart = (e: ReactPointerEvent) => {
+    if (!kannZiehen || e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    ziehStart.current = { x: e.clientX, y: e.clientY, vx: versatz.x, vy: versatz.y, id: e.pointerId };
+    setZieht(true);
+  };
+  const ziehenBewegen = (e: ReactPointerEvent) => {
+    const s = ziehStart.current;
+    if (!s || s.id !== e.pointerId || !bildGroesse) return;
+    setVersatz(klemmeVersatz({ x: s.vx + e.clientX - s.x, y: s.vy + e.clientY - s.y }, bildGroesse, flaecheMass));
+  };
+  const ziehenEnde = () => { ziehStart.current = null; setZieht(false); };
+  const doppelklick = (e: ReactMouseEvent) => {
+    if (art !== "bild" || !flaeche.current) return;
+    if (bz > 1.01) { einpassen(); return; }
+    const r = flaeche.current.getBoundingClientRect();
+    bildZoom(2, { x: e.clientX - r.left - r.width / 2, y: e.clientY - r.top - r.height / 2 });
+  };
 
   /** Tab bleibt im Dialog (aria-modal). */
   const fokusFalle = (e: ReactKeyboardEvent) => {
@@ -117,16 +257,15 @@ export function Viewer({ dokument, seite: start = 1, onSchliessen }: Props) {
     else if (!e.shiftKey && document.activeElement === letztes) { e.preventDefault(); erstes.focus(); }
   };
 
-  const z = zoom ?? 1;
-  const bildStil = useMemo<CSSProperties | undefined>(() => {
-    if (!bildMass || !flaecheMass.b) return undefined;
-    const passt = Math.min((flaecheMass.b - 64) / bildMass.b, (flaecheMass.h - 64) / bildMass.h, 1);
-    return { width: Math.round(bildMass.b * passt * z), height: Math.round(bildMass.h * passt * z) };
-  }, [bildMass, flaecheMass, z]);
-  const trefferSumme = treffer.reduce((n, t) => n + t.anzahl, 0);
-  const sucheAktiv = suche.trim().length >= 2;
+  const bildStil = useMemo<CSSProperties | undefined>(() => bildGroesse
+    ? { width: Math.round(bildGroesse.b), height: Math.round(bildGroesse.h), transform: `translate(-50%, -50%) translate(${Math.round(versatz.x)}px, ${Math.round(versatz.y)}px)` }
+    : undefined, [bildGroesse, versatz]);
   const scan = scanAnzeige(dokument);
-  const mitZoom = (art === "pdf" && doc) || art === "bild";
+  const mitZoom = (art === "pdf" && doc) || (art === "bild" && bildMass);
+  const istEingepasst = art === "bild" ? bz <= 1.0001 : eingepasst;
+  const zoomMin = art === "bild" ? bz <= BILD_MIN + 1e-4 : z <= ZOOM_STUFEN[0] + 1e-4;
+  const zoomMax = art === "bild" ? bz >= BILD_MAX - 1e-4 : z >= ZOOM_STUFEN[ZOOM_STUFEN.length - 1] - 1e-4;
+  const sucheStand = sucheAktiv ? (texte ? (treffer.length ? `${aktiv + 1} / ${treffer.length}` : "Kein Treffer") : "sucht …") : "";
 
   return (
     <div className="vw-grund" style={stil} role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onSchliessen(); }}>
@@ -151,17 +290,21 @@ export function Viewer({ dokument, seite: start = 1, onSchliessen }: Props) {
               <button type="button" className="vw-symbol" onClick={() => zuSeite(seite + 1)} disabled={seite >= anzahl} aria-label="Nächste Seite (Bild ab)"><ChevronRight size={16} strokeWidth={1.75} aria-hidden="true" /></button>
             </div>}
             {mitZoom && <div className="vw-gruppe" role="group" aria-label="Zoom">
-              <button type="button" className="vw-symbol" onClick={() => setZoom(naechsterZoom(z, -1))} disabled={z <= ZOOM_STUFEN[0]} aria-label="Verkleinern"><Minus size={15} strokeWidth={1.75} aria-hidden="true" /></button>
+              <button type="button" className="vw-symbol" onClick={() => zoomen(-1)} disabled={zoomMin} aria-label="Verkleinern (−)"><Minus size={15} strokeWidth={1.75} aria-hidden="true" /></button>
               <span className="vw-zoom" aria-live="polite">{Math.round(z * 100)} %</span>
-              <button type="button" className="vw-symbol" onClick={() => setZoom(naechsterZoom(z, 1))} disabled={z >= ZOOM_STUFEN[ZOOM_STUFEN.length - 1]} aria-label="Vergrössern"><Plus size={15} strokeWidth={1.75} aria-hidden="true" /></button>
+              <button type="button" className="vw-symbol" onClick={() => zoomen(1)} disabled={zoomMax} aria-label="Vergrössern (+)"><Plus size={15} strokeWidth={1.75} aria-hidden="true" /></button>
+              <button type="button" className="vw-einpassen" onClick={einpassen} disabled={istEingepasst} title="Ganze Seite zeigen (Taste 0)">Einpassen</button>
             </div>}
-            {art === "pdf" && doc && <label className={`vw-suche${sucheAktiv ? " vw-suche-aktiv" : ""}`}>
+            {art === "pdf" && doc && <div className={`vw-suche${sucheAktiv ? " vw-suche-aktiv" : ""}`} role="search">
               <Search size={14} strokeWidth={1.75} aria-hidden="true" />
-              <input type="search" value={suche} placeholder="Im Dokument suchen" aria-describedby="vw-suche-stand" title="Enter: nächster Treffer, Umschalt+Enter: vorheriger"
+              <input type="search" value={suche} placeholder="Im Dokument suchen" aria-label="Im Dokument suchen" aria-describedby="vw-suche-stand"
+                title="Enter: nächster Treffer, Umschalt+Enter: vorheriger"
                 onChange={(e) => setSuche(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const n = naechsterTreffer(treffer, seite, e.shiftKey ? -1 : 1); if (n) zuSeite(n); } }} />
-              <span id="vw-suche-stand" className="vw-suche-stand" aria-live="polite">{sucheAktiv ? (texte ? (trefferSumme ? `${trefferSumme} Treffer` : "Kein Treffer") : "sucht …") : ""}</span>
-            </label>}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); blaettern(e.shiftKey ? -1 : 1); } }} />
+              <span id="vw-suche-stand" className="vw-suche-stand" aria-live="polite">{sucheStand}</span>
+              <button type="button" className="vw-suche-knopf" onClick={() => blaettern(-1)} disabled={!treffer.length} aria-label="Vorheriger Treffer (Umschalt+Enter)"><ChevronUp size={14} strokeWidth={1.9} aria-hidden="true" /></button>
+              <button type="button" className="vw-suche-knopf" onClick={() => blaettern(1)} disabled={!treffer.length} aria-label="Nächster Treffer (Enter)"><ChevronDown size={14} strokeWidth={1.9} aria-hidden="true" /></button>
+            </div>}
           </div>
           <div className="vw-aktionen">
             {art !== "gesperrt" && <a className="vw-knopf" href={dateiUrl(dokument.id, true)} download={dokument.dateiname}><Download size={15} strokeWidth={1.75} aria-hidden="true" />Herunterladen</a>}
@@ -171,20 +314,25 @@ export function Viewer({ dokument, seite: start = 1, onSchliessen }: Props) {
         <div className={`vw-inhalt${art === "pdf" && doc && anzahl > 1 ? " vw-mit-leiste" : ""}`}>
           {art === "pdf" && doc && anzahl > 1 && <nav ref={leiste} className="vw-leiste" aria-label="Seiten">
             <ol>{Array.from({ length: anzahl }, (_, i) => i + 1).map((n) => {
-              const t = treffer.find((x) => x.seite === n);
+              const t = trefferJeSeite.find((x) => x.seite === n);
               return <li key={n}><button type="button" data-seite={n} aria-current={n === seite ? "page" : undefined}
                 className={t ? "vw-blatt vw-blatt-treffer" : "vw-blatt"} onClick={() => zuSeite(n)}
-                aria-label={`Seite ${n}${t ? `, ${t.anzahl} Treffer` : ""}`}><span className="vw-blatt-papier" aria-hidden="true" />{n}</button></li>;
+                aria-label={`Seite ${n}${t ? `, ${t.anzahl} Treffer` : ""}`}><Miniatur doc={doc} nr={n} wurzel={leiste} />{n}</button></li>;
             })}</ol>
           </nav>}
-          <div ref={flaeche} className="vw-flaeche" tabIndex={art === "pdf" || art === "bild" ? 0 : undefined} aria-label={art === "pdf" ? `Seite ${seite} von ${anzahl || "?"}` : art === "bild" ? dokument.dateiname : undefined}>
+          <div ref={flaeche} className={`vw-flaeche${art === "bild" ? " vw-flaeche-bild" : ""}${kannZiehen ? " vw-ziehbar" : ""}${zieht ? " vw-zieht" : ""}`}
+            tabIndex={art === "pdf" || art === "bild" ? 0 : undefined}
+            aria-label={art === "pdf" ? `Seite ${seite} von ${anzahl || "?"}` : art === "bild" ? dokument.dateiname : undefined}
+            onPointerDown={art === "bild" ? ziehenStart : undefined} onPointerMove={art === "bild" ? ziehenBewegen : undefined}
+            onPointerUp={art === "bild" ? ziehenEnde : undefined} onPointerCancel={art === "bild" ? ziehenEnde : undefined} onDoubleClick={doppelklick}>
             {art === "pdf" && (fehler
               ? <Hinweis titel="Nicht darstellbar" text={fehler} />
               : <div className={`vw-papier${doc && gezeichnet ? " vw-papier-bereit" : ""}`}>
                 {!(doc && gezeichnet) && <p className="vw-laden" role="status"><span className="vw-laden-balken" aria-hidden="true" />Dokument wird geladen …</p>}
-                {doc && <canvas ref={canvas} />}
+                {doc && <canvas ref={canvas} aria-hidden="true" />}
+                {doc && <div ref={textEbene} className="vw-text" />}
               </div>)}
-            {art === "bild" && <img className={`vw-bild${bildMass ? " vw-bild-bereit" : ""}`} src={dateiUrl(dokument.id)} alt={dokument.dateiname} style={bildStil}
+            {art === "bild" && !fehler && <img className={`vw-bild${bildMass ? " vw-bild-bereit" : ""}`} src={dateiUrl(dokument.id)} alt={dokument.dateiname} style={bildStil} draggable={false}
               onLoad={(e) => setBildMass({ b: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
               onError={() => setFehler(ablageFehlerText(null, undefined, "Bild konnte nicht geladen werden."))} />}
             {art === "bild" && fehler && <Hinweis titel="Nicht darstellbar" text={fehler} />}
@@ -200,6 +348,32 @@ export function Viewer({ dokument, seite: start = 1, onSchliessen }: Props) {
       </div>
     </div>
   );
+}
+
+/** Miniatur einer Seite (ca. 44 px breit), erst gezeichnet, wenn sie in der Seitenleiste sichtbar wird. */
+function Miniatur({ doc, nr, wurzel }: { doc: PDFDocumentProxy; nr: number; wurzel: RefObject<HTMLElement | null> }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const [bereit, setBereit] = useState(false);
+  useEffect(() => {
+    const el = canvas.current;
+    if (!el) return;
+    let abbrechen: (() => void) | null = null; let aktivMini = true;
+    const io = new IntersectionObserver((e) => {
+      if (!e.some((x) => x.isIntersecting)) return;
+      io.disconnect();
+      void import("./pdf").then(async ({ seitenMass, zeichneSeite }) => {
+        const m = await seitenMass(doc, nr);
+        if (!aktivMini) return;
+        const r = zeichneSeite(doc, nr, el, 44 / m.b);
+        abbrechen = r.abbrechen;
+        await r.fertig;
+        if (aktivMini) setBereit(true);
+      }).catch(() => { /* bleibt leeres Blatt */ });
+    }, { root: wurzel.current, rootMargin: "120px 0px" });
+    io.observe(el);
+    return () => { aktivMini = false; io.disconnect(); abbrechen?.(); };
+  }, [doc, nr, wurzel]);
+  return <canvas ref={canvas} className={`vw-blatt-papier${bereit ? " vw-blatt-bereit" : ""}`} aria-hidden="true" />;
 }
 
 function Hinweis({ titel, text, aktion, symbol, rolle }: { titel: string; text: string; aktion?: ReactNode; symbol?: ReactNode; rolle?: "alert" }) {

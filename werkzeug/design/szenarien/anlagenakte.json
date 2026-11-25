@@ -1,60 +1,253 @@
 {
-  "beschreibung": "Anlagenakte (T8, 24.11.2026): Seite Dokumente (Alle Dokumente mit Detail und Verknüpfung, abgelehnt, Office), Bauteile hinzufügen, Viewer PDF Seite 1/2 und Bild, Preise prüfen, Anlagenkarte mit Datenblatt und Unterlagen, Viewer aus der Karte. Vorher: bash werkzeug/design/instanz.sh start --muster; node werkzeug/design/lebensdauer-daten.mjs; node app/web/werkzeug/akte-testdaten.mjs. Leere Ablage, simulierte Zustände (wird geprüft, Prüfung fehlgeschlagen) und Leser-Ansicht: node app/web/werkzeug/akte-bilder.mjs.",
-  "fenster": [[1440, 900], [1280, 720], [1920, 1080]],
+  "beschreibung": "Anlagenakte (T8, 24.11.2026, Fixrunde 1 25.11.): Seite Dokumente (Alle Dokumente mit Detail und Verknüpfung, abgelehnt, Office), Bauteile hinzufügen, Viewer PDF Seite 1/2 und Bild, Preise prüfen, Anlagenkarte mit Datenblatt und Unterlagen, Viewer aus der Karte. Vorher: bash werkzeug/design/instanz.sh start --muster; node werkzeug/design/lebensdauer-daten.mjs; node app/web/werkzeug/akte-testdaten.mjs. Leere Ablage, simulierte Zustände (wird geprüft, Prüfung fehlgeschlagen) und Leser-Ansicht: node app/web/werkzeug/akte-bilder.mjs.",
+  "fenster": [
+    [
+      1440,
+      900
+    ],
+    [
+      1280,
+      720
+    ],
+    [
+      1920,
+      1080
+    ]
+  ],
   "schritte": [
-    { "klick": "Muster 6 L-Form viele Gruppen" },
-    { "warte": 6000 },
-    { "knopf": "Gebäude wählen" },
-    { "warte": 300 },
-    { "klick": "Dokumente", "exakt": true },
-    { "warte": 2000 },
-    { "bild": "dokumente-liste" },
-    { "selektor": ".dk-z-wahl:has-text('Datenblatt')" },
-    { "warte": 1500 },
-    { "bild": "detail-datenblatt" },
-    { "knopf": "Hinzufügen" },
-    { "warte": 500 },
-    { "bild": "bauteile-hinzufuegen" },
-    { "knopf": "Abbrechen", "exakt": true },
-    { "selektor": ".dk-z-wahl:has-text('Rechnung Service')" },
-    { "warte": 600 },
-    { "bild": "detail-abgelehnt" },
-    { "selektor": ".dk-z-wahl:has-text('Wartungsplan')" },
-    { "warte": 600 },
-    { "bild": "detail-office" },
-    { "selektor": ".dk-z-wahl:has-text('Datenblatt')" },
-    { "warte": 600 },
-    { "knopf": "Öffnen", "exakt": true },
-    { "warte": 2500 },
-    { "bild": "viewer-pdf-s1" },
-    { "knopf": "Nächste Seite" },
-    { "warte": 1200 },
-    { "bild": "viewer-pdf-s2" },
-    { "taste": "Escape" },
-    { "warte": 400 },
-    { "selektor": ".dk-z-wahl:has-text('Technikraum')" },
-    { "warte": 600 },
-    { "knopf": "Öffnen", "exakt": true },
-    { "warte": 1500 },
-    { "bild": "viewer-bild" },
-    { "taste": "Escape" },
-    { "warte": 400 },
-    { "selektor": "[role=tab]:has-text('Preise prüfen')" },
-    { "warte": 1000 },
-    { "bild": "preise-pruefen" },
-    { "knopf": "Digital Twin" },
-    { "warte": 6000 },
-    { "selektor": "tr[data-schluessel]:has-text('Umwälzpumpe')" },
-    { "warte": 2500 },
-    { "bild": "karte" },
-    { "rad": [0.88, 0.45, 900] },
-    { "warte": 500 },
-    { "bild": "karte-unterlagen" },
-    { "selektor": ".tw-ul-wahl:has-text('Datenblatt')" },
-    { "warte": 2500 },
-    { "bild": "viewer-aus-karte" },
-    { "taste": "Escape" },
-    { "warte": 500 },
-    { "bild": "karte-nach-esc" }
+    {
+      "klick": "Muster 6 L-Form viele Gruppen"
+    },
+    {
+      "warte": 6000
+    },
+    {
+      "knopf": "Gebäude wählen"
+    },
+    {
+      "warte": 300
+    },
+    {
+      "klick": "Dokumente",
+      "exakt": true
+    },
+    {
+      "warte": 2000
+    },
+    {
+      "bild": "dokumente-liste"
+    },
+    {
+      "selektor": ".dk-z-wahl:has-text('Datenblatt')"
+    },
+    {
+      "warte": 1500
+    },
+    {
+      "bild": "detail-datenblatt"
+    },
+    {
+      "knopf": "Hinzufügen"
+    },
+    {
+      "warte": 500
+    },
+    {
+      "bild": "bauteile-hinzufuegen"
+    },
+    {
+      "knopf": "Abbrechen",
+      "exakt": true
+    },
+    {
+      "selektor": ".dk-z-wahl:has-text('Rechnung Service')"
+    },
+    {
+      "warte": 600
+    },
+    {
+      "bild": "detail-abgelehnt"
+    },
+    {
+      "selektor": ".dk-z-wahl:has-text('Wartungsplan')"
+    },
+    {
+      "warte": 600
+    },
+    {
+      "bild": "detail-office"
+    },
+    {
+      "selektor": ".dk-z-wahl:has-text('Datenblatt')"
+    },
+    {
+      "warte": 600
+    },
+    {
+      "knopf": "Öffnen",
+      "exakt": true
+    },
+    {
+      "warte": 2500
+    },
+    {
+      "bild": "viewer-pdf-s1"
+    },
+    {
+      "knopf": "Nächste Seite"
+    },
+    {
+      "warte": 1200
+    },
+    {
+      "bild": "viewer-pdf-s2"
+    },
+    {
+      "selektor": ".vw-suche input"
+    },
+    {
+      "taste": "P"
+    },
+    {
+      "taste": "u"
+    },
+    {
+      "taste": "m"
+    },
+    {
+      "taste": "p"
+    },
+    {
+      "taste": "e"
+    },
+    {
+      "warte": 1500
+    },
+    {
+      "bild": "viewer-suche"
+    },
+    {
+      "taste": "Enter"
+    },
+    {
+      "warte": 900
+    },
+    {
+      "bild": "viewer-suche-weiter"
+    },
+    {
+      "taste": "Escape"
+    },
+    {
+      "warte": 400
+    },
+    {
+      "selektor": ".dk-z-wahl:has-text('Technikraum')"
+    },
+    {
+      "warte": 600
+    },
+    {
+      "knopf": "Öffnen",
+      "exakt": true
+    },
+    {
+      "warte": 1500
+    },
+    {
+      "bild": "viewer-bild"
+    },
+    {
+      "rad": [
+        0.6,
+        0.5,
+        -600
+      ]
+    },
+    {
+      "warte": 500
+    },
+    {
+      "bild": "viewer-bild-zoom"
+    },
+    {
+      "knopf": "Einpassen"
+    },
+    {
+      "warte": 400
+    },
+    {
+      "taste": "Escape"
+    },
+    {
+      "warte": 400
+    },
+    {
+      "selektor": "[role=tab]:has-text('Preise prüfen')"
+    },
+    {
+      "warte": 1000
+    },
+    {
+      "bild": "preise-pruefen"
+    },
+    {
+      "knopf": "Digital Twin"
+    },
+    {
+      "warte": 6000
+    },
+    {
+      "selektor": "tr[data-schluessel]:has-text('Umwälzpumpe')"
+    },
+    {
+      "warte": 2500
+    },
+    {
+      "bild": "karte"
+    },
+    {
+      "fps": 3000
+    },
+    {
+      "selektor": ".tw-objekt-sprung"
+    },
+    {
+      "warte": 900
+    },
+    {
+      "bild": "karte-sprung-unterlagen"
+    },
+    {
+      "rad": [
+        0.88,
+        0.45,
+        900
+      ]
+    },
+    {
+      "warte": 500
+    },
+    {
+      "bild": "karte-unterlagen"
+    },
+    {
+      "selektor": ".tw-ul-wahl:has-text('Datenblatt')"
+    },
+    {
+      "warte": 2500
+    },
+    {
+      "bild": "viewer-aus-karte"
+    },
+    {
+      "taste": "Escape"
+    },
+    {
+      "warte": 500
+    },
+    {
+      "bild": "karte-nach-esc"
+    }
   ]
 }

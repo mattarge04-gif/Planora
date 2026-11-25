@@ -215,7 +215,7 @@ export function AkteDetail({ d, bauteile, katalog, darf, laeuft, lesen, onOeffne
             <Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /></button>)}
       </div>
       {frage && <div className="dk-frage dk-detail-frage" role="group" aria-label="Löschen bestätigen" onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setFrage(false); } }}>
-        <p>Dokument löschen? Verknüpfungen und offene Preisvorschläge entfallen, übernommene Preise bleiben.</p>
+        <p>{d.art === "pdf" ? "Dokument löschen? Verknüpfungen und offene Preisvorschläge entfallen, übernommene Preise bleiben." : "Dokument löschen? Die Verknüpfungen mit Bauteilen entfallen."}</p>
         <div><button type="button" className="ep-knopf dk-knopf-gefahr" autoFocus onClick={() => { setFrage(false); onLoeschen(); }}>Löschen</button>
           <button type="button" className="dk-leise" onClick={() => setFrage(false)}>Abbrechen</button></div>
       </div>}
@@ -225,7 +225,7 @@ export function AkteDetail({ d, bauteile, katalog, darf, laeuft, lesen, onOeffne
           {darf && d.scanStatus !== "abgelehnt"
             ? <span className="dk-auswahl dk-auswahl-breit"><select id="dk-kategorie" value={d.kategorie} disabled={laeuft} onChange={(e) => onKategorie(e.target.value as Kategorie)}>
               {KATEGORIEN.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}</select></span>
-            : <strong>{kategorieName(d.kategorie)}</strong>}
+            : <span className="dk-detail-wert">{kategorieName(d.kategorie)}</span>}
         </label>
       </div>
 

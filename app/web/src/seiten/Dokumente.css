@@ -398,3 +398,23 @@ button.dk-link { border: 0; padding: 0; background: none; font: inherit; cursor:
 .dk-z-status .dk-scan-fehler { white-space: normal; line-height: 1.3; align-items: flex-start; }
 .dk-z-status .dk-scan-fehler svg { margin-top: 2px; }
 .dk-status-abgelehnt { color: var(--ep-stoerung-text); }
+
+/* Kategorie ohne Auswahl (Leser, abgelehnt): normaler Wert, nicht fett */
+.dk-detail-wert { font-size: 13px; font-weight: 500; color: var(--ep-text); }
+
+/* Ladegerüst: gleiche Spalten wie die Ablage, ruhige Platzhalter (Kritik r1: kein Text auf leerer Fläche) */
+.dk-g { display: block; height: 10px; border-radius: 999px; background: var(--ep-flaeche-2); }
+.dk-geruest .dk-g { animation: dk-puls 1.4s ease-in-out infinite; }
+.dk-g-titel { width: 120px; height: 14px; }
+.dk-g-ablage { height: 58px; border-radius: 10px; }
+.dk-g-zeile { display: grid; grid-template-columns: 32px minmax(0, 1fr) 160px; align-items: center; gap: 10px; height: 50px; padding: 0 6px; box-shadow: 0 1px 0 var(--ep-grau-1); }
+.dk-g-zeile:last-child { box-shadow: none; }
+.dk-g-icon { width: 32px; height: 32px; border-radius: 8px; }
+.dk-g-text { display: grid; gap: 6px; }
+.dk-g-text .dk-g:first-child { width: 62%; }
+.dk-g-kurz { width: 34%; }
+.dk-g-rest { width: 100%; }
+.dk-geruest .dk-detail { display: grid; gap: 12px; }
+.dk-g-vorschau { height: 195px; border-radius: 10px; }
+@keyframes dk-puls { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .dk-geruest .dk-g { animation: none; } }

@@ -58,6 +58,13 @@ export function ablageFehlerText(code: string | null, status?: number, fallback 
   if (status === 404) return "Das Dokument ist nicht mehr abgelegt.";
   return fallback;
 }
+const ERLAUBTE_ENDUNG = /\.(pdf|jpe?g|png|heic|docx|xlsx|pptx|doc|xls|ppt)$/i;
+/** Ablegen fehlgeschlagen: bei erlaubter Endung und unbekanntem Typ passt der Inhalt nicht zur Endung (z. B. Programm als .pdf). */
+export function ablegenFehlerText(code: string | null, status: number | undefined, dateiname: string): string {
+  const endung = dateiname.match(ERLAUBTE_ENDUNG)?.[0].toLowerCase();
+  if (code === "typ_unbekannt" && endung) return `Inhalt passt nicht zur Endung ${endung}.`;
+  return ablageFehlerText(code, status, ABLEGEN_FEHLT);
+}
 export const unterlagenFuer = (d: AblageZeile[], bauteilIds: string[]) => d.filter((x) => x.bauteilIds.some((id) => bauteilIds.includes(id)));
 export function vorpruefen<T extends { size: number }>(dateien: T[]) {
   return { ok: dateien.filter((f) => f.size <= MAX_BYTES), zuGross: dateien.filter((f) => f.size > MAX_BYTES) };

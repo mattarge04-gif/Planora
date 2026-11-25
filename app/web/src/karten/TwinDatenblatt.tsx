@@ -69,7 +69,7 @@ export function TwinDatenblatt({ bauteilIds, katalog, onAbgelaufen }: Props) {
             const id = `${uid}-${f.schluessel}`;
             return <div key={f.schluessel} className="tw-db-feld">
               <label htmlFor={id}>{f.bezeichnung}</label>
-              <span className="tw-db-eingabe">
+              <span className={`tw-db-eingabe${f.einheit === "DN" ? " tw-db-vorne" : ""}`}>
                 <input id={id} autoFocus={i === 0} inputMode={f.art === "zahl" ? "decimal" : undefined} value={eingabe[f.schluessel] ?? ""}
                   aria-invalid={fehler[f.schluessel] ? true : undefined} aria-describedby={fehler[f.schluessel] ? `${id}-f` : undefined}
                   onChange={(e) => setEingabe((a) => ({ ...a, [f.schluessel]: e.target.value }))} />
