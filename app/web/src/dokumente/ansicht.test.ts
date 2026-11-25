@@ -39,6 +39,14 @@ describe("Ablage-Anzeige", () => {
     expect(datenblattVorschlag(d({ kategorie: "datenblatt", bauteilIds: ["p1"] }), bt)).toEqual(["p2"]);
     expect(datenblattVorschlag(d({ kategorie: "offerte", bauteilIds: ["p1"] }), bt)).toEqual([]);
     expect(unterlagenFuer([d({ id: "a", bauteilIds: ["p1"] }), d({ id: "b" })], ["p1", "p2"]).map((x) => x.id)).toEqual(["a"]);
+    // E48: Datenblatt an Pumpe 1 erscheint bei Pumpe 2 gleichen Typs (Schreibweise egal), nicht bei anderem Typ oder ohne Typ; andere Kategorien nur direkt
+    const typBt: AblageBauteil[] = [{ id: "m1", katalogId: "heizung.umwaelzpumpe", geschoss: "UG1", ort: "UG1", hersteller: "Grundfos", typ: "Magna 32" },
+      { id: "m2", katalogId: "heizung.umwaelzpumpe", geschoss: "UG1", ort: "UG1", hersteller: "grundfos", typ: "MAGNA 32 " },
+      { id: "m3", katalogId: "heizung.umwaelzpumpe", geschoss: "UG1", ort: "UG1", hersteller: "Grundfos", typ: "Magna 40" },
+      { id: "o1", katalogId: "heizung.umwaelzpumpe", geschoss: "UG1", ort: "UG1", hersteller: null, typ: null }];
+    const doks = [d({ id: "db", kategorie: "datenblatt", bauteilIds: ["m1"] }), d({ id: "foto", kategorie: "foto", bauteilIds: ["m1"] })];
+    expect([unterlagenFuer(doks, ["m2"], typBt), unterlagenFuer(doks, ["m3"], typBt), unterlagenFuer(doks, ["o1"], typBt)].map((l) => l.map((x) => x.id)))
+      .toEqual([["db"], [], []]);
   });
   it("Fehlertexte und Vorpruefung", () => {
     expect(ablageFehlerText("typ_unbekannt")).toBe("Dateityp nicht erlaubt. Erlaubt sind PDF, JPG, PNG, HEIC, Word, Excel und PowerPoint.");

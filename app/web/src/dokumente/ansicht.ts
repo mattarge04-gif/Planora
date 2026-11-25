@@ -79,7 +79,13 @@ export function duplikatText(z: Pick<AblageZeile, "dateiname" | "scanStatus">, n
   const als = z.dateiname === name ? "" : ` als ${z.dateiname}`;
   return z.scanStatus === "quarantaene" ? `Ist schon abgelegt${als}, wird geprüft.` : `Ist schon abgelegt${als}.`;
 }
-export const unterlagenFuer = (d: AblageZeile[], bauteilIds: string[]) => d.filter((x) => x.bauteilIds.some((id) => bauteilIds.includes(id)));
+const typSchluessel = (b: AblageBauteil) => (b.hersteller?.trim() && b.typ?.trim() ? `${b.katalogId}|${b.hersteller.trim().toLowerCase()}|${b.typ.trim().toLowerCase()}` : null);
+/** Unterlagen der Karte: direkt verknüpfte Dateien; ein Datenblatt gilt für alle Bauteile gleichen Typs (E48, Katalog-ID + Hersteller + Typ). */
+export function unterlagenFuer(d: AblageZeile[], bauteilIds: string[], bauteile: AblageBauteil[] = []): AblageZeile[] {
+  const typen = new Set(bauteile.filter((b) => bauteilIds.includes(b.id)).map(typSchluessel).filter((x): x is string => !!x));
+  const gleicherTyp = new Set(bauteile.filter((b) => typen.has(typSchluessel(b) ?? "")).map((b) => b.id));
+  return d.filter((x) => x.bauteilIds.some((id) => bauteilIds.includes(id)) || (x.kategorie === "datenblatt" && x.bauteilIds.some((id) => gleicherTyp.has(id))));
+}
 export function vorpruefen<T extends { size: number }>(dateien: T[]) {
   return { ok: dateien.filter((f) => f.size <= MAX_BYTES), zuGross: dateien.filter((f) => f.size > MAX_BYTES) };
 }

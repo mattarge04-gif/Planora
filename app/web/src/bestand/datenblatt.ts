@@ -1,9 +1,21 @@
 import { ersetzeJson, holeJson } from "../api";
 export interface DatenblattFeld { schluessel: string; bezeichnung: string; einheit: string | null; art: "zahl" | "text" }
-export interface DatenblattAntwort { bauteilId: string; katalogId: string; felder: DatenblattFeld[]; werte: Record<string, number | string>; darfAendern: boolean }
-export const ladeDatenblatt = (bauteilId: string) => holeJson<DatenblattAntwort>(`/api/bestand/bauteile/${bauteilId}/datenblatt`);
+/** E48: `bauteilIds` = alle Bauteile, fuer die die Werte gelten (Gruppe der Karte plus gleicher Hersteller + Typ); `abweichend` = Felder mit unterschiedlichen Werten. */
+export interface DatenblattAntwort { bauteilId: string; katalogId: string; felder: DatenblattFeld[]; werte: Record<string, number | string>; darfAendern: boolean;
+  bauteilIds: string[]; typ: string | null; abweichend: string[] }
+export const ladeDatenblatt = (bauteilId: string, gruppe: string[] = []) =>
+  holeJson<DatenblattAntwort>(`/api/bestand/bauteile/${bauteilId}/datenblatt${gruppe.length > 1 ? `?gruppe=${gruppe.join(",")}` : ""}`);
 export const speichereDatenblatt = (bauteilIds: string[], werte: Record<string, number | string | null>) =>
   ersetzeJson<DatenblattAntwort>("/api/bestand/datenblatt", { bauteilIds, werte });
+/** Nur geaenderte Felder senden (der Server mischt): sonst ueberschriebe ein Speichern abweichende Werte anderer Bauteile (G7). */
+export const geaendert = (eingabe: Record<string, string>, start: Record<string, string>) =>
+  Object.fromEntries(Object.entries(eingabe).filter(([k, v]) => v.trim() !== (start[k] ?? "").trim()));
+/** Text unter dem Datenblatt: fuer wen die Werte gelten. */
+export function geltungText(d: Pick<DatenblattAntwort, "bauteilIds" | "typ">): string | null {
+  const n = d.bauteilIds.length;
+  if (d.typ) return n > 1 ? `Gilt für alle ${n} Bauteile vom Typ ${d.typ}.` : `Gilt für alle Bauteile vom Typ ${d.typ}.`;
+  return n > 1 ? `Gilt für alle ${n} Bauteile dieser Gruppe.` : null;
+}
 /** Eingabe (Textfelder) -> Werte fuer PUT; Zahlen mit Komma oder Punkt, leer = null. */
 export function werteAusEingabe(felder: DatenblattFeld[], eingabe: Record<string, string>) {
   const werte: Record<string, number | string | null> = {}; const fehler: Record<string, string> = {};

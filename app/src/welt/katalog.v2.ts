@@ -4,7 +4,7 @@ const z = (schluessel: string, bezeichnung: string, einheit: string | null): Dat
 const t = (schluessel: string, bezeichnung: string): DatenblattFeld => ({ schluessel, bezeichnung, einheit: null, art: "text" });
 const DN = z("dn", "Nennweite", "DN");
 /** [A] fachlich nicht freigegeben (Spec Anlagenakte 7). */
-const QUELLE = { text: "Planora-Richtwert, angelehnt an VDI 2067 Blatt 1", jahr: 2012 };
+const QUELLE = { text: "VDI 2067 Blatt 1", jahr: 2012 }; // Anzeige: "in Anlehnung an" (Planora-Richtwert [A])
 
 /** Katalog v2: v1 plus Masse [Breite, Hoehe, Tiefe] in Metern (schematisch), Zubehoer und Bibliothek. IDs nie umbenennen (ADR 0011). */
 export const KATALOG_V2: Katalog = {

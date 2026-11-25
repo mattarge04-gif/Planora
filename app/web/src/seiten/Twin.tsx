@@ -401,7 +401,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
               ? <TwinObjekt key={karte.id} karte={karte} bezug={straenge.find((st) => st.zubehoer.includes(karte.schluessel)) ? bezug(karte) : null} kartenRef={objektRef} onSchliessen={schliesseKarte}
                 lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} onDokument={zuPreisen}
                 onFundstelle={(id, seite) => { setViewerFehler(null); void viewer.oeffneId(id, seite); }} katalog={katalog?.eintraege} onAbgelaufen={onAbgelaufen}
-                {...(ablage ? { unterlagen: unterlagenFuer(ablage.dokumente, karte.bauteilIds), darfAblegen: ablage.darfAendern,
+                {...(ablage ? { unterlagen: unterlagenFuer(ablage.dokumente, karte.bauteilIds, ablage.bauteile), darfAblegen: ablage.darfAendern,
                   onOeffnen: viewer.oeffne, onNeuLaden: ladeAblageNeu, alleUnterlagen: ablage.dokumente, onAblegen: (dateien: File[]) => ablegenFuer(dateien, karte.bauteilIds) } : {})} />
               : gruppe ? <TwinGruppe key={gruppe.id} karte={gruppe} kartenRef={objektRef} onSchliessen={schliesseKarte} />
               : <p className="tw-objekt-leer">Anlage oder Leitung im Modell wählen, um Details zu sehen.</p>}

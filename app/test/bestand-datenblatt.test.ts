@@ -41,7 +41,7 @@ const ORIGIN = "http://localhost:3996";
 const pw = randomBytes(12).toString("base64url");
 let db: Awaited<ReturnType<typeof frischeDb>>; let app: FastifyInstance;
 let anfrage: ReturnType<typeof anfrageMit>;
-let L1: string, L2: string, kBearb: string, kLeser: string, kFremd: string, G: string, P1: string, P2: string, V: string;
+let L1: string, L2: string, kBearb: string, kLeser: string, kFremd: string, G: string, P1: string, P2: string, V: string, M1: string, M2: string, M3: string;
 beforeAll(async () => {
   db = await frischeDb();
   app = await baueServer({ pool: db.pool, stufe: 4, baseURL: ORIGIN, secret: randomBytes(32).toString("hex"), ablageWurzel: mkdtempSync(join(tmpdir(), "ablage-")), virenScanner: fakeScanner() });
@@ -55,6 +55,9 @@ beforeAll(async () => {
   const gs = (await db.pool.query("insert into geschoss(liegenschaft_id, gebaeude_id, code, reihenfolge, hoehe_m) values ($1,$2,'UG1',0,3.2) returning id", [L1, G])).rows[0].id;
   const bt = async (k: string, i: number) => (await db.pool.query("insert into bauteil(liegenschaft_id, gebaeude_id, katalog_id, geschoss_id, status, reihenfolge) values ($1,$2,$3,$4,'bestaetigt',$5) returning id", [L1, G, k, gs, i])).rows[0].id;
   P1 = await bt("heizung.umwaelzpumpe", 0); P2 = await bt("heizung.umwaelzpumpe", 1); V = await bt("heizung.verteiler", 2);
+  // E48: drei Pumpen gleichen Typs (Schreibweise abweichend), eine mit anderem Typ
+  const typ = async (h: string, t: string, i: number) => { const id = await bt("heizung.umwaelzpumpe", i); await db.pool.query("update bauteil set hersteller=$2, typ=$3 where id=$1", [id, h, t]); return id; };
+  M1 = await typ("Grundfos", "Magna 32", 3); M2 = await typ("grundfos ", "MAGNA 32", 4); M3 = await typ("Grundfos", "Magna 40", 5);
 });
 afterAll(async () => { await app.close(); await db.ende(); });
 
@@ -74,7 +77,39 @@ describe("Datenblatt-API", () => {
     expect((await anfrage("GET", `/api/bestand/bauteile/${P1}/datenblatt`, kFremd)).statusCode).toBe(404);
   });
   it("leeres Datenblatt loescht die Akte-Zeile, wenn sonst nichts erfasst ist", async () => {
-    await anfrage("PUT", "/api/bestand/datenblatt", kBearb, { bauteilIds: [P1, P2], werte: {} });
+    await anfrage("PUT", "/api/bestand/datenblatt", kBearb, { bauteilIds: [P1, P2], werte: { dn: null, foerderhoehe_m: "" } });
     expect((await db.pool.query("select 1 from bauteil_akte where bauteil_id = any($1::uuid[])", [[P1, P2]])).rowCount).toBe(0);
+  });
+});
+
+describe("Datenblatt je Typ (E48)", () => {
+  it("Werte gelten fuer alle Bauteile gleicher Katalog-ID + Hersteller + Typ, nicht fuer anderen Typ", async () => {
+    const p = await anfrage("PUT", "/api/bestand/datenblatt", kBearb, { bauteilIds: [M1], werte: { dn: 32 } });
+    expect(p.json()).toMatchObject({ werte: { dn: 32 }, typ: "Grundfos Magna 32", abweichend: [] });
+    expect([...p.json().bauteilIds].sort()).toEqual([M1, M2].sort());
+    expect((await anfrage("GET", `/api/bestand/bauteile/${M2}/datenblatt`, kBearb)).json()).toMatchObject({ werte: { dn: 32 }, typ: "grundfos MAGNA 32" }); // eigene Schreibweise
+    expect((await anfrage("GET", `/api/bestand/bauteile/${M3}/datenblatt`, kBearb)).json()).toMatchObject({ werte: {}, typ: "Grundfos Magna 40" });
+  });
+  it("ohne Hersteller/Typ nur das Bauteil (bzw. die Gruppe der Karte)", async () => {
+    await anfrage("PUT", "/api/bestand/datenblatt", kBearb, { bauteilIds: [P1], werte: { leistung_w: 45 } });
+    const g = (await anfrage("GET", `/api/bestand/bauteile/${P1}/datenblatt`, kBearb)).json();
+    expect([g.typ, g.bauteilIds]).toEqual([null, [P1]]);
+    expect((await anfrage("GET", `/api/bestand/bauteile/${P2}/datenblatt`, kBearb)).json().werte).toEqual({});
+  });
+  it("G7: nur gesendete Felder aendern sich; abweichende Werte werden gemeldet, nicht still ueberschrieben", async () => {
+    await db.pool.query(`insert into bauteil_akte(bauteil_id, liegenschaft_id, datenblatt) values ($1,$2,'{"dn":40,"foerderhoehe_m":5}')
+      on conflict (bauteil_id) do update set datenblatt=excluded.datenblatt`, [M2, L1]);
+    const g = (await anfrage("GET", `/api/bestand/bauteile/${M1}/datenblatt`, kBearb)).json();
+    expect(g.abweichend.sort()).toEqual(["dn", "foerderhoehe_m"]);
+    const p = (await anfrage("PUT", "/api/bestand/datenblatt", kBearb, { bauteilIds: [M1], werte: { leistung_w: 60 } })).json();
+    expect(p.abweichend.sort()).toEqual(["dn", "foerderhoehe_m"]);
+    const roh = (await db.pool.query("select bauteil_id, datenblatt from bauteil_akte where bauteil_id = any($1::uuid[])", [[M1, M2]])).rows;
+    expect(Object.fromEntries(roh.map((r) => [r.bauteil_id, r.datenblatt]))).toEqual({ [M1]: { dn: 32, leistung_w: 60 }, [M2]: { dn: 40, foerderhoehe_m: 5, leistung_w: 60 } });
+  });
+  it("GET mit ?gruppe: Abweichung innerhalb der Kartengruppe; fremde IDs 400 bzw. ignoriert", async () => {
+    const g = (await anfrage("GET", `/api/bestand/bauteile/${P1}/datenblatt?gruppe=${P1},${P2}`, kBearb)).json();
+    expect([[...g.bauteilIds].sort(), g.abweichend]).toEqual([[P1, P2].sort(), ["leistung_w"]]);
+    expect((await anfrage("GET", `/api/bestand/bauteile/${P1}/datenblatt?gruppe=${V}`, kBearb)).json().bauteilIds).toEqual([P1]);
+    expect((await anfrage("GET", `/api/bestand/bauteile/${P1}/datenblatt?gruppe=x`, kBearb)).statusCode).toBe(400);
   });
 });
