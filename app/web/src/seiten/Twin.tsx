@@ -29,10 +29,9 @@ import type { FilterStufe } from "../szene3/ampelFilter";
 import { erneuerungFilter, POSTEN_TEXT, umschalten } from "../karten/erneuerungFilter";
 import { anzeigeWelt } from "../szene3/gruppenNetz";
 import { usePreiseVerfuegbar } from "./dokumenteVerfuegbar";
-import { ladeAblage, legeAb } from "../dokumente/api";
-import { ablageFehlerText, ablegenFehlerText, unterlagenFuer, vorpruefen } from "../dokumente/ansicht";
+import { ladeAblage, legeAlleAb } from "../dokumente/api";
+import { unterlagenFuer } from "../dokumente/ansicht";
 import type { AblageAntwort } from "../dokumente/typen";
-import type { AblageMeldung } from "../karten/TwinUnterlagen";
 import { useViewer } from "../viewer/useViewer";
 import "./Twin.css";
 
@@ -345,20 +344,10 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
   };
 
   /** "+ Ablegen" in der Anlagenkarte: Dateien ablegen und gleich mit den Bauteilen verknüpfen (auch beim Duplikat, Ruling 5). */
-  const ablegenFuer = async (dateien: File[], bauteilIds: string[]): Promise<AblageMeldung[]> => {
-    const { ok, zuGross } = vorpruefen(dateien);
-    const m: AblageMeldung[] = zuGross.map((f) => ({ datei: f.name, text: ablageFehlerText("zu_gross"), art: "fehler" }));
-    for (const f of ok) {
-      try {
-        const r = await legeAb(gebaeudeId, f, { bauteilIds });
-        if (!r.neu) m.push({ datei: f.name, text: r.zeile.dateiname === f.name ? "Ist schon abgelegt." : `Ist schon abgelegt als ${r.zeile.dateiname}.`, art: "hinweis" });
-      } catch (e) {
-        if (e instanceof ApiFehler && e.status === 401) { onAbgelaufen(); return m; }
-        m.push({ datei: f.name, text: ablegenFehlerText(fehlerCode(e), e instanceof ApiFehler ? e.status : undefined, f.name), art: "fehler" });
-      }
-    }
-    ladeAblageNeu();
-    return m;
+  const ablegenFuer = async (dateien: File[], bauteilIds: string[]) => {
+    const r = await legeAlleAb(gebaeudeId, dateien, { bauteilIds });
+    if (r.abgelaufen) onAbgelaufen(); else ladeAblageNeu();
+    return r;
   };
 
   const liegenschaft = liste?.find((g) => g.id === gebaeudeId)?.liegenschaftName ?? null;
@@ -413,7 +402,7 @@ export function Twin({ gebaeudeId, name, onGebaeude, onListe, onBearbeiten, onPl
                 lebensdauer={lebensdauer} darfAendern={lebensdauer?.darfAendern === true} onLebensdauer={setLebensdauer} onDokument={zuPreisen}
                 onFundstelle={(id, seite) => { setViewerFehler(null); void viewer.oeffneId(id, seite); }} katalog={katalog?.eintraege} onAbgelaufen={onAbgelaufen}
                 {...(ablage ? { unterlagen: unterlagenFuer(ablage.dokumente, karte.bauteilIds), darfAblegen: ablage.darfAendern,
-                  onOeffnen: viewer.oeffne, onNeuLaden: ladeAblageNeu, onAblegen: (dateien: File[]) => ablegenFuer(dateien, karte.bauteilIds) } : {})} />
+                  onOeffnen: viewer.oeffne, onNeuLaden: ladeAblageNeu, alleUnterlagen: ablage.dokumente, onAblegen: (dateien: File[]) => ablegenFuer(dateien, karte.bauteilIds) } : {})} />
               : gruppe ? <TwinGruppe key={gruppe.id} karte={gruppe} kartenRef={objektRef} onSchliessen={schliesseKarte} />
               : <p className="tw-objekt-leer">Anlage oder Leitung im Modell wählen, um Details zu sehen.</p>}
           </aside>

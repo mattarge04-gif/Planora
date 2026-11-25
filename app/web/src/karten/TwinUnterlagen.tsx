@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import { Download, Info, Plus, TriangleAlert, X } from "lucide-react";
-import type { AblageZeile } from "../dokumente/typen";
+import type { AblageMeldung, AblageZeile } from "../dokumente/typen";
 import { dateiUrl } from "../dokumente/api";
-import { KATEGORIEN, kategorieName, oeffnenArt, pruefungLaeuft, scanAnzeige } from "../dokumente/ansicht";
+import { DATEI_ACCEPT, KATEGORIEN, kategorieName, oeffnenArt, pruefungLaeuft, scanAnzeige } from "../dokumente/ansicht";
 import { DokumentSymbol, endung } from "../ui/dokumentSymbol";
 
-export interface AblageMeldung { datei: string; text: string; art: "fehler" | "hinweis" }
 
 interface Props {
   unterlagen: AblageZeile[];
+  /** Ganze Ablage des Gebäudes: zeigt hier abgelegte, dann abgelehnte Dateien weiter an (der Befund löst die Verknüpfung). */
+  alle: AblageZeile[];
   darfAblegen: boolean;
   onOeffnen: (d: AblageZeile, seite?: number) => void;
   /** Legt Dateien ab und verknüpft sie mit den Bauteilen der Karte; liefert Meldungen je Datei. */
-  onAblegen: (dateien: File[]) => Promise<AblageMeldung[]>;
+  onAblegen: (dateien: File[]) => Promise<{ meldungen: AblageMeldung[]; zeilen: AblageZeile[] }>;
   /** Ablage neu laden (Polling, solange eine Prüfung läuft). */
   onNeuLaden: () => void;
 }
@@ -23,10 +24,12 @@ const RANG = new Map(KATEGORIEN.map((k, i) => [k.id, i]));
 const geordnet = (d: AblageZeile[]) => [...d].sort((a, b) => (RANG.get(a.kategorie) ?? 9) - (RANG.get(b.kategorie) ?? 9) || a.dateiname.localeCompare(b.dateiname, "de-CH"));
 
 /** Abschnitt "Unterlagen (n)" der Anlagenkarte: verknüpfte Dateien, Klick öffnet den Viewer, "+ Ablegen" verknüpft direkt. */
-export function TwinUnterlagen({ unterlagen, darfAblegen, onOeffnen, onAblegen, onNeuLaden }: Props) {
+export function TwinUnterlagen({ unterlagen, alle, darfAblegen, onOeffnen, onAblegen, onNeuLaden }: Props) {
   const feld = useRef<HTMLInputElement>(null);
   const [laeuft, setLaeuft] = useState<string[]>([]);
   const [meldungen, setMeldungen] = useState<AblageMeldung[]>([]);
+  const [eigene, setEigene] = useState<string[]>([]);
+  const abgelehnt = alle.filter((d) => d.scanStatus === "abgelehnt" && eigene.includes(d.id) && !unterlagen.some((x) => x.id === d.id));
   const [ziehen, setZiehen] = useState(false);
   const tiefe = useRef(0);
   const pruefen = pruefungLaeuft(unterlagen);
@@ -39,7 +42,10 @@ export function TwinUnterlagen({ unterlagen, darfAblegen, onOeffnen, onAblegen, 
   async function ablegen(dateien: File[]) {
     if (!dateien.length) return;
     setMeldungen([]); setLaeuft(dateien.map((f) => f.name));
-    try { setMeldungen(await onAblegen(dateien)); } finally { setLaeuft([]); }
+    try {
+      const r = await onAblegen(dateien);
+      setMeldungen(r.meldungen); setEigene((e) => [...e, ...r.zeilen.map((z) => z.id)]);
+    } finally { setLaeuft([]); }
   }
   const ziel = darfAblegen ? {
     onDragOver: (e: DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; },
@@ -54,16 +60,17 @@ export function TwinUnterlagen({ unterlagen, darfAblegen, onOeffnen, onAblegen, 
         <h3>Unterlagen{unterlagen.length > 0 && <span className="tw-ul-anzahl">{unterlagen.length}</span>}</h3>
         {darfAblegen && <>
           <input ref={feld} type="file" multiple className="ui-sr" tabIndex={-1} aria-hidden="true"
-            accept="application/pdf,.pdf,image/jpeg,image/png,image/heic,.heic,.docx,.xlsx,.pptx,.doc,.xls,.ppt"
+            accept={DATEI_ACCEPT}
             onChange={(e) => { const f = [...(e.target.files ?? [])]; e.target.value = ""; void ablegen(f); }} />
           <button type="button" className="tw-ul-ablegen" disabled={laeuft.length > 0} onClick={() => feld.current?.click()}
             aria-label="Datei ablegen und mit dieser Anlage verknüpfen"><Plus size={13} strokeWidth={2} aria-hidden="true" />Ablegen</button>
         </>}
       </div>
-      {unterlagen.length === 0 && laeuft.length === 0
+      {unterlagen.length === 0 && abgelehnt.length === 0 && laeuft.length === 0
         ? <p className="tw-ul-leer">{darfAblegen ? "Noch keine Unterlagen. Datenblatt, Foto oder Protokoll hierher ziehen." : "Noch keine Unterlagen verknüpft."}</p>
         : <ul className="tw-ul-liste">
           {geordnet(unterlagen).map((d) => <Eintrag key={d.id} d={d} onOeffnen={onOeffnen} />)}
+          {abgelehnt.map((d) => <Eintrag key={d.id} d={d} onOeffnen={onOeffnen} />)}
           {laeuft.map((n) => <li key={"ab-" + n} className="tw-ul-eintrag tw-ul-laeuft">
             <span className="tw-ul-icon" aria-hidden="true"><DokumentSymbol kategorie="sonstiges" groesse={14} /></span>
             <span className="tw-ul-text"><span className="tw-ul-name">{n}</span><span className="tw-ul-meta tw-ul-pruefen"><i aria-hidden="true" />wird abgelegt …</span></span>

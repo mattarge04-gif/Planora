@@ -8,8 +8,8 @@ import type { Katalog } from "../typen";
 import { alleSicheren, fehlerCode, ladeUebersicht, liesNeu, uebernimm, verwirf } from "../preisdokument/api";
 import { franken, gruppiere, laeuftNoch, offeneSichere, statusText, zuordnungText } from "../preisdokument/ansicht";
 import type { DokumentZeile, Uebersicht, VorschlagZeile } from "../preisdokument/typen";
-import { ladeAblage, legeAb, loesche, pruefeErneut, setzeKategorie, verknuepfe } from "../dokumente/api";
-import { ablageFehlerText, ablegenFehlerText, pruefungLaeuft, scanAnzeige, vorpruefen } from "../dokumente/ansicht";
+import { ladeAblage, legeAlleAb, loesche, pruefeErneut, setzeKategorie, verknuepfe } from "../dokumente/api";
+import { ablageFehlerText, lesbarFuerPreise, pruefungLaeuft, scanAnzeige, vorpruefen } from "../dokumente/ansicht";
 import type { AblageAntwort, Kategorie } from "../dokumente/typen";
 import { Marke } from "../ui/Kopfzeile";
 import { useViewer } from "../viewer/useViewer";
@@ -178,25 +178,14 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
   };
 
   async function dateienAblegen(liste: File[], o: { kategorie?: Kategorie; nurPdf?: boolean } = {}) {
-    const { ok, zuGross } = vorpruefen(liste);
-    const neu: AblageHinweis[] = zuGross.map((f) => ({ datei: f.name, text: ablageFehlerText("zu_gross"), art: "fehler" }));
-    setHinweise(neu);
-    if (!ok.length) return;
-    setAblegen(ok.map((f) => f.name));
-    let zuletzt: string | null = null;
-    for (const f of ok) {
-      try {
-        const r = await legeAb(gebaeudeId, f, o.kategorie ? { kategorie: o.kategorie } : {});
-        // Gleicher Inhalt schon abgelegt: der Server antwortet mit dem bestehenden Dokument (200) -> melden und hinzeigen.
-        if (!r.neu) neu.push({ datei: f.name, text: r.zeile.dateiname === f.name ? "Ist schon abgelegt." : `Ist schon abgelegt als ${r.zeile.dateiname}.`, art: "hinweis" });
-        zuletzt = r.zeile.id;
-      } catch (e) {
-        if (e instanceof ApiFehler && e.status === 401) { onAbgelaufen(); return; }
-        neu.push({ datei: f.name, text: ablegenFehlerText(fehlerCode(e), e instanceof ApiFehler ? e.status : undefined, f.name), art: "fehler" });
-      }
-      setAblegen((a) => a.filter((n) => n !== f.name));
-    }
-    setHinweise([...neu]);
+    setHinweise([]);
+    setAblegen(vorpruefen(liste).ok.map((f) => f.name));
+    // Gleicher Inhalt schon abgelegt: der Server antwortet mit dem bestehenden Dokument (200) -> melden und hinzeigen.
+    const r = await legeAlleAb(gebaeudeId, liste, o.kategorie ? { kategorie: o.kategorie } : {}, (n) => setAblegen((a) => a.filter((x) => x !== n)));
+    setAblegen([]);
+    if (r.abgelaufen) { onAbgelaufen(); return; }
+    setHinweise(r.meldungen);
+    const zuletzt = r.zeilen.at(-1)?.id ?? null;
     try { await ablageNeu(); } catch (e) { fehlerBehandeln(e); }
     if (zuletzt) {
       const id = zuletzt;
@@ -257,7 +246,7 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
   const filterText = filterBauteil ? `${nameVon(filterBauteil.katalogId)} · ${filterBauteil.ort}` : "gewähltes Bauteil";
   const aktiv = ablage?.dokumente.find((d) => d.id === aktivId) ?? null;
   const aktivPreise = aktiv ? u?.dokumente.find((d) => d.id === aktiv.id) ?? null : null;
-  const lesbar = !!aktiv && aktiv.art === "pdf" && aktiv.scanStatus === "sauber" && an && darf && !!aktivPreise
+  const lesbar = !!aktiv && lesbarFuerPreise(aktiv) && an && darf && !!aktivPreise
     && aktivPreise.status !== "neu" && aktivPreise.status !== "liest";
   // Umschalter schon beim Laden zeigen (kein Springen des Layouts); verschwindet nur, wenn Preise nicht lesbar sind.
   const zeigeUmschalter = preise !== "aus";
@@ -335,7 +324,7 @@ export function Dokumente({ gebaeudeId, name, bauteilId, ansicht: startAnsicht =
 
         {!an && <div className={`dk-aus${vorschlaegeDa ? " dk-aus-klein" : ""}`}>
           <ScanSearch size={vorschlaegeDa ? 16 : 22} strokeWidth={1.6} aria-hidden="true" />
-          <p>Auslesen ist ausgeschaltet. Der Admin kann es einschalten.{vorschlaegeDa ? " Bestehende Vorschläge lassen sich weiter prüfen." : darf ? " Abgelegte PDFs bleiben beim Gebäude und lassen sich später lesen." : ""}</p>
+          <p>Automatisches Auslesen ist nicht eingerichtet.{vorschlaegeDa ? " Bestehende Vorschläge lassen sich weiter prüfen." : darf ? " Abgelegte PDFs bleiben beim Gebäude und lassen sich später lesen." : ""}</p>
         </div>}
         {an && !vorschlaegeDa && <div className="dk-leer">
           <ScanSearch size={22} strokeWidth={1.6} aria-hidden="true" />
@@ -432,7 +421,8 @@ function DokumentEintrag({ d, darf, an, aktiv, zeigen, onZeigen, onOeffnen, onNe
   const scan = scanAnzeige({ scanStatus: d.scanStatus, scanGrund: null });
   // "aus" ist der Startwert neuer Dokumente: bei eingeschaltetem Auslesen heisst das "noch nicht gelesen".
   const statusKlasse = !sauber ? (scan.art === "laeuft" ? "liest" : scan.art === "abgelehnt" ? "abgelehnt" : "fehler") : liest ? "liest" : d.status === "fehler" || d.status === "abgebrochen" ? "fehler" : d.status === "aus" ? "aus" : "fertig";
-  const status = !sauber ? scan.text : d.status === "aus" && an ? "Noch nicht gelesen"
+  // Ohne Schluessel (E48) kein Lesestand: "aus" heisst dann nur "abgelegt".
+  const status = !sauber ? scan.text : d.status === "aus" ? (an ? "Noch nicht gelesen" : "")
     : d.status === "fertig" && d.vorschlaege.length > 0 && offen < d.vorschlaege.length ? `${statusText(d)}, ${offen === 0 ? "alle entschieden" : `${offen} offen`}` : statusText(d);
   return (
     <li id={`dk-dok-${d.id}`} className={`dk-dok${aktiv ? " dk-dok-aktiv" : ""}`}>
@@ -442,8 +432,8 @@ function DokumentEintrag({ d, darf, an, aktiv, zeigen, onZeigen, onOeffnen, onNe
           ? <button type="button" className="dk-dok-name dk-dok-wahl" onClick={onZeigen} title={d.dateiname}>{d.dateiname}</button>
           : <span className="dk-dok-name" title={d.dateiname}>{d.dateiname}</span>}
         <span className="dk-dok-meta">{datum(d.hochgeladenAm)}, {d.seiten ? umfang(d) : `${Math.max(1, Math.round(d.groesse / 1024))} kB`}</span>
-        <span className={`dk-status dk-status-${statusKlasse}`}>{(liest || (!sauber && scan.art === "laeuft")) && <i aria-hidden="true" />}{(statusKlasse === "fehler" || statusKlasse === "abgelehnt") && <TriangleAlert size={12} strokeWidth={2.2} aria-hidden="true" />}{status}</span>
-        {darf && an && sauber && !liest && d.status === "aus" && <button type="button" className="dk-leise dk-dok-lesen" onClick={onNeuLesen}><ScanSearch size={13} strokeWidth={1.75} aria-hidden="true" />Preise lesen</button>}
+        {status && <span className={`dk-status dk-status-${statusKlasse}`}>{(liest || (!sauber && scan.art === "laeuft")) && <i aria-hidden="true" />}{(statusKlasse === "fehler" || statusKlasse === "abgelehnt") && <TriangleAlert size={12} strokeWidth={2.2} aria-hidden="true" />}{status}</span>}
+        {darf && an && lesbarFuerPreise({ ...d, art: "pdf" }) && !liest && d.status === "aus" && <button type="button" className="dk-leise dk-dok-lesen" onClick={onNeuLesen}><ScanSearch size={13} strokeWidth={1.75} aria-hidden="true" />Preise lesen</button>}
       </span>
       <span className="dk-dok-aktionen">
         {sauber && <button type="button" className="dk-symbol" onClick={onOeffnen} aria-label={`${d.dateiname} öffnen`} title="Öffnen">

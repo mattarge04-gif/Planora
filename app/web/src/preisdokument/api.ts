@@ -25,6 +25,5 @@ export const liesNeu = (id: string) => sendeJson<DokumentZeile>(`${BASIS}/dokume
 export const uebernimm = (id: string, b: UebernehmenEingabe) => sendeJson<Uebersicht>(`${BASIS}/vorschlaege/${id}/uebernehmen`, b);
 export const verwirf = (id: string) => sendeJson<Uebersicht>(`${BASIS}/vorschlaege/${id}/verwerfen`, {});
 export const alleSicheren = (gebaeudeId: string, stand: number) => sendeJson<Uebersicht>(`${BASIS}/gebaeude/${gebaeudeId}/alle-sicheren`, { stand });
-export const dateiUrl = (id: string, seite?: number) => `/api/dokumente/${id}/datei${seite ? `#page=${seite}` : ""}`;
 
 export { fehlerCode } from "../api";

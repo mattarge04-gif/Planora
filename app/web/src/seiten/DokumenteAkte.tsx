@@ -1,17 +1,16 @@
 // Seite Dokumente, Zustand "Alle Dokumente": Ablage-Liste links, Detail rechts (Vorschau, Kategorie, Verknüpfungen, Aktionen).
 import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { Download, Eye, FilePlus2, Info, Link2, Lock, Plus, RotateCw, ScanSearch, Search, ShieldX, Trash2, TriangleAlert, X } from "lucide-react";
-import type { AblageBauteil, AblageZeile, Kategorie } from "../dokumente/typen";
+import type { AblageBauteil, AblageMeldung as AblageHinweis, AblageZeile, Kategorie } from "../dokumente/typen";
 import { dateiUrl, ladeBytes } from "../dokumente/api";
-import { KATEGORIEN, bauteilKandidaten, datenblattVorschlag, filtere, groesseText, kategorieName, oeffnenArt, scanAnzeige } from "../dokumente/ansicht";
+import { DATEI_ACCEPT, KATEGORIEN, bauteilKandidaten, datenblattVorschlag, filtere, groesseText, kategorieName, oeffnenArt, scanAnzeige } from "../dokumente/ansicht";
 import { anzeigeName, iconFuer } from "../dashboard";
 import type { KatalogEintrag } from "../typen";
 import { ANLAGEN_ICON } from "../karten/TwinObjekt";
 import { DokumentSymbol, endung } from "../ui/dokumentSymbol";
 import { datum } from "./dokumenteAnsicht";
 
-export interface AblageHinweis { datei: string; text: string; art: "fehler" | "hinweis" }
-export const ABLAGE_ACCEPT = "application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png,image/heic,.heic,.docx,.xlsx,.pptx,.doc,.xls,.ppt";
+export type { AblageMeldung as AblageHinweis } from "../dokumente/typen";
 
 /** Ablegeflaeche: Ziehen auf die ganze Liste, Knopf öffnet die Dateiauswahl. */
 export function useAblegen(darf: boolean, onDateien: (f: File[]) => void) {
@@ -74,7 +73,7 @@ export function AkteListe({ dokumente, darf, aktivId, ablegen, hinweise, onWahl,
 
   return (
     <section className={`ep-karte dk-akte-liste${ziehen ? " dk-ziehen" : ""}${leer ? " dk-akte-leer" : ""}`} aria-labelledby="dk-akte-titel" {...ziel}>
-      {darf && <input ref={feld} type="file" accept={ABLAGE_ACCEPT} multiple className="ui-sr" tabIndex={-1} aria-hidden="true"
+      {darf && <input ref={feld} type="file" accept={DATEI_ACCEPT} multiple className="ui-sr" tabIndex={-1} aria-hidden="true"
         onChange={(e) => { const f = [...(e.target.files ?? [])]; e.target.value = ""; onDateien(f); }} />}
       <div className="dk-akte-kopf">
         <h2 id="dk-akte-titel">Abgelegt <span className="ep-anzahl">{dokumente.length}</span></h2>
@@ -201,7 +200,8 @@ export function AkteDetail({ d, bauteile, katalog, darf, laeuft, lesen, onOeffne
       <div className="dk-detail-kopf">
         <h2 id="dk-detail-titel">{d.dateiname}</h2>
         <p className="dk-detail-meta">{meta.join(", ")}</p>
-        {!sauber && <p className="dk-detail-scan"><ScanZustand d={d} />{d.scanStatus === "abgelehnt" && <span className="dk-detail-scan-text">Die Datei bleibt gesperrt und wird nach 7 Tagen gelöscht.</span>}</p>}
+        {!sauber && <p className="dk-detail-scan"><ScanZustand d={d} />{d.scanStatus === "abgelehnt" && <span className="dk-detail-scan-text">Die Datei bleibt gesperrt und wird nach 7 Tagen gelöscht.</span>}
+          {d.scanStatus === "scan_fehler" && d.scanGrund && <span className="dk-detail-scan-text">{d.scanGrund}</span>}</p>}
       </div>
       <div className="dk-detail-aktionen">
         {(art === "pdf" || art === "bild") && <button type="button" className="ep-knopf ep-knopf-haupt" onClick={onOeffnen}><Eye size={15} strokeWidth={1.75} aria-hidden="true" />Öffnen</button>}

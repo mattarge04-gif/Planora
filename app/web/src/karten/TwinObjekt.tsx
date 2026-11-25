@@ -6,7 +6,8 @@ import type { BildschirmPunkt } from "../szene3/Interaktion";
 import type { GruppenKarte } from "./gruppenKarte";
 import type { LdStand } from "../lebensdauer/typen";
 import { TwinLebensdauer } from "./TwinLebensdauer";
-import { TwinUnterlagen, type AblageMeldung } from "./TwinUnterlagen";
+import { TwinUnterlagen } from "./TwinUnterlagen";
+import type { AblageMeldung } from "../dokumente/typen";
 import { TwinDatenblatt } from "./TwinDatenblatt";
 import { zeigeInKarte } from "./kartenScroll";
 import type { AblageZeile } from "../dokumente/typen";
@@ -35,7 +36,8 @@ interface Props { karte: ObjektKarte; onSchliessen: () => void; lebensdauer?: Ld
   /** Mit den Bauteilen der Karte verknüpfte Unterlagen (Ablage des Gebäudes); ohne Prop kein Abschnitt. */
   unterlagen?: AblageZeile[]; darfAblegen?: boolean;
   onOeffnen?: (d: AblageZeile, seite?: number) => void;
-  onAblegen?: (dateien: File[]) => Promise<AblageMeldung[]>;
+  onAblegen?: (dateien: File[]) => Promise<{ meldungen: AblageMeldung[]; zeilen: AblageZeile[] }>;
+  alleUnterlagen?: AblageZeile[];
   onNeuLaden?: () => void;
   katalog?: KatalogEintrag[]; onAbgelaufen?: () => void }
 
@@ -48,7 +50,7 @@ function zuUnterlagen(karte: HTMLElement | null) {
 
 /** Anlagenkarte rechts, Inhalt aus objektKarte(); Lebensdauer, Datenblatt und Unterlagen als Abschnitte. */
 export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAendern, onLebensdauer, onDokument, bezug = null,
-  onFundstelle, unterlagen, darfAblegen = false, onOeffnen, onAblegen, onNeuLaden, katalog, onAbgelaufen }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
+  onFundstelle, unterlagen, darfAblegen = false, onOeffnen, onAblegen, onNeuLaden, alleUnterlagen = [], katalog, onAbgelaufen }: Props & { kartenRef: RefObject<HTMLElement | null> }) {
   const Icon = ANLAGEN_ICON[karte.icon];
   const [gescrollt, setGescrollt] = useState(false);
   return (
@@ -82,7 +84,7 @@ export function TwinObjekt({ karte, onSchliessen, kartenRef, lebensdauer, darfAe
       </div>}
       {lebensdauer && onLebensdauer && <TwinLebensdauer stand={lebensdauer} bauteilIds={karte.bauteilIds} darfAendern={darfAendern === true} onGespeichert={onLebensdauer} onDokument={onDokument} onFundstelle={onFundstelle} />}
       {katalog && karte.bauteilIds.length > 0 && <TwinDatenblatt bauteilIds={karte.bauteilIds} katalog={katalog} onAbgelaufen={onAbgelaufen} />}
-      {unterlagen && onOeffnen && onAblegen && onNeuLaden && <TwinUnterlagen unterlagen={unterlagen} darfAblegen={darfAblegen}
+      {unterlagen && onOeffnen && onAblegen && onNeuLaden && <TwinUnterlagen unterlagen={unterlagen} alle={alleUnterlagen} darfAblegen={darfAblegen}
         onOeffnen={onOeffnen} onAblegen={onAblegen} onNeuLaden={onNeuLaden} />}
       </div>
     </section>

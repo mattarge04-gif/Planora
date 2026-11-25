@@ -8,3 +8,5 @@ export interface AblageZeile {
 }
 export interface AblageBauteil { id: string; katalogId: string; geschoss: string; ort: string; hersteller: string | null; typ: string | null }
 export interface AblageAntwort { dokumente: AblageZeile[]; bauteile: AblageBauteil[]; darfAendern: boolean }
+/** Meldung je Datei nach dem Ablegen (Seite Dokumente und Anlagenkarte). */
+export interface AblageMeldung { datei: string; text: string; art: "fehler" | "hinweis" }

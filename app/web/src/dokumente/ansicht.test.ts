@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ablageFehlerText, ablegenFehlerText, bauteilKandidaten, datenblattVorschlag, filtere, groesseText, kategorieName, oeffnenArt, pruefungLaeuft, scanAnzeige, unterlagenFuer, vorpruefen, MAX_BYTES } from "./ansicht";
+import { ablageFehlerText, ablegenFehlerText, bauteilKandidaten, datenblattVorschlag, duplikatText, lesbarFuerPreise, filtere, groesseText, kategorieName, oeffnenArt, pruefungLaeuft, scanAnzeige, unterlagenFuer, vorpruefen, MAX_BYTES } from "./ansicht";
 import type { AblageBauteil, AblageZeile } from "./typen";
 
 const d = (x: Partial<AblageZeile> = {}): AblageZeile => ({ id: "d1", dateiname: "a.pdf", art: "pdf", mime: "application/pdf", kategorie: "sonstiges", groesse: 1000, seiten: 1,
@@ -11,7 +11,7 @@ describe("Ablage-Anzeige", () => {
     expect(scanAnzeige(d({ scanStatus: "quarantaene" }))).toEqual({ text: "wird geprüft …", art: "laeuft" });
     expect(scanAnzeige(d())).toEqual({ text: "geprüft", art: "ok" });
     expect(scanAnzeige(d({ scanStatus: "abgelehnt", scanGrund: "Eicar-Test-Signature" }))).toEqual({ text: "Datei abgelehnt (Virenprüfung)", art: "abgelehnt", detail: "Befund: Eicar-Test-Signature" });
-    expect(scanAnzeige(d({ scanStatus: "scan_fehler", scanGrund: "x" }))).toEqual({ text: "Prüfung fehlgeschlagen", art: "fehler" });
+    expect(scanAnzeige(d({ scanStatus: "scan_fehler", scanGrund: "Datei fehlt, bitte neu ablegen." }))).toEqual({ text: "Prüfung fehlgeschlagen", art: "fehler", detail: "Datei fehlt, bitte neu ablegen." });
   });
   it("Groesse und Kategorie", () => {
     expect([groesseText(820), groesseText(820 * 1024), groesseText(4.2 * 1024 * 1024)]).toEqual(["820 B", "820 KB", "4.2 MB"]);
@@ -42,7 +42,7 @@ describe("Ablage-Anzeige", () => {
   });
   it("Fehlertexte und Vorpruefung", () => {
     expect(ablageFehlerText("typ_unbekannt")).toBe("Dateityp nicht erlaubt. Erlaubt sind PDF, JPG, PNG, HEIC, Word, Excel und PowerPoint.");
-    expect([ablageFehlerText("nicht_sauber"), ablageFehlerText("auslesen_aus")]).toEqual(["Datei ist noch nicht freigegeben.", "Auslesen ist ausgeschaltet. Der Admin kann es einschalten."]);
+    expect([ablageFehlerText("nicht_sauber"), ablageFehlerText("auslesen_aus")]).toEqual(["Datei ist noch nicht freigegeben.", "Automatisches Auslesen ist nicht eingerichtet."]);
     expect(ablageFehlerText("makro")).toBe("Dateien mit Makros werden nicht abgelegt.");
     expect(ablageFehlerText(null, 413)).toBe("Datei grösser als 100 MB.");
     expect(ablageFehlerText("toString")).toBe("Aktion fehlgeschlagen.");
@@ -56,6 +56,13 @@ describe("Ablage-Anzeige", () => {
       "Abgelehnte Dateien lassen sich nicht ändern.", "Nur fehlgeschlagene Prüfungen lassen sich wiederholen.", "Die Bauteile müssen vom gleichen Typ und im gleichen Gebäude sein.",
       "Unbekanntes Datenblatt-Feld.", "Ungültiger Wert im Datenblatt.", "Das Dokument wird bereits gelesen.", "Nur PDF-Dateien lassen sich auslesen.",
       "Das Dokument hat zu viele Seiten zum Auslesen."]);
+    expect(ablageFehlerText("zu_gross_lesen")).toBe("Das Dokument ist zu gross zum Auslesen (über 32 MB).");
+    expect([duplikatText({ dateiname: "a.pdf", scanStatus: "abgelehnt" }, "a.pdf"), duplikatText({ dateiname: "a.pdf", scanStatus: "sauber" }, "b.pdf"),
+      duplikatText({ dateiname: "a.pdf", scanStatus: "quarantaene" }, "a.pdf")])
+      .toEqual(["Wurde bei der Virenprüfung abgelehnt.", "Ist schon abgelegt als a.pdf.", "Ist schon abgelegt, wird geprüft."]);
+    const p = { art: "pdf" as const, scanStatus: "sauber" as const, groesse: 1000, seiten: 3 };
+    expect([lesbarFuerPreise(p), lesbarFuerPreise({ ...p, groesse: 32 * 1024 * 1024 + 1 }), lesbarFuerPreise({ ...p, seiten: 101 }), lesbarFuerPreise({ ...p, scanStatus: "quarantaene" })])
+      .toEqual([true, false, false, false]);
     const v = vorpruefen([{ size: 10 }, { size: MAX_BYTES + 1 }]);
     expect([v.ok.length, v.zuGross.length]).toEqual([1, 1]);
   });

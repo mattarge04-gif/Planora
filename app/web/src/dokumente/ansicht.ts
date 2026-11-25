@@ -1,5 +1,12 @@
 import type { AblageBauteil, AblageZeile, Kategorie } from "./typen";
 export const MAX_BYTES = 100 * 1024 * 1024;
+/** Lesegrenzen "Preise lesen" (Spiegel von app/src/preisdokument/pdf.ts). */
+export const LESEN_MAX_BYTES = 32 * 1024 * 1024, LESEN_MAX_SEITEN = 100;
+/** Erlaubte Dateien fuer die Dateiauswahl (Typ entscheidet der Server aus den Magic Bytes). */
+export const DATEI_ACCEPT = "application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png,image/heic,.heic,.docx,.xlsx,.pptx,.doc,.xls,.ppt";
+/** Sauberes PDF innerhalb der Lesegrenzen (sonst kein Knopf "Preise lesen"). */
+export const lesbarFuerPreise = (d: Pick<AblageZeile, "art" | "scanStatus" | "groesse" | "seiten">) =>
+  d.art === "pdf" && d.scanStatus === "sauber" && d.groesse <= LESEN_MAX_BYTES && (d.seiten ?? 0) <= LESEN_MAX_SEITEN;
 export const KATEGORIEN: { id: Kategorie; name: string }[] = [
   { id: "datenblatt", name: "Datenblatt" }, { id: "plan", name: "Plan" }, { id: "offerte", name: "Offerte" },
   { id: "foto", name: "Foto" }, { id: "protokoll", name: "Protokoll" }, { id: "sonstiges", name: "Sonstiges" },
@@ -10,7 +17,7 @@ export function scanAnzeige(d: Pick<AblageZeile, "scanStatus" | "scanGrund">): {
   if (d.scanStatus === "quarantaene") return { text: "wird geprüft …", art: "laeuft" };
   if (d.scanStatus === "sauber") return { text: "geprüft", art: "ok" };
   if (d.scanStatus === "abgelehnt") return d.scanGrund ? { text: "Datei abgelehnt (Virenprüfung)", art: "abgelehnt", detail: `Befund: ${d.scanGrund}` } : { text: "Datei abgelehnt (Virenprüfung)", art: "abgelehnt" };
-  return { text: "Prüfung fehlgeschlagen", art: "fehler" };
+  return d.scanGrund ? { text: "Prüfung fehlgeschlagen", art: "fehler", detail: d.scanGrund } : { text: "Prüfung fehlgeschlagen", art: "fehler" };
 }
 const zahl = new Intl.NumberFormat("de-CH", { maximumFractionDigits: 1 });
 export function groesseText(bytes: number): string {
@@ -43,11 +50,12 @@ const FEHLER: Record<string, string> = {
   makro: "Dateien mit Makros werden nicht abgelegt.", zu_gross: "Datei grösser als 100 MB.", leer: "Datei ist leer.",
   nicht_sauber: "Datei ist noch nicht freigegeben.", bauteil_unbekannt: "Bauteil gehört nicht zu diesem Gebäude.",
   abgelehnt: "Abgelehnte Dateien lassen sich nicht ändern.", nicht_scan_fehler: "Nur fehlgeschlagene Prüfungen lassen sich wiederholen.",
-  auslesen_aus: "Auslesen ist ausgeschaltet. Der Admin kann es einschalten.",
+  auslesen_aus: "Automatisches Auslesen ist nicht eingerichtet.",
   bauteil_gemischt: "Die Bauteile müssen vom gleichen Typ und im gleichen Gebäude sein.",
   feld_unbekannt: "Unbekanntes Datenblatt-Feld.", feld_typ: "Ungültiger Wert im Datenblatt.",
   liest_bereits: "Das Dokument wird bereits gelesen.", kein_pdf: "Nur PDF-Dateien lassen sich auslesen.",
   zu_viele_seiten: "Das Dokument hat zu viele Seiten zum Auslesen.",
+  zu_gross_lesen: "Das Dokument ist zu gross zum Auslesen (über 32 MB).",
 };
 export const ABLEGEN_FEHLT = "Ablegen fehlgeschlagen.";
 /** `fallback` je Aktion, z. B. "Ablegen fehlgeschlagen." beim Upload. */
@@ -64,6 +72,12 @@ export function ablegenFehlerText(code: string | null, status: number | undefine
   const endung = dateiname.match(ERLAUBTE_ENDUNG)?.[0].toLowerCase();
   if (code === "typ_unbekannt" && endung) return `Inhalt passt nicht zur Endung ${endung}.`;
   return ablageFehlerText(code, status, ABLEGEN_FEHLT);
+}
+/** Gleicher Inhalt schon abgelegt (Antwort 200): Text je Zustand des bestehenden Dokuments. */
+export function duplikatText(z: Pick<AblageZeile, "dateiname" | "scanStatus">, name: string): string {
+  if (z.scanStatus === "abgelehnt") return "Wurde bei der Virenprüfung abgelehnt.";
+  const als = z.dateiname === name ? "" : ` als ${z.dateiname}`;
+  return z.scanStatus === "quarantaene" ? `Ist schon abgelegt${als}, wird geprüft.` : `Ist schon abgelegt${als}.`;
 }
 export const unterlagenFuer = (d: AblageZeile[], bauteilIds: string[]) => d.filter((x) => x.bauteilIds.some((id) => bauteilIds.includes(id)));
 export function vorpruefen<T extends { size: number }>(dateien: T[]) {
