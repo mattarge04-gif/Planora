@@ -14,7 +14,7 @@ describe("Ablage-Anzeige", () => {
     expect(scanAnzeige(d({ scanStatus: "scan_fehler", scanGrund: "Datei fehlt, bitte neu ablegen." }))).toEqual({ text: "Prüfung fehlgeschlagen", art: "fehler", detail: "Datei fehlt, bitte neu ablegen." });
   });
   it("Groesse und Kategorie", () => {
-    expect([groesseText(820), groesseText(820 * 1024), groesseText(4.2 * 1024 * 1024)]).toEqual(["820 B", "820 KB", "4.2 MB"]);
+    expect([groesseText(820), groesseText(820 * 1024), groesseText(4.2 * 1024 * 1024)]).toEqual(["1 kB", "820 kB", "4.2 MB"]);
     expect(kategorieName("datenblatt")).toBe("Datenblatt");
   });
   it("Filter und Polling", () => {

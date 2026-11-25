@@ -1,3 +1,4 @@
+import { groesseText } from "../dokumente/ansicht";
 // Reine Anzeigefunktionen der Seite Dokumente (ohne React), ergaenzt preisdokument/ansicht.ts um Bauteil-Kandidaten und Filter.
 import { chf } from "../lebensdauer/ansicht";
 import type { LdStand } from "../lebensdauer/typen";
@@ -84,7 +85,6 @@ export function datum(iso: string): string {
 /** "1 Seite" / "12 Seiten", Groesse in kB/MB. */
 export function umfang(d: Pick<DokumentZeile, "seiten" | "groesse">): string {
   const s = d.seiten === 1 ? "1 Seite" : `${d.seiten} Seiten`;
-  const g = d.groesse >= 1024 * 1024 ? `${(d.groesse / 1024 / 1024).toFixed(1).replace(".0", "")} MB` : `${Math.max(1, Math.round(d.groesse / 1024))} kB`;
-  return `${s}, ${g}`;
+  return `${s}, ${groesseText(d.groesse)}`;
 }
 

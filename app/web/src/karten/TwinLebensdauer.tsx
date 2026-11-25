@@ -54,7 +54,7 @@ export function TwinLebensdauer({ stand, bauteilIds, darfAendern, onGespeichert,
                   </p>}
                   {darfAendern && <div className="tw-ld-aktionen">
                     <button type="button" className="tw-ld-knopf" ref={(el) => { if (el) knoepfe.current.set(z.id, el); else knoepfe.current.delete(z.id); }}
-                      onClick={() => setOffen({ id: z.id, start: "baujahr" })}>Bearbeiten</button>
+                      onClick={() => setOffen({ id: z.id, start: "baujahr" })}>Lebensdauer bearbeiten</button>
                   </div>}
                 </>}
           </li>

@@ -14,7 +14,7 @@ export async function beispielAnlegen(pool: pg.Pool): Promise<{ liegenschaftId: 
     await c.query("begin");
     const liegenschaftId: string = (await c.query("insert into liegenschaft(name) values ('Beispielliegenschaft M2a') returning id")).rows[0].id;
     const gebaeudeId = await legeGebaeudeAn(c, liegenschaftId,
-      { name: "Beispielgebaeude", grundform: "quader", breiteM: 30, tiefeM: 15, geschosse: [{ code: "EG" }, { code: "OG1" }] }, REGELWERK_V1);
+      { name: "Beispielgebäude", grundform: "quader", breiteM: 30, tiefeM: 15, geschosse: [{ code: "EG" }, { code: "OG1" }] }, REGELWERK_V1);
     const h = (await ladeHuelle(c, gebaeudeId))!;
     const [eg, og1] = h.geschosse;
     const b: Beschreibung = {

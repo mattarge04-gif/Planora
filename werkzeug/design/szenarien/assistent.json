@@ -2,7 +2,7 @@
   "beschreibung": "Track B (Stufe 1): Interview-Assistent an Muster 5 (FBH über Geschosse), alle acht Schritte mit Live-Vorschau, Tastaturfokus in Schritt 5 und reduzierte Bewegung. Hinzugefügte Teile und Umschaltungen werden zurückgenommen, damit jedes Fenster denselben Entwurf zeigt; ab dem zweiten Fenster öffnet der gespeicherte Entwurf (Meldung sichtbar), daher zuerst Schritt 1 wählen. Ohne fps-Messung: die Szenenmitte liegt bei 1280/1440 unter dem Formular.",
   "fenster": [[1440, 900], [1920, 1080], [1280, 720]],
   "schritte": [
-    { "knopf": "Muster 5 FBH ueber Geschosse bearbeiten" },
+    { "knopf": "Muster 5 FBH über Geschosse bearbeiten" },
     { "warte": 6000 },
     { "selektor": ".as-schritt" },
     { "warte": 1500 },

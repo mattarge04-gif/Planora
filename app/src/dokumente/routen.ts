@@ -74,7 +74,7 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
       }
       const id = randomUUID();
       const seiten = t.typ.art === "pdf" ? zaehleSeiten(daten) : null;
-      const kategorie = req.query.kategorie ?? startKategorie(t.typ.art);
+      const kategorie = req.query.kategorie ?? startKategorie(t.typ.art, name);
       // Spec 4.3: Bytes zuerst nur in die Quarantaene; Ablage und Datei-Referenz erst nach sauberem Scan (pruefer.ts).
       const x = await o.quarantaene.schreibeNeu(Readable.from(daten));
       try {

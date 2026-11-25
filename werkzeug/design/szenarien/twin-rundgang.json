@@ -2,7 +2,7 @@
   "beschreibung": "Teilaufgabe 7: Drehung in vier Schritten mit offenem EG (Schnitt der kameraseitigen Fassaden), OG1 gedreht, reduzierte Bewegung (Auswahl springt ohne Fahrt), normal vs. reduziert.",
   "fenster": [[1440, 900], [1920, 1080], [1280, 720]],
   "schritte": [
-    { "klick": "Beispielgebaeude" },
+    { "klick": "Beispielgebäude" },
     { "warte": 7000 },
     { "knopf": "Technik", "exakt": true },
     { "warte": 3000 },

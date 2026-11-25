@@ -102,8 +102,8 @@ const m2: Muster = {
 };
 
 const m3: Muster = {
-  schluessel: "m3-zubehoer", name: "Muster 3 Zubehoer",
-  huelle: { name: "Muster 3 Zubehoer", grundform: "quader", geschosse: [{ code: "EG" }, { code: "OG1" }] },
+  schluessel: "m3-zubehoer", name: "Muster 3 Zubehör",
+  huelle: { name: "Muster 3 Zubehör", grundform: "quader", geschosse: [{ code: "EG" }, { code: "OG1" }] },
   beschreibung: (g) => {
     const { b, v, hkZ, hkP, fbhR, fbhC, fbhD } = beispielBau(g);
     b.gruppe(v, "ungeregelt", "HK Buero", [hkZ, hkP], true); // bewusst ohne Zubehoer
@@ -136,8 +136,8 @@ const m4: Muster = {
 };
 
 const m5: Muster = {
-  schluessel: "m5-fbh-ueber-geschosse", name: "Muster 5 FBH ueber Geschosse",
-  huelle: { name: "Muster 5 FBH ueber Geschosse", grundform: "quader", geschosse: [{ code: "EG" }, { code: "OG1" }, { code: "OG2" }] },
+  schluessel: "m5-fbh-ueber-geschosse", name: "Muster 5 FBH über Geschosse",
+  huelle: { name: "Muster 5 FBH über Geschosse", grundform: "quader", geschosse: [{ code: "EG" }, { code: "OG1" }, { code: "OG2" }] },
   beschreibung: (g) => {
     const b = new Bau(g, FBH_STANDARD);
     const technik = b.einheit(0, "Technik", "technik");

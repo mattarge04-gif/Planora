@@ -505,7 +505,8 @@ a.tw-ul-wahl:focus-visible { outline: 2px solid var(--tw-eis-akzent); outline-of
 .tw-rechts > .tw-objekt { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .tw-objekt > .tw-objekt-kopf { flex: none; }
 /* Gescrollt: obere Kante blendet weich aus, angeschnittene Reste des vorigen Abschnitts wirken nicht wie halbe Knöpfe (Kritik r2). */
-.tw-objekt-inhalt.tw-gescrollt { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px); mask-image: linear-gradient(to bottom, transparent 0, #000 22px); }
+/* Oben 12 px ganz ausgeblendet: angeschnittene Zeilen scheinen nicht als Geisterschrift durch (D4). */
+.tw-objekt-inhalt.tw-gescrollt { -webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent 12px, #000 26px); mask-image: linear-gradient(to bottom, transparent 0, transparent 12px, #000 26px); }
 .tw-objekt-inhalt { min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin-right: -10px; padding-right: 10px; scrollbar-width: thin; scrollbar-color: var(--tw-grau-2) transparent; }
 .tw-ld-form > .tw-ld-aktionen {
   position: sticky; bottom: 0; z-index: 1; margin: 2px -12px -12px; padding: 8px 12px 12px; border-radius: 0 0 var(--tw-radius-kachel) var(--tw-radius-kachel);

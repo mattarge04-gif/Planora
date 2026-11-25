@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent } from "react";
-import { Download, Info, Plus, TriangleAlert, X } from "lucide-react";
+import { Download, Info, Plus, ShieldX, TriangleAlert, X } from "lucide-react";
 import type { AblageMeldung, AblageZeile } from "../dokumente/typen";
 import { dateiUrl } from "../dokumente/api";
 import { DATEI_ACCEPT, KATEGORIEN, kategorieName, oeffnenArt, pruefungLaeuft, scanAnzeige } from "../dokumente/ansicht";
@@ -95,7 +95,7 @@ function Eintrag({ d, onOeffnen }: { d: AblageZeile; onOeffnen: (d: AblageZeile)
     <span className="tw-ul-text">
       <span className="tw-ul-name">{d.dateiname}</span>
       {art === "gesperrt"
-        ? <span className={`tw-ul-meta tw-ul-scan-${scan.art}`} title={scan.detail}>{scan.art === "laeuft" && <i aria-hidden="true" />}{scan.art !== "laeuft" && <TriangleAlert size={11} strokeWidth={2.2} aria-hidden="true" />}{scan.text}</span>
+        ? <span className={`tw-ul-meta tw-ul-scan-${scan.art}`} title={scan.detail}>{scan.art === "laeuft" && <i aria-hidden="true" />}{scan.art === "abgelehnt" && <ShieldX size={11} strokeWidth={2.2} aria-hidden="true" />}{scan.art === "fehler" && <TriangleAlert size={11} strokeWidth={2.2} aria-hidden="true" />}{scan.text}</span>
         : <span className="tw-ul-meta">{meta}</span>}
     </span>
   </>;

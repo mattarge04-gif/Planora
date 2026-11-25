@@ -71,7 +71,7 @@ describe("Dokumente-API: Ablegen", () => {
     const r = await ablegen(kBearb, daten);
     expect(r.statusCode).toBe(201);
     expect(r.json().scanStatus).toBe("quarantaene");
-    expect(r.json()).toMatchObject({ dateiname: "Datenblatt.pdf", art: "pdf", mime: "application/pdf", kategorie: "sonstiges", seiten: 2, groesse: daten.length, bauteilIds: [] });
+    expect(r.json()).toMatchObject({ dateiname: "Datenblatt.pdf", art: "pdf", mime: "application/pdf", kategorie: "datenblatt", seiten: 2, groesse: daten.length, bauteilIds: [] });
     const r2 = await ablegen(kBearb, daten, "anders.pdf");
     expect([r2.statusCode, r2.json().id, r2.json().dateiname]).toEqual([200, r.json().id, "Datenblatt.pdf"]);
     expect((await warteScan(r.json().id)).scanStatus).toBe("sauber");

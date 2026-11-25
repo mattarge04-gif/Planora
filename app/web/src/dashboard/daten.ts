@@ -83,7 +83,16 @@ function anlagenZeile(welt: Welt, beschreibung: Beschreibung, katalog: KatalogEi
 }
 /** Eine Tabellenzeile je WeltSymbol; dessen echter Schlüssel ist der Auswahlweg. */
 export function anlagenZeilen(welt: Welt, beschreibung: Beschreibung, katalog: KatalogEintrag[]): AnlagenZeile[] {
-  return welt.symbole.map((s) => anlagenZeile(welt, beschreibung, katalog, s, panelDaten(welt, beschreibung, katalog, s.schluessel)!));
+  const zeilen = welt.symbole.map((s) => anlagenZeile(welt, beschreibung, katalog, s, panelDaten(welt, beschreibung, katalog, s.schluessel)!));
+  // Gleicher Typ am gleichen Ort mehrfach (z. B. zwei Pumpen in der Zentrale): nummerieren wie in der Bauteilwahl (D5).
+  const art = (z: AnlagenZeile) => `${z.katalogId}|${z.herstellerTyp ?? ""}|${z.standort}`;
+  const gesamt = new Map<string, number>(), nr = new Map<string, number>();
+  for (const z of zeilen) gesamt.set(art(z), (gesamt.get(art(z)) ?? 0) + 1);
+  return zeilen.map((z) => {
+    if (gesamt.get(art(z))! < 2) return z;
+    nr.set(art(z), (nr.get(art(z)) ?? 0) + 1);
+    return { ...z, standort: `${z.standort}, Nr. ${nr.get(art(z))}` };
+  });
 }
 
 export interface ObjektKarte extends AnlagenZeile {

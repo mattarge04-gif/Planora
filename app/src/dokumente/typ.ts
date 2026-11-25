@@ -122,4 +122,8 @@ export function erkenneTyp(d: Buffer): Erkannt {
 }
 
 /** Vorbelegung [A]: Bild -> foto, sonst sonstiges. */
-export const startKategorie = (art: Art): Kategorie => (art === "bild" ? "foto" : "sonstiges");
+/** Startkategorie: Bild = Foto; sonst Hinweis aus dem Dateinamen [A] (D8), z. B. "Offerte_Pumpen.pdf" -> offerte; anpassbar in der Ablage. */
+const NAMENS_HINWEIS: [RegExp, Kategorie][] = [[/(^|[^a-zäöü])(offerte|angebot|rechnung)/i, "offerte"], [/datenbl|datasheet/i, "datenblatt"],
+  [/protokoll/i, "protokoll"], [/(^|[^a-zäöü])(plan|grundriss|schema)([^a-zäöü]|$)/i, "plan"]];
+export const startKategorie = (art: Art, name = ""): Kategorie =>
+  art === "bild" ? "foto" : NAMENS_HINWEIS.find(([re]) => re.test(name))?.[1] ?? "sonstiges";

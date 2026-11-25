@@ -92,6 +92,11 @@ describe("Anzeigenamen und Anlagen", () => {
       herstellerTyp: "Zehnder", bauteilIds: ["b-h1"], geschossId: "eg", einheitId: "a", standort: "EG · Büro A", menge: "12", status: "bestaetigt" });
     expect(zeilen.find((z) => z.schluessel === "fd")?.menge).toBe("unbekannt");
   });
+  it("nummeriert gleichen Typ am gleichen Ort (D5)", () => {
+    const h1 = welt.symbole.find((x) => x.schluessel === "h1")!;
+    const w = { ...welt, symbole: [h1, { ...h1, schluessel: "h1b" }] };
+    expect(anlagenZeilen(w, beschreibung, katalog).map((z) => z.standort)).toEqual(["EG · Büro A, Nr. 1", "EG · Büro A, Nr. 2"]);
+  });
   it("zeigt Teilmengen und Hersteller/Typ nach der bestehenden Panel-Regel", () => {
     const w = { ...welt, symbole: [{ ...welt.symbole[2], mengeSumme: 12, mengeUnbekannt: true, typ: "Charleston", status: "vorgeschlagen" as const }] };
     expect(anlagenZeilen(w, beschreibung, katalog)[0]).toMatchObject({ menge: "mind. 12 (teilweise unbekannt)", herstellerTyp: "Zehnder · Charleston", status: "vorgeschlagen" });

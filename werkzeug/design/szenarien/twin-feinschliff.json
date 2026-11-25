@@ -2,7 +2,7 @@
   "beschreibung": "Teilaufgabe 8: direkter Einstieg, ein Tabellen-Tabstopp, T-Rückmeldung, Zoom per Tastatur und Mausrad mit Auswahl, Nahkulisse und Tabellenbeschnitt.",
   "fenster": [[1440, 900], [1920, 1080], [1280, 720]],
   "schritte": [
-    { "klick": "Beispielgebaeude" },
+    { "klick": "Beispielgebäude" },
     { "warte": 7000 },
     { "bild": "einstieg" },
     { "knopf": "Technik", "exakt": true },

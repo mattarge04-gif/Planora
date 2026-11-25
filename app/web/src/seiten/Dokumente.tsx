@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
-import { ArrowLeft, ArrowUpRight, Check, Eye, FilePlus2, FileText, ScanSearch, Trash2, TriangleAlert, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, Eye, FilePlus2, FileText, ScanSearch, ShieldX, Trash2, TriangleAlert, X } from "lucide-react";
 import { ApiFehler, holeJson } from "../api";
 import { TOKENS } from "../design/tokens";
 import { anzeigeName } from "../dashboard";
@@ -9,7 +9,7 @@ import { alleSicheren, fehlerCode, ladeUebersicht, liesNeu, uebernimm, verwirf }
 import { franken, gruppiere, laeuftNoch, offeneSichere, statusText, zuordnungText } from "../preisdokument/ansicht";
 import type { DokumentZeile, Uebersicht, VorschlagZeile } from "../preisdokument/typen";
 import { ladeAblage, legeAlleAb, loesche, pruefeErneut, setzeKategorie, verknuepfe } from "../dokumente/api";
-import { ablageFehlerText, lesbarFuerPreise, pruefungLaeuft, scanAnzeige, vorpruefen } from "../dokumente/ansicht";
+import { ablageFehlerText, groesseText, lesbarFuerPreise, pruefungLaeuft, scanAnzeige, vorpruefen } from "../dokumente/ansicht";
 import type { AblageAntwort, Kategorie } from "../dokumente/typen";
 import { Marke } from "../ui/Kopfzeile";
 import { useViewer } from "../viewer/useViewer";
@@ -431,8 +431,8 @@ function DokumentEintrag({ d, darf, an, aktiv, zeigen, onZeigen, onOeffnen, onNe
         {zeigen
           ? <button type="button" className="dk-dok-name dk-dok-wahl" onClick={onZeigen} title={d.dateiname}>{d.dateiname}</button>
           : <span className="dk-dok-name" title={d.dateiname}>{d.dateiname}</span>}
-        <span className="dk-dok-meta">{datum(d.hochgeladenAm)}, {d.seiten ? umfang(d) : `${Math.max(1, Math.round(d.groesse / 1024))} kB`}</span>
-        {status && <span className={`dk-status dk-status-${statusKlasse}`}>{(liest || (!sauber && scan.art === "laeuft")) && <i aria-hidden="true" />}{(statusKlasse === "fehler" || statusKlasse === "abgelehnt") && <TriangleAlert size={12} strokeWidth={2.2} aria-hidden="true" />}{status}</span>}
+        <span className="dk-dok-meta">{datum(d.hochgeladenAm)}, {d.seiten ? umfang(d) : groesseText(d.groesse)}</span>
+        {status && <span className={`dk-status dk-status-${statusKlasse}`}>{(liest || (!sauber && scan.art === "laeuft")) && <i aria-hidden="true" />}{statusKlasse === "fehler" && <TriangleAlert size={12} strokeWidth={2.2} aria-hidden="true" />}{statusKlasse === "abgelehnt" && <ShieldX size={12} strokeWidth={2.2} aria-hidden="true" />}{status}</span>}
         {darf && an && lesbarFuerPreise({ ...d, art: "pdf" }) && !liest && d.status === "aus" && <button type="button" className="dk-leise dk-dok-lesen" onClick={onNeuLesen}><ScanSearch size={13} strokeWidth={1.75} aria-hidden="true" />Preise lesen</button>}
       </span>
       <span className="dk-dok-aktionen">

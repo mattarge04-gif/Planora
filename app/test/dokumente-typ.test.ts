@@ -40,6 +40,10 @@ describe("erkenneTyp", () => {
   });
   it("startKategorie", () => {
     expect([startKategorie("bild"), startKategorie("pdf"), startKategorie("office")]).toEqual(["foto", "sonstiges", "sonstiges"]);
+    // D8: Hinweis aus dem Dateinamen (Wortanfang, ohne Gross-/Kleinschreibung)
+    expect([startKategorie("pdf", "o1-Offerte Pumpen.pdf"), startKategorie("pdf", "Angebot_2026.pdf"), startKategorie("pdf", "datenblatt-pumpe.pdf"),
+      startKategorie("office", "Abnahmeprotokoll.docx"), startKategorie("pdf", "Grundriss-Plan EG.pdf"), startKategorie("bild", "offerte.jpg"), startKategorie("pdf", "planung.pdf")])
+      .toEqual(["offerte", "offerte", "datenblatt", "protokoll", "plan", "foto", "sonstiges"]);
   });
   it("ZIP: Eintragslimit und Verzeichnislaenge fail closed", () => {
     const viele = zip([...Array.from({ length: 20_001 }, (_, i) => `f${i}.xml`), "word/vbaProject.bin"]);

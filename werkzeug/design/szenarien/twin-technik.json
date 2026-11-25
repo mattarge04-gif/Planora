@@ -2,7 +2,7 @@
   "beschreibung": "Runde 3: geschlossenes Heizungsnetz mit Speicher, angeschlossenen Abgaben und Hülsen; mittlere Technikansicht und Nahaufnahmen mit freiem unteren Bildfünftel. Ausschnitte aus den r1-Projektionen für alle Fenstergrössen berechnet: 16 Zoomschritte für OG1, EG 16 plus 12 Schritte mit versetztem Ziel; Modelle bleiben oberhalb der Geschossleiste.",
   "fenster": [[1440, 900], [1920, 1080], [1280, 720]],
   "schritte": [
-    {"klick":"Beispielgebaeude"},
+    {"klick":"Beispielgebäude"},
     {"warte":7000},
     {"bild":"uebersicht"},
     {"knopf":"EG 3 Einheiten","exakt":true},

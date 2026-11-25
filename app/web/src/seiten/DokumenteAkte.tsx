@@ -193,7 +193,8 @@ export function AkteDetail({ d, bauteile, katalog, darf, laeuft, lesen, onOeffne
   const nurLoeschen = !sauber && !(d.scanStatus === "scan_fehler" && darf);
   const name = (k: string) => anzeigeName(k, katalog);
   const verknuepft = d.bauteilIds.map((id) => bauteile.find((b) => b.id === id)).filter((b): b is AblageBauteil => !!b);
-  const meta = [endung(d), groesseText(d.groesse), d.seiten ? (d.seiten === 1 ? "1 Seite" : `${d.seiten} Seiten`) : null, `abgelegt ${datum(d.hochgeladenAm)}`].filter(Boolean);
+  // Abgelehnt: keine Seitenzahl (die PDF-Huelle eines Befunds ist kein Dokument, D8).
+  const meta = [endung(d), groesseText(d.groesse), d.seiten && d.scanStatus !== "abgelehnt" ? (d.seiten === 1 ? "1 Seite" : `${d.seiten} Seiten`) : null, `abgelegt ${datum(d.hochgeladenAm)}`].filter(Boolean);
   return (
     <section className="ep-karte dk-detail" aria-labelledby="dk-detail-titel">
       <Vorschau d={d} onOeffnen={onOeffnen} />
@@ -273,7 +274,7 @@ function BauteilWahl({ d, bauteile, katalog, laeuft, onHinzu, onAbbrechen }: {
     <div className="dk-wahl" role="group" aria-label="Bauteile hinzufügen" onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); onAbbrechen(); } }}>
       <div className="dk-wahl-filter">
         <label className="dk-suche"><Search size={13} strokeWidth={1.75} aria-hidden="true" /><span className="ui-sr">Name</span>
-          <input type="search" autoFocus value={suche} placeholder="Name, Ort, Hersteller" onChange={(e) => setSuche(e.target.value)} /></label>
+          <input type="search" autoFocus value={suche} placeholder="Name, Ort, Typ" title="Suche nach Name, Ort, Hersteller oder Typ" onChange={(e) => setSuche(e.target.value)} /></label>
         <label className="dk-auswahl"><span className="ui-sr">Typ</span><select value={typ ?? ""} onChange={(e) => setTyp(e.target.value || null)}>
           <option value="">Alle Typen</option>{typen.map((t) => <option key={t} value={t}>{name(t)}</option>)}</select></label>
         <label className="dk-auswahl"><span className="ui-sr">Geschoss</span><select value={geschoss ?? ""} onChange={(e) => setGeschoss(e.target.value || null)}>

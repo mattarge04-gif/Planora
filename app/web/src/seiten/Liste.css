@@ -1,0 +1,26 @@
+/* Startseite Gebäudeliste: Karten je Liegenschaft im Stil von Erneuerungsplan/Dokumente (--ep-*). */
+.gl-aktionen { display: flex; gap: 8px; }
+.gl-inhalt { display: grid; gap: 16px; max-width: 760px; margin: 0 auto; padding: 16px 24px 40px; animation: ep-ein var(--ep-panel-ms) var(--ep-kurve) both; }
+.gl-karte { padding: 16px 12px 10px; }
+.gl-karte h2 { padding: 0 10px 8px; font-size: 13px; font-weight: 600; color: var(--ep-sekundaer); letter-spacing: 0; }
+.gl-liste { list-style: none; margin: 0; padding: 0; }
+.gl-zeile { display: flex; align-items: center; gap: 4px; border-radius: var(--ep-radius-kachel); transition: background-color var(--ep-hover-ms) var(--ep-kurve); }
+.gl-zeile + .gl-zeile { box-shadow: 0 -1px 0 rgb(31 38 48 / 0.05); }
+.gl-zeile:hover { background: rgb(31 38 48 / 0.035); }
+.gl-wahl {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 10px; border: 0; border-radius: var(--ep-radius-kachel);
+  background: none; font: inherit; color: var(--ep-text); text-align: left; cursor: pointer;
+}
+.gl-icon { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 9px; background: var(--ep-grund); color: var(--ep-sekundaer); }
+.gl-text { display: grid; min-width: 0; }
+.gl-name { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gl-meta { font-size: 12px; color: var(--ep-sekundaer); }
+.gl-pfeil { margin-left: auto; color: var(--ep-sekundaer); opacity: 0; transition: opacity var(--ep-hover-ms) var(--ep-kurve); }
+.gl-zeile:hover .gl-pfeil, .gl-wahl:focus-visible .gl-pfeil { opacity: 1; }
+.gl-bearbeiten {
+  display: grid; place-items: center; width: 32px; height: 32px; margin-right: 6px; padding: 0; border: 0; border-radius: 999px;
+  background: none; color: var(--ep-sekundaer); cursor: pointer; transition: background-color var(--ep-hover-ms) var(--ep-kurve), color var(--ep-hover-ms) var(--ep-kurve);
+}
+.gl-bearbeiten:hover { background: rgb(31 38 48 / 0.06); color: var(--ep-text); }
+.gl-leer { display: flex; align-items: center; gap: 12px; color: var(--ep-sekundaer); }
+@media (prefers-reduced-motion: reduce) { .gl-inhalt { animation: none; } }

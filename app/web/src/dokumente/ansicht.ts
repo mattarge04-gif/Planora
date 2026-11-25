@@ -20,9 +20,9 @@ export function scanAnzeige(d: Pick<AblageZeile, "scanStatus" | "scanGrund">): {
   return d.scanGrund ? { text: "Prüfung fehlgeschlagen", art: "fehler", detail: d.scanGrund } : { text: "Prüfung fehlgeschlagen", art: "fehler" };
 }
 const zahl = new Intl.NumberFormat("de-CH", { maximumFractionDigits: 1 });
+/** Einheitlich in allen Ansichten (D3): mindestens "1 kB", ab 1 MB mit einer Nachkommastelle. */
 export function groesseText(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${zahl.format(Math.round(bytes / 1024))} KB`;
+  if (bytes < 1024 * 1024) return `${zahl.format(Math.max(1, Math.round(bytes / 1024)))} kB`;
   return `${zahl.format(bytes / (1024 * 1024))} MB`;
 }
 export const filtere = (d: AblageZeile[], f: { kategorie: Kategorie | null; nurUnverknuepft: boolean }) =>

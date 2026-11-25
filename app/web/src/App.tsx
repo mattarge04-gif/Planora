@@ -3,7 +3,7 @@ import { holeJson, sendeJson } from "./api";
 import { Login } from "./seiten/Login";
 import { Liste } from "./seiten/Liste";
 import { TOKENS } from "./design/tokens";
-import { pfadFuer, routeAusPfad, type AssistentRoute } from "./assistent/route";
+import { pfadFuer, routeAusPfad, seiteAusPfad, seitenPfad, type AssistentRoute } from "./assistent/route";
 
 const Twin = lazy(() => import("./seiten/Twin").then((modul) => ({ default: modul.Twin })));
 const Erneuerungsplan = lazy(() => import("./seiten/Erneuerungsplan").then((modul) => ({ default: modul.Erneuerungsplan })));
@@ -17,15 +17,23 @@ type Zustand =
   | { art: "dokumente"; gebaeudeId: string; name: string; bauteilId?: string; herkunft: "twin" | "plan"; ansicht?: "alle" | "preise" }
   | { art: "assistent"; route: AssistentRoute };
 
-/** Adresszeile nachführen (nur der Assistent hat eigene Pfade; übrige Ansichten bleiben auf "/"). */
+/** Adresszeile nachführen (Assistent und Gebäudeseiten haben eigene Pfade, die Liste "/"). */
 function adresse(pfad: string, ersetzen = false) {
   if (window.location.pathname === pfad) return;
   if (ersetzen) window.history.replaceState(null, "", pfad); else window.history.pushState(null, "", pfad);
 }
-const ausAdresse = (): Zustand => {
+const pfadVon = (z: Zustand) => z.art === "assistent" ? pfadFuer(z.route)
+  : z.art === "twin" || z.art === "plan" || z.art === "dokumente" ? seitenPfad({ art: z.art, gebaeudeId: z.gebaeudeId }) : "/";
+/** Zustand aus der Adresse; Gebäudeseiten holen den Namen aus der Gebäudeliste (unbekannt oder ohne Zugriff -> Liste). */
+async function ausAdresse(): Promise<Zustand> {
   const r = routeAusPfad(window.location.pathname);
-  return r ? { art: "assistent", route: r } : { art: "liste" };
-};
+  if (r) return { art: "assistent", route: r };
+  const s = seiteAusPfad(window.location.pathname);
+  if (!s) return { art: "liste" };
+  const g = (await holeJson<{ id: string; name: string }[]>("/api/struktur/gebaeude").catch(() => [])).find((x) => x.id === s.gebaeudeId);
+  if (!g) return { art: "liste" };
+  return s.art === "dokumente" ? { art: "dokumente", gebaeudeId: g.id, name: g.name, herkunft: "twin" } : { art: s.art, gebaeudeId: g.id, name: g.name };
+}
 
 const ladeStil = { position: "fixed", inset: 0, display: "grid", placeItems: "center", background: TOKENS.farbe.grund,
   color: TOKENS.farbe.textSekundaer, fontFamily: TOKENS.typografie.familie, fontSize: TOKENS.typografie.groessePx.text } as const;
@@ -33,12 +41,12 @@ const ladeStil = { position: "fixed", inset: 0, display: "grid", placeItems: "ce
 export function App() {
   const [zustand, setZustandRoh] = useState<Zustand>({ art: "laden" });
   const setZustand = useCallback((z: Zustand) => {
-    if (z.art !== "login") adresse(z.art === "assistent" ? pfadFuer(z.route) : "/");
+    if (z.art !== "login") adresse(pfadVon(z));
     setZustandRoh(z);
   }, []);
   useEffect(() => {
-    holeJson("/api/ich").then(() => setZustandRoh(ausAdresse()), () => setZustandRoh({ art: "login" }));
-    const zurueck = () => setZustandRoh((z) => (z.art === "login" || z.art === "laden" ? z : ausAdresse()));
+    holeJson("/api/ich").then(() => ausAdresse().then(setZustandRoh), () => setZustandRoh({ art: "login" }));
+    const zurueck = () => void ausAdresse().then((neu) => setZustandRoh((z) => (z.art === "login" || z.art === "laden" ? z : neu)));
     window.addEventListener("popstate", zurueck);
     return () => window.removeEventListener("popstate", zurueck);
   }, []);
@@ -47,7 +55,7 @@ export function App() {
     try { await sendeJson("/api/auth/sign-out", {}); } finally { setZustand({ art: "login" }); }
   };
   if (zustand.art === "laden") return <p className="status">Laden …</p>;
-  if (zustand.art === "login") return <Login onAngemeldet={() => setZustandRoh(ausAdresse())} />;
+  if (zustand.art === "login") return <Login onAngemeldet={() => void ausAdresse().then(setZustandRoh)} />;
   if (zustand.art === "twin") return <Suspense fallback={<div role="status" style={ladeStil}>Digital Twin wird geladen …</div>}>
     <Twin gebaeudeId={zustand.gebaeudeId} name={zustand.name}
     onGebaeude={(g) => setZustand({ art: "twin", gebaeudeId: g.id, name: g.name })}
@@ -70,16 +78,7 @@ export function App() {
       onAngelegt={(id) => adresse(pfadFuer({ art: "bearbeiten", gebaeudeId: id }), true)}
       onFertig={(id, name) => setZustand({ art: "twin", gebaeudeId: id, name })}
       onSchliessen={() => setZustand({ art: "liste" })} onAbgelaufen={abgelaufen} /></Suspense>;
-  return (
-    <div className="rahmen">
-      <header className="kopf">
-        <strong>Planora</strong>
-        <span className="abstand" />
-        <button className="link" onClick={abmelden}>Abmelden</button>
-      </header>
-      <Liste onWahl={(g) => setZustand({ art: "twin", gebaeudeId: g.id, name: g.name })}
-        onBearbeiten={(g) => setZustand({ art: "assistent", route: { art: "bearbeiten", gebaeudeId: g.id } })}
-        onNeu={() => setZustand({ art: "assistent", route: { art: "neu" } })} onAbgelaufen={abgelaufen} />
-    </div>
-  );
+  return <Liste onWahl={(g) => setZustand({ art: "twin", gebaeudeId: g.id, name: g.name })}
+    onBearbeiten={(g) => setZustand({ art: "assistent", route: { art: "bearbeiten", gebaeudeId: g.id } })}
+    onNeu={() => setZustand({ art: "assistent", route: { art: "neu" } })} onAbmelden={() => void abmelden()} onAbgelaufen={abgelaufen} />;
 }

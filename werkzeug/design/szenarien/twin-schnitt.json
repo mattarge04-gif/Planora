@@ -2,7 +2,7 @@
   "beschreibung": "Abnahme 1: geschlossene Übersicht, OG1 mit erhaltenem EG, EG ohne OG, Kameradrehung, Nahaufnahme und reduzierte Darstellung.",
   "fenster": [[1440, 900], [1920, 1080], [1280, 720]],
   "schritte": [
-    { "klick": "Beispielgebaeude" },
+    { "klick": "Beispielgebäude" },
     { "warte": 7000 },
     { "bild": "uebersicht" },
     { "knopf": "OG1 2 Einheiten", "exakt": true },
