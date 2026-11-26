@@ -1,3 +1,4 @@
+import { inflateRawSync } from "node:zlib";
 /** Grenzen und Typen der Ablage (Spec Anlagenakte 2026-11-23 Abschnitt 3/4.2). Typ nur aus Magic Bytes, nie aus Endung. */
 export const MAX_BYTES = 100 * 1024 * 1024; // [A]
 export type Art = "pdf" | "bild" | "office";
@@ -13,7 +14,7 @@ const MAX_ZIP_EINTRAEGE = 20_000;
 const MAX_ZIP_NAME = 1024;
 const MAX_ZIP_NAMEN_BYTES = 4 * 1024 * 1024;
 const MAX_OLE_SEKTOREN = 4096;
-const MIME = {
+export const MIME = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -23,27 +24,48 @@ type Erkannt = { ok: true; typ: Typ } | { ok: false; grund: TypGrund };
 const ja = (art: Art, mime: string): Erkannt => ({ ok: true, typ: { art, mime } });
 const nein = (grund: TypGrund): Erkannt => ({ ok: false, grund });
 
-/** Namen aus dem zentralen Verzeichnis einer ZIP-Datei (nur Kopfdaten, nichts wird entpackt); null, wenn kein gueltiges, vollstaendig lesbares ZIP (fail closed). */
-export function zipNamen(d: Buffer): string[] | null {
+export interface ZipEintrag { name: string; methode: number; komprimiert: number; groesse: number; offset: number }
+
+/** Eintraege aus dem zentralen Verzeichnis (nur Kopfdaten, nichts wird entpackt); null, wenn kein gueltiges, vollstaendig lesbares ZIP (fail closed). */
+export function zipVerzeichnis(d: Buffer): ZipEintrag[] | null {
   if (d.length < 22) return null;
   const min = Math.max(0, d.length - 22 - 0xffff);
   for (let i = d.length - 22; i >= min; i--) {
     if (d.readUInt32LE(i) !== 0x06054b50) continue;
     const anzahl = d.readUInt16LE(i + 10), groesse = d.readUInt32LE(i + 12), start = d.readUInt32LE(i + 16);
     if (anzahl > MAX_ZIP_EINTRAEGE || start + groesse > i) return null; // inkl. zip64-Marker (0xFFFF / 0xFFFFFFFF)
-    const namen: string[] = [];
+    const eintraege: ZipEintrag[] = [];
     let p = start, bytes = 0;
     for (let n = 0; n < anzahl; n++) {
       if (p + 46 > i || d.readUInt32LE(p) !== 0x02014b50) return null;
       const nl = d.readUInt16LE(p + 28), xl = d.readUInt16LE(p + 30), kl = d.readUInt16LE(p + 32);
       bytes += nl;
       if (nl > MAX_ZIP_NAME || bytes > MAX_ZIP_NAMEN_BYTES || p + 46 + nl > i) return null;
-      namen.push(d.subarray(p + 46, p + 46 + nl).toString("utf8"));
+      eintraege.push({ name: d.subarray(p + 46, p + 46 + nl).toString("utf8"), methode: d.readUInt16LE(p + 10),
+        komprimiert: d.readUInt32LE(p + 20), groesse: d.readUInt32LE(p + 24), offset: d.readUInt32LE(p + 42) });
       p += 46 + nl + xl + kl;
     }
-    return p === start + groesse ? namen : null; // Verzeichnis muss genau die angegebene Laenge haben
+    return p === start + groesse ? eintraege : null; // Verzeichnis muss genau die angegebene Laenge haben
   }
   return null;
+}
+
+/** Namen aus dem zentralen Verzeichnis (Typpruefung); null wie zipVerzeichnis. */
+export const zipNamen = (d: Buffer): string[] | null => zipVerzeichnis(d)?.map((e) => e.name) ?? null;
+
+/** Inhalt eines Eintrags (gespeichert oder deflate), hoechstens `max` Bytes; null bei Formfehler, anderer Methode oder Ueberschreitung (fail closed). */
+export function zipLies(d: Buffer, e: ZipEintrag, max: number): Buffer | null {
+  if (e.groesse > max || e.offset + 30 > d.length || d.readUInt32LE(e.offset) !== 0x04034b50) return null;
+  const start = e.offset + 30 + d.readUInt16LE(e.offset + 26) + d.readUInt16LE(e.offset + 28);
+  if (start + e.komprimiert > d.length) return null;
+  const roh = d.subarray(start, start + e.komprimiert);
+  if (e.methode === 0) return e.komprimiert === e.groesse ? Buffer.from(roh) : null;
+  if (e.methode !== 8) return null;
+  try {
+    // maxOutputLength = angegebene Groesse (+1, um Ueberlaenge zu erkennen): eine Zip-Bombe bricht beim Entpacken ab
+    const x = inflateRawSync(roh, { maxOutputLength: e.groesse + 1 });
+    return x.length === e.groesse ? x : null;
+  } catch { return null; }
 }
 
 function ooxml(d: Buffer): Erkannt {

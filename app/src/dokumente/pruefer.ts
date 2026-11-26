@@ -29,7 +29,7 @@ export async function raeumeAbgelehnteAuf(pool: pg.Pool, quarantaene: Ablage, ta
   return r.length;
 }
 
-export function erzeugePruefer(pool: pg.Pool, ablage: Ablage, quarantaene: Ablage, scanner: VirenScanner, o: { gleichzeitig?: number } = {}): Pruefer {
+export function erzeugePruefer(pool: pg.Pool, ablage: Ablage, quarantaene: Ablage, scanner: VirenScanner, o: { gleichzeitig?: number; nachSauber?: (id: string) => void } = {}): Pruefer {
   const max = o.gleichzeitig ?? 2;
   const warteschlange: string[] = [];
   const eingereiht = new Set<string>();
@@ -75,7 +75,7 @@ export function erzeugePruefer(pool: pg.Pool, ablage: Ablage, quarantaene: Ablag
       } else if (s !== "sauber") await gibReferenzFrei(c, gespeichert.schluessel, objekt);
     });
     if (gespeichert.sha256 !== d.sha256) await setzeFehler(id);
-    if (uebernommen) await raeumeQuarantaeneKopie(pool, quarantaene, d.schluessel);
+    if (uebernommen) { await raeumeQuarantaeneKopie(pool, quarantaene, d.schluessel); o.nachSauber?.(id); } // Suche: Text auslesen
   }
 
   function verfolge(id: string) {

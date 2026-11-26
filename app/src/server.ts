@@ -15,6 +15,7 @@ import { join } from "node:path";
 import { registriereDokumentRouten } from "./dokumente/routen.js";
 import { registriereBestandRouten } from "./bestand/routen.js";
 import { erzeugePruefer, raeumeAbgelehnteAuf } from "./dokumente/pruefer.js";
+import { erzeugeIndexierer } from "./suche/indexierer.js";
 import { clamdScanner } from "./dokumente/clamd.js";
 import { scannerKonfig, type VirenScanner } from "./dokumente/scanner.js";
 import { registrierePreisdokumentRouten } from "./preisdokument/routen.js";
@@ -111,21 +112,25 @@ export async function baueServer(o: ServerOptionen) {
   const scanner: VirenScanner = o.virenScanner ?? (clamd ? clamdScanner(clamd)
     : hintergrund ? (() => { throw new Error("PLANORA_CLAMD_HOST fehlt: Virenpruefung ist Pflicht"); })()
       : { pruefe: () => Promise.reject(new Error("Virenpruefung nicht konfiguriert")) });
-  const pruefer = erzeugePruefer(o.pool, app.ablage, quarantaene, scanner);
+  // Suche (E48): nach sauberem Scan Text auslesen; Start und Nachholtakt holen offene Dokumente nach.
+  const indexierer = erzeugeIndexierer(o.pool, app.ablage);
+  const pruefer = erzeugePruefer(o.pool, app.ablage, quarantaene, scanner, { nachSauber: (id) => indexierer.starte(id) });
   const bereinige = () => void raeumeAbgelehnteAuf(o.pool, quarantaene).catch(() => {});
+  const nachholen = () => { void pruefer.reiheNeuEin().catch(() => {}); void indexierer.reiheNeuEin().catch(() => {}); };
   if (hintergrund) {
-    void pruefer.reiheNeuEin().catch(() => {}); // DB evtl. nicht erreichbar (Wartung): Start nicht blockieren
+    nachholen(); // DB evtl. nicht erreichbar (Wartung): Start nicht blockieren
     bereinige();
   }
   const bereinigungsTakt = hintergrund ? setInterval(bereinige, 24 * 60 * 60 * 1000) : undefined;
   bereinigungsTakt?.unref();
-  // Holt Pruefungen nach, wenn die DB beim Start fehlte (laufende ueberspringt der Pruefer selbst).
-  const nachholTakt = hintergrund ? setInterval(() => void pruefer.reiheNeuEin().catch(() => {}), 5 * 60 * 1000) : undefined;
+  // Holt Pruefungen und Auslesen nach, wenn die DB beim Start fehlte oder die Suche spaeter eingeschaltet wurde (laufende ueberspringen beide selbst).
+  const nachholTakt = hintergrund ? setInterval(nachholen, 5 * 60 * 1000) : undefined;
   nachholTakt?.unref();
   app.addHook("onClose", async () => {
     if (bereinigungsTakt) clearInterval(bereinigungsTakt);
     if (nachholTakt) clearInterval(nachholTakt);
-    await Promise.race([pruefer.warteLeer(), new Promise((r) => setTimeout(r, 5000).unref())]);
+    // nacheinander: ein Pruefer-Job kann beim Abschluss noch ein Auslesen starten
+    await Promise.race([pruefer.warteLeer().then(() => indexierer.warteLeer()), new Promise((r) => setTimeout(r, 5000).unref())]);
   });
   registriereDokumentRouten(app, o.pool, { pruefer, quarantaene }); // /api/dokumente/… (Kernmodul, immer aktiv)
   registriereBestandRouten(app, o.pool); // Datenblatt je Bauteil (Bibliothek, E46)

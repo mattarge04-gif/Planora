@@ -1,16 +1,19 @@
+import { deflateRawSync } from "node:zlib";
 // Testdateien als Buffer (nie auf Platte). Inhalt per `zusatz` eindeutig machen: gleicher sha256 im Gebaeude = Duplikat.
 const NL = String.fromCharCode(10);
 export const pdf = (seiten = 1, zusatz = "") => Buffer.from(["%PDF-1.7",
   ...Array.from({ length: seiten }, (_, i) => `${i + 3} 0 obj << /Type /Page /Parent 2 0 R >> endobj`),
   `2 0 obj << /Type /Pages /Count ${seiten} >> endobj`, zusatz + "%%EOF"].join(NL));
-/** Minimales ZIP (nur gespeicherte Eintraege, CRC 0) mit den angegebenen Namen; reicht fuer die Typerkennung. */
-export function zip(namen: string[]): Buffer {
+/** Minimales ZIP (CRC 0) mit den angegebenen Namen; Inhalt aus `inhalte` (sonst "x"), optional deflate-komprimiert. */
+export function zip(namen: string[], inhalte: Record<string, string> = {}, deflate = false): Buffer {
   const lokal: Buffer[] = [], zentral: Buffer[] = [];
   let offset = 0;
   for (const n of namen) {
-    const name = Buffer.from(n, "utf8"), inhalt = Buffer.from("x");
-    const h = Buffer.alloc(30); h.writeUInt32LE(0x04034b50, 0); h.writeUInt16LE(20, 4); h.writeUInt32LE(inhalt.length, 18); h.writeUInt32LE(inhalt.length, 22); h.writeUInt16LE(name.length, 26);
-    const z = Buffer.alloc(46); z.writeUInt32LE(0x02014b50, 0); z.writeUInt16LE(20, 4); z.writeUInt16LE(20, 6); z.writeUInt32LE(inhalt.length, 20); z.writeUInt32LE(inhalt.length, 24); z.writeUInt16LE(name.length, 28); z.writeUInt32LE(offset, 42);
+    const name = Buffer.from(n, "utf8"), roh = Buffer.from(inhalte[n] ?? "x", "utf8"), inhalt = deflate ? deflateRawSync(roh) : roh;
+    const h = Buffer.alloc(30); h.writeUInt32LE(0x04034b50, 0); h.writeUInt16LE(20, 4); h.writeUInt16LE(deflate ? 8 : 0, 8);
+    h.writeUInt32LE(inhalt.length, 18); h.writeUInt32LE(roh.length, 22); h.writeUInt16LE(name.length, 26);
+    const z = Buffer.alloc(46); z.writeUInt32LE(0x02014b50, 0); z.writeUInt16LE(20, 4); z.writeUInt16LE(20, 6); z.writeUInt16LE(deflate ? 8 : 0, 10);
+    z.writeUInt32LE(inhalt.length, 20); z.writeUInt32LE(roh.length, 24); z.writeUInt16LE(name.length, 28); z.writeUInt32LE(offset, 42);
     lokal.push(h, name, inhalt); zentral.push(z, name);
     offset += 30 + name.length + inhalt.length;
   }
@@ -48,3 +51,34 @@ export const png = (zusatz = "") => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e
 export const jpg = () => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from("JFIF")]);
 export const heic = (marke = "heic") => Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from("ftyp" + marke + "0000mif1heic")]);
 export const exe = () => Buffer.concat([Buffer.from("MZ"), Buffer.alloc(64)]);
+/** Gueltiges PDF mit Text (Helvetica, WinAnsi: Umlaute und ° gehen, keine Zeichen ausserhalb Latin-1); "\n" = neue Zeile. */
+export function pdfText(seiten: string[], zusatz = ""): Buffer {
+  const esc = (s: string) => s.replace(/[\\()]/g, (m) => "\\" + m);
+  const objekte = ["<< /Type /Catalog /Pages 2 0 R >>",
+    `<< /Type /Pages /Count ${seiten.length} /Kids [${seiten.map((_, i) => `${4 + 2 * i} 0 R`).join(" ")}] >>`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"];
+  seiten.forEach((t, i) => {
+    const inhalt = t.split("\n").map((z, k) => `BT /F1 11 Tf 56 ${780 - 16 * k} Td (${esc(z)}) Tj ET`).join("\n");
+    objekte.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + 2 * i} 0 R >>`,
+      `<< /Length ${Buffer.byteLength(inhalt, "latin1")} >>\nstream\n${inhalt}\nendstream`);
+  });
+  let s = "%PDF-1.7\n"; const lage: number[] = [];
+  objekte.forEach((o, i) => { lage.push(Buffer.byteLength(s, "latin1")); s += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const xref = Buffer.byteLength(s, "latin1");
+  s += `xref\n0 ${objekte.length + 1}\n0000000000 65535 f \n${lage.map((o) => `${String(o).padStart(10, "0")} 00000 n \n`).join("")}`
+    + `trailer\n<< /Size ${objekte.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%${zusatz}\n%%EOF`;
+  return Buffer.from(s, "latin1");
+}
+const xml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+/** docx mit einem Absatz je Eintrag (deflate wie Word). */
+export const docxText = (absaetze: string[], zusatz = "") => zip(["[Content_Types].xml", "_rels/.rels", "word/document.xml"], { "word/document.xml":
+  `<?xml version="1.0"?><w:document xmlns:w="w"><w:body>${absaetze.map((a) => `<w:p><w:r><w:t xml:space="preserve">${xml(a)}</w:t></w:r></w:p>`).join("")}</w:body></w:document><!--${zusatz}-->` }, true);
+/** xlsx: blaetter[b][zeile][spalte]; Zahl -> <v>, "#n" -> geteilte Zeichenkette n, sonst Inline-Text. Blattnamen in xl/workbook.xml (Standard "Blatt n"). */
+export const xlsxText = (blaetter: string[][][], geteilt: string[] = [], namen = blaetter.map((_, i) => `Blatt ${i + 1}`)) => zip(
+  ["[Content_Types].xml", "_rels/.rels", "xl/workbook.xml", "xl/_rels/workbook.xml.rels", "xl/sharedStrings.xml", ...blaetter.map((_, i) => `xl/worksheets/sheet${i + 1}.xml`)], {
+    "xl/workbook.xml": `<workbook xmlns:r="r"><sheets>${namen.map((n, i) => `<sheet name="${xml(n)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("")}</sheets></workbook>`,
+    "xl/_rels/workbook.xml.rels": `<Relationships>${blaetter.map((_, i) => `<Relationship Id="rId${i + 1}" Type="ws" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}</Relationships>`,
+    "xl/sharedStrings.xml": `<sst>${geteilt.map((s) => `<si><t>${xml(s)}</t></si>`).join("")}</sst>`,
+    ...Object.fromEntries(blaetter.map((zeilen, i) => [`xl/worksheets/sheet${i + 1}.xml`, `<worksheet><sheetData>${zeilen.map((z) => `<row>${z.map((c) =>
+      /^#\d+$/.test(c) ? `<c t="s"><v>${c.slice(1)}</v></c>` : /^-?\d+(\.\d+)?$/.test(c) ? `<c><v>${c}</v></c>` : `<c t="inlineStr"><is><t>${xml(c)}</t></is></c>`).join("")}</row>`).join("")}</sheetData></worksheet>`])),
+  }, true);
