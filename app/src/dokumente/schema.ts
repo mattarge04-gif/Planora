@@ -10,3 +10,6 @@ export const BAUTEILE_SCHEMA = { type: "object", additionalProperties: false, re
   properties: { bauteilIds: { type: "array", maxItems: 500, items: UUID } } } as const;
 export const KATEGORIE_SCHEMA = { type: "object", additionalProperties: false, required: ["kategorie"],
   properties: { kategorie: { type: "string", enum: [...KATEGORIEN] } } } as const;
+const UUID_ODER_NULL = { type: ["string", "null"], pattern: UUID.pattern } as const;
+export const ORT_SCHEMA = { type: "object", additionalProperties: false, required: ["geschossId", "einheitId", "allgemein"],
+  properties: { geschossId: UUID_ODER_NULL, einheitId: UUID_ODER_NULL, allgemein: { type: "boolean" } } } as const;

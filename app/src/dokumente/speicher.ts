@@ -98,3 +98,41 @@ export async function ergaenzeVerknuepfungen(c: Q, dokumentId: string, ids: stri
     throw e;
   }
 }
+
+/** Geschosse und Einheiten fuer die Zuordnung (Ablage, Vorschlag). */
+export async function ladeAblageOrte(c: Q, gebaeudeId: string): Promise<{ geschosse: AblageGeschoss[]; einheiten: AblageEinheit[] }> {
+  const geschosse = (await c.query("select id, code from geschoss where gebaeude_id=$1 order by reihenfolge", [gebaeudeId])).rows as AblageGeschoss[];
+  const einheiten = (await c.query(`select e.id, e.geschoss_id, e.bezeichnung from einheit e join geschoss g on g.id=e.geschoss_id
+     where g.gebaeude_id=$1 order by g.reihenfolge, e.reihenfolge`, [gebaeudeId])).rows.map((r) => ({ id: r.id, geschossId: r.geschoss_id, bezeichnung: r.bezeichnung }));
+  return { geschosse, einheiten };
+}
+
+const ortFehler = (code: "ort_unbekannt" | "ort_mehrfach", meldung: string) => new FachFehler([{ pfad: "ort", code, meldung }], 400);
+
+/** Hoechstens eines von Geschoss, Einheit, allgemein; Geschoss und Einheit muessen zum Gebaeude gehoeren (sonst 400). */
+export async function pruefeOrt(c: Q, gebaeudeId: string, o: Ort): Promise<Ort> {
+  if (Number(!!o.geschossId) + Number(!!o.einheitId) + Number(o.allgemein) > 1) throw ortFehler("ort_mehrfach", "Nur eine Zuordnung: Geschoss, Einheit oder allgemein");
+  const g = o.geschossId?.toLowerCase() ?? null, e = o.einheitId?.toLowerCase() ?? null;
+  if (g && !(await c.query("select 1 from geschoss where id=$1 and gebaeude_id=$2", [g, gebaeudeId])).rowCount)
+    throw ortFehler("ort_unbekannt", "Geschoss gehört nicht zu diesem Gebäude");
+  if (e && !(await c.query("select 1 from einheit e join geschoss g on g.id=e.geschoss_id where e.id=$1 and g.gebaeude_id=$2", [e, gebaeudeId])).rowCount)
+    throw ortFehler("ort_unbekannt", "Einheit gehört nicht zu diesem Gebäude");
+  return { geschossId: g, einheitId: e, allgemein: o.allgemein };
+}
+
+const mitOrtFk = async (f: () => Promise<unknown>) => {
+  try { await f(); } catch (e) {
+    if ((e as { code?: string }).code === "23503") throw ortFehler("ort_unbekannt", "Geschoss oder Einheit wurde inzwischen gelöscht");
+    throw e;
+  }
+};
+/** Setzt den Ort (bereits geprueft). */
+export const setzeOrt = (c: Q, dokumentId: string, o: Ort) => mitOrtFk(() =>
+  c.query("update dokument set ort_geschoss_id=$2, ort_einheit_id=$3, allgemein=$4 where id=$1", [dokumentId, o.geschossId, o.einheitId, o.allgemein]));
+/** Duplikat-Upload: Ort nur ergaenzen, wenn das Dokument noch keinen hat; nie ueberschreiben, nie bei abgelehnt. */
+export async function ergaenzeOrt(c: Q, dokumentId: string, o: Ort) {
+  if (!o.geschossId && !o.einheitId && !o.allgemein) return;
+  await mitOrtFk(() => c.query(`update dokument set ort_geschoss_id=$2, ort_einheit_id=$3, allgemein=$4
+    where id=$1 and scan_status <> 'abgelehnt' and ort_geschoss_id is null and ort_einheit_id is null and not allgemein`,
+    [dokumentId, o.geschossId, o.einheitId, o.allgemein]));
+}
