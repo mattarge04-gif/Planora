@@ -1,0 +1,9 @@
+{
+  "texte": {
+    "liste": "Digital Twin\nDokumente\nMuster 6 L-Form viele Gruppen\nAlle Dokumente\n7\nPreise prüfen\n0\n\nAbgelegt 7\nKategorie\nAlle Kategorien\nDatenblatt\nPlan\nOfferte\nFoto\nProtokoll\nSonstiges\nNicht verknüpft\n2\n\nDateien hierher ziehen\nPDF, Bilder und Office bis 100 MB\n\nDateien wählen\nName\nKategorie\nAbgelegt\nGrösse\nPrüfung\nRechnung Service unbekannt.pdf\nPDF · nicht verknüpft\nOfferte\n26.11.2026\n1 kB\nabgelehnt\no1-pumpen.pdf\nPDF · nicht verknüpft\nOfferte\n26.11.2026\n50 kB\ngeprüft\nWartungsplan 2025.xlsx\nXLSX · 1 Bauteil\nSonstiges\n26.11.2026\n2 kB\ngeprüft\nTechnikraum Ostwand.png\nPNG · 1 Bauteil\nFoto\n26.11.2026\n10 kB\ngeprüft\nInbetriebnahme Heizung 2024.pdf\nPDF · 1 Bauteil\nProtokoll\n26.11.2026\n2 kB\ngeprüft\nGrundriss UG Technik H-01.pdf\nPDF · 1 Bauteil\nPlan\n26.11.2026\n1 kB\ngeprüft\nDatenblatt Umwälzpumpe 25-60.pdf\nPDF · 2 Bauteile\nDatenblatt\n26.11.2026\n3 kB\ngeprüft\nÖffnen\no1-pumpen.pdf\n\nPDF, 50 kB, 1 Seite, abgelegt 26.11.2026\n\nÖffnen\nHerunterladen\nKategorie\nDatenblatt\nPlan\nOfferte\nFoto\nProtokoll\nSonstiges\nVerknüpfte Bauteile 0\nHinzufügen\n\nNoch mit keinem Bauteil verknüpft. Verknüpfte Unterlagen erscheinen in der Anlagenkarte.",
+    "preise": "Digital Twin\nDokumente\nMuster 6 L-Form viele Gruppen\nAlle Dokumente\n7\nPreise prüfen\n0\n\nPDF-Dokumente 5\n\nOfferte hierher ziehen\nPDF, Kategorie Offerte\n\nDatei wählen\nDatenblatt Umwälzpumpe 25-60.pdf\n26.11.2026, 3 Seiten, 3 kB\nGrundriss UG Technik H-01.pdf\n26.11.2026, 1 Seite, 1 kB\nInbetriebnahme Heizung 2024.pdf\n26.11.2026, 2 Seiten, 2 kB\no1-pumpen.pdf\n26.11.2026, 1 Seite, 50 kB\nRechnung Service unbekannt.pdf\n26.11.2026, 1 kB\nDatei abgelehnt (Virenprüfung)\nPreisvorschläge\n\nAutomatisches Auslesen ist nicht eingerichtet. Abgelegte PDFs bleiben beim Gebäude und lassen sich später lesen."
+  },
+  "log": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ]
+}
