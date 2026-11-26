@@ -19,6 +19,15 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 ## 0b. Stand – zuletzt aktualisiert 26.11.2026
 
+### Tagesabschluss 26.11.2026 – Suche T1 fertig, T2 Fix in Arbeit [F]
+
+- Einstieg naechste Sitzung: "weiter" -> diesen Block, dann Ledger `.superpowers/sdd/2026-11-26-suche-und-ablage/progress.md` (lokal; alle Rulings 1–11, Minors). Branch `m2c-interview` am 26.11. auf PO-Auftrag gepusht; kein Merge nach `main`.
+- Suche T1 (`4113a18`, Fix `77e4399`): Migration 019, Ort-Zuordnung, Modul `suche`; Extensions im Superuser-Init/Restore, `pg_restore --no-comments`. `test:docker` 38 ok/5 skip. OFFEN (Fixrunde 2): `app/test-docker/backup.test.ts:164` legt Extensions nicht an -> `test:docker:b` laufen lassen.
+- Suche T2 (`cbda2bf`): Text auslesen. Review "Needs fixes" (quadratisches Teilen auf Main-Thread, Flate-Bombe sprengt Prozess). Fixrunde 1 (Ruling 10: Kindprozess + RSS-Waechter) als Zwischenstand committet, UNGEPRUEFT -> fertigstellen, re-review, dann T3.
+- E49 Startseite: Ansatz A Modellplatte, Login mit Kundennamen, keine Adresse; `docs/design/entscheide/2026-11-26-startseite.md`, [A] 3.75 PT nach der Suche. Fahrplan jetzt ca. 27 PT (knapp fuer 3–4 Wochen; zuerst KI-Antwort der Suche kuerzen).
+- Regel PO 26.11.: jeder Implementer-Bericht bestaetigt "ponytail gelesen: ja" + Beispiel.
+- Kritik r1 Fixwelle (`docs/design/kritiken/2026-11-26-fixwelle-akte/r1/`): Restpunkte D4-Rest, D5 im Erneuerungsplan, Demodaten (Magna-Datenblatt, Hersteller), 1280-Tabelle -> mit Startseite (Fahrplan 5b).
+
 ### Siemens-Demo: Anlagenakte fertig, Suche + Ablage in Umsetzung (26.11.2026) [F]
 
 - E47: Demo bei Siemens in 3–4 Wochen auf Online-Server (nur wenige Tage, als letzter Schritt), Budget da; Kosten einzeln mit PO-OK. Fahrplan `docs/superpowers/plans/2026-11-25-siemens-demo.md` (ca. 23 PT). Massstab PO: nichts darf intern/roh wirken, alles muss funktionieren.

@@ -3,6 +3,13 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-26 (spaet) – Suche T1/T2, Startseite entschieden
+
+- [F] Suche T1 fertig + Fix: trusted extensions legen Mitgliedsobjekte unter `postgres` an; Restore als `planora_migrator` scheiterte an `COMMENT ON EXTENSION` -> Extensions im Superuser-Init/Host-Restore, `pg_restore --no-comments`. Lokal unsichtbar, erst `test:docker` fand es.
+- [F] Suche T2 Review: `resourceLimits` eines worker_threads begrenzt nur den V8-Heap, nicht ArrayBuffer (pdf.js-Flate-Bombe) -> Kindprozess mit RSS-Waechter (Ruling 10, Zwischenstand ungeprueft).
+- [F] E49 Startseite Modellplatte. PO-Regel: ponytail-Bestaetigung je Bericht.
+- Offen: T1 Fixrunde 2 (`backup.test.ts:164`, `test:docker:b`), T2 Fix fertig + Re-Review, T3–T10, Startseite.
+
 ## 2026-11-25/26 – Siemens-Demo (E47), Anlagenakte fertig, Suche + Ablage geplant
 
 ### 1. Was gemacht wurde
