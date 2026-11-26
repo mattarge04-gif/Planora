@@ -67,6 +67,8 @@ try {
   await schalteEin(pool, "lebensdauer", STUFE, randomUUID());
   // Demo E44/E45: Preis aus Dokument; liest nur mit OPENAI_API_KEY.
   await schalteEin(pool, "preisdokument", STUFE, randomUUID());
+  // Demo E48: Schlaue Suche; Antworten und Sinnsuche nur mit OPENAI_API_KEY, Wortsuche immer.
+  await schalteEin(pool, "suche", STUFE, randomUUID());
   // PO 17.11.: standardmaessig nur ein leeres Testgebaeude; Beispiel und Muster (Design-Szenarien) mit PLANORA_MUSTER=1.
   if (process.env.PLANORA_MUSTER === "1") {
     await beispielAnlegen(pool);

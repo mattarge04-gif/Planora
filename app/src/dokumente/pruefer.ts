@@ -55,7 +55,8 @@ export function erzeugePruefer(pool: pg.Pool, ablage: Ablage, quarantaene: Ablag
     if (erg.ergebnis === "befund") {
       const signatur = bereinigeSignatur(erg.signatur);
       await inTx(pool, "begin", async (c) => {
-        const r = await c.query("update dokument set scan_status='abgelehnt', scan_grund=$2, gescannt_am=now() where id=$1 and scan_status='quarantaene' returning id", [id, signatur]);
+        const r = await c.query(`update dokument set scan_status='abgelehnt', scan_grund=$2, gescannt_am=now(), ort_geschoss_id=null, ort_einheit_id=null, allgemein=false
+          where id=$1 and scan_status='quarantaene' returning id`, [id, signatur]);
         if (!r.rowCount) return;
         await c.query("delete from dokument_bauteil where dokument_id=$1", [id]);
         await auditEreignis(c, null, "dokument.abgelehnt", { dokumentId: id, gebaeudeId: d.gebaeude_id, signatur });

@@ -9,8 +9,8 @@ import { auditEreignis } from "../audit/audit.js";
 import { inTx, mitClient, verweigert, zugriff, zugriffDokument } from "../rechte/zugriff.js";
 import { MAX_BYTES, erkenneTyp, startKategorie, type Kategorie } from "./typ.js";
 import { zaehleSeiten } from "./pdf.js";
-import { ABLEGEN_QUERY, BAUTEILE_SCHEMA, DATEI_QUERY, KATEGORIE_SCHEMA } from "./schema.js";
-import { ergaenzeVerknuepfungen, ladeAblage, ladeAblageBauteile, loescheDokument, pruefeBauteile, setzeVerknuepfungen } from "./speicher.js";
+import { ABLEGEN_QUERY, BAUTEILE_SCHEMA, DATEI_QUERY, KATEGORIE_SCHEMA, ORT_SCHEMA } from "./schema.js";
+import { KEIN_ORT, ergaenzeOrt, ergaenzeVerknuepfungen, ladeAblage, ladeAblageBauteile, ladeAblageOrte, loescheDokument, pruefeBauteile, pruefeOrt, setzeOrt, setzeVerknuepfungen, type Ort } from "./speicher.js";
 import { raeumeQuarantaeneKopie, type Pruefer } from "./pruefer.js";
 
 /** Entfernt Steuer- und Bidi-Zeichen (Anzeige-Taeuschung, z. B. U+202E) und begrenzt auf 255 Zeichen. */
@@ -25,10 +25,10 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
     return r ? zeile(gebaeudeId, r.id) : null;
   };
 
-  // Duplikat: uebergebene Bauteile werden zusaetzlich verknuepft (Vereinigung), nie entfernt. Bei Befund/abgelehnt keine neue Verknuepfung.
-  const ergaenzeUndLade = async (gebaeudeId: string, z: { id: string }, ids: string[]) => {
-    if (!ids.length) return z;
-    await inTx(pool, "begin", (c) => ergaenzeVerknuepfungen(c, z.id, ids)); // sperrt die Zeile, prueft abgelehnt atomar
+  // Duplikat: Bauteile werden zusaetzlich verknuepft (Vereinigung), der Ort nur ergaenzt (nie ueberschrieben). Bei abgelehnt nichts Neues.
+  const ergaenzeUndLade = async (gebaeudeId: string, z: { id: string }, ids: string[], ort: Ort = KEIN_ORT) => {
+    if (!ids.length && !ort.geschossId && !ort.einheitId && !ort.allgemein) return z;
+    await inTx(pool, "begin", async (c) => { await ergaenzeVerknuepfungen(c, z.id, ids); await ergaenzeOrt(c, z.id, ort); }); // sperrt die Zeile, prueft abgelehnt atomar
     return zeile(gebaeudeId, z.id);
   };
   const fachlich = async <T>(reply: FastifyReply, f: () => Promise<T>) => {
@@ -39,7 +39,7 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
     // Rohe Bytes in einem Request (ADR 0016 Nachtrag, kein Multipart). Typ kommt aus den Magic Bytes, nie aus Content-Type oder Endung.
     scope.addContentTypeParser("application/octet-stream", { parseAs: "buffer", bodyLimit: MAX_BYTES + 1024 }, (_req, body, done) => done(null, body));
 
-    scope.post<{ Params: { id: string }; Querystring: { kategorie?: Kategorie; bauteile?: string } }>("/api/dokumente/gebaeude/:id", { schema: { params: ID_PARAMS, querystring: ABLEGEN_QUERY } }, async (req, reply) => {
+    scope.post<{ Params: { id: string }; Querystring: { kategorie?: Kategorie; bauteile?: string; geschoss?: string; einheit?: string; allgemein?: "1" } }>("/api/dokumente/gebaeude/:id", { schema: { params: ID_PARAMS, querystring: ABLEGEN_QUERY } }, async (req, reply) => {
       const k = req.kontext!;
       const z = await mitClient(pool, (c) => zugriff(c, k.benutzerId, req.params.id, true));
       if (z !== 200) return verweigert(reply, z);
@@ -52,9 +52,13 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
       let name = "Dokument";
       try { name = bereinigeDateiname(decodeURIComponent(String(req.headers["x-dateiname"] ?? ""))) || name; } catch { /* Standardname */ }
       // Spec 4.1: ?bauteile verknuepft sofort (auch in Quarantaene); bei Befund entfernt der Pruefer die Verknuepfungen.
-      let verknuepfen: string[] = [];
-      try { verknuepfen = await mitClient(pool, (c) => pruefeBauteile(c, req.params.id, req.query.bauteile ? req.query.bauteile.split(",") : [])); }
-      catch (e) { if (e instanceof FachFehler) return reply.code(e.status).send({ fehler: e.fehler }); throw e; }
+      let verknuepfen: string[] = []; let ort: Ort = KEIN_ORT;
+      try {
+        ({ verknuepfen, ort } = await mitClient(pool, async (c) => ({
+          verknuepfen: await pruefeBauteile(c, req.params.id, req.query.bauteile ? req.query.bauteile.split(",") : []),
+          ort: await pruefeOrt(c, req.params.id, { geschossId: req.query.geschoss ?? null, einheitId: req.query.einheit ?? null, allgemein: req.query.allgemein === "1" }),
+        })));
+      } catch (e) { if (e instanceof FachFehler) return reply.code(e.status).send({ fehler: e.fehler }); throw e; }
       const sha = createHash("sha256").update(daten).digest("hex");
       const vorhanden = await bestehendes(req.params.id, sha);
       if (vorhanden) {
@@ -65,12 +69,12 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
             [vorhanden.id, x.schluessel]);
           if (!neu.rowCount) await raeumeQuarantaeneKopie(pool, o.quarantaene, x.schluessel); // inzwischen sauber, abgelehnt oder geloescht
           return fachlich(reply, async () => {
-            const antwort = await ergaenzeUndLade(req.params.id, (await zeile(req.params.id, vorhanden.id)) ?? vorhanden, verknuepfen);
+            const antwort = await ergaenzeUndLade(req.params.id, (await zeile(req.params.id, vorhanden.id)) ?? vorhanden, verknuepfen, ort);
             if (neu.rowCount) o.pruefer.starte(vorhanden.id); // erst nach dem Laden: gemeldeter Status unabhaengig vom Timing
             return reply.code(200).send(antwort);
           });
         }
-        return fachlich(reply, async () => reply.code(200).send(await ergaenzeUndLade(req.params.id, vorhanden, verknuepfen)));
+        return fachlich(reply, async () => reply.code(200).send(await ergaenzeUndLade(req.params.id, vorhanden, verknuepfen, ort)));
       }
       const id = randomUUID();
       const seiten = t.typ.art === "pdf" ? zaehleSeiten(daten) : null;
@@ -83,13 +87,14 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
             values ($1,$2,$3,$4,$5,$6,$7,$8,$9,'aus',$10,$11,$12,'quarantaene')`,
             [id, req.params.id, g.liegenschaft_id, name, x.schluessel, x.sha256, x.groesse, seiten, k.benutzerId, t.typ.art, t.typ.mime, kategorie]);
           await setzeVerknuepfungen(c, id, verknuepfen);
+          await setzeOrt(c, id, ort);
           await auditEreignis(c, k.auditId, "dokument.abgelegt", { gebaeudeId: req.params.id, dokumentId: id, groesse: x.groesse, art: t.typ.art });
         });
       } catch (e) {
         const dup = await bestehendes(req.params.id, sha);
         if (dup) { // paralleler Upload gleichen Inhalts; Kopie nur behalten, solange ein ungeprueftes Dokument sie braucht (G6)
           await raeumeQuarantaeneKopie(pool, o.quarantaene, x.schluessel);
-          return fachlich(reply, async () => reply.code(200).send(await ergaenzeUndLade(req.params.id, dup, verknuepfen)));
+          return fachlich(reply, async () => reply.code(200).send(await ergaenzeUndLade(req.params.id, dup, verknuepfen, ort)));
         }
         await raeumeQuarantaeneKopie(pool, o.quarantaene, x.schluessel);
         if (e instanceof FachFehler) return reply.code(e.status).send({ fehler: e.fehler }); // z. B. Bauteil zwischen Pruefung und Einfuegen geloescht
@@ -105,7 +110,7 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
       inTx(pool, "begin isolation level repeatable read read only", async (c) => {
         const z = await zugriff(c, req.kontext!.benutzerId, req.params.id, false);
         if (z !== 200) return verweigert(reply, z);
-        return { dokumente: await ladeAblage(c, req.params.id), bauteile: await ladeAblageBauteile(c, req.params.id),
+        return { dokumente: await ladeAblage(c, req.params.id), bauteile: await ladeAblageBauteile(c, req.params.id), ...(await ladeAblageOrte(c, req.params.id)),
           darfAendern: (await zugriff(c, req.kontext!.benutzerId, req.params.id, true)) === 200 };
       }));
 
@@ -169,6 +174,20 @@ export function registriereDokumentRouten(app: FastifyInstance, pool: pg.Pool, o
         });
         return r ?? reply.code(409).send({ fehler: "abgelehnt" });
       });
+
+    scope.put<{ Params: { id: string }; Body: Ort }>("/api/dokumente/:id/ort", { schema: { params: ID_PARAMS, body: ORT_SCHEMA } }, async (req, reply) => {
+      const k = req.kontext!;
+      const z = await mitClient(pool, (c) => zugriffDokument(c, k.benutzerId, req.params.id, true));
+      if (z.code !== 200) return verweigert(reply, z.code as 403 | 404);
+      return fachlich(reply, () => inTx(pool, "begin", async (c) => {
+        const s = (await c.query("select scan_status from dokument where id=$1 for update", [req.params.id])).rows[0];
+        if (!s) throw new FachFehler([{ pfad: "dokument", code: "nicht_gefunden", meldung: "Dokument nicht gefunden" }], 404);
+        if (s.scan_status === "abgelehnt") throw new FachFehler([{ pfad: "dokument", code: "abgelehnt", meldung: "Abgelehnte Dateien lassen sich nicht ändern" }], 409);
+        await setzeOrt(c, req.params.id, await pruefeOrt(c, z.gebaeudeId, req.body));
+        await auditEreignis(c, k.auditId, "dokument.ort", { gebaeudeId: z.gebaeudeId, dokumentId: req.params.id });
+        return (await ladeAblage(c, z.gebaeudeId, req.params.id))[0];
+      }));
+    });
 
     scope.post<{ Params: { id: string } }>("/api/dokumente/:id/erneut-pruefen", { schema: { params: ID_PARAMS } }, async (req, reply) => {
       const k = req.kontext!;

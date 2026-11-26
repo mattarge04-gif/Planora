@@ -18,6 +18,7 @@ import { erzeugePruefer, raeumeAbgelehnteAuf } from "./dokumente/pruefer.js";
 import { clamdScanner } from "./dokumente/clamd.js";
 import { scannerKonfig, type VirenScanner } from "./dokumente/scanner.js";
 import { registrierePreisdokumentRouten } from "./preisdokument/routen.js";
+import { registriereSucheRouten } from "./suche/routen.js";
 import { erzeugeLaeufer, markiereAbgebrochen } from "./preisdokument/laeufer.js";
 import { openaiAdapter } from "./preisdokument/openai.js";
 import type { LeseAdapter } from "./preisdokument/adapter.js";
@@ -140,6 +141,7 @@ export async function baueServer(o: ServerOptionen) {
   // Beim Schliessen laufende Lesungen abwarten (max. 5 s), damit sie nicht auf einen geschlossenen Pool treffen.
   app.addHook("onClose", async () => { await Promise.race([laeufer.warteLeer(), new Promise((r) => setTimeout(r, 5000).unref())]); });
   registrierePreisdokumentRouten(app, o.pool, laeufer);
+  registriereSucheRouten(app, o.pool); // Schlaue Suche (E48), Option Lieferstufe 3
   // Platzhalter fuer Fachmodule bis M2–M8: erreichbar nur, wenn Guard und Sitzung sie durchlassen
   for (const m of MANIFEST) for (const r of m.routen) {
     if (r.startsWith("/api/auth") || r.startsWith("/api/admin")) continue;

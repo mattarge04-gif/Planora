@@ -5,21 +5,29 @@ type Q = Pick<pg.ClientBase, "query">;
 
 export type ScanStatus = "quarantaene" | "sauber" | "abgelehnt" | "scan_fehler";
 export type AuslesenStatus = "neu" | "liest" | "fertig" | "fehler" | "abgebrochen" | "aus";
+export type TextStatus = "offen" | "fertig" | "ohne_text" | "fehler";
+export interface Ort { geschossId: string | null; einheitId: string | null; allgemein: boolean }
+export const KEIN_ORT: Ort = { geschossId: null, einheitId: null, allgemein: false };
+export interface AblageGeschoss { id: string; code: string }
+export interface AblageEinheit { id: string; geschossId: string; bezeichnung: string }
 export interface AblageZeile { id: string; dateiname: string; art: Art; mime: string; kategorie: Kategorie; groesse: number; seiten: number | null;
-  hochgeladenAm: string; scanStatus: ScanStatus; scanGrund: string | null; gescanntAm: string | null; bauteilIds: string[] }
+  hochgeladenAm: string; scanStatus: ScanStatus; scanGrund: string | null; gescanntAm: string | null; bauteilIds: string[];
+  geschossId: string | null; einheitId: string | null; allgemein: boolean; textStatus: TextStatus }
 export interface AblageBauteil { id: string; katalogId: string; geschoss: string; ort: string; hersteller: string | null; typ: string | null }
 
 /** Ablage eines Gebaeudes, neueste zuerst; mit nurId genau ein Dokument. */
 export async function ladeAblage(c: Q, gebaeudeId: string, nurId: string | null = null): Promise<AblageZeile[]> {
   const r = await c.query(
     `select d.id, d.dateiname, d.art, d.mime, d.kategorie, d.groesse, d.seiten, d.hochgeladen_am, d.scan_status, d.scan_grund, d.gescannt_am,
+            d.ort_geschoss_id, d.ort_einheit_id, d.allgemein, d.text_status,
             coalesce(array_agg(v.bauteil_id::text order by v.bauteil_id) filter (where v.bauteil_id is not null), '{}') bauteil_ids
        from dokument d left join dokument_bauteil v on v.dokument_id = d.id
       where d.gebaeude_id = $1 and ($2::uuid is null or d.id = $2::uuid)
       group by d.id order by d.hochgeladen_am desc, d.id`, [gebaeudeId, nurId]);
   return r.rows.map((x) => ({ id: x.id, dateiname: x.dateiname, art: x.art, mime: x.mime, kategorie: x.kategorie, groesse: Number(x.groesse),
     seiten: x.seiten, hochgeladenAm: x.hochgeladen_am.toISOString(), scanStatus: x.scan_status, scanGrund: x.scan_grund,
-    gescanntAm: x.gescannt_am ? x.gescannt_am.toISOString() : null, bauteilIds: x.bauteil_ids }));
+    gescanntAm: x.gescannt_am ? x.gescannt_am.toISOString() : null, bauteilIds: x.bauteil_ids,
+    geschossId: x.ort_geschoss_id, einheitId: x.ort_einheit_id, allgemein: x.allgemein, textStatus: x.text_status }));
 }
 
 /** Bauteile fuer die Verknuepfung (Filter Typ, Geschoss, Name im Web). */
