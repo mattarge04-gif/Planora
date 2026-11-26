@@ -1,4 +1,6 @@
-import { Worker } from "node:worker_threads";
+import { fork, type ChildProcess } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { MIME, zipLies, zipVerzeichnis, type ZipEintrag } from "../dokumente/typ.js";
 
 /** Text auslesen fuer die Suche (Spec 3 "Auslesen"). Fehler werfen AuslesenFehler; in die DB kommt nur ein fester Text (indexierer.ts). */
@@ -19,19 +21,20 @@ export const bereinigeText = (s: string) => s.replace(/[\u0000-\u0009\u000B-\u00
 /** Dateiname ohne Endung, Trennzeichen als Leerzeichen (Abschnitt nr 0). */
 export const nameText = (dateiname: string) => bereinigeText(dateiname.replace(/\.[a-z0-9]{1,5}$/i, "").replace(/[_\-.]+/g, " ")).slice(0, 255) || dateiname.slice(0, 255) || "Dokument";
 
-/** Lange Texte in Stuecke zu hoechstens ABSCHNITT_ZEICHEN mit Ueberlappung, Schnitt am letzten Leerzeichen; leere Teile entfallen. */
+/** Lange Texte in Stuecke zu hoechstens ABSCHNITT_ZEICHEN mit Ueberlappung, Schnitt am letzten Leerzeichen; leere Teile entfallen.
+ *  Suche nur im Fenster des Stuecks (linear, auch ohne Leerzeichen); bricht ab, sobald es mehr als MAX_ABSCHNITTE sind (Aufrufer verwirft). */
 export function teileAbschnitte(teile: Teil[]): Teil[] {
-  const aus: Teil[] = [];
+  const aus: Teil[] = [], halb = ABSCHNITT_ZEICHEN / 2;
   for (const t of teile) {
     const text = bereinigeText(t.text);
     for (let p = 0; p < text.length;) {
       let ende = Math.min(text.length, p + ABSCHNITT_ZEICHEN);
-      if (ende < text.length) { const l = text.lastIndexOf(" ", ende); if (l > p + ABSCHNITT_ZEICHEN / 2) ende = l; }
+      if (ende < text.length) { const l = text.slice(p + halb + 1, ende + 1).lastIndexOf(" "); if (l >= 0) ende = p + halb + 1 + l; }
       const stueck = text.slice(p, ende).trim();
-      if (stueck) aus.push({ ortArt: t.ortArt, ort: t.ort, text: stueck });
+      if (stueck && aus.push({ ortArt: t.ortArt, ort: t.ort, text: stueck }) > MAX_ABSCHNITTE) return aus;
       if (ende >= text.length) break;
-      const weiter = text.indexOf(" ", Math.max(p + 1, ende - UEBERLAPPUNG));
-      p = weiter < 0 || weiter >= ende ? ende : weiter + 1;
+      const von = Math.max(p + 1, ende - UEBERLAPPUNG), w = text.slice(von, ende).indexOf(" ");
+      p = w < 0 ? ende : von + w + 1;
     }
   }
   return aus;
@@ -92,7 +95,12 @@ export function xlsxTeile(d: Buffer): Teil[] {
   const { v, lies } = office(d);
   const eintrag = (name: string) => v.find((x) => x.name === name);
   const ss = eintrag("xl/sharedStrings.xml");
-  const geteilt = ss ? lies(ss).split("</si>").slice(0, -1).map((si) => xmlText(tTexte(si))) : [];
+  // Phonetische Lesehilfen (<rPh>, japanische Eingabe) gehoeren nicht zum Zelltext; Schnitt statt Regex ueber Elementgrenzen.
+  const ohnePhonetik = (si: string) => si.split("<rPh").map((x, i) => {
+    const k = x.indexOf("</rPh>");
+    return i === 0 ? x : k < 0 ? "" : x.slice(k + 6);
+  }).join("");
+  const geteilt = ss ? lies(ss).split("</si>").slice(0, -1).map((si) => xmlText(tTexte(ohnePhonetik(si)))) : [];
   const wb = eintrag("xl/workbook.xml"), rels = eintrag("xl/_rels/workbook.xml.rels");
   const ziel = new Map<string, string>();
   if (rels) for (const [tag] of lies(rels).matchAll(/<Relationship\b[^<>]*>/g)) {
@@ -137,28 +145,45 @@ async function pdfLesen(d: Buffer): Promise<{ teile: Teil[]; gekuerzt: boolean }
 }
 export const pdfTeile = async (d: Buffer) => (await pdfLesen(d)).teile;
 
-/** Text je Teil im aktuellen Thread; nur PDF, docx, xlsx werden gelesen, alles andere ist "ohne_text" (nur Dateiname). */
+/** Text je Teil im aktuellen Prozess; nur PDF, docx, xlsx werden gelesen, alles andere ist "ohne_text" (nur Dateiname). */
 export async function liesText(d: Buffer, mime: string): Promise<Gelesen> {
   const roh = mime === "application/pdf" ? await pdfLesen(d) : { teile: mime === MIME.docx ? docxTeile(d) : mime === MIME.xlsx ? xlsxTeile(d) : [], gekuerzt: false };
   const teile = roh.teile.filter((t) => bereinigeText(t.text));
-  return { status: teile.length ? "fertig" : "ohne_text", teile, ...(roh.gekuerzt && teile.length ? { gekuerzt: true as const } : {}) };
+  return { status: teile.length ? "fertig" : "ohne_text", teile, ...(roh.gekuerzt ? { gekuerzt: true as const } : {}) };
 }
 
-/** liesText in einem eigenen Worker-Thread mit Zeit- und Speichergrenze: eine boesartige Datei haelt den API-Prozess nicht an.
- *  Ueberschreitung -> terminate() und AuslesenFehler("zeit" | "speicher"). Unter tsx (Entwicklung, Tests) laedt der Worker die .ts-Datei. */
-export function liesTextBegrenzt(d: Buffer, mime: string, o: { zeitMs?: number; speicherMb?: number } = {}): Promise<Gelesen> {
-  if (mime !== "application/pdf" && mime !== MIME.docx && mime !== MIME.xlsx) return Promise.resolve({ status: "ohne_text", teile: [] }); // kein Thread fuer Bilder & Co.
-  const ts = import.meta.url.endsWith(".ts");
-  const w = new Worker(new URL(`./auslesen-worker.${ts ? "ts" : "js"}`, import.meta.url), {
-    workerData: { d, mime }, execArgv: ts ? ["--import", "tsx"] : [],
-    resourceLimits: { maxOldGenerationSizeMb: o.speicherMb ?? 512, maxYoungGenerationSizeMb: 64 },
-  });
-  let zeit: NodeJS.Timeout | undefined;
+/** Auslesen und gleich in fertige Abschnitte teilen (laeuft im Kindprozess, der Elternprozess rechnet nichts mehr). */
+export async function liesAbschnitte(d: Buffer, mime: string): Promise<Gelesen> {
+  const r = await liesText(d, mime);
+  const teile = teileAbschnitte(r.teile);
+  return { ...r, status: teile.length ? "fertig" : "ohne_text", teile };
+}
+
+const LESBAR = new Set<string>(["application/pdf", MIME.docx, MIME.xlsx]);
+/** RSS eines anderen Prozesses in MB; nur Linux (/proc). Anderswo 0: dort greift der Waechter im Kind (auslesen-kind.ts). */
+const rssMb = (pid: number) => {
+  try { return Number(/VmRSS:\s+(\d+) kB/.exec(readFileSync(`/proc/${pid}/status`, "utf8"))?.[1] ?? 0) / 1024; } catch { return 0; }
+};
+
+/** liesAbschnitte in einem Kindprozess: V8-Heap 512 MB, RSS-Waechter (Standard 768 MB [A], alle 250 ms) und Zeitlimit (60 s).
+ *  Nur so ist auch Speicher ausserhalb des Heaps (pdf.js-Puffer einer Flate-Bombe) begrenzt; der API-Prozess bleibt heil.
+ *  Fehler: AuslesenFehler("zeit" | "speicher" | "abbruch") oder aus dem Kind; `signal` beendet das Kind (Server schliesst). */
+export function liesTextBegrenzt(d: Buffer, mime: string, o: { zeitMs?: number; rssMb?: number; signal?: AbortSignal; aufKind?: (k: ChildProcess) => void } = {}): Promise<Gelesen> {
+  if (!LESBAR.has(mime)) return Promise.resolve({ status: "ohne_text", teile: [] }); // kein Prozess fuer Bilder & Co.
+  const ts = import.meta.url.endsWith(".ts"), grenze = o.rssMb ?? 768; // unter tsx (Entwicklung, Tests) die .ts-Datei
+  const kind = fork(fileURLToPath(new URL(`./auslesen-kind.${ts ? "ts" : "js"}`, import.meta.url)), [String(grenze)], {
+    execArgv: [...(ts ? ["--import", "tsx"] : []), "--max-old-space-size=512"], serialization: "advanced",
+    stdio: ["ignore", "inherit", "inherit", "ipc"], signal: o.signal });
+  o.aufKind?.(kind);
+  let grund: string | null = null, zeit: NodeJS.Timeout | undefined, waechter: NodeJS.Timeout | undefined;
   return new Promise<Gelesen>((ok, nein) => {
-    zeit = setTimeout(() => nein(new AuslesenFehler("zeit")), o.zeitMs ?? 60_000);
-    w.once("message", (m: { ergebnis?: Gelesen; fehler?: string; eigen?: boolean }) =>
+    const abbruch = (g: string) => { grund ??= g; kind.kill("SIGKILL"); };
+    zeit = setTimeout(() => abbruch("zeit"), o.zeitMs ?? 60_000);
+    if (process.platform === "linux") waechter = setInterval(() => { if (kind.pid && rssMb(kind.pid) > grenze) abbruch("speicher"); }, 250);
+    kind.once("message", (m: { ergebnis?: Gelesen; fehler?: string; eigen?: boolean }) =>
       m.ergebnis ? ok(m.ergebnis) : nein(m.eigen ? new AuslesenFehler(m.fehler) : new Error(m.fehler)));
-    w.once("error", (e: Error & { code?: string }) => nein(e.code === "ERR_WORKER_OUT_OF_MEMORY" ? new AuslesenFehler("speicher") : e));
-    w.once("exit", () => nein(new Error("Auslese-Worker ohne Ergebnis beendet")));
-  }).finally(() => { clearTimeout(zeit); void w.terminate(); }); // erste Meldung entscheidet; Worker in jedem Fall beenden
+    kind.once("error", nein); // u. a. AbortError ueber `signal`
+    kind.once("exit", () => nein(grund ? new AuslesenFehler(grund) : new AuslesenFehler("abbruch"))); // Heap voll, Waechter im Kind, Absturz
+    kind.send({ d, mime });
+  }).finally(() => { clearTimeout(zeit); clearInterval(waechter); if (kind.exitCode === null && kind.signalCode === null) kind.kill("SIGKILL"); });
 }

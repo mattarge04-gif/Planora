@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { AuslesenFehler, docxTeile, liesText, liesTextBegrenzt, nameText, pdfTeile, teileAbschnitte, xlsxTeile, ABSCHNITT_ZEICHEN, MAX_PDF_SEITEN } from "../src/suche/auslesen.js";
+import type { ChildProcess } from "node:child_process";
+import { once } from "node:events";
+import { AuslesenFehler, docxTeile, liesText, liesTextBegrenzt, nameText, pdfTeile, teileAbschnitte, xlsxTeile, ABSCHNITT_ZEICHEN, MAX_ABSCHNITTE, MAX_PDF_SEITEN } from "../src/suche/auslesen.js";
 import { MIME, zipLies, zipVerzeichnis } from "../src/dokumente/typ.js";
-import { docxText, pdfText, png, pptx, xlsxText, zip } from "./hilfe-dateien.js";
+import { docxText, pdfBombe, pdfText, png, pptx, xlsxText, zip } from "./hilfe-dateien.js";
 
 describe("ZIP-Eintraege lesen", () => {
   it("gespeichert und deflate, Grenze und Formfehler -> null", () => {
@@ -75,22 +77,61 @@ describe("Text auslesen", () => {
     expect(a.every((x) => x.ortArt === "seite" && x.ort === 3 && x.text.length <= ABSCHNITT_ZEICHEN)).toBe(true);
     expect(a[1].text.startsWith("Wärme")).toBe(true); // Schnitt am Leerzeichen
   });
+  it("Abschnitte: linear ohne Leerzeichen, Abbruch nach MAX_ABSCHNITTE", () => {
+    let start = Date.now();
+    const a = teileAbschnitte([{ ortArt: "seite", ort: 1, text: "x".repeat(2_900_000) }]);
+    expect(Date.now() - start).toBeLessThan(300); // vorher quadratisch: ~640 ms
+    expect(a.length).toBe(Math.ceil(2_900_000 / ABSCHNITT_ZEICHEN));
+    start = Date.now();
+    expect(teileAbschnitte([{ ortArt: "seite", ort: 1, text: "Wärme ".repeat(3_000_000) }]).length).toBe(MAX_ABSCHNITTE + 1);
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
+  it("xlsx: phonetische Lesehilfen <rPh> gehoeren nicht zum Text", () => {
+    const d = zip(["[Content_Types].xml", "xl/workbook.xml", "xl/sharedStrings.xml", "xl/worksheets/sheet1.xml"], {
+      "xl/sharedStrings.xml": `<sst><si><t>東京</t><rPh sb="0" eb="2"><t>トウキョウ</t></rPh></si><si><t>B</t><rPh><t>offen</t></si></sst>`,
+      "xl/worksheets/sheet1.xml": `<row><c t="s"><v>0</v></c><c t="s"><v>1</v></c></row>` }, true);
+    expect(xlsxTeile(d)).toEqual([{ ortArt: "blatt", ort: 1, text: "東京 | B" }]);
+  });
+  it("gekuerzt auch ohne Text gemeldet", async () => {
+    expect(await liesText(pdfText(Array.from({ length: MAX_PDF_SEITEN + 1 }, () => "")), "application/pdf")).toEqual({ status: "ohne_text", teile: [], gekuerzt: true });
+  });
   it("Dateiname als Text", () => {
     expect(nameText("Datenblatt_WP-Vitocal.250.pdf")).toBe("Datenblatt WP Vitocal 250");
     expect(nameText(".pdf")).toBe(".pdf");
   });
 });
 
-describe("Auslesen im Worker-Thread", () => {
-  it("liefert dasselbe wie im Prozess; Fehler bleiben AuslesenFehler", async () => {
-    const r = await liesTextBegrenzt(pdfText(["Datenblatt Wärmepumpe"]), "application/pdf");
-    expect(r.status).toBe("fertig");
-    expect(r.teile[0].text).toContain("Wärmepumpe");
+describe("Auslesen im Kindprozess", () => {
+  const beendet = (k: ChildProcess) => k.exitCode !== null || k.signalCode !== null ? Promise.resolve() : once(k, "exit");
+  it("liefert fertige Abschnitte; Fehler bleiben AuslesenFehler; Kind endet", async () => {
+    let kind: ChildProcess | undefined;
+    const r = await liesTextBegrenzt(pdfText(["Datenblatt Wärmepumpe"]), "application/pdf", { aufKind: (k) => { kind = k; } });
+    expect(r).toEqual({ status: "fertig", teile: [{ ortArt: "seite", ort: 1, text: "Datenblatt Wärmepumpe" }] });
+    await beendet(kind!);
     await expect(liesTextBegrenzt(docxText(["x"]).subarray(0, 40), MIME.docx)).rejects.toBeInstanceOf(AuslesenFehler);
   });
-  it("Zeitlimit: Worker wird beendet, Fehler 'zeit'", async () => {
-    const e = await liesTextBegrenzt(pdfText(["langsam"]), "application/pdf", { zeitMs: 1 }).catch((x) => x);
+  it("16 MB Text ohne Leerzeichen: in der Zeitgrenze, Abbruch nach MAX_ABSCHNITTE", async () => {
+    const d = docxText(["x".repeat(15 * 1024 * 1024)]);
+    const r = await liesTextBegrenzt(d, MIME.docx, { zeitMs: 20_000 });
+    expect(r.teile.length).toBe(MAX_ABSCHNITTE + 1);
+    expect(r.teile.every((t) => t.text.length === ABSCHNITT_ZEICHEN)).toBe(true);
+  });
+  it("Zeitlimit: beschaeftigtes Kind wird beendet, Fehler 'zeit'", async () => {
+    let kind: ChildProcess | undefined;
+    const e = await liesTextBegrenzt(await bombe(), "application/pdf", { zeitMs: 1500, rssMb: 100_000, aufKind: (k) => { kind = k; } }).catch((x) => x);
     expect(e).toBeInstanceOf(AuslesenFehler);
     expect(e.message).toBe("zeit");
+    await beendet(kind!);
+    expect(kind!.signalCode ?? kind!.exitCode).not.toBeNull();
   });
+  it("Flate-Bombe: Speichergrenze beendet das Kind, dieser Prozess bleibt klein", async () => {
+    const vorher = process.memoryUsage.rss();
+    const e = await liesTextBegrenzt(await bombe(), "application/pdf", { zeitMs: 50_000 }).catch((x) => x);
+    expect(e).toBeInstanceOf(AuslesenFehler);
+    expect(["speicher", "abbruch"]).toContain(e.message); // Linux: Elternwaechter, sonst Waechter im Kind
+    expect(process.memoryUsage.rss() - vorher).toBeLessThan(200 * 1024 * 1024);
+  }, 60_000);
 });
+
+let bombeCache: Buffer | undefined;
+const bombe = async () => (bombeCache ??= await pdfBombe(2048));

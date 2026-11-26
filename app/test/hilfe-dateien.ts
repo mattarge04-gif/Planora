@@ -1,4 +1,5 @@
-import { deflateRawSync } from "node:zlib";
+import { once } from "node:events";
+import { createDeflate, deflateRawSync } from "node:zlib";
 // Testdateien als Buffer (nie auf Platte). Inhalt per `zusatz` eindeutig machen: gleicher sha256 im Gebaeude = Duplikat.
 const NL = String.fromCharCode(10);
 export const pdf = (seiten = 1, zusatz = "") => Buffer.from(["%PDF-1.7",
@@ -52,15 +53,15 @@ export const jpg = () => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), B
 export const heic = (marke = "heic") => Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from("ftyp" + marke + "0000mif1heic")]);
 export const exe = () => Buffer.concat([Buffer.from("MZ"), Buffer.alloc(64)]);
 /** Gueltiges PDF mit Text (Helvetica, WinAnsi: Umlaute und ° gehen, keine Zeichen ausserhalb Latin-1); "\n" = neue Zeile. */
-export function pdfText(seiten: string[], zusatz = ""): Buffer {
+export function pdfText(seiten: string[], zusatz = "", flate?: Buffer): Buffer {
   const esc = (s: string) => s.replace(/[\\()]/g, (m) => "\\" + m);
   const objekte = ["<< /Type /Catalog /Pages 2 0 R >>",
     `<< /Type /Pages /Count ${seiten.length} /Kids [${seiten.map((_, i) => `${4 + 2 * i} 0 R`).join(" ")}] >>`,
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"];
   seiten.forEach((t, i) => {
-    const inhalt = t.split("\n").map((z, k) => `BT /F1 11 Tf 56 ${780 - 16 * k} Td (${esc(z)}) Tj ET`).join("\n");
+    const inhalt = flate && i === 0 ? flate.toString("latin1") : t.split("\n").map((z, k) => `BT /F1 11 Tf 56 ${780 - 16 * k} Td (${esc(z)}) Tj ET`).join("\n");
     objekte.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + 2 * i} 0 R >>`,
-      `<< /Length ${Buffer.byteLength(inhalt, "latin1")} >>\nstream\n${inhalt}\nendstream`);
+      `<< /Length ${Buffer.byteLength(inhalt, "latin1")}${flate && i === 0 ? " /Filter /FlateDecode" : ""} >>\nstream\n${inhalt}\nendstream`);
   });
   let s = "%PDF-1.7\n"; const lage: number[] = [];
   objekte.forEach((o, i) => { lage.push(Buffer.byteLength(s, "latin1")); s += `${i + 1} 0 obj\n${o}\nendobj\n`; });
@@ -68,6 +69,14 @@ export function pdfText(seiten: string[], zusatz = ""): Buffer {
   s += `xref\n0 ${objekte.length + 1}\n0000000000 65535 f \n${lage.map((o) => `${String(o).padStart(10, "0")} 00000 n \n`).join("")}`
     + `trailer\n<< /Size ${objekte.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%${zusatz}\n%%EOF`;
   return Buffer.from(s, "latin1");
+}
+/** Flate-Bombe: PDF, dessen erste Seite klein komprimiert und `mb` MB Leerzeichen entpackt ist. */
+export async function pdfBombe(mb: number, zusatz = ""): Promise<Buffer> {
+  const z = createDeflate({ level: 9 }), teile: Buffer[] = [], block = Buffer.alloc(16 * 1024 * 1024, 0x20);
+  z.on("data", (c: Buffer) => teile.push(c));
+  for (let i = 0; i < mb / 16; i++) if (!z.write(block)) await once(z, "drain");
+  z.end(); await once(z, "end");
+  return pdfText(["x"], zusatz, Buffer.concat(teile));
 }
 const xml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 /** docx mit einem Absatz je Eintrag (deflate wie Word). */

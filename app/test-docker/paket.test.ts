@@ -3,6 +3,7 @@
 // abgebaut wird nur, was dieser Lauf selbst angelegt hat.
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { DOCKER_TESTS, TEST, baueImage, cookies, docker, https, legeErstadminAn, melde, testInstanz, type TestInstanz } from "./paket-hilfe.js";
+import { pdfBombe, pdfText } from "../test/hilfe-dateien.js";
 
 let inst: TestInstanz;
 
@@ -48,6 +49,19 @@ describe.skipIf(!DOCKER_TESTS)("Compose-Paket (Docker)", () => {
        if(!await a.verify(h,'laufzeitprobe')) throw Error('Argon2 defekt'); console.log('ok');`]);
     expect(r.stdout.trim()).toBe("ok");
   });
+
+  it("Suche: Auslesen im Kindprozess aus dist; Flate-Bombe -> 'speicher' (RSS-Waechter /proc), api lebt weiter", async () => {
+    const eingabe = [pdfText(["Planora im Container"]), await pdfBombe(2048)].map((b) => b.toString("base64")).join(" ");
+    const r = await inst.compose(["exec", "-T", "api", "node", "--input-type=module", "-e",
+      `const t=[]; for await (const c of process.stdin) t.push(c);
+       const [ok, bombe] = Buffer.concat(t).toString().split(' ').map((s) => Buffer.from(s, 'base64'));
+       const m = await import('/app/dist/suche/auslesen.js');
+       const r = await m.liesTextBegrenzt(ok, 'application/pdf');
+       const e = await m.liesTextBegrenzt(bombe, 'application/pdf').then(() => 'kein Fehler', (x) => x.message);
+       console.log(JSON.stringify({ text: r.teile[0].text, bombe: e }));`], { eingabe, timeoutMs: 120_000 });
+    expect(JSON.parse(r.stdout.trim())).toEqual({ text: "Planora im Container", bombe: "speicher" });
+    expect((await https(inst.basis, "GET", "/api/health")).status).toBe(200);
+  }, 180_000);
 
   it("Migrator endet mit Exit 0 und hat alle Migrationen angewendet", async () => {
     const m = await inst.inspect("migrator");

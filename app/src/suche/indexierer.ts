@@ -1,19 +1,20 @@
 import type pg from "pg";
 import type { Ablage } from "../ablage/ablage.js";
 import { inTx } from "../rechte/zugriff.js";
-import { AuslesenFehler, MAX_ABSCHNITTE, MAX_PDF_SEITEN, liesTextBegrenzt, nameText, teileAbschnitte, type Teil } from "./auslesen.js";
+import { AuslesenFehler, MAX_ABSCHNITTE, MAX_PDF_SEITEN, liesTextBegrenzt, nameText, type Teil } from "./auslesen.js";
 
 /** Feste Texte in der DB; rohe Meldungen nur im Log. */
 export const AUSLESEN_FEHLER_TEXT = "Text konnte nicht gelesen werden.";
 export const ZU_LANGE_TEXT = "Text auslesen dauerte zu lange.";
 export const ZU_VIEL_TEXT = "Dokument hat zu viel Text für die Suche.";
 export const GEKUERZT_TEXT = `Nur die ersten ${MAX_PDF_SEITEN} Seiten sind durchsuchbar.`;
-export interface Indexierer { starte(id: string): void; warteLeer(): Promise<void>; reiheNeuEin(): Promise<number> }
+export interface Indexierer { starte(id: string): void; warteLeer(): Promise<void>; reiheNeuEin(): Promise<number>; /** laufende Kindprozesse beenden (Server schliesst); Dokumente bleiben offen */ beende(): void }
 export const sucheAktiv = async (q: Pick<pg.Pool, "query">) => (await q.query("select aktiv from modul_schalter where modul_id='suche'")).rows[0]?.aktiv === true;
 
 /** Hintergrundjob (Muster wie Pruefer/Laeufer): nach sauberem Scan und beim Start/Nachholtakt fuer text_status='offen'. */
 export function erzeugeIndexierer(pool: pg.Pool, ablage: Ablage, o: { gleichzeitig?: number; istAktiv?: () => Promise<boolean> } = {}): Indexierer {
-  const max = o.gleichzeitig ?? 1; // je Job ein Worker-Thread mit bis 512 MB
+  const max = o.gleichzeitig ?? 1; // je Job ein Kindprozess mit bis 768 MB
+  const stopp = new AbortController();
   const istAktiv = o.istAktiv ?? (() => sucheAktiv(pool));
   const warteschlange: string[] = [];
   const eingereiht = new Set<string>();
@@ -26,11 +27,12 @@ export function erzeugeIndexierer(pool: pg.Pool, ablage: Ablage, o: { gleichzeit
     try {
       const stuecke: Buffer[] = [];
       for await (const s of ablage.lese(d.schluessel)) stuecke.push(s as Buffer);
-      const r = await liesTextBegrenzt(Buffer.concat(stuecke), d.mime);
-      teile = teileAbschnitte(r.teile); status = r.status;
+      const r = await liesTextBegrenzt(Buffer.concat(stuecke), d.mime, { signal: stopp.signal });
+      teile = r.teile; status = r.status;
       if (r.gekuerzt) grund = GEKUERZT_TEXT;
       if (teile.length > MAX_ABSCHNITTE) { teile = []; status = "fehler"; grund = ZU_VIEL_TEXT; }
     } catch (e) {
+      if (stopp.signal.aborted) return; // Server schliesst: bleibt offen, Neustart holt es nach
       if (!(e instanceof AuslesenFehler)) console.error(`suche: Auslesen abgebrochen: ${e instanceof Error ? e.message.slice(0, 200) : "unbekannt"}`);
       status = "fehler"; grund = e instanceof AuslesenFehler && e.message === "zeit" ? ZU_LANGE_TEXT : AUSLESEN_FEHLER_TEXT;
     }
@@ -46,7 +48,7 @@ export function erzeugeIndexierer(pool: pg.Pool, ablage: Ablage, o: { gleichzeit
     });
   }
   async function arbeite(id: string) {
-    if (!(await istAktiv())) return; // Modul aus: bleibt offen, Nachholtakt holt es nach
+    if (stopp.signal.aborted || !(await istAktiv())) return; // Modul aus: bleibt offen, Nachholtakt holt es nach
     await liesAus(id);
   }
 
@@ -64,6 +66,10 @@ export function erzeugeIndexierer(pool: pg.Pool, ablage: Ablage, o: { gleichzeit
   const starte = (id: string) => { if (eingereiht.has(id)) return; eingereiht.add(id); warteschlange.push(id); weiter(); };
   return {
     starte,
+    beende: () => {
+      warteschlange.length = 0; stopp.abort();
+      if (!laufend) { leer.forEach((f) => f()); leer = []; }
+    },
     warteLeer: () => (!laufend && !warteschlange.length ? Promise.resolve() : new Promise<void>((r) => leer.push(r))),
     async reiheNeuEin() {
       if (!(await istAktiv())) return 0;

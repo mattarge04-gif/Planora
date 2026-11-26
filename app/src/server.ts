@@ -131,6 +131,7 @@ export async function baueServer(o: ServerOptionen) {
     if (nachholTakt) clearInterval(nachholTakt);
     // nacheinander: ein Pruefer-Job kann beim Abschluss noch ein Auslesen starten
     await Promise.race([pruefer.warteLeer().then(() => indexierer.warteLeer()), new Promise((r) => setTimeout(r, 5000).unref())]);
+    indexierer.beende(); // noch laufendes Auslesen: Kindprozess beenden statt verwaist weiterlaufen lassen
   });
   registriereDokumentRouten(app, o.pool, { pruefer, quarantaene }); // /api/dokumente/… (Kernmodul, immer aktiv)
   registriereBestandRouten(app, o.pool); // Datenblatt je Bauteil (Bibliothek, E46)
