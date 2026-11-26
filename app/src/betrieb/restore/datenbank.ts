@@ -42,7 +42,7 @@ export function datenbankUmgebung(o:{rollenDb:pg.PoolConfig;zielDb:pg.ClientConf
       try{if((await c.query("select rolsuper from pg_roles where rolname=current_user")).rows[0].rolsuper)throw new Error("Migrator darf kein Superuser sein");}finally{await c.end();}
       const env={PGHOST:cfg.host,PGPORT:String(cfg.port??5432),PGDATABASE:cfg.database,PGUSER:cfg.user,PGPASSWORD:cfg.password as string,PGSSLMODE:o.zielDb.ssl?"verify-full":"disable",...o.pgEnv,PGOPTIONS:cfg.options};
       const sqlDatei=join(ordner,"import.sql"),sperreDatei=join(ordner,"sperre.sql");
-      await erfolgreich(lauf,{programm:"pg_restore",args:["--no-owner","--file",sqlDatei,join(ordner,"daten.dump")]});
+      await erfolgreich(lauf,{programm:"pg_restore",args:["--no-owner","--no-comments","--file",sqlDatei,join(ordner,"daten.dump")]});
       await fs.chmod(sqlDatei,0o600);
       await fs.writeFile(sperreDatei,`select public.restore_sperren('${m.instanzId}'::uuid,'${m.backupId}'::uuid,${m.journalSeq}::bigint);\n`,{mode:0o600,flag:"wx"});
       // Import und Kontosperre sind atomar sichtbar. Jeder SQL-Fehler rollt alles zurueck.

@@ -87,7 +87,7 @@ describe.skipIf(!DOCKER_TESTS)("Compose-Paket (Docker)", () => {
     expect(rollen).toEqual(["planora_app:true:false", "planora_backup:true:false", "planora_betrieb:true:false", "planora_migrator:true:false", "planora_owner:false:false"]);
     expect((await inst.sql("postgres", "select distinct tableowner from pg_tables where schemaname='public'")).text).toBe("planora_owner");
     expect((await inst.sql("postgres", "select pg_get_userbyid(datdba) from pg_database where datname='planora'")).text).toBe("planora_owner");
-    expect((await inst.sql("postgres", "select distinct pg_get_userbyid(proowner) from pg_proc where pronamespace='public'::regnamespace")).text).toBe("planora_owner");
+    expect((await inst.sql("postgres", "select distinct pg_get_userbyid(proowner) from pg_proc p where pronamespace='public'::regnamespace and not exists (select 1 from pg_depend d where d.objid=p.oid and d.deptype='e')")).text).toBe("planora_owner");
     // nur planora_migrator darf in die Eigentuemerrolle wechseln
     expect((await inst.sql("postgres", "select string_agg(member::regrole::text, ',') from pg_auth_members where roleid='planora_owner'::regrole")).text).toBe("planora_migrator");
     for (const rolle of ["planora_app", "planora_betrieb", "planora_backup", "planora_migrator"]) {

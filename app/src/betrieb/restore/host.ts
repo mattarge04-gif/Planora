@@ -42,6 +42,8 @@ export async function restoreHost(docker: Ausfuehrer, i: InstanzPfad, instanz: s
       await hostSql(`create role ${rolle} login createrole password '${passwort}';\n`); rolleErzeugt = true;
       await hostSql(`grant pg_read_all_data to ${rolle} with admin true;\n${["app", "backup", "betrieb", "migrator"].map((r) => `grant planora_${r} to ${rolle} with admin true, inherit false, set false;`).join("\n")}\ncreate database ${zielDb} owner ${rolle};\n`);
       await hostSql("grant usage,create on schema public to planora_owner;", zielDb);
+      // Trusted Extensions (Migration 019) als Superuser: der Import laeuft als planora_migrator ohne CREATE auf der Datenbank, pg_dump setzt IF NOT EXISTS.
+      await hostSql("create extension if not exists pg_trgm;\ncreate extension if not exists unaccent;", zielDb);
       copyFileSync(key, join(temp, "recovery.key")); lesbarFuerBackup(join(temp, "recovery.key"));
       const recoveryDatei = join(d, "recovery_db");
       schreibeAtomar(recoveryDatei, `postgres://${rolle}:${passwort}@db:5432/${zielDb}`); lesbarFuerBackup(recoveryDatei);

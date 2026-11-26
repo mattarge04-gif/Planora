@@ -239,6 +239,10 @@ configs:
       create role planora_backup login password :'backup';
       create role planora_betrieb login password :'betrieb';
       alter database planora owner to planora_owner;
+      -- Trusted Extensions der Suche (Migration 019) legt hier der Superuser an: Der Restore-Import laeuft als planora_migrator ohne CREATE
+      -- auf der Datenbank; pg_dump schreibt CREATE EXTENSION IF NOT EXISTS und trifft so auf die vorhandene Extension.
+      create extension pg_trgm;
+      create extension unaccent;
       -- 001 gibt pg_read_all_data an planora_backup weiter: dafuer braucht der Eigentuemer nur die ADMIN-Option.
       grant pg_read_all_data to planora_owner with admin true, inherit false, set false;
       revoke connect on database planora from public;

@@ -71,6 +71,7 @@ describe.runIf(aktiv)("Retention (Docker, echtes restic)", () => {
     u.pool = new pg.Pool({ host: "127.0.0.1", port: dbPort, user: "postgres", password: u.pw, database: "planora" });
     const recoveryPw = randomBytes(24).toString("hex");
     await u.pool.query(`create role planora_recovery login createrole password '${recoveryPw}'; grant pg_read_all_data to planora_recovery with admin option; alter database planora owner to planora_recovery`);
+    await u.pool.query("create extension pg_trgm; create extension unaccent"); // wie der Host-Restore: Extensions als Superuser, Import ohne CREATE
     u.env.PLANORA_TEST_ROLLEN_DB = `postgres://planora_recovery:${recoveryPw}@db:5432/planora`;
     await expect(u.compose("run", "--rm", "restore", "restore", s1.backupId, "--instanz-id", u.instanzId)).rejects.toMatchObject({ code: 1 });
     expect((await u.pool.query("select count(*)::int n from pg_tables where schemaname='public'")).rows[0].n).toBe(0);

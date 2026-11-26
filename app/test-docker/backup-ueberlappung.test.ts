@@ -59,6 +59,7 @@ describe.runIf(aktiv)("Retention mit ueberlappender Sicherung (Docker)", () => {
     for (let n = 0; ; n++) { try { await u.pool.query("select 1"); break; } catch (e) { if (n > 60) throw e; await new Promise((r) => setTimeout(r, 1000)); } }
     const recoveryPw = randomBytes(24).toString("hex");
     await u.pool.query(`create role planora_recovery login createrole password '${recoveryPw}'; grant pg_read_all_data to planora_recovery with admin option; alter database planora owner to planora_recovery`);
+    await u.pool.query("create extension pg_trgm; create extension unaccent"); // wie der Host-Restore: Extensions als Superuser, Import ohne CREATE
     u.env.PLANORA_TEST_ROLLEN_DB = `postgres://planora_recovery:${recoveryPw}@db:5432/planora`;
     const r = letzte(await u.compose("run", "--rm", "restore", "restore", idA, "--instanz-id", u.instanzId));
     expect(r).toMatchObject({ backupId: idA, zustand: "gesperrt", journalSeq: letzteSeq });
