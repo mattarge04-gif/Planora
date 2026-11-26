@@ -2,6 +2,12 @@
 
 Aktueller Entwicklungsstand: [gemeinsame Fortsetzung](../superpowers/plans/2026-11-11-fortsetzung.md). M1a integriert; M1 technisch abgeschlossen und lokal abgenommen (WSL-Ersatz-VM); offen: echte CH-VM, SMTP-Versandtest, menschliche Lizenzfreigabe. Historische Abschnitte anhand neuerer Entscheide lesen.
 
+## E49 – Startseite Modellplatte (PO, 2026-11-26)
+
+Rohantworten: "Neu gestalten (Recommended)"; Ansatz "A Modellplatte (Recommended)"; Kundenname "Ja (Recommended)"; Adresse "Nein, später (Recommended)".
+
+- Login + Gebaeudeliste neu nach Ansatz A in `docs/design/entscheide/2026-11-26-startseite.md`, [A] ca. 3.75 PT, nach der Suche. Login mit Kundennamen; keine Adresse.
+
 ## E48 – Abnahme Anlagenakte, Suche + Ordner-Ablage (PO, 2026-11-25/26)
 
 Rohantworten: Datenblatt "es wird nur eingetragen zb grundfoss magna 32 dann datenblatt eif dazu"; "Preise lesen" ohne Schluessel "Verstecken (Recommended)"; Suche-Technik + gemeinsame Spec "Passt"; Ordner-Ablage "genau für die ablage will ich noch ein extra register wie zb bei erneuerung wo ein popup kommt und man einfach zb den ganzen explorer ordner anwählt dann werden alle dateien angezigt und man kann sie zu bauteile, allgemein geschosse oder einheiten oder als undefiniert zb zuteilen damit man nicht im 3d in jedes bauteil drücken muss"; Vorschlag "Ja, mit KI (Recommended)".

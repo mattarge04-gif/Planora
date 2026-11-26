@@ -12,9 +12,9 @@ Stand 25.11.2026, PO-bestaetigt ("passt"). Ziel: Demo bei Siemens in 3–4 Woche
 | 6 | Demo-Gebaeude: realistisches Buerohaus, echt wirkende Datenblaetter (PDF), Preise, Baujahre; keine "Muster"/"Testgebaeude" | 1.5 | offen |
 | 7 | Generalprobe: Drehbuch, unabhaengiger Pruefer als "Siemens-FM", 2 Probedurchlaeufe mit PO | 1.5 | offen |
 | 8 | Server fuer wenige Tage (monatlich/stuendlich kuendbar), Installation, HTTPS/Domain, Konten, Entwicklungs-Login aus, lokaler Ersatz auf PO-Laptop. Vorher: `betrieb/compose.yaml` reicht `OPENAI_API_KEY`/`PLANORA_KI_*` nicht an `api` durch, `PLANORA_STUFE` steht auf 1 (Suche erst ab Stufe 3) | 2 | als letztes |
-| 5b | Startseite neu (PO 26.11. "Neu gestalten"): Login + Gebaeudeliste mit Kennzahlen je Gebaeude (Ampel, faellige Kosten, Unterlagen, Silhouette), planora-design Vollablauf (art-director 2–3 Ansaetze, PO waehlt); dazu Restpunkte Kritik `docs/design/kritiken/2026-11-26-fixwelle-akte/r1/` (D4-Rest, D5 im Erneuerungsplan, Demodaten, 1280-Tabelle) | 1.5 | nach Suche |
+| 5b | Startseite neu (E49, Ansatz A Modellplatte, Login mit Kundennamen): Login + Gebaeudeliste mit Kennzahlen je Gebaeude (Ampel, faellige Kosten, Unterlagen, Silhouette), planora-design Vollablauf (art-director 2–3 Ansaetze, PO waehlt); dazu Restpunkte Kritik `docs/design/kritiken/2026-11-26-fixwelle-akte/r1/` (D4-Rest, D5 im Erneuerungsplan, Demodaten, 1280-Tabelle) | 3.75 | nach Suche |
 | 9 | Puffer fuer Befunde der Generalprobe | 2 | – |
-| | Total | ca. 24.5 | |
+| | Total | ca. 27 | |
 
 Kuerzen nur in dieser Reihenfolge: (1) T9-Modelle (erledigt), (2) Suche zuerst ohne KI-Antwort (−2 PT). Punkte 4–8 nicht kuerzen.
 
