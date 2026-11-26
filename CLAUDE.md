@@ -17,7 +17,16 @@ Abschnitt 0b gewinnt bei Widerspruch zu aelteren Abschnitten; massgeblich fuer E
 
 **Gestaltung [F]:** Jede visuelle Arbeit (3D-Szene, Dashboard, Farben, Typografie, Bewegung, Anlagenmodelle) laeuft ueber den Skill `planora-design` (`.claude/skills/planora-design/SKILL.md`) mit den Agenten `art-director`, `3d-designer`, `ui-ux-designer`, `visual-critic` (`.claude/agents/`). Designbibliothek und verbindliche Geschmacksregeln: `docs/design/README.md`, `docs/design/prinzipien.md` (nur mit PO-Bestaetigung aendern). GPU-Screenshots: `werkzeug/design/`. UI-Texte mit echten Umlauten.
 
-## 0b. Stand – zuletzt aktualisiert 24.11.2026
+## 0b. Stand – zuletzt aktualisiert 26.11.2026
+
+### Siemens-Demo: Anlagenakte fertig, Suche + Ablage in Umsetzung (26.11.2026) [F]
+
+- E47: Demo bei Siemens in 3–4 Wochen auf Online-Server (nur wenige Tage, als letzter Schritt), Budget da; Kosten einzeln mit PO-OK. Fahrplan `docs/superpowers/plans/2026-11-25-siemens-demo.md` (ca. 23 PT). Massstab PO: nichts darf intern/roh wirken, alles muss funktionieren.
+- Einstieg naechste Sitzung: "weiter" -> Fahrplan, dann Ledger `.superpowers/sdd/2026-11-26-suche-und-ablage/progress.md` (lokal).
+- Anlagenakte T1–T10 fertig: T8 Kritik r3 bereit, T9 r2 bereit, T10 Abnahme `docs/abnahme/2026-11-25-anlagenakte/README.md`, Gesamtreview "mit Korrekturen" -> Fixwelle `e216b61`..`80dfd39` (ClamAV `AlertExceedsMax`, Duplikat-Neupruefung, Sandbox-CSP, D1–D8, Datenblatt je Typ E48, Gebaeudeseiten mit Adresse). `test:docker` mit echtem clamd 38/43 ok (5 uebersprungen), RAM-Spitze 1.93 GiB.
+- E48: Datenblatt gilt je Katalog-ID + Hersteller + Typ (im Gebaeude); "Preise lesen" ohne Schluessel versteckt; Schlaue Suche + Register "Ablage" (Ordner, KI-Vorschlag): Spec `docs/superpowers/specs/2026-11-26-suche-und-ablage-design.md`, Plan `docs/superpowers/plans/2026-11-26-suche-und-ablage.md` (10 Tasks).
+- Pruefstand: Backend 768/768, Web 582/582, Typen/Build gruen. Code nach Skill `ponytail` (PO 25.11.).
+- Offen vor Server: `betrieb/compose.yaml` reicht `OPENAI_API_KEY`/`PLANORA_KI_*` nicht an `api`, `PLANORA_STUFE` = 1 (Suche ab 3). Offen: `OPENAI_API_KEY` lokal, visual-critic der neuen Gebaeudeliste, Leser-Konto im Entwicklungsstart fehlt.
 
 ### Anlagenakte schlank in Arbeit (24.11.2026) [F]
 

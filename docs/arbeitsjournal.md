@@ -3,6 +3,24 @@
 Chronologisch, neueste Sitzung zuoberst. Was gilt, steht in `CLAUDE.md` Abschnitt 0b.
 Kennzeichnung: [F] Fakt, [A] Annahme, [?] offene Frage.
 
+## 2026-11-25/26 – Siemens-Demo (E47), Anlagenakte fertig, Suche + Ablage geplant
+
+### 1. Was gemacht wurde
+
+- [F] E47: Zustimmung fuer Siemens-Demo in 3–4 Wochen, Online-Server nur wenige Tage als letzter Schritt, Budget da. Fahrplan `docs/superpowers/plans/2026-11-25-siemens-demo.md`.
+- [F] Anlagenakte T8 (3 Kritikrunden), T9 (GLB Ausdehnungsgefaess/Sonstiges, Platzierung am Reihenanfang), T10 Abnahme, Gesamtreview, Fixwelle; `test:docker` mit echtem clamd gruen.
+- [F] E48 und Brainstorming Schlaue Suche + Ordner-Ablage (Teile 1–4 "passt"), Spec und Plan (10 Tasks). Skill `ponytail` installiert, gilt fuer Code.
+
+### 2. Gelernt
+
+- [F] Neue Geraetetypen ohne Wandplatz und Leitung wirken sofort wie Platzhalter; Platzierung zwischen Speicher und langem Verteiler kollidiert mit dessen Zuleitung (Reihe rechnet mit Katalogbreite 1.2 m statt Verteilerlaenge).
+- [F] ClamAV gibt ohne `AlertExceedsMax yes` Dateien bei Grenzueberschreitung als sauber frei.
+- [F] Die Compose-Konfiguration reicht KI-Variablen nicht an die api und steht auf Stufe 1 – vor dem Demo-Server beheben.
+
+### 3. Offen
+
+- [?] Datenschutz Siemens (Textabschnitte an OpenAI); Modellnamen/Preise Embedding pruefen; Leser-Konto im Entwicklungsstart.
+
 ## 2026-11-23/24 – Anlagenakte schlank (E46), T1–T7 fertig, T8 begonnen
 
 ### 1. Was gemacht wurde
